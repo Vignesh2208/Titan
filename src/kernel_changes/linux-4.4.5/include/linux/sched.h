@@ -1592,7 +1592,7 @@ struct task_struct {
 	s64 virt_start_time;
 	s64 burst_target; // In INS-VT refers to single stepping window size, In APP-VT refers to target end virtual time of current burst
 	int associated_tracer_id;
-	int dilation_factor;
+	int associated_vcpu_id;
 	spinlock_t dialation_lock;
 	unsigned long ptrace_mflags;
 	unsigned long ptrace_msteps;

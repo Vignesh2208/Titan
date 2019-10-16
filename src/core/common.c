@@ -30,6 +30,7 @@ extern atomic_t progress_n_rounds ;
 extern atomic_t progress_n_enabled ;
 extern atomic_t n_waiting_tracers;
 extern wait_queue_head_t progress_sync_proc_wqueue;
+extern wait_queue_head_t * tracer_wqueue;
 
 
 extern int run_usermode_tracer_spin_process(char *path, char **argv,
@@ -215,6 +216,7 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	new_elem->pid = tracee->pid;
 	new_elem->curr_task = tracee;
 	tracee->associated_tracer_id = tracer_entry->tracer_id;
+	tracee->associated_vcpu_id = tracer_entry->cpu_assignement - 2;
 
 	new_elem->base_quanta = PROCESS_MIN_QUANTA_NS;
 	new_elem->quanta_left_from_prev_round = 0;
@@ -275,6 +277,10 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid)
 	head_1 = tracer_entry->schedule_queue.head;
 	head_2 = tracer_entry->run_queue.head;
 
+	if (tracee) {
+		tracee->associated_tracer_id = -1;
+	}
+
 	while (head_1 != NULL || head_2 != NULL) {
 
 		if (head_1) {
@@ -301,7 +307,7 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid)
 
 
 /**
-* write_buffer: <tracer_type>,<meta_task_type>,<spinner_pid> or <proc_to_control_pid>
+* write_buffer: <tracer_type>,<tracer_id>,<meta_task_type>,<spinner_pid> or <proc_to_control_pid>
 **/
 int register_tracer_process(char * write_buffer) {
 
@@ -320,10 +326,11 @@ int register_tracer_process(char * write_buffer) {
 
 	num_args = convert_string_to_array(write_buffer, api_args, MAX_API_ARGUMENT_SIZE);
 
-	BUG_ON(num_args <= 1);
+	BUG_ON(num_args <= 2);
 
 	tracer_type = api_args[0];
-	meta_task_type = api_args[1];
+	tracer_id = api_args[1];
+	meta_task_type = api_args[2];
 
 	if (tracer_type != TRACER_TYPE_INS_VT && tracer_type != TRACER_TYPE_APP_VT) {
 		PDEBUG_E("Unknown Tracer Type !");
@@ -331,8 +338,8 @@ int register_tracer_process(char * write_buffer) {
 	}
 
 	if (meta_task_type == 1) {
-		BUG_ON(num_args != 3);
-		spinner_pid  = api_args[2];
+		BUG_ON(num_args != 4);
+		spinner_pid  = api_args[3];
 		if (spinner_pid <= 0) {
 			PDEBUG_E("Spinner pid must be greater than zero. "
 			         "Received value: %d\n", spinner_pid);
@@ -350,8 +357,8 @@ int register_tracer_process(char * write_buffer) {
 
 	} else if (meta_task_type != 0) {
 		meta_task_type = 0;
-		BUG_ON(num_args != 3);
-		process_to_control_pid = api_args[2];
+		BUG_ON(num_args != 4);
+		process_to_control_pid = api_args[3];
 		if (process_to_control_pid <= 0) {
 			PDEBUG_E("proccess_to_control_pid must be greater than zero. "
 			         "Received value: %d\n", process_to_control_pid);
@@ -369,11 +376,19 @@ int register_tracer_process(char * write_buffer) {
 
 	PDEBUG_I("Register Tracer: Starting ...\n");
 
+	new_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
 
-	new_tracer = alloc_tracer_entry(tracer_id, tracer_type);
+	if (!new_tracer) {
+		new_tracer = alloc_tracer_entry(tracer_id, tracer_type);
+		hmap_put_abs(&get_tracer_by_id, tracer_id, new_tracer);
+		hmap_put_abs(&get_tracer_by_pid, current->pid, new_tracer);
+	} else {
+		initialize_tracer_entry(new_tracer, tracer_id, tracer_type);
+		hmap_put_abs(&get_tracer_by_pid, current->pid, new_tracer);
+	}
 
 	if (!new_tracer)
-		return -ENOMEM;
+		return FAIL;
 
 	for (i = 0; i < EXP_CPUS; i++) {
 		if (per_cpu_chain_length[i] < per_cpu_chain_length[best_cpu])
@@ -381,10 +396,8 @@ int register_tracer_process(char * write_buffer) {
 	}
 
 	mutex_lock(&exp_lock);
-	tracer_id = ++tracer_num;
-
+	
 	per_cpu_chain_length[best_cpu] ++;
-
 	new_tracer->tracer_id = tracer_id;
 	new_tracer->cpu_assignment = best_cpu + 2;
 	new_tracer->tracer_task = current;
@@ -392,12 +405,13 @@ int register_tracer_process(char * write_buffer) {
 	new_tracer->proc_to_control_task = NULL;
 	new_tracer->spinner_task = NULL;
 	new_tracer->vt_exec_manager_task = NULL;
+	new_tracer->w_queue = &tracer_wqueue[new_tracer->cpu_assignment - 2];
 
+	current->associated_tracer_id = tracer_id;
+	current->associated_vcpu_id = new_tracer->cpu_assignment - 2;
 
-	hmap_put_abs(&get_tracer_by_id, tracer_id, new_tracer);
-	hmap_put_abs(&get_tracer_by_pid, current->pid, new_tracer);
+	++tracer_num;
 	llist_append(&per_cpu_tracer_list[best_cpu], new_tracer);
-
 	mutex_unlock(&exp_lock);
 
 	if (meta_task_type) {
@@ -420,6 +434,8 @@ int register_tracer_process(char * write_buffer) {
 
 	get_tracer_struct_write(new_tracer);
 	cpumask_set_cpu(new_tracer->cpu_assignment, &current->cpus_allowed);
+
+
 	if (meta_task_type && spinner_task) {
 		PDEBUG_I("Set Spinner Task for Tracer: %d, Spinner: %d\n",
 		         current->pid, spinner_task->pid);
@@ -526,55 +542,31 @@ void update_all_tracers_virtual_time(int cpuID, s64 target_increment) {
   Assumes no tracer lock is acquired prior to call.
 **/
 
-int handle_tracer_results(char * buffer) {
+int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 
-	s64 result = 0 ;
-	tracer * curr_tracer = hmap_get_abs(&get_tracer_by_pid, current->pid);
-	int buf_len = strlen(buffer);
-	int next_idx = 0;
-	lxc_schedule_elem * curr_elem;
 	struct pid *pid_struct;
 	struct task_struct * task;
-	s64 overshoot_time = 0;
-	s32 rem = 0;
-	s64 quantum_n_insns;
+	int i, pid_to_remove;
 
 	if (!curr_tracer)
 		return FAIL;
 
-	if (experiment_type == EXP_CS) {
-		signal_cpu_worker_resume(curr_tracer);
-		return SUCCESS;
-	}
-
 	get_tracer_struct_write(curr_tracer);
-	while (next_idx < buf_len) {
-		result = atoi(buffer + next_idx);
-		next_idx += get_next_value(buffer + next_idx);
-
-		PDEBUG_V("Handle tracer results: Pid: %d, Tracer ID: %d, "
-		         "Curr Result: %d, All results: %s\n", current->pid,
-		         curr_tracer->tracer_id, result, buffer);
-
-
-		if (result <= 0) {
+	for (i = 0; i < num_args; i++) {
+		pid_to_remove = api_args[i];
+		if (pid_to_remove <= 0)
 			break;
-		}
 
-		if (result) {
-			//result is a pid to be ignored
-			PDEBUG_I("Handle tracer results: Pid: %d, Tracer ID: %d, "
-			         "Ignoring Process: %d\n", current->pid,
-			         curr_tracer->tracer_id, result);
-			struct task_struct * mappedTask = get_task_ns(result, current);
-			if (mappedTask != NULL) {
-				PDEBUG_I("MAPPED TASK PID = %d, Ignoring it.\n", mappedTask->pid);
-				hmap_put_abs(&curr_tracer->ignored_children, mappedTask->pid, current);
-			}
+		PDEBUG_I("Handle tracer results: Pid: %d, Tracer ID: %d, "
+			     "Ignoring Process: %d\n", curr_tracer->tracer_task->pid,
+			     curr_tracer->tracer_id, pid_to_remove);
+		struct task_struct * mappedTask = get_task_ns(pid_to_remove, curr_tracer->tracer_task);
+		if (mappedTask != NULL) {
+			remove_from_tracer_schedule_queue(curr_tracer, pid_to_remove);
 		}
 	}
-	put_tracer_struct_write(curr_tracer);
 
+	put_tracer_struct_write(curr_tracer);
 	signal_cpu_worker_resume(curr_tracer);
 	return SUCCESS;
 }

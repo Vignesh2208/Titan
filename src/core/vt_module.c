@@ -53,6 +53,8 @@ struct task_struct *loop_task;
 struct task_struct * round_task = NULL;
 extern wait_queue_head_t progress_sync_proc_wqueue;
 extern wait_queue_head_t expstop_call_proc_wqueue;
+wait_queue_head_t * tracer_wqueue;
+
 extern int initialize_experiment_components(char * write_buffer);
 extern int round_sync_task(void *data);
 extern void run_dilated_hrtimers();
@@ -177,7 +179,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
 	int err = 0;
 	int retval = 0;
-	int i = 0;
+	int i = 0, cpu_assignment;
 	uint8_t mask = 0;
 	unsigned long flags;
 	overshoot_info * args;
@@ -189,6 +191,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 	int ret, num_integer_args;
     int api_integer_args[MAX_API_ARGUMENT_SIZE];
 	tracer * curr_tracer;
+	int tracer_id;
 
 	memset(api_info_tmp.api_argument, 0, sizeof(char)*MAX_API_ARGUMENT_SIZE);
     memset(api_integer_args, 0, sizeof(int)*MAX_API_ARGUMENT_SIZE);
@@ -218,19 +221,102 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
 
     case VT_UPDATE_TRACER_CLOCK :
+		// Only registered tracer process can invoke this ioctl 
+		api_info = (invoked_api *) arg;
+        if (!api_info)
+            return -EFAULT;
+        if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+			return -EFAULT;
+		}
+
+        curr_tracer = hmap_get_abs(&get_tracer_by_pid, current->pid);
+		if (!curr_tracer) {
+			PDEBUG_I("VT-IO: Tracer : %d, not registered\n", current->pid);
+			return -EFAULT;
+		}
+		if (curr_tracer->tracer_type == TRACER_TYPE_APP_VT || current->associated_tracer_id <= 0)
+			return 0;
+
+		curr_tracer->curr_virtual_time += api_info_tmp.return_value;
+		set_children_time(curr_tracer, curr_tracer->tracer_task, curr_tracer->curr_virtual_time, 0);
         return 0;
 
     case VT_WRITE_RESULTS :
+		// A registered tracer process or one of the processes in a tracer's schedule queue can invoke this ioctl
+		// For INSVT tracer type, only the tracer process can invoke this ioctl
+
+
+		if (current->associated_tracer_id <= 0) {
+			PDEBUG_E("Process: %d is not associated with any tracer !\n");
+			return -EFAULT;
+		}
+
+		cpu_assignment = 
         api_info = (invoked_api *) arg;
         if (!api_info)
             return -EFAULT;
-        if (copy_from_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+        if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 			return -EFAULT;
 		}
-        
+
+		num_integer_args = convert_string_to_array(
+            api_info_tmp.api_agrument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+        if (num_integer_args < 1) {
+			PDEBUG_E("VT_RM_PROCESS_FROM_SQ: Not enough arguments !");
+			return -EFAULT;
+		}
+
+		tracer_id = api_integer_args[0];
+        curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+		if (!curr_tracer) {
+			PDEBUG_I("VT-IO: Tracer : %d, not registered\n", current->pid);
+			return -EFAULT;
+		}
+
+		
+
+		mutex_lock(&file_lock);
+		handle_tracer_results(curr_tracer, &api_integer_args[1], num_integer_args - 1);
+		mutex_unlock(&file_lock);
+
+
+		wait_event_interruptible(
+		    *curr_tracer->w_queue, 
+			current->associated_tracer_id <= 0 || curr_tracer->w_queue_wakeup_pid == current->pid || );
+		PDEBUG_V("VT-IO: Associated Tracer : %d, Process: %d, resuming from wait\n", tracer_id, current->pid);
+
+		// Ensure that for INS_VT tracer, only the tracer process can invoke this call
+		if (current->associated_tracer_id)
+			BUG_ON(curr_tracer->tracer_task->pid != current->pid && curr_tracer->tracer_type == TRACER_TYPE_INS_VT);
+
+		if (current->associated_tracer_id <= 0) {
+			current->burst_target = 0;
+			current->virt_start_time = 0;
+			current->curr_virt_time = 0;
+			current->associated_tracer_id = 0;
+			current->associated_vcpu_id = 0;
+			current->wakeup_time = 0;
+			current->vt_exec_manager = NULL;
+			current->tracer_clock = NULL;
+			PDEBUG_I("VT-IO: Tracer: %d, Process: %d STOPPING\n", tracer_id, current->pid);
+			
+			return 0;
+		}
+
+		api_info_tmp.return_value = current->burst_target;
+		if (copy_to_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+			wake_up_interruptible(&expstop_call_proc_wqueue);
+			PDEBUG_I("Status Read: Tracer : %d, Process: %d Resuming from wait. "
+			         "Error copying to user buf\n", tracer_id, current->pid);
+			return -EFAULT;
+		}
+
+		PDEBUG_V("VT-IO: Tracer: %d, Process: %d Returning !\n", tracer_id, current->pid);	
         return 0;
 
     case VT_GET_CURRENT_VIRTUAL_TIME :
+		// Any process can invoke this call.
         tv = (struct timeval *)arg;
 		if (!tv)
 			return -EFAULT;
@@ -248,70 +334,123 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return 0;
 
     case VT_REGISTER_TRACER :
+		// Any process can invoke this call if it is not already associated with a tracer
         api_info = (invoked_api *) arg;
         if (!api_info)
             return -EFAULT;
-        if (copy_from_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+        if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 			return -EFAULT;
 		}
 
-        return register_tracer_process(api_info_tmp.api_argument);
+		if (current->associated_tracer_id) {
+			PDEBUG_E("Process: %d, already associated with another tracer. "
+					"It cannot be registered as a new tracer !", current->pid);
+			return -EFAULT;
+		}
 
-    case VT_ADD_PROCESSES_TO_SQ :
+        ret_val = register_tracer_process(api_info_tmp.api_argument);
+		if (ret_val == FAIL) 
+			return -EFAULT;
+
+		api_info_tmp.return_value = ret_val;
+
+		if (copy_to_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+
+			PDEBUG_I("VT_REGISTER_TRACER: Tracer : %d, "
+			         "Error copying to user buf\n", current->pid);
+			return -EFAULT;
+		}
+		atomic_inc(&n_waiting_tracers);
+		wake_up_interruptible(&progress_sync_proc_wqueue);
+		return 0;
+
+
+    case VT_ADD_PROCESSES_TO_SQ:
+		// Any process can invoke this call.
         api_info = (invoked_api *) arg;
         if (!api_info)
             return -EFAULT;
-        if (copy_from_user(api_info, &api_info_tmp,  sizeof(invoked_api))) {
+        if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 			return -EFAULT;
 		}
         num_integer_args = convert_string_to_array(
             api_info_tmp.api_agrument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
-        curr_tracer = hmap_get_abs(&get_tracer_by_pid, current->pid);
-		if (!curr_tracer) {
-			PDEBUG_I("VT-IO: Tracer : %d, not registered\n", current->pid);
+		if (num_integer_args <= 1) {
+			PDEBUG_E("VT_ADD_PROCESS_TO_SQ: Not enough arguments !");
 			return -EFAULT;
 		}
-        for (i = 0; i < num_integer_args; i++) {
+
+		tracer_id = api_integer_args[0];
+        curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+		if (!curr_tracer) {
+			PDEBUG_I("VT-IO: Tracer : %d, not registered\n", tracer_id);
+			return -EFAULT;
+		}
+
+		get_tracer_struct_write(curr_tracer);
+        for (i = 1; i < num_integer_args; i++) {
             add_to_tracer_schedule_queue(curr_tracer, api_integer_args[i]);
         }
+		put_tracer_struct_write(curr_tracer);
+		
         
         return 0;
 
     case VT_RM_PROCESSES_FROM_SQ :
+		// Any non tracer process can invoke this call.
         api_info = (invoked_api *) arg;
         if (!api_info)
             return -EFAULT;
-        if (copy_from_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+        if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 			return -EFAULT;
 		}
         num_integer_args = convert_string_to_array(
             api_info_tmp.api_agrument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
-        curr_tracer = hmap_get_abs(&get_tracer_by_pid, current->pid);
-		if (!curr_tracer) {
-			PDEBUG_I("VT-IO: Tracer : %d, not registered\n", current->pid);
+        if (num_integer_args <= 1) {
+			PDEBUG_E("VT_RM_PROCESS_FROM_SQ: Not enough arguments !");
 			return -EFAULT;
 		}
-        for (i = 0; i < num_integer_args; i++) {
+
+		tracer_id = api_integer_args[0];
+        curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+		if (!curr_tracer || current->associated_tracer_id <= 0) {
+			PDEBUG_I("VT_RM_PROCESSES_FROM_SQ: Process : %d, not registered with tracer: %d\n", current->pid, tracer_id);
+			return -EFAULT;
+		}
+
+		// This ioctl call cannot be invoked by a tracer process
+		if (curr_tracer->tracer_task->pid == current->pid) {
+			PDEBUG_E("VT_RM_PROCESSES_FROM_SQ: Tracer process: %d cannot invoke this call on behalf of tracer-id: %d\n",
+					current->pid, tracer_id);
+			return -EFAULT;
+		}
+
+		get_tracer_struct_write(curr_tracer);
+        for (i = 1; i < num_integer_args; i++) {
             remove_from_tracer_schedule_queue(curr_tracer, api_integer_args[i]);
         }
-        
+        put_tracer_struct_write(curr_tracer);
+
         return 0;
 
     case VT_SYNC_AND_FREEZE :
+		// Any process can invoke this call.
         return handle_sync_and_freeze_cmd();
 
     case VT_INITIALIZE_EXP :
+		// Any process can invoke this call.
         api_info = (invoked_api *) arg;
         if (!api_info)
             return -EFAULT;
-        if (copy_from_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+        if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 			return -EFAULT;
 		}
         return handle_initialize_exp_cmd(api_info_tmp.api_argument);
 
     case VT_GETTIME_PID :
+		// Any process can invoke this call.
         api_info = (invoked_api *) arg;
         if (!api_info)
             return -EFAULT;
@@ -323,96 +462,34 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
 
     case VT_START_EXP :
+		// Any process can invoke this call.
         return handle_start_exp_cmd();
 
     case VT_STOP_EXP :
+		// Any process can invoke this call.
         return handle_stop_exp_cmd();
 
     case VT_PROGRESS_BY :
+		// Any process can invoke this call.
         api_info = (invoked_api *) arg;
         if (!api_info)
             return -EFAULT;
-        if (copy_from_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+        if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 			return -EFAULT;
 		}
         return 0;
 
     case VT_SET_NETDEVICE_OWNER :
+		// Any process can invoke this call.
         api_info = (invoked_api *) arg;
         if (!api_info)
             return -EFAULT;
-        if (copy_from_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+        if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 			return -EFAULT;
 		}
         return handle_set_netdevice_owner_cmd(api_info_tmp.api_argument);
-	
-	case TK_IO_WRITE_RESULTS	:	ptr = (char *) arg;
-		if (copy_from_user(write_buffer, ptr, STATUS_MAXSIZE)) {
-			return -EFAULT;
-		}
 
-		current->virt_start_time = 0;
-		mutex_lock(&file_lock);
-		ret = handle_tracer_results(write_buffer + 2);
-		mutex_unlock(&file_lock);
-
-		curr_tracer = hmap_get_abs(&get_tracer_by_pid, current->pid);
-		if (!curr_tracer) {
-			PDEBUG_I("TK-IO: Tracer : %d, not registered\n", current->pid);
-			return -1;
-		}
-
-		PDEBUG_V("TK-IO: Tracer : %d, Waiting for next command.\n",
-		         current->pid);
-
-		atomic_inc(&n_waiting_tracers);
-		wake_up_interruptible(&progress_sync_proc_wqueue);
-		wait_event_interruptible(
-		    curr_tracer->w_queue,
-		    atomic_read(&curr_tracer->w_queue_control) == 0);
-		PDEBUG_V("TK-IO: Tracer : %d, Resuming from wait\n", current->pid);
-
-
-		get_tracer_struct_read(curr_tracer);
-		if (copy_to_user(ptr, curr_tracer->run_q_buffer,
-		                 curr_tracer->buf_tail_ptr + 1 )) {
-			put_tracer_struct_read(curr_tracer);
-			atomic_dec(&n_waiting_tracers);
-			wake_up_interruptible(&expstop_call_proc_wqueue);
-			PDEBUG_I("Status Read: Tracer : %d, Resuming from wait. "
-			         "Error copying to user buf\n", current->pid);
-			return -EFAULT;
-		}
-
-		if (strcmp(curr_tracer->run_q_buffer, "STOP") == 0) {
-			ret = curr_tracer->buf_tail_ptr;
-			put_tracer_struct_read(curr_tracer);
-			// free up memory
-			PDEBUG_I("TK-IO: Tracer: %d, STOPPING\n", current->pid);
-			get_tracer_struct_write(curr_tracer);
-			if (curr_tracer->spinner_task != NULL) {
-				curr_tracer->spinner_task = NULL;
-			}
-			put_tracer_struct_write(curr_tracer);
-			hmap_remove_abs(&get_tracer_by_id, curr_tracer->tracer_id);
-			hmap_remove_abs(&get_tracer_by_pid, current->pid);
-
-			mutex_lock(&exp_lock);
-			kfree(curr_tracer);
-			mutex_unlock(&exp_lock);
-
-			atomic_dec(&n_waiting_tracers);
-			wake_up_interruptible(&expstop_call_proc_wqueue);
-			return 0;
-
-		}
-		atomic_dec(&n_waiting_tracers);
-		ret = curr_tracer->buf_tail_ptr;
-		put_tracer_struct_read(curr_tracer);
-		PDEBUG_V("TK-IO: Tracer: %d, Returning value: %d\n", current->pid, ret);
-		return 0;
-
-	default: return -ENOTTY;
+		default: return -ENOTTY;
 	}
 
 	return retval;
@@ -485,11 +562,19 @@ int __init my_module_init(void) {
 		EXP_CPUS = 1;
 
 	expected_time = 0;
+	tracer_wqueue = kmalloc(EXP_CPUS*sizeof(wait_queue_head_t));
+
+	if (!tracer_wqueue) {
+		PDEBUG_E("Error: Could not allot memory for tracer wait queue\n");
+		return -ENOMEM;
+	}
+
+	for (i = 0; i < EXP_CPUS; i++) {
+		init_waitqueue_head(&tracer_wqueue[i]);
+	}
 
 	PDEBUG_A("Number of EXP_CPUS: %d\n", EXP_CPUS);
 	PDEBUG_A("MODULE LOADED SUCCESSFULLY \n");
-
-
 	return 0;
 }
 

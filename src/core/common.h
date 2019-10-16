@@ -17,7 +17,7 @@ int register_tracer_process(char * write_buffer);
 void update_all_children_virtual_time(tracer * tracer_entry, s64 time_increment);
 void update_init_task_virtual_time(s64 time_to_set);
 void update_all_tracers_virtual_time(int cpuID, s64 target_increment);
-int handle_tracer_results(char * buffer);
+int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args);
 int handle_stop_exp_cmd();
 int handle_set_netdevice_owner_cmd(char * write_buffer);
 s64 get_dilated_time(struct task_struct * task) ;

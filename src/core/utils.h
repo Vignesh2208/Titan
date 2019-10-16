@@ -9,6 +9,7 @@ void free_mmap_pages(void *mem, int npages);
 int get_next_value (char *write_buffer);
 int atoi(char *s);
 struct task_struct* find_task_by_pid(unsigned int nr);
+void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id, int tracer_type);
 tracer * alloc_tracer_entry(uint32_t tracer_id, int tracer_type);
 void free_tracer_entry(tracer * tracer_entry);
 void set_children_cpu(struct task_struct *aTask, int cpu);

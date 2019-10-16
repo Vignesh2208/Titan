@@ -76,19 +76,11 @@ struct task_struct* find_task_by_pid(unsigned int nr) {
 	return task;
 }
 
-tracer * alloc_tracer_entry(uint32_t tracer_id, int tracer_type) {
+void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id, int tracer_type) {
 
-	tracer * new_tracer = NULL;
-
-	new_tracer = (tracer *)kmalloc(sizeof(tracer), GFP_KERNEL);
 	if (!new_tracer)
-		return NULL;
-
-    memset(new_tracer, 0, sizeof(tracer));
-
-    BUG_ON(tracer_type != TRACER_TYPE_INS_VT && tracer_type != TRACER_TYPE_APP_VT);
-
-
+		return;
+		
     new_tracer->proc_to_control_pid = -1;
     new_tracer->cpu_assignment = 0;
 	new_tracer->tracer_id = tracer_id;
@@ -101,12 +93,31 @@ tracer * alloc_tracer_entry(uint32_t tracer_id, int tracer_type) {
 
 	memset(new_tracer->run_q_buffer, BUF_MAX_SIZE);
 	
+	llist_destroy(&new_tracer->schedule_queue);
+    llist_destroy(&new_tracer->run_queue);
+
 	llist_init(&new_tracer->schedule_queue);
     llist_init(&new_tracer->run_queue);
 	
-	init_waitqueue_head(&new_tracer->w_queue);
+	
 	rwlock_init(&new_tracer->tracer_lock);
 	atomic_set(&new_tracer->w_queue_control, 1);
+
+}
+
+tracer * alloc_tracer_entry(uint32_t tracer_id, int tracer_type) {
+
+	tracer * new_tracer = NULL;
+
+	new_tracer = (tracer *)kmalloc(sizeof(tracer), GFP_KERNEL);
+	if (!new_tracer)
+		return NULL;
+
+    memset(new_tracer, 0, sizeof(tracer));
+
+    BUG_ON(tracer_type != TRACER_TYPE_INS_VT && tracer_type != TRACER_TYPE_APP_VT);
+
+	initialize_tracer_entry(new_tracer, tracer_id, tracer_type)
 
 	return new_tracer;
 

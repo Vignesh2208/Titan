@@ -52,8 +52,8 @@ typedef struct tracer_struct {
 
 	llist schedule_queue;
     llist run_queue;
-	wait_queue_head_t w_queue;
-	atomic_t w_queue_control;
+	wait_queue_head_t * w_queue;
+	int w_queue_wakeup_pid;
 } tracer;
 
 
