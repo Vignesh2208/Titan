@@ -3,13 +3,11 @@
 #include "utils.h"
 
 extern int tracer_num;
-extern int n_processed_tracers;
 extern int EXP_CPUS;
 extern int TOTAL_CPUS;
 extern struct task_struct *round_task;
-extern int experiment_stopped;
 extern int experiment_status;
-extern int experiment_type;
+extern int initialization_status;
 extern s64 virt_exp_start_time;
 
 extern struct mutex exp_lock;
@@ -227,9 +225,12 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 
 	if (tracer_entry->tracer_type == TRACER_TYPE_APP_VT) {
 		BUG_ON(!aligned_tracer_clock_array);
-		BUG_ON(!tracer_entry->vt_exec_manager_task);
 		tracee->tracer_clock = (s64 *)&aligned_tracer_clock_array[tracee->associated_tracer_id - 1];
-		tracee->vt_exec_manager = tracer_entry->vt_exec_manager_task;
+		tracee->vt_exec_task_wqueue = tracer_wqueue[tracer_entry->cpu_assignment - 2];
+		tracee->ready = 0;
+	} else {
+		tracee->vt_exec_task_wqueue = NULL;
+		tracee->ready = 0;
 	}
 
 	if (!tracee->virt_start_time) {
@@ -279,6 +280,10 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid)
 
 	if (tracee) {
 		tracee->associated_tracer_id = -1;
+		tracee->virt_start_time = 0;
+		tracee->curr_virt_time = 0;
+		tracee->wakeup_time = 0;
+		tracee->burst_target = 0;
 	}
 
 	while (head_1 != NULL || head_2 != NULL) {
@@ -404,11 +409,11 @@ int register_tracer_process(char * write_buffer) {
 	new_tracer->create_spinner = meta_task_type;
 	new_tracer->proc_to_control_task = NULL;
 	new_tracer->spinner_task = NULL;
-	new_tracer->vt_exec_manager_task = NULL;
 	new_tracer->w_queue = &tracer_wqueue[new_tracer->cpu_assignment - 2];
+	new_tracer->tracer_pid = current->pid;
 
 	current->associated_tracer_id = tracer_id;
-	current->associated_vcpu_id = new_tracer->cpu_assignment - 2;
+	current->ready = 0;
 
 	++tracer_num;
 	llist_append(&per_cpu_tracer_list[best_cpu], new_tracer);
@@ -562,7 +567,7 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 			     curr_tracer->tracer_id, pid_to_remove);
 		struct task_struct * mappedTask = get_task_ns(pid_to_remove, curr_tracer->tracer_task);
 		if (mappedTask != NULL) {
-			remove_from_tracer_schedule_queue(curr_tracer, pid_to_remove);
+			remove_from_tracer_schedule_queue(curr_tracer, mappedTask->pid);
 		}
 	}
 
@@ -571,21 +576,59 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 	return SUCCESS;
 }
 
+void wait_for_insvt_tracer_completion(tracer * curr_tracer)
+{
 
+	if (!curr_tracer)
+		return;
+	BUG_ON(curr_tracer->tracer_type != TRACER_TYPE_INS_VT);
+	curr_tracer->w_queue_wakeup_pid = curr_tracer->tracer_pid;
+	wake_up_interruptible(curr_tracer->w_queue);
+	wait_event_interruptible(*curr_tracer->w_queue, curr_tracer->w_queue_wakeup_pid == 1);
+	PDEBUG_V("Resuming from Tracer completion for Tracer ID: %d\n", curr_tracer->tracer_id);
+
+}
+
+void wait_for_appvt_tracer_completion(tracer * curr_tracer, struct task_struct * relevant_task)
+{
+	if (!curr_tracer || !relevant_task) {
+		return;
+	}
+
+	BUG_ON(curr_tracer->tracer_type != TRACER_TYPE_APP_VT);
+	curr_tracer->w_queue_wakeup_pid = relevant_task->pid;
+	wake_up_interruptible(curr_tracer->w_queue);
+	wait_event_interruptible(*curr_tracer->w_queue, relevant_task->burst_target == 0 || curr_tracer->w_queue_wakeup_pid == 1);
+	PDEBUG_V("Resuming from Tracer completion for Tracer ID: %d\n", curr_tracer->tracer_id);
+
+}
+
+void signal_cpu_worker_resume(tracer * curr_tracer) {
+
+	if (!curr_tracer)
+		return;
+
+	if (curr_tracer->tracer_type == TRACER_TYPE_INS_VT) {
+		PDEBUG_V("Signal INSVT Tracer resume. Tracer ID: %d\n",
+	             curr_tracer->tracer_id);
+
+		curr_tracer->w_queue_wakeup_pid = 1;
+		wake_up_interruptible(curr_tracer->w_queue);
+	} else {
+		if (current->burst_target > 0) {
+			PDEBUG_V("Signal APPVT Tracer resume. Tracer ID: %d\n",
+	            curr_tracer->tracer_id);
+			curr_tracer->w_queue_wakeup_pid = 1;
+			wake_up_interruptible(curr_tracer->w_queue);
+		}
+	}
+
+}
 
 int handle_stop_exp_cmd() {
-	atomic_set(&progress_n_enabled, 0);
-	atomic_set(&progress_n_rounds, 0);
-	atomic_set(&experiment_stopping, 1);
-	wake_up_process(round_task);
-	wake_up_interruptible(&progress_sync_proc_wqueue);
-	wait_event_interruptible(expstop_call_proc_wqueue,
-	                         atomic_read(&experiment_stopping) == 0
-	                         && atomic_read(&n_waiting_tracers) == 0);
-
-
-	PDEBUG_V("Returning from Stop Cmd\n");
-	return cleanup_experiment_components();
+	if (handle_progress_by(0) == SUCCESS)
+		return cleanup_experiment_components();
+	return FAIL;
 }
 
 

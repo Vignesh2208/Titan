@@ -3,6 +3,16 @@
 
 #include "includes.h"
 
+
+#define NOTRUNNING -1
+#define RUNNING 0
+#define FROZEN 1
+#define STOPPING 2
+#define NOT_INITIALIZED 0
+#define INITIALIZED 1
+#define DILATION_DIR "dilation"
+#define DILATION_FILE "status"
+
 #define MAX_API_ARGUMENT_SIZE 100
 #define BUF_MAX_SIZE MAX_API_ARGUMENT_SIZE
 
@@ -33,12 +43,11 @@ typedef struct tracer_struct {
 	struct task_struct * tracer_task;
 	struct task_struct * spinner_task;
 	struct task_struct * proc_to_control_task;
-    struct task_struct * vt_exec_manager_task;
 
 	int proc_to_control_pid;
 	int create_spinner;
 	int tracer_id;
-    int buf_tail_ptr;
+	int tracer_pid;
     int tracer_type;
 	u32 cpu_assignment;
 	s64 curr_virtual_time;
@@ -47,8 +56,6 @@ typedef struct tracer_struct {
     s64 nxt_round_burst_length;
 
 	rwlock_t tracer_lock;
-	
-    char run_q_buffer[BUF_MAX_SIZE];
 
 	llist schedule_queue;
     llist run_queue;

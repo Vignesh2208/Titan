@@ -1,7 +1,7 @@
 #include "utils.h"
 
 
-extern int experiment_stopped;
+extern int experiment_status;
 extern s64 virt_exp_start_time;
 extern int tracer_num;
 extern int schedule_list_size(tracer * tracer_entry);
@@ -84,24 +84,23 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id, int tracer
     new_tracer->proc_to_control_pid = -1;
     new_tracer->cpu_assignment = 0;
 	new_tracer->tracer_id = tracer_id;
+	new_tracer->trace_pid = 0;
 	new_tracer->round_start_virt_time = 0;
     new_tracer->nxt_round_burst_length = 0;
     new_tracer->curr_virt_time = 0;
     new_tracer->round_overshoot = 0;
-    new_tracer->buf_tail_ptr = 0;
     new_tracer->tracer_type = tracer_type;
+	new_tracer->w_queue_wakeup_pid = 0;
 
-	memset(new_tracer->run_q_buffer, BUF_MAX_SIZE);
 	
 	llist_destroy(&new_tracer->schedule_queue);
     llist_destroy(&new_tracer->run_queue);
 
 	llist_init(&new_tracer->schedule_queue);
-    llist_init(&new_tracer->run_queue);
-	
-	
+    llist_init(&new_tracer->run_queue);	
+
 	rwlock_init(&new_tracer->tracer_lock);
-	atomic_set(&new_tracer->w_queue_control, 1);
+
 
 }
 
@@ -222,7 +221,7 @@ void set_children_time(tracer * tracer_entry,
 				} else {
 					t->curr_virt_time = time;
 				}
-				if (experiment_stopped != RUNNING)
+				if (experiment_status != RUNNING)
 					t->wakeup_time = 0;
 			}
 		} while_each_thread(me, t);
@@ -240,7 +239,7 @@ void set_children_time(tracer * tracer_entry,
 			taskRecurse->curr_virt_time = time;
 		}
         
-		if (experiment_stopped != RUNNING)
+		if (experiment_status != RUNNING)
 			taskRecurse->wakeup_time = 0;
 		set_children_time(tracer_entry, taskRecurse, time, increment);
 	}
@@ -295,7 +294,7 @@ tracer * get_tracer_for_task(struct task_struct * aTask) {
 	if (!aTask)
 		return NULL;
 
-	if (experiment_stopped != RUNNING)
+	if (experiment_status != RUNNING)
 		return NULL;
 
     tracer_id = aTask->associated_tracer_id;
