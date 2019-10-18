@@ -61,6 +61,7 @@ typedef struct tracer_struct {
     llist run_queue;
 	wait_queue_head_t * w_queue;
 	int w_queue_wakeup_pid;
+	lxc_schedule_elem * last_run;
 } tracer;
 
 

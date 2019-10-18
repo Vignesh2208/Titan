@@ -1,19 +1,21 @@
 #ifndef __VT_DEFINITIONS__
 #define __VT_DEFINITIONS__
 
+#define VT_IOC_MAGIC  'k'
 
-#define REGISTER_TRACER 'A'
-#define GETTIMEPID 'B'
-#define SYNC_AND_FREEZE 'C'
-#define SET_NETDEVICE_OWNER 'D'
-#define UPDATE_TRACER_PARAMS 'E'
-#define PROGRESS  'F'
-#define PROGRESS_N_ROUNDS	'G'
-#define START_EXP 'H'
-#define STOP_EXP 'I'
-#define TRACER_RESULTS 'J'
-#define INITIALIZE_EXP 'K'
-#define RUN_DILATED_HRTIMERS 'L'
+#define VT_UPDATE_TRACER_CLOCK _IOW(VT_IOC_MAGIC,  1, int)
+#define VT_WRITE_RESULTS _IOW(VT_IOC_MAGIC,  2, int)
+#define VT_GET_CURRENT_VIRTUAL_TIME _IOW(VT_IOC_MAGIC,  3, int)
+#define VT_REGISTER_TRACER _IOW(VT_IOC_MAGIC,  4, int)
+#define VT_ADD_PROCESSES_TO_SQ _IOW(VT_IOC_MAGIC,  5, int)
+#define VT_SYNC_AND_FREEZE _IOW(VT_IOC_MAGIC,  6, int)
+#define VT_INITIALIZE_EXP _IOW(VT_IOC_MAGIC,  7, int)
+#define VT_GETTIME_PID _IOW(VT_IOC_MAGIC,  8, int)
+#define VT_STOP_EXP _IOW(VT_IOC_MAGIC,  9, int)
+#define VT_PROGRESS_BY _IOW(VT_IOC_MAGIC,  10, int)
+#define VT_SET_NETDEVICE_OWNER _IOW(VT_IOC_MAGIC,  11, int)
+#define VT_FREE_TRACER _IOW(VT_IOC_MAGIC,  12, int)
+
 
 
 #endif

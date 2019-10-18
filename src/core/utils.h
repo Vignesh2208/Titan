@@ -1,4 +1,5 @@
-
+#ifndef __VT_UTILS_H
+#define __VT_UTILS_H
 
 #include <linux/string.h>
 #include "vt_module.h"
@@ -25,3 +26,5 @@ void get_tracer_struct_write(tracer* tracer_entry);
 void put_tracer_struct_write(tracer* tracer_entry);
 
 int convert_string_to_array(char * str, int * arr, int arr_size);
+
+#endif

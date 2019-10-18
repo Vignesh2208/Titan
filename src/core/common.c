@@ -1,5 +1,6 @@
 #include "includes.h"
 #include "vt_module.h"
+#include "sync_experiment.h"
 #include "utils.h"
 
 extern int tracer_num;
@@ -139,6 +140,8 @@ void clean_up_schedule_list(tracer * tracer_entry) {
 				task->virt_start_time = 0;
 				task->curr_virtual_time = 0;
 				task->wakeup_time = 0;
+				task->burst_target = 0;
+				task->associated_tracer_id = -1;
 			}
 		} else
 			break;
@@ -197,6 +200,10 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 		return;
 	}
 	
+	if (experiment_status == STOPPING) {
+		PDEBUG_E("add_to_tracer_schedule_queue: cannot add when experiment is stopping !\n");
+		return;
+	}
 
 	PDEBUG_I("add_to_tracer_schedule_queue: "
 	         "Adding new tracee %d to tracer-id: %d\n",
@@ -503,11 +510,12 @@ void update_init_task_virtual_time(s64 time_to_set) {
 /*
 Assumes no tracer lock is acquired prior to call
 */
-void update_all_tracers_virtual_time(int cpuID, s64 target_increment) {
+void update_all_tracers_virtual_time(int cpuID) {
 	llist_elem * head;
 	llist * tracer_list;
 	tracer * curr_tracer;
 	s64 overshoot_err;
+	s64 target_increment;
 
 	tracer_list =  &per_cpu_tracer_list[cpuID];
 	head = tracer_list->head;
@@ -517,20 +525,23 @@ void update_all_tracers_virtual_time(int cpuID, s64 target_increment) {
 
 		curr_tracer = (tracer*)head->item;
 		get_tracer_struct_write(curr_tracer);
-		
-		if (curr_tracer && curr_tracer->tracer_type == TRACER_TYPE_APP_VT) {
-			BUG_ON(!aligned_tracer_clock_array);
-			BUG_ON(aligned_tracer_clock_array[curr_tracer->tracer_id - 1] < curr_tracer->round_start_virt_time +  target_increment);
-			overshoot_err = aligned_tracer_clock_array[curr_tracer->tracer_id - 1] - (curr_tracer->round_start_virt_time +  target_increment);
-			curr_tracer->round_overshoot = overshoot_err;
-			target_increment = target_increment + overshoot_err;
-			update_all_children_virtual_time(curr_tracer, target_increment);
+		target_increment = curr_tracer->nxt_round_burst_length;
 
-			BUG_ON(aligned_tracer_clock_array[curr_tracer->tracer_id - 1] != curr_tracer->curr_virtual_time);
-		} else {
-			update_all_children_virtual_time(curr_tracer, target_increment);
+		if (target_increment > 0)
+			if (curr_tracer && curr_tracer->tracer_type == TRACER_TYPE_APP_VT) {
+				BUG_ON(!aligned_tracer_clock_array);
+				WARN_ON(aligned_tracer_clock_array[curr_tracer->tracer_id - 1] < curr_tracer->round_start_virt_time +  target_increment);
+				overshoot_err = aligned_tracer_clock_array[curr_tracer->tracer_id - 1] - (curr_tracer->round_start_virt_time +  target_increment);
+				curr_tracer->round_overshoot = overshoot_err;
+				target_increment = target_increment + overshoot_err;
+				update_all_children_virtual_time(curr_tracer, target_increment);
+
+				BUG_ON(aligned_tracer_clock_array[curr_tracer->tracer_id - 1] != curr_tracer->curr_virtual_time);
+			} else {
+				update_all_children_virtual_time(curr_tracer, target_increment);
+			}
 		}
-		
+		curr_tracer->nxt_round_burst_length = 0;
 		put_tracer_struct_write(curr_tracer);
 		head = head->next;
 	}
@@ -628,6 +639,17 @@ void signal_cpu_worker_resume(tracer * curr_tracer) {
 int handle_stop_exp_cmd() {
 	if (handle_progress_by(0) == SUCCESS)
 		return cleanup_experiment_components();
+	return FAIL;
+}
+
+int handle_initialize_exp_cmd(char * buffer) {
+	int num_expected_tracers;
+
+	num_expected_tracers = atoi(buffer);
+	if (num_expected_tracers) {
+		return initialize_experiment_components(num_expected_tracers);
+	}
+
 	return FAIL;
 }
 

@@ -91,7 +91,7 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id, int tracer
     new_tracer->round_overshoot = 0;
     new_tracer->tracer_type = tracer_type;
 	new_tracer->w_queue_wakeup_pid = 0;
-
+	new_tracer->last_run = NULL;
 	
 	llist_destroy(&new_tracer->schedule_queue);
     llist_destroy(&new_tracer->run_queue);

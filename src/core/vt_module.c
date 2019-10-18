@@ -378,7 +378,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 		case VT_ADD_PROCESSES_TO_SQ:
 			// Any process can invoke this call.
 
-			if (initialization_status != INITIALIZED) {
+			if (initialization_status != INITIALIZED && experiment_status == STOPPING) {
 				PDEBUG_E("VT_ADD_PROCESSES_TO_SQ: Operation cannot be performed when experiment is not initialized !");
 				return -EFAULT;
 			}
@@ -424,7 +424,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 				return -EFAULT;
 			}
 
-			return handle_sync_and_freeze_cmd();
+			return sync_and_freeze();
 
 		case VT_INITIALIZE_EXP :
 			// Any process can invoke this call.
@@ -506,7 +506,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 			if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 				return -EFAULT;
 			}
-			return handle_progress_by(api_info.return_value);
+			return progress_by(api_info.return_value);
 
     	case VT_SET_NETDEVICE_OWNER :
 			// Any process can invoke this call.
@@ -620,6 +620,7 @@ the system call table.
 ***/
 void __exit my_module_exit(void) {
 	s64 i;
+	int num_prev_alotted_pages;
 
 	//remove_proc_entry(DILATION_FILE, dilation_dir);
 	remove_proc_entry(DILATION_FILE, NULL);
@@ -637,6 +638,19 @@ void __exit my_module_exit(void) {
 
 	for (i = 0; i < 1000000000; i++) {}
 
+
+	if (tracer_num > 0) {
+        // Free all tracer structs from previous experiment if any
+        free_all_tracers();
+		if (tracer_clock_array) {
+			num_prev_alotted_pages = (PAGE_SIZE * sizeof(s64))/tracer_num;
+			num_prev_alotted_pages ++;
+			free_mmap_pages(tracer_clock_array, num_prev_alotted_pages);
+	    }
+    	tracer_clock_array = NULL;
+    	aligned_tracer_clock_array = NULL;
+        tracer_num = 0;
+    }
 
 
 	/* Kill the looping task */
