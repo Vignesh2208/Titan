@@ -10,39 +10,38 @@
  *
  * Fixes:
  *
- * Rani Assaf <rani@magic.metawire.com> :980802: JIFFIES and CPU clock sources
- *are repaired.
+ * Rani Assaf <rani@magic.metawire.com> :980802: JIFFIES and CPU clock sources are repaired.
  * Eduardo J. Blanco <ejbs@netlabs.com.uy> :990222: kmod support
  * Jamal Hadi Salim <hadi@nortelnetworks.com>: 990601: ingress support
  */
 
-#include <linux/errno.h>
-#include <linux/hrtimer.h>
-#include <linux/init.h>
-#include <linux/kernel.h>
-#include <linux/kmod.h>
-#include <linux/list.h>
-#include <linux/lockdep.h>
 #include <linux/module.h>
-#include <linux/netdevice.h>
+#include <linux/types.h>
+#include <linux/kernel.h>
+#include <linux/string.h>
+#include <linux/errno.h>
+#include <linux/skbuff.h>
+#include <linux/init.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
-#include <linux/skbuff.h>
+#include <linux/kmod.h>
+#include <linux/list.h>
+#include <linux/hrtimer.h>
+#include <linux/lockdep.h>
 #include <linux/slab.h>
-#include <linux/string.h>
-#include <linux/types.h>
 
 #include <net/net_namespace.h>
+#include <net/sock.h>
 #include <net/netlink.h>
 #include <net/pkt_sched.h>
-#include <net/sock.h>
+#include <linux/netdevice.h>
 
 static int qdisc_notify(struct net *net, struct sk_buff *oskb,
-			struct nlmsghdr *n, u32 clid, struct Qdisc *old,
-			struct Qdisc *new);
+			struct nlmsghdr *n, u32 clid,
+			struct Qdisc *old, struct Qdisc *new);
 static int tclass_notify(struct net *net, struct sk_buff *oskb,
-			 struct nlmsghdr *n, struct Qdisc *q, unsigned long cl,
-			 int event);
+			 struct nlmsghdr *n, struct Qdisc *q,
+			 unsigned long cl, int event);
 
 /*
 
@@ -95,8 +94,7 @@ static int tclass_notify(struct net *net, struct sk_buff *oskb,
    not zero error code.
    NET_XMIT_DROP 	- this packet dropped
      Expected action: do not backoff, but wait until queue will clear.
-   NET_XMIT_CN	 	- probably this packet enqueued, but another one
-   dropped.
+   NET_XMIT_CN	 	- probably this packet enqueued, but another one dropped.
      Expected action: backoff or ignore
    NET_XMIT_POLICED	- dropped by police.
      Expected action: backoff or error to real-time apps.
@@ -128,9 +126,11 @@ static int tclass_notify(struct net *net, struct sk_buff *oskb,
 /* Protects list of registered TC modules. It is pure SMP lock. */
 static DEFINE_RWLOCK(qdisc_mod_lock);
 
+
 /************************************************
  *	Queueing disciplines manipulation.	*
  ************************************************/
+
 
 /* The list of all installed queueing disciplines. */
 
@@ -262,10 +262,11 @@ static struct Qdisc *qdisc_match_from_root(struct Qdisc *root, u32 handle)
 {
 	struct Qdisc *q;
 
-	if (!(root->flags & TCQ_F_BUILTIN) && root->handle == handle)
+	if (!(root->flags & TCQ_F_BUILTIN) &&
+	    root->handle == handle)
 		return root;
 
-	list_for_each_entry_rcu (q, &root->list, list) {
+	list_for_each_entry_rcu(q, &root->list, list) {
 		if (q->handle == handle)
 			return q;
 	}
@@ -303,7 +304,8 @@ struct Qdisc *qdisc_lookup(struct net_device *dev, u32 handle)
 
 	if (dev_ingress_queue(dev))
 		q = qdisc_match_from_root(
-			dev_ingress_queue(dev)->qdisc_sleeping, handle);
+			dev_ingress_queue(dev)->qdisc_sleeping,
+			handle);
 out:
 	return q;
 }
@@ -364,19 +366,19 @@ static struct Qdisc_ops *qdisc_lookup_ops(struct nlattr *kind)
  */
 static __u8 __detect_linklayer(struct tc_ratespec *r, __u32 *rtab)
 {
-	int low = roundup(r->mpu, 48);
-	int high = roundup(low + 1, 48);
-	int cell_low = low >> r->cell_log;
+	int low       = roundup(r->mpu, 48);
+	int high      = roundup(low+1, 48);
+	int cell_low  = low >> r->cell_log;
 	int cell_high = (high >> r->cell_log) - 1;
 
 	/* rtab is too inaccurate at rates > 100Mbit/s */
-	if ((r->rate > (100000000 / 8)) || (rtab[0] == 0)) {
+	if ((r->rate > (100000000/8)) || (rtab[0] == 0)) {
 		pr_debug("TC linklayer: Giving up ATM detection\n");
 		return TC_LINKLAYER_ETHERNET;
 	}
 
-	if ((cell_high > cell_low) && (cell_high < 256) &&
-	    (rtab[cell_low] == rtab[cell_high])) {
+	if ((cell_high > cell_low) && (cell_high < 256)
+	    && (rtab[cell_low] == rtab[cell_high])) {
 		pr_debug("TC linklayer: Detected ATM, low(%d)=high(%d)=%u\n",
 			 cell_low, cell_high, rtab[cell_high]);
 		return TC_LINKLAYER_ATM;
@@ -386,8 +388,7 @@ static __u8 __detect_linklayer(struct tc_ratespec *r, __u32 *rtab)
 
 static struct qdisc_rate_table *qdisc_rtab_list;
 
-struct qdisc_rate_table *qdisc_get_rtab(struct tc_ratespec *r,
-					struct nlattr *tab)
+struct qdisc_rate_table *qdisc_get_rtab(struct tc_ratespec *r, struct nlattr *tab)
 {
 	struct qdisc_rate_table *rtab;
 
@@ -424,7 +425,8 @@ void qdisc_put_rtab(struct qdisc_rate_table *tab)
 	if (!tab || --tab->refcnt)
 		return;
 
-	for (rtabp = &qdisc_rtab_list; (rtab = *rtabp) != NULL;
+	for (rtabp = &qdisc_rtab_list;
+	     (rtab = *rtabp) != NULL;
 	     rtabp = &rtab->next) {
 		if (rtab == tab) {
 			*rtabp = rtab->next;
@@ -439,7 +441,7 @@ static LIST_HEAD(qdisc_stab_list);
 static DEFINE_SPINLOCK(qdisc_stab_lock);
 
 static const struct nla_policy stab_policy[TCA_STAB_MAX + 1] = {
-	[TCA_STAB_BASE] = { .len = sizeof(struct tc_sizespec) },
+	[TCA_STAB_BASE]	= { .len = sizeof(struct tc_sizespec) },
 	[TCA_STAB_DATA] = { .type = NLA_BINARY },
 };
 
@@ -472,7 +474,7 @@ static struct qdisc_size_table *qdisc_get_stab(struct nlattr *opt)
 
 	spin_lock(&qdisc_stab_lock);
 
-	list_for_each_entry (stab, &qdisc_stab_list, list) {
+	list_for_each_entry(stab, &qdisc_stab_list, list) {
 		if (memcmp(&stab->szopts, s, sizeof(*s)))
 			continue;
 		if (tsize > 0 && memcmp(stab->data, tab, tsize * sizeof(u16)))
@@ -538,8 +540,7 @@ nla_put_failure:
 	return -1;
 }
 
-void __qdisc_calculate_pkt_len(struct sk_buff *skb,
-			       const struct qdisc_size_table *stab)
+void __qdisc_calculate_pkt_len(struct sk_buff *skb, const struct qdisc_size_table *stab)
 {
 	int pkt_len, slot;
 
@@ -556,8 +557,8 @@ void __qdisc_calculate_pkt_len(struct sk_buff *skb,
 		pkt_len = stab->data[slot];
 	else
 		pkt_len = stab->data[stab->szopts.tsize - 1] *
-				  (slot / stab->szopts.tsize) +
-			  stab->data[slot % stab->szopts.tsize];
+				(slot / stab->szopts.tsize) +
+				stab->data[slot % stab->szopts.tsize];
 
 	pkt_len <<= stab->szopts.size_log;
 out:
@@ -570,8 +571,8 @@ EXPORT_SYMBOL(__qdisc_calculate_pkt_len);
 void qdisc_warn_nonwc(const char *txt, struct Qdisc *qdisc)
 {
 	if (!(qdisc->flags & TCQ_F_WARN_NONWC)) {
-		pr_warn("%s: %s qdisc %X: is non-work-conserving?\n", txt,
-			qdisc->ops->id, qdisc->handle >> 16);
+		pr_warn("%s: %s qdisc %X: is non-work-conserving?\n",
+			txt, qdisc->ops->id, qdisc->handle >> 16);
 		qdisc->flags |= TCQ_F_WARN_NONWC;
 	}
 }
@@ -579,8 +580,8 @@ EXPORT_SYMBOL(qdisc_warn_nonwc);
 
 static enum hrtimer_restart qdisc_watchdog(struct hrtimer *timer)
 {
-	struct qdisc_watchdog *wd =
-		container_of(timer, struct qdisc_watchdog, timer);
+	struct qdisc_watchdog *wd = container_of(timer, struct qdisc_watchdog,
+						 timer);
 
 	rcu_read_lock();
 	qdisc_unthrottled(wd->qdisc);
@@ -593,171 +594,159 @@ static enum hrtimer_restart qdisc_watchdog(struct hrtimer *timer)
 extern struct pid *find_vpid(int);
 extern struct task_struct *find_task_by_pid(int);
 
-s64 get_current_dilated_time(struct task_struct *task)
-{
-	struct timeval tv;
-	s64 virt_start_time;
-	s64 now;
+s64 get_current_dilated_time(struct task_struct *task) {
+  struct timeval tv;
+  s64 virt_start_time;
+  s64 now;
 
-	do_gettimeofday(&tv);
-	now = timeval_to_ns(&tv);
+  do_gettimeofday(&tv);
+  now = timeval_to_ns(&tv);
 
-	if (task == NULL)
-		return now;
+  if (task == NULL) return now;
 
-	virt_start_time = task->virt_start_time;
-	if (virt_start_time > 0) {
-		return task->curr_virtual_time;
-	}
-	return now;
+  virt_start_time = task->virt_start_time;
+  if (virt_start_time > 0) {
+    return task->curr_virtual_time;
+  }
+  return now;
 }
 
 EXPORT_SYMBOL(get_current_dilated_time);
 
-struct task_struct *get_task_struct_from_qdisc(struct Qdisc *qdisc)
-{
-	struct netem_sched_data *q = qdisc_priv(qdisc);
-	struct qdisc_watchdog *wd = &q->watchdog;
-	struct pid *owner_pid;
-	struct task_struct *result;
+struct task_struct *get_task_struct_from_qdisc(struct Qdisc *qdisc) {
+  struct netem_sched_data *q = qdisc_priv(qdisc);
+  struct qdisc_watchdog *wd = &q->watchdog;
+  struct pid *owner_pid;
+  struct task_struct *result;
 
-	if (wd->owner_pid > 0) {
-		owner_pid = wd->owner_pid;
-		result = pid_task(owner_pid, PIDTYPE_PID);
-		return result;
-	}
+  if (wd->owner_pid > 0) {
+    owner_pid = wd->owner_pid;
+    result = pid_task(owner_pid, PIDTYPE_PID);
+    return result;
+  }
 
-	if (qdisc != NULL) {
-		if (qdisc->dev_queue != NULL) {
-			if (qdisc->dev_queue->dev != NULL) {
-				read_lock(&dev_base_lock);
-				if (qdisc->dev_queue->dev->owner_pid > 0) {
-					owner_pid =
-						qdisc->dev_queue->dev->owner_pid;
-					read_unlock(&dev_base_lock);
-					result = pid_task(owner_pid,
-							  PIDTYPE_PID);
-					if (result != NULL) {
-						wd->owner_pid = owner_pid;
-					}
-					return result;
-				}
-				read_unlock(&dev_base_lock);
-			}
-		}
-	}
+  if (qdisc != NULL) {
+    if (qdisc->dev_queue != NULL) {
+      if (qdisc->dev_queue->dev != NULL) {
+        read_lock(&dev_base_lock);
+        if (qdisc->dev_queue->dev->owner_pid > 0) {
+          owner_pid = qdisc->dev_queue->dev->owner_pid;
+          read_unlock(&dev_base_lock);
+          result = pid_task(owner_pid, PIDTYPE_PID);
+          if (result != NULL) {
+            wd->owner_pid = owner_pid;
+          }
+          return result;
+        }
+        read_unlock(&dev_base_lock);
+      }
+    }
+  }
 
-	return NULL;
+  return NULL;
 }
 
 EXPORT_SYMBOL(get_task_struct_from_qdisc);
 
-static enum hrtimer_restart
-qdisc_watchdog_dilated(struct hrtimer_dilated *timer)
-{
-	struct netem_skb_cb *cb = NULL;
-	struct task_struct *pkt_owner = NULL;
-	s64 current_dilated_time = 0;
-	struct qdisc_watchdog *wd =
-		container_of(timer, struct qdisc_watchdog, timer_dilated);
+static enum hrtimer_restart qdisc_watchdog_dilated(
+    struct hrtimer_dilated *timer) {
+  struct netem_skb_cb *cb = NULL;
+  struct task_struct *pkt_owner = NULL;
+  s64 current_dilated_time = 0;
+  struct qdisc_watchdog *wd =
+      container_of(timer, struct qdisc_watchdog, timer_dilated);
 
-	if (wd->skb == NULL)
-		cb = NULL;
-	else
-		cb = netem_skb_cb(wd->skb);
+  if (wd->skb == NULL)
+    cb = NULL;
+  else
+    cb = netem_skb_cb(wd->skb);
 
-	pkt_owner = get_task_struct_from_qdisc(wd->qdisc);
+  pkt_owner = get_task_struct_from_qdisc(wd->qdisc);
 
-	if (pkt_owner == NULL || cb == NULL) {
-		if (pkt_owner == NULL)
-			printk(KERN_INFO
-			       "Netem: pkt_owner is null. Maybe sending early. Pid = %d\n",
-			       wd->owner_pid);
+  if (pkt_owner == NULL || cb == NULL) {
+    if (pkt_owner == NULL)
+      printk(KERN_INFO
+             "Netem: pkt_owner is null. Maybe sending early. Pid = %d\n",
+             wd->owner_pid);
 
-		if (cb == NULL)
-			printk(KERN_INFO
-			       "Netem: cb is null. Maybe sending early. Pid = %d\n",
-			       wd->owner_pid);
+    if (cb == NULL)
+      printk(KERN_INFO "Netem: cb is null. Maybe sending early. Pid = %d\n",
+             wd->owner_pid);
 
-		qdisc_unthrottled(wd->qdisc);
-		__netif_schedule(qdisc_root(wd->qdisc));
-		return HRTIMER_NORESTART;
-	}
+    qdisc_unthrottled(wd->qdisc);
+    __netif_schedule(qdisc_root(wd->qdisc));
+    return HRTIMER_NORESTART;
+  }
 
-	current_dilated_time = get_current_dilated_time(pkt_owner);
+  current_dilated_time = get_current_dilated_time(pkt_owner);
 
-	if (PSCHED_NS2TICKS(current_dilated_time) >= cb->time_to_send) {
-		qdisc_unthrottled(wd->qdisc);
-		if (PSCHED_NS2TICKS(current_dilated_time) > cb->time_to_send) {
-			// printk(KERN_INFO "Netem: Sending Late. Diff = %llu\n",
-			// PSCHED_NS2TICKS(current_dilated_time) -  cb->time_to_send);
-		}
-		__netif_schedule(qdisc_root(wd->qdisc));
+  if (PSCHED_NS2TICKS(current_dilated_time) >= cb->time_to_send) {
+    qdisc_unthrottled(wd->qdisc);
+    if (PSCHED_NS2TICKS(current_dilated_time) > cb->time_to_send) {
+      // printk(KERN_INFO "Netem: Sending Late. Diff = %llu\n",
+      // PSCHED_NS2TICKS(current_dilated_time) -  cb->time_to_send);
+    }
+    __netif_schedule(qdisc_root(wd->qdisc));
 
-		return HRTIMER_NORESTART;
-	} else {
-		// hrtimer_forward_now(timer,ns_to_ktime(100000));
-		// return HRTIMER_RESTART;
+    return HRTIMER_NORESTART;
+  } else {
+    // hrtimer_forward_now(timer,ns_to_ktime(100000));
+    // return HRTIMER_RESTART;
 
-		qdisc_unthrottled(wd->qdisc);
-		__netif_schedule(qdisc_root(wd->qdisc));
+    qdisc_unthrottled(wd->qdisc);
+    __netif_schedule(qdisc_root(wd->qdisc));
 
-		// printk(KERN_INFO "Netem: Dilated time less. Sending early. Pid = %d\n",
-		// wd->owner_pid);
-		return HRTIMER_NORESTART;
-	}
+    // printk(KERN_INFO "Netem: Dilated time less. Sending early. Pid = %d\n",
+    // wd->owner_pid);
+    return HRTIMER_NORESTART;
+  }
 }
 
-void qdisc_watchdog_init(struct qdisc_watchdog *wd, struct Qdisc *qdisc)
-{
-	hrtimer_init(&wd->timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS_PINNED);
-	// hrtimer_init(&wd->timer_dilated,CLOCK_MONOTONIC,HRTIMER_MODE_REL);
-	dilated_hrtimer_init(&wd->timer_dilated, 0, HRTIMER_MODE_ABS);
-	wd->timer.function = qdisc_watchdog;
-	wd->timer_dilated.function = qdisc_watchdog_dilated;
-	wd->qdisc = qdisc;
-	wd->owner_pid = 0;
-	printk(KERN_INFO "QDISC WATCH DOG init\n");
+void qdisc_watchdog_init(struct qdisc_watchdog *wd, struct Qdisc *qdisc) {
+  hrtimer_init(&wd->timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS_PINNED);
+  // hrtimer_init(&wd->timer_dilated,CLOCK_MONOTONIC,HRTIMER_MODE_REL);
+  dilated_hrtimer_init(&wd->timer_dilated, 0, HRTIMER_MODE_ABS);
+  wd->timer.function = qdisc_watchdog;
+  wd->timer_dilated.function = qdisc_watchdog_dilated;
+  wd->qdisc = qdisc;
+  wd->owner_pid = 0;
+  printk(KERN_INFO "QDISC WATCH DOG init\n");
 }
 EXPORT_SYMBOL(qdisc_watchdog_init);
 
-void qdisc_watchdog_schedule_ns_dilated(struct qdisc_watchdog *wd, u64 expires)
-{
-	if (test_bit(__QDISC_STATE_DEACTIVATED,
-		     &qdisc_root_sleeping(wd->qdisc)->state))
-		return;
+void qdisc_watchdog_schedule_ns_dilated(struct qdisc_watchdog *wd,
+                                        u64 expires) {
+  if (test_bit(__QDISC_STATE_DEACTIVATED,
+               &qdisc_root_sleeping(wd->qdisc)->state))
+    return;
 
-	qdisc_throttled(wd->qdisc);
+  qdisc_throttled(wd->qdisc);
 
-	// hrtimer_start(&wd->timer_dilated,ns_to_ktime(1000000),HRTIMER_MODE_REL);
-	dilated_hrtimer_start(&wd->timer_dilated, ns_to_ktime(expires),
-			      HRTIMER_MODE_ABS);
+  // hrtimer_start(&wd->timer_dilated,ns_to_ktime(1000000),HRTIMER_MODE_REL);
+  dilated_hrtimer_start(&wd->timer_dilated, ns_to_ktime(expires),
+                        HRTIMER_MODE_ABS);
 }
 
 EXPORT_SYMBOL(qdisc_watchdog_schedule_ns_dilated);
 
 void qdisc_watchdog_schedule_ns(struct qdisc_watchdog *wd, u64 expires,
-				bool throttle)
-{
-	if (test_bit(__QDISC_STATE_DEACTIVATED,
-		     &qdisc_root_sleeping(wd->qdisc)->state))
-		return;
+                                bool throttle) {
+  if (test_bit(__QDISC_STATE_DEACTIVATED,
+               &qdisc_root_sleeping(wd->qdisc)->state))
+    return;
 
-	if (throttle)
-		qdisc_throttled(wd->qdisc);
+  if (throttle) qdisc_throttled(wd->qdisc);
 
-	hrtimer_start(&wd->timer, ns_to_ktime(expires),
-		      HRTIMER_MODE_ABS_PINNED);
+  hrtimer_start(&wd->timer, ns_to_ktime(expires), HRTIMER_MODE_ABS_PINNED);
 }
 EXPORT_SYMBOL(qdisc_watchdog_schedule_ns);
 
-void qdisc_watchdog_cancel(struct qdisc_watchdog *wd)
-{
-	hrtimer_cancel(&wd->timer);
-	// hrtimer_cancel(&wd->timer_dilated);
-	dilated_hrtimer_cancel(&wd->timer_dilated);
-	printk(KERN_INFO "QDISC WATCH DOG Cancel\n");
-	qdisc_unthrottled(wd->qdisc);
+void qdisc_watchdog_cancel(struct qdisc_watchdog *wd) {
+  hrtimer_cancel(&wd->timer);
+  // hrtimer_cancel(&wd->timer_dilated);
+  dilated_hrtimer_cancel(&wd->timer_dilated);
+  printk(KERN_INFO "QDISC WATCH DOG Cancel\n");
+  qdisc_unthrottled(wd->qdisc);
 }
 EXPORT_SYMBOL(qdisc_watchdog_cancel);
 
@@ -769,8 +758,8 @@ static struct hlist_head *qdisc_class_hash_alloc(unsigned int n)
 	if (size <= PAGE_SIZE)
 		h = kmalloc(size, GFP_KERNEL);
 	else
-		h = (struct hlist_head *)__get_free_pages(GFP_KERNEL,
-							  get_order(size));
+		h = (struct hlist_head *)
+			__get_free_pages(GFP_KERNEL, get_order(size));
 
 	if (h != NULL) {
 		for (i = 0; i < n; i++)
@@ -811,12 +800,12 @@ void qdisc_class_hash_grow(struct Qdisc *sch, struct Qdisc_class_hash *clhash)
 
 	sch_tree_lock(sch);
 	for (i = 0; i < osize; i++) {
-		hlist_for_each_entry_safe (cl, next, &ohash[i], hnode) {
+		hlist_for_each_entry_safe(cl, next, &ohash[i], hnode) {
 			h = qdisc_class_hash(cl->classid, nmask);
 			hlist_add_head(&cl->hnode, &nhash[h]);
 		}
 	}
-	clhash->hash = nhash;
+	clhash->hash     = nhash;
 	clhash->hashsize = nsize;
 	clhash->hashmask = nmask;
 	sch_tree_unlock(sch);
@@ -832,8 +821,8 @@ int qdisc_class_hash_init(struct Qdisc_class_hash *clhash)
 	clhash->hash = qdisc_class_hash_alloc(size);
 	if (clhash->hash == NULL)
 		return -ENOMEM;
-	clhash->hashsize = size;
-	clhash->hashmask = size - 1;
+	clhash->hashsize  = size;
+	clhash->hashmask  = size - 1;
 	clhash->hashelems = 0;
 	return 0;
 }
@@ -880,7 +869,7 @@ static u32 qdisc_alloc_handle(struct net_device *dev)
 		if (!qdisc_lookup(dev, autohandle))
 			return autohandle;
 		cond_resched();
-	} while (--i > 0);
+	} while	(--i > 0);
 
 	return 0;
 }
@@ -922,8 +911,8 @@ void qdisc_tree_decrease_qlen(struct Qdisc *sch, unsigned int n)
 EXPORT_SYMBOL(qdisc_tree_decrease_qlen);
 
 static void notify_and_destroy(struct net *net, struct sk_buff *skb,
-			       struct nlmsghdr *n, u32 clid, struct Qdisc *old,
-			       struct Qdisc *new)
+			       struct nlmsghdr *n, u32 clid,
+			       struct Qdisc *old, struct Qdisc *new)
 {
 	if (new || old)
 		qdisc_notify(net, skb, n, clid, old, new);
@@ -955,7 +944,7 @@ static int qdisc_graft(struct net_device *dev, struct Qdisc *parent,
 		ingress = 0;
 		num_q = dev->num_tx_queues;
 		if ((q && q->flags & TCQ_F_INGRESS) ||
-		    (new && new->flags &TCQ_F_INGRESS)) {
+		    (new && new->flags & TCQ_F_INGRESS)) {
 			num_q = 1;
 			ingress = 1;
 			if (!dev_ingress_queue(dev))
@@ -975,20 +964,20 @@ static int qdisc_graft(struct net_device *dev, struct Qdisc *parent,
 				dev_queue = netdev_get_tx_queue(dev, i);
 
 			old = dev_graft_qdisc(dev_queue, new);
-			if (new &&i > 0)
+			if (new && i > 0)
 				atomic_inc(&new->refcnt);
 
 			if (!ingress)
 				qdisc_destroy(old);
 		}
 
-	skip:
+skip:
 		if (!ingress) {
-			notify_and_destroy(net, skb, n, classid, dev->qdisc,
-					   new);
+			notify_and_destroy(net, skb, n, classid,
+					   dev->qdisc, new);
 			if (new && !new->ops->attach)
 				atomic_inc(&new->refcnt);
-			dev->qdisc = new ?: &noop_qdisc;
+			dev->qdisc = new ? : &noop_qdisc;
 
 			if (new && new->ops->attach)
 				new->ops->attach(new);
@@ -1026,10 +1015,10 @@ static struct lock_class_key qdisc_rx_lock;
    Parameters are passed via opt.
  */
 
-static struct Qdisc *qdisc_create(struct net_device *dev,
-				  struct netdev_queue *dev_queue,
-				  struct Qdisc *p, u32 parent, u32 handle,
-				  struct nlattr **tca, int *errp)
+static struct Qdisc *
+qdisc_create(struct net_device *dev, struct netdev_queue *dev_queue,
+	     struct Qdisc *p, u32 parent, u32 handle,
+	     struct nlattr **tca, int *errp)
 {
 	int err;
 	struct nlattr *kind = tca[TCA_KIND];
@@ -1043,21 +1032,21 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
 		char name[IFNAMSIZ];
 		if (nla_strlcpy(name, kind, IFNAMSIZ) < IFNAMSIZ) {
 			/* We dropped the RTNL semaphore in order to
-       * perform the module load.  So, even if we
-       * succeeded in loading the module we have to
-       * tell the caller to replay the request.  We
-       * indicate this using -EAGAIN.
-       * We replay the request because the device may
-       * go away in the mean time.
-       */
+			 * perform the module load.  So, even if we
+			 * succeeded in loading the module we have to
+			 * tell the caller to replay the request.  We
+			 * indicate this using -EAGAIN.
+			 * We replay the request because the device may
+			 * go away in the mean time.
+			 */
 			rtnl_unlock();
 			request_module("sch_%s", name);
 			rtnl_lock();
 			ops = qdisc_lookup_ops(kind);
 			if (ops != NULL) {
 				/* We will try again qdisc_lookup_ops,
-         * so don't keep a reference.
-         */
+				 * so don't keep a reference.
+				 */
 				module_put(ops->owner);
 				err = -EAGAIN;
 				goto err_out;
@@ -1098,8 +1087,8 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
 
 	if (!ops->init || (err = ops->init(sch, tca[TCA_OPTIONS])) == 0) {
 		if (qdisc_is_percpu_stats(sch)) {
-			sch->cpu_bstats = netdev_alloc_pcpu_stats(
-				struct gnet_stats_basic_cpu);
+			sch->cpu_bstats =
+				netdev_alloc_pcpu_stats(struct gnet_stats_basic_cpu);
 			if (!sch->cpu_bstats)
 				goto err_out4;
 
@@ -1130,8 +1119,10 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
 			else
 				root_lock = qdisc_lock(sch);
 
-			err = gen_new_estimator(&sch->bstats, sch->cpu_bstats,
-						&sch->rate_est, root_lock,
+			err = gen_new_estimator(&sch->bstats,
+						sch->cpu_bstats,
+						&sch->rate_est,
+						root_lock,
 						tca[TCA_RATE]);
 			if (err)
 				goto err_out4;
@@ -1143,7 +1134,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
 	}
 err_out3:
 	dev_put(dev);
-	kfree((char *)sch - sch->padded);
+	kfree((char *) sch - sch->padded);
 err_out2:
 	module_put(ops->owner);
 err_out:
@@ -1154,9 +1145,9 @@ err_out4:
 	free_percpu(sch->cpu_bstats);
 	free_percpu(sch->cpu_qstats);
 	/*
-   * Any broken qdiscs that would require a ops->reset() here?
-   * The qdisc was never in action so it shouldn't be necessary.
-   */
+	 * Any broken qdiscs that would require a ops->reset() here?
+	 * The qdisc was never in action so it shouldn't be necessary.
+	 */
 	qdisc_put_stab(rtnl_dereference(sch->stab));
 	if (ops->destroy)
 		ops->destroy(sch);
@@ -1188,10 +1179,11 @@ static int qdisc_change(struct Qdisc *sch, struct nlattr **tca)
 
 	if (tca[TCA_RATE]) {
 		/* NB: ignores errors from replace_estimator
-       because change can't be undone. */
+		   because change can't be undone. */
 		if (sch->flags & TCQ_F_MQROOT)
 			goto out;
-		gen_replace_estimator(&sch->bstats, sch->cpu_bstats,
+		gen_replace_estimator(&sch->bstats,
+				      sch->cpu_bstats,
 				      &sch->rate_est,
 				      qdisc_root_sleeping_lock(sch),
 				      tca[TCA_RATE]);
@@ -1201,17 +1193,16 @@ out:
 }
 
 struct check_loop_arg {
-	struct qdisc_walker w;
-	struct Qdisc *p;
-	int depth;
+	struct qdisc_walker	w;
+	struct Qdisc		*p;
+	int			depth;
 };
 
-static int check_loop_fn(struct Qdisc *q, unsigned long cl,
-			 struct qdisc_walker *w);
+static int check_loop_fn(struct Qdisc *q, unsigned long cl, struct qdisc_walker *w);
 
 static int check_loop(struct Qdisc *q, struct Qdisc *p, int depth)
 {
-	struct check_loop_arg arg;
+	struct check_loop_arg	arg;
 
 	if (q->ops->cl_ops == NULL)
 		return 0;
@@ -1224,8 +1215,8 @@ static int check_loop(struct Qdisc *q, struct Qdisc *p, int depth)
 	return arg.w.stop ? -ELOOP : 0;
 }
 
-static int check_loop_fn(struct Qdisc *q, unsigned long cl,
-			 struct qdisc_walker *w)
+static int
+check_loop_fn(struct Qdisc *q, unsigned long cl, struct qdisc_walker *w)
 {
 	struct Qdisc *leaf;
 	const struct Qdisc_class_ops *cops = q->ops->cl_ops;
@@ -1340,6 +1331,7 @@ replay:
 	if (!dev)
 		return -ENODEV;
 
+
 	if (clid) {
 		if (clid != TC_H_ROOT) {
 			if (clid != TC_H_INGRESS) {
@@ -1369,10 +1361,10 @@ replay:
 					goto create_n_graft;
 				if (n->nlmsg_flags & NLM_F_EXCL)
 					return -EEXIST;
-				if (tca[TCA_KIND] &&
-				    nla_strcmp(tca[TCA_KIND], q->ops->id))
+				if (tca[TCA_KIND] && nla_strcmp(tca[TCA_KIND], q->ops->id))
 					return -EINVAL;
-				if (q == p || (p && check_loop(q, p, 0)))
+				if (q == p ||
+				    (p && check_loop(q, p, 0)))
 					return -ELOOP;
 				atomic_inc(&q->refcnt);
 				goto graft;
@@ -1381,24 +1373,24 @@ replay:
 					goto create_n_graft;
 
 				/* This magic test requires explanation.
-         *
-         *   We know, that some child q is already
-         *   attached to this parent and have choice:
-         *   either to change it or to create/graft new one.
-         *
-         *   1. We are allowed to create/graft only
-         *   if CREATE and REPLACE flags are set.
-         *
-         *   2. If EXCL is set, requestor wanted to say,
-         *   that qdisc tcm_handle is not expected
-         *   to exist, so that we choose create/graft too.
-         *
-         *   3. The last case is when no flags are set.
-         *   Alas, it is sort of hole in API, we
-         *   cannot decide what to do unambiguously.
-         *   For now we select create/graft, if
-         *   user gave KIND, which does not match existing.
-         */
+				 *
+				 *   We know, that some child q is already
+				 *   attached to this parent and have choice:
+				 *   either to change it or to create/graft new one.
+				 *
+				 *   1. We are allowed to create/graft only
+				 *   if CREATE and REPLACE flags are set.
+				 *
+				 *   2. If EXCL is set, requestor wanted to say,
+				 *   that qdisc tcm_handle is not expected
+				 *   to exist, so that we choose create/graft too.
+				 *
+				 *   3. The last case is when no flags are set.
+				 *   Alas, it is sort of hole in API, we
+				 *   cannot decide what to do unambiguously.
+				 *   For now we select create/graft, if
+				 *   user gave KIND, which does not match existing.
+				 */
 				if ((n->nlmsg_flags & NLM_F_CREATE) &&
 				    (n->nlmsg_flags & NLM_F_REPLACE) &&
 				    ((n->nlmsg_flags & NLM_F_EXCL) ||
@@ -1431,8 +1423,8 @@ create_n_graft:
 	if (clid == TC_H_INGRESS) {
 		if (dev_ingress_queue(dev))
 			q = qdisc_create(dev, dev_ingress_queue(dev), p,
-					 tcm->tcm_parent, tcm->tcm_parent, tca,
-					 &err);
+					 tcm->tcm_parent, tcm->tcm_parent,
+					 tca, &err);
 		else
 			err = -ENOENT;
 	} else {
@@ -1445,8 +1437,9 @@ create_n_graft:
 		else
 			dev_queue = netdev_get_tx_queue(dev, 0);
 
-		q = qdisc_create(dev, dev_queue, p, tcm->tcm_parent,
-				 tcm->tcm_handle, tca, &err);
+		q = qdisc_create(dev, dev_queue, p,
+				 tcm->tcm_parent, tcm->tcm_handle,
+				 tca, &err);
 	}
 	if (q == NULL) {
 		if (err == -EAGAIN)
@@ -1471,7 +1464,7 @@ static int tc_fill_qdisc(struct sk_buff *skb, struct Qdisc *q, u32 clid,
 	struct gnet_stats_basic_cpu __percpu *cpu_bstats = NULL;
 	struct gnet_stats_queue __percpu *cpu_qstats = NULL;
 	struct tcmsg *tcm;
-	struct nlmsghdr *nlh;
+	struct nlmsghdr  *nlh;
 	unsigned char *b = skb_tail_pointer(skb);
 	struct gnet_dump d;
 	struct qdisc_size_table *stab;
@@ -1534,8 +1527,8 @@ static bool tc_qdisc_dump_ignore(struct Qdisc *q)
 }
 
 static int qdisc_notify(struct net *net, struct sk_buff *oskb,
-			struct nlmsghdr *n, u32 clid, struct Qdisc *old,
-			struct Qdisc *new)
+			struct nlmsghdr *n, u32 clid,
+			struct Qdisc *old, struct Qdisc *new)
 {
 	struct sk_buff *skb;
 	u32 portid = oskb ? NETLINK_CB(oskb).portid : 0;
@@ -1545,8 +1538,8 @@ static int qdisc_notify(struct net *net, struct sk_buff *oskb,
 		return -ENOBUFS;
 
 	if (old && !tc_qdisc_dump_ignore(old)) {
-		if (tc_fill_qdisc(skb, old, clid, portid, n->nlmsg_seq, 0,
-				  RTM_DELQDISC) < 0)
+		if (tc_fill_qdisc(skb, old, clid, portid, n->nlmsg_seq,
+				  0, RTM_DELQDISC) < 0)
 			goto err_out;
 	}
 	if (new && !tc_qdisc_dump_ignore(new)) {
@@ -1565,8 +1558,8 @@ err_out:
 }
 
 static int tc_dump_qdisc_root(struct Qdisc *root, struct sk_buff *skb,
-			      struct netlink_callback *cb, int *q_idx_p,
-			      int s_q_idx)
+			      struct netlink_callback *cb,
+			      int *q_idx_p, int s_q_idx)
 {
 	int ret = 0, q_idx = *q_idx_p;
 	struct Qdisc *q;
@@ -1580,20 +1573,18 @@ static int tc_dump_qdisc_root(struct Qdisc *root, struct sk_buff *skb,
 	} else {
 		if (!tc_qdisc_dump_ignore(q) &&
 		    tc_fill_qdisc(skb, q, q->parent, NETLINK_CB(cb->skb).portid,
-				  cb->nlh->nlmsg_seq, NLM_F_MULTI,
-				  RTM_NEWQDISC) <= 0)
+				  cb->nlh->nlmsg_seq, NLM_F_MULTI, RTM_NEWQDISC) <= 0)
 			goto done;
 		q_idx++;
 	}
-	list_for_each_entry (q, &root->list, list) {
+	list_for_each_entry(q, &root->list, list) {
 		if (q_idx < s_q_idx) {
 			q_idx++;
 			continue;
 		}
 		if (!tc_qdisc_dump_ignore(q) &&
 		    tc_fill_qdisc(skb, q, q->parent, NETLINK_CB(cb->skb).portid,
-				  cb->nlh->nlmsg_seq, NLM_F_MULTI,
-				  RTM_NEWQDISC) <= 0)
+				  cb->nlh->nlmsg_seq, NLM_F_MULTI, RTM_NEWQDISC) <= 0)
 			goto done;
 		q_idx++;
 	}
@@ -1618,7 +1609,7 @@ static int tc_dump_qdisc(struct sk_buff *skb, struct netlink_callback *cb)
 
 	idx = 0;
 	ASSERT_RTNL();
-	for_each_netdev (net, dev) {
+	for_each_netdev(net, dev) {
 		struct netdev_queue *dev_queue;
 
 		if (idx < s_idx)
@@ -1627,8 +1618,7 @@ static int tc_dump_qdisc(struct sk_buff *skb, struct netlink_callback *cb)
 			s_q_idx = 0;
 		q_idx = 0;
 
-		if (tc_dump_qdisc_root(dev->qdisc, skb, cb, &q_idx, s_q_idx) <
-		    0)
+		if (tc_dump_qdisc_root(dev->qdisc, skb, cb, &q_idx, s_q_idx) < 0)
 			goto done;
 
 		dev_queue = dev_ingress_queue(dev);
@@ -1637,7 +1627,7 @@ static int tc_dump_qdisc(struct sk_buff *skb, struct netlink_callback *cb)
 				       &q_idx, s_q_idx) < 0)
 			goto done;
 
-	cont:
+cont:
 		idx++;
 	}
 
@@ -1648,9 +1638,13 @@ done:
 	return skb->len;
 }
 
+
+
 /************************************************
  *	Traffic classes manipulation.		*
  ************************************************/
+
+
 
 static int tc_ctl_tclass(struct sk_buff *skb, struct nlmsghdr *n)
 {
@@ -1680,17 +1674,17 @@ static int tc_ctl_tclass(struct sk_buff *skb, struct nlmsghdr *n)
 		return -ENODEV;
 
 	/*
-     parent == TC_H_UNSPEC - unspecified parent.
-     parent == TC_H_ROOT   - class is root, which has no parent.
-     parent == X:0	 - parent is root class.
-     parent == X:Y	 - parent is a node in hierarchy.
-     parent == 0:Y	 - parent is X:Y, where X:0 is qdisc.
+	   parent == TC_H_UNSPEC - unspecified parent.
+	   parent == TC_H_ROOT   - class is root, which has no parent.
+	   parent == X:0	 - parent is root class.
+	   parent == X:Y	 - parent is a node in hierarchy.
+	   parent == 0:Y	 - parent is X:Y, where X:0 is qdisc.
 
-     handle == 0:0	 - generate handle from kernel pool.
-     handle == 0:Y	 - class is X:Y, where X:0 is qdisc.
-     handle == X:Y	 - clear.
-     handle == X:0	 - root class.
-   */
+	   handle == 0:0	 - generate handle from kernel pool.
+	   handle == 0:Y	 - class is X:Y, where X:0 is qdisc.
+	   handle == X:Y	 - clear.
+	   handle == X:0	 - root class.
+	 */
 
 	/* Step 1. Determine qdisc handle X:0 */
 
@@ -1711,10 +1705,10 @@ static int tc_ctl_tclass(struct sk_buff *skb, struct nlmsghdr *n)
 			qid = dev->qdisc->handle;
 
 		/* Now qid is genuine qdisc handle consistent
-     * both with parent and child.
-     *
-     * TC_H_MAJ(portid) still may be unspecified, complete it now.
-     */
+		 * both with parent and child.
+		 *
+		 * TC_H_MAJ(portid) still may be unspecified, complete it now.
+		 */
 		if (portid)
 			portid = TC_H_MAKE(qid, portid);
 	} else {
@@ -1757,10 +1751,9 @@ static int tc_ctl_tclass(struct sk_buff *skb, struct nlmsghdr *n)
 		case RTM_DELTCLASS:
 			err = -EOPNOTSUPP;
 			if (cops->delete)
-				err = cops->delete (q, cl);
+				err = cops->delete(q, cl);
 			if (err == 0)
-				tclass_notify(net, skb, n, q, cl,
-					      RTM_DELTCLASS);
+				tclass_notify(net, skb, n, q, cl, RTM_DELTCLASS);
 			goto out;
 		case RTM_GETTCLASS:
 			err = tclass_notify(net, skb, n, q, cl, RTM_NEWTCLASS);
@@ -1785,12 +1778,13 @@ out:
 	return err;
 }
 
+
 static int tc_fill_tclass(struct sk_buff *skb, struct Qdisc *q,
-			  unsigned long cl, u32 portid, u32 seq, u16 flags,
-			  int event)
+			  unsigned long cl,
+			  u32 portid, u32 seq, u16 flags, int event)
 {
 	struct tcmsg *tcm;
-	struct nlmsghdr *nlh;
+	struct nlmsghdr  *nlh;
 	unsigned char *b = skb_tail_pointer(skb);
 	struct gnet_dump d;
 	const struct Qdisc_class_ops *cl_ops = q->ops->cl_ops;
@@ -1832,8 +1826,8 @@ nla_put_failure:
 }
 
 static int tclass_notify(struct net *net, struct sk_buff *oskb,
-			 struct nlmsghdr *n, struct Qdisc *q, unsigned long cl,
-			 int event)
+			 struct nlmsghdr *n, struct Qdisc *q,
+			 unsigned long cl, int event)
 {
 	struct sk_buff *skb;
 	u32 portid = oskb ? NETLINK_CB(oskb).portid : 0;
@@ -1852,19 +1846,17 @@ static int tclass_notify(struct net *net, struct sk_buff *oskb,
 }
 
 struct qdisc_dump_args {
-	struct qdisc_walker w;
-	struct sk_buff *skb;
-	struct netlink_callback *cb;
+	struct qdisc_walker	w;
+	struct sk_buff		*skb;
+	struct netlink_callback	*cb;
 };
 
-static int qdisc_class_dump(struct Qdisc *q, unsigned long cl,
-			    struct qdisc_walker *arg)
+static int qdisc_class_dump(struct Qdisc *q, unsigned long cl, struct qdisc_walker *arg)
 {
 	struct qdisc_dump_args *a = (struct qdisc_dump_args *)arg;
 
 	return tc_fill_tclass(a->skb, q, cl, NETLINK_CB(a->cb->skb).portid,
-			      a->cb->nlh->nlmsg_seq, NLM_F_MULTI,
-			      RTM_NEWTCLASS);
+			      a->cb->nlh->nlmsg_seq, NLM_F_MULTI, RTM_NEWTCLASS);
 }
 
 static int tc_dump_tclass_qdisc(struct Qdisc *q, struct sk_buff *skb,
@@ -1873,17 +1865,19 @@ static int tc_dump_tclass_qdisc(struct Qdisc *q, struct sk_buff *skb,
 {
 	struct qdisc_dump_args arg;
 
-	if (tc_qdisc_dump_ignore(q) || *t_p < s_t || !q->ops->cl_ops ||
-	    (tcm->tcm_parent && TC_H_MAJ(tcm->tcm_parent) != q->handle)) {
+	if (tc_qdisc_dump_ignore(q) ||
+	    *t_p < s_t || !q->ops->cl_ops ||
+	    (tcm->tcm_parent &&
+	     TC_H_MAJ(tcm->tcm_parent) != q->handle)) {
 		(*t_p)++;
 		return 0;
 	}
 	if (*t_p > s_t)
-		memset(&cb->args[1], 0, sizeof(cb->args) - sizeof(cb->args[0]));
+		memset(&cb->args[1], 0, sizeof(cb->args)-sizeof(cb->args[0]));
 	arg.w.fn = qdisc_class_dump;
 	arg.skb = skb;
 	arg.cb = cb;
-	arg.w.stop = 0;
+	arg.w.stop  = 0;
 	arg.w.skip = cb->args[1];
 	arg.w.count = 0;
 	q->ops->cl_ops->walk(q, &arg.w);
@@ -1906,7 +1900,7 @@ static int tc_dump_tclass_root(struct Qdisc *root, struct sk_buff *skb,
 	if (tc_dump_tclass_qdisc(root, skb, tcm, cb, t_p, s_t) < 0)
 		return -1;
 
-	list_for_each_entry (q, &root->list, list) {
+	list_for_each_entry(q, &root->list, list) {
 		if (tc_dump_tclass_qdisc(q, skb, tcm, cb, t_p, s_t) < 0)
 			return -1;
 	}
@@ -1935,8 +1929,9 @@ static int tc_dump_tclass(struct sk_buff *skb, struct netlink_callback *cb)
 		goto done;
 
 	dev_queue = dev_ingress_queue(dev);
-	if (dev_queue && tc_dump_tclass_root(dev_queue->qdisc_sleeping, skb,
-					     tcm, cb, &t, s_t) < 0)
+	if (dev_queue &&
+	    tc_dump_tclass_root(dev_queue->qdisc_sleeping, skb, tcm, cb,
+				&t, s_t) < 0)
 		goto done;
 
 done:
@@ -1980,9 +1975,9 @@ reclassify:
 #ifdef CONFIG_NET_CLS_ACT
 reset:
 	if (unlikely(limit++ >= MAX_REC_LOOP)) {
-		net_notice_ratelimited(
-			"%s: reclassify loop, rule prio %u, protocol %02x\n",
-			tp->q->ops->id, tp->prio & 0xffff, ntohs(tp->protocol));
+		net_notice_ratelimited("%s: reclassify loop, rule prio %u, protocol %02x\n",
+				       tp->q->ops->id, tp->prio & 0xffff,
+				       ntohs(tp->protocol));
 		return TC_ACT_SHOT;
 	}
 
@@ -2018,8 +2013,9 @@ EXPORT_SYMBOL(tcf_destroy_chain);
 #ifdef CONFIG_PROC_FS
 static int psched_show(struct seq_file *seq, void *v)
 {
-	seq_printf(seq, "%08x %08x %08x %08x\n", (u32)NSEC_PER_USEC,
-		   (u32)PSCHED_TICKS2NS(1), 1000000,
+	seq_printf(seq, "%08x %08x %08x %08x\n",
+		   (u32)NSEC_PER_USEC, (u32)PSCHED_TICKS2NS(1),
+		   1000000,
 		   (u32)NSEC_PER_SEC / hrtimer_resolution);
 
 	return 0;
@@ -2033,7 +2029,7 @@ static int psched_open(struct inode *inode, struct file *file)
 static const struct file_operations psched_fops = {
 	.owner = THIS_MODULE,
 	.open = psched_open,
-	.read = seq_read,
+	.read  = seq_read,
 	.llseek = seq_lseek,
 	.release = single_release,
 };
@@ -2089,12 +2085,10 @@ static int __init pktsched_init(void)
 
 	rtnl_register(PF_UNSPEC, RTM_NEWQDISC, tc_modify_qdisc, NULL, NULL);
 	rtnl_register(PF_UNSPEC, RTM_DELQDISC, tc_get_qdisc, NULL, NULL);
-	rtnl_register(PF_UNSPEC, RTM_GETQDISC, tc_get_qdisc, tc_dump_qdisc,
-		      NULL);
+	rtnl_register(PF_UNSPEC, RTM_GETQDISC, tc_get_qdisc, tc_dump_qdisc, NULL);
 	rtnl_register(PF_UNSPEC, RTM_NEWTCLASS, tc_ctl_tclass, NULL, NULL);
 	rtnl_register(PF_UNSPEC, RTM_DELTCLASS, tc_ctl_tclass, NULL, NULL);
-	rtnl_register(PF_UNSPEC, RTM_GETTCLASS, tc_ctl_tclass, tc_dump_tclass,
-		      NULL);
+	rtnl_register(PF_UNSPEC, RTM_GETTCLASS, tc_ctl_tclass, tc_dump_tclass, NULL);
 
 	return 0;
 }
