@@ -422,6 +422,10 @@ int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 		wait->_qproc = NULL;
 		timed_out = 1;
 		time_to_sleep = timespec_to_ktime(*end_time);
+	} else if (end_time) {
+		time_to_sleep = timespec_to_ktime(*end_time);
+	} else {
+		time_to_sleep = 0;
 	}
 
 	
@@ -683,6 +687,7 @@ static long do_pselect(int n, fd_set __user *inp, fd_set __user *outp,
 {
 	sigset_t ksigmask, sigsaved;
 	struct timespec ts, end_time, *to = NULL;
+	struct timeval tmp;
 	int ret;
 
 	if (tsp) {
@@ -706,7 +711,14 @@ static long do_pselect(int n, fd_set __user *inp, fd_set __user *outp,
 	}
 
 	ret = core_sys_select(n, inp, outp, exp, to);
-	ret = poll_select_copy_remaining(&end_time, tsp, 0, ret);
+
+	if (current->virt_start_time > 0) {
+		memset(&tmp, 0, sizeof(tmp));
+		if (copy_to_user(tsp, &tmp, sizeof(tmp)))
+			return -EFAULT;
+	} else {
+		ret = poll_select_copy_remaining(&end_time, tsp, 0, ret);
+	}
 
 	if (ret == -ERESTARTNOHAND) {
 		/*
@@ -821,11 +833,19 @@ static int do_poll(unsigned int nfds,  struct poll_list *list,
 	unsigned long slack = 0;
 	unsigned int busy_flag = net_busy_loop_on() ? POLL_BUSY_LOOP : 0;
 	unsigned long busy_end = 0;
+	s64 sleep_used_up_ns = 0;
+	s64 min_sleep_quanta_ns = 10000;
+	ktime_t time_to_sleep = 0;
 
 	/* Optimise the no-wait case */
 	if (end_time && !end_time->tv_sec && !end_time->tv_nsec) {
 		pt->_qproc = NULL;
 		timed_out = 1;
+		time_to_sleep = timespec_to_ktime(*end_time);
+	} else if (end_time) {
+		time_to_sleep = timespec_to_ktime(*end_time);
+	} else {
+		time_to_sleep = 0;
 	}
 
 	if (end_time && !timed_out)
@@ -892,8 +912,20 @@ static int do_poll(unsigned int nfds,  struct poll_list *list,
 			to = &expire;
 		}
 
-		if (!poll_schedule_timeout(wait, TASK_INTERRUPTIBLE, to, slack))
-			timed_out = 1;
+		if (!timed_out && current->virt_start_time == 0) {
+			if (!poll_schedule_timeout(wait, TASK_INTERRUPTIBLE,
+						   to, slack))
+				timed_out = 1;
+		} else {
+
+			if (time_to_sleep == 0 || sleep_used_up_ns >= time_to_sleep.tv64) {
+				timed_out = 1;
+			} else {
+				dilated_hrtimer_sleep(ns_to_ktime(min_sleep_quanta_ns));
+				sleep_used_up_ns += min_sleep_quanta_ns;
+			}
+			
+		}
 	}
 	return count;
 }
@@ -1002,7 +1034,7 @@ SYSCALL_DEFINE3(poll, struct pollfd __user *, ufds, unsigned int, nfds,
 
 	ret = do_sys_poll(ufds, nfds, to);
 
-	if (ret == -EINTR) {
+	if (ret == -EINTR && current->ptrace_msteps == 0) {
 		struct restart_block *restart_block;
 
 		restart_block = &current->restart_block;

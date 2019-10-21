@@ -57,11 +57,6 @@ s64 get_dilated_task_time(struct task_struct *task)
 	now = timeval_to_ns(&tv);
 
 	if (task->virt_start_time != 0) {
-		if (task->group_leader !=
-		    task) { // use virtual time of the leader thread
-			task = task->group_leader;
-		}
-
 		return task->curr_virtual_time;
 	}
 	return now;

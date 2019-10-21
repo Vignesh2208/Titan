@@ -1367,11 +1367,11 @@ error_unregister:
 	ep_unregister_pollwait(ep, epi);
 
 	/*
-   * We need to do this because an event could have been arrived on some
-   * allocated wait queue. Note that we don't care about the ep->ovflist
-   * list, since that is used/cleaned only inside a section bound by "mtx".
-   * And ep_insert() is called with "mtx" held.
-   */
+	 * We need to do this because an event could have been arrived on some
+	 * allocated wait queue. Note that we don't care about the ep->ovflist
+	 * list, since that is used/cleaned only inside a section bound by "mtx".
+	 * And ep_insert() is called with "mtx" held.
+	 */
 	spin_lock_irqsave(&ep->lock, flags);
 	if (ep_is_linked(&epi->rdllink))
 		list_del_init(&epi->rdllink);
@@ -1565,20 +1565,6 @@ static inline struct timespec ep_set_mstimeout(long ms)
 	return timespec_add_safe(now, ts);
 }
 
-s64 curr_dilated_time(void)
-{
-	s64 now;
-	struct timeval ktv;
-	do_gettimeofday(&ktv);
-	struct task_struct *task;
-	task = current;
-	now = timeval_to_ns(&ktv);
-	if (task->virt_start_time != 0) {
-		return task->curr_virtual_time;
-	}
-	return now;
-}
-
 /**
  * ep_poll - Retrieves ready events, and delivers them to the caller supplied
  *           event buffer.
@@ -1604,15 +1590,11 @@ static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
 	long slack = 0;
 	wait_queue_t wait;
 	ktime_t expires, *to = NULL;
+	s64 sleep_used_up_ns = 0;
+	s64 min_sleep_quanta_ns = 10000;
+	ktime_t time_to_sleep = 0;
 
-	struct timespec sleep_time;
-	ktime_t virt_time_expire;
-	int is_dialated = 0;
-	int rc;
-	s64 curr_virtual_time = curr_dilated_time();
-	s64 virt_wakeup_time = curr_virtual_time + timeout * 1000000;
 	if (current->virt_start_time != 0 && timeout > 0) {
-		is_dialated = 1;
 		printk(KERN_INFO "Epoll Dialated: Pid: %d, Timeout: %lu\n",
 		       current->pid, timeout);
 	}
@@ -1623,6 +1605,7 @@ static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
 		slack = select_estimate_accuracy(&end_time);
 		to = &expires;
 		*to = timespec_to_ktime(end_time);
+		time_to_sleep = timespec_to_ktime(*end_time);
 	} else if (timeout == 0) {
 		/*
 		 * Avoid the unnecessary trip to the wait queue loop, if the
@@ -1660,29 +1643,18 @@ fetch_events:
 			}
 
 			spin_unlock_irqrestore(&ep->lock, flags);
-			/*
-      if (current->virt_start_time != 0 && timeout > 0) {
-              is_dialated = 1;
-              sleep_time.tv_sec = 0;
-              sleep_time.tv_nsec = 1000000;
-              virt_time_expire = timespec_to_ktime(sleep_time);
-              to = &virt_time_expire;
-              //set_current_state(TASK_INTERRUPTIBLE);
-              if (!schedule_hrtimeout_range(to, 0, HRTIMER_MODE_REL)) {
-                      if (curr_dilated_time() > virt_wakeup_time) {
-                              timed_out = 1;
-                      }
-              } else {
-                      if (curr_dilated_time() > virt_wakeup_time) {
-                              timed_out = 1;
-                      }
-              }
 
-      } else {*/
-			if (!schedule_hrtimeout_range(to, slack,
-						      HRTIMER_MODE_ABS))
-				timed_out = 1;
-			//}
+			if (!timed_out && current->virt_start_time == 0) {
+				if (!schedule_hrtimeout_range(to, slack, HRTIMER_MODE_ABS))
+					timed_out = 1;
+			} else {
+				if (time_to_sleep == 0 || sleep_used_up_ns >= time_to_sleep.tv64) {
+					timed_out = 1;
+				} else {
+					dilated_hrtimer_sleep(ns_to_ktime(min_sleep_quanta_ns));
+					sleep_used_up_ns += min_sleep_quanta_ns;
+				}
+			}
 
 			spin_lock_irqsave(&ep->lock, flags);
 		}
