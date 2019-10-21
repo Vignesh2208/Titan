@@ -1,60 +1,40 @@
-#ifndef __KRONOS_FUNCTIONS
-#define __KRONOS_FUNCTIONS
-#include <sys/time.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
+#ifndef __VT_FUNCTIONS
+#define __VT_FUNCTIONS
+#include <errno.h>
+#include <fcntl.h>
+#include <linux/netlink.h>
 #include <signal.h>
-#include <sys/syscall.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/syscall.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/socket.h>
-#include <linux/netlink.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/select.h>
+#include <unistd.h>
 #include "utility_functions.h"
-
-#define MAX_PAYLOAD 1000
-#define NETLINK_USER 31
-#define IFNAMESIZ 16
-#define MAX_BUF_SIZ 1000
-
-#define SMALLEST_PROCESS_QUANTA_INSNS 100000
-
-
-
-// General Functions **********************
-
 
 typedef unsigned long u32;
 
-// Synchronization Functions **********************
+// These functions can only be called from inside a tracer process or its
+// children
+int register_tracer(int tracer_id, int tracer_type, int registration_type,
+                    int optional_pid);
+int update_tracer_clock(int tracer_id, s64 increment);
+int write_tracer_results(int tracer_id, int* results, int num_results);
+int add_processes_to_tracer_sq(int tracer_id, int* pids, int num_pids);
 
-int addToExp(float relative_cpu_speed, u32 n_round_instructions);
-int addToExp_sp(float relative_cpu_speed, u32 n_round_instructions, pid_t pid);
-int addToExp_child(float relative_cpu_speed, u32 n_round_instructions,
-                pid_t pid);
-int synchronizeAndFreeze(int n_expected_tracers);
-int update_tracer_params(int tracer_pid, float relative_cpu_speed,
-                         u32 n_round_instructions);
-int write_tracer_results(char * result);
-int set_netdevice_owner(int tracer_pid, char * intf_name);
-int gettimepid(int pid);
-
-int startExp();
+// These functions can be called by the orchestrater script which may be in c,
+// c++ or python
+s64 get_current_virtual_time();
+s64 get_current_time_pid(int pid);
+int initializeExp(int num_expected_tracers);
+int synchronizeAndFreeze();
 int stopExp();
-int initializeExp(int exp_type);
-
-
-int progress_n_rounds(int n_rounds);
-int progress();
-int hello();
-int get_experiment_stats(ioctl_args * args);
-int fire_timers();
-
+int progressBy(s64 duration);
+int set_netdevice_owner(int tracer_id, char* intf_name);
 
 #endif

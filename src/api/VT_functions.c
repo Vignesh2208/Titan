@@ -1,253 +1,128 @@
 
-#include "Kronos_functions.h"
-#include "Kronos_definitions.h"
+#include "VT_functions.h"
+#include <sys/ioctl.h>
 #include "utility_functions.h"
 
-#include <sys/ioctl.h>
+int register_tracer(int tracer_id, int tracer_type, int registration_type,
+                    int optional_pid) {
+  ioctl_args arg;
+  if (tracer_id < 0 || optional_pid < 0 ||
+      (tracer_type != TRACER_TYPE_INS_VT &&
+       tracer_type != TRACER_TYPE_APP_VT) ||
+      (registration_type < SIMPLE_REGISTRATION ||
+       registration_type > REGISTRATION_W_CONTROL_THREAD)) {
+    print("Tracer registration: incorrect parameters for tracer: %d\n",
+          tracer_id);
+    return -1;
+  }
+  init_ioctl_arg(&arg);
+  if (registration_type == SIMPLE_REGISTRATION) {
+    sprintf(arg.cmd_buf, '%d,%d,%d', tracer_id, tracer_type,
+            SIMPLE_REGISTRATION);
+  } else {
+    sprintf(arg.cmd_buf, '%d,%d,%d,%d', tracer_id, tracer_type,
+            registration_type, optional_pid);
+  }
+  return send_to_vt_module(VT_REGISTER_TRACER, &arg);
+}
+int update_tracer_clock(int tracer_id, s64 increment) {
+  if (tracer_id < 0 || increment < 0) {
+    print("Update tracer clock: incorrect parameters for tracer: %d\n",
+          tracer_id);
+    return -1;
+  }
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  sprintf(arg.cmd_buf, '%d', tracer_id);
+  arg.cmd_value = increment;
+  return send_to_vt_module(VT_UPDATE_TRACER_CLOCK, &arg);
+}
+int write_tracer_results(int tracer_id, int* results, int num_results) {
+  if (tracer_id < 0 || num_results < 0) {
+    print("Write tracer results: incorrect parameters for tracer: %d\n",
+          tracer_id);
+    return -1;
+  }
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
 
-#define TK_IOC_MAGIC  'k'
-#define TK_IO_GET_STATS _IOW(TK_IOC_MAGIC,  1, int)
-#define TK_IO_WRITE_RESULTS _IOW(TK_IOC_MAGIC,  2, int)
-#define TK_IO_RESUME_BLOCKED_SYSCALLS _IOW(TK_IOC_MAGIC,  3, int)
+  if (num_results == 0)
+    sprintf(arg.cmd_buf, '%d', tracer_id);
+  else {
+    sprintf(arg.cmd_buf, '%d,', tracer_id);
+    if (append_to_ioctl_arg(&arg, results, num_results) < 0) return -1;
+  }
 
-
-
-int hello() {
-	printf("Hello there from shared lib !\n");
-	return 0;
+  return send_to_vt_module(VT_WRITE_RESULTS, &arg);
 }
 
-
-int get_experiment_stats(ioctl_args * args) {
-
-	if (is_root() && isModuleLoaded()) {
-		return get_stats(args);
-	}
-	return -1;
-
-
+s64 get_current_virtual_time() {
+  return send_to_vt_module(VT_GET_CURRENT_VIRTUAL_TIME, NULL);
 }
 
-/*
-Register Tracer and create a spinner task for the tracer
-*/
-int addToExp_sp(float relative_cpu_speed, u32 n_round_instructions,
-                pid_t pid ) {
-
-	if (n_round_instructions <= 0 || relative_cpu_speed <= 0.0)
-		return -1;
-
-	int rel_cpu_speed = (int)(1000.0 * relative_cpu_speed);
-
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,%d,%d,1,%d", REGISTER_TRACER, rel_cpu_speed,
-		        (int)n_round_instructions, pid);
-		return send_to_kronos(command);
-	}
-	return -1;
+s64 get_current_time_pid(int pid) {
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  if (pid < 0) {
+    print("get_current_time_pid: incorrect pid: %d\n", pid);
+  }
+  sprintf(arg.cmd_buf, '%d', pid);
+  return send_to_vt_module(VT_GETTIME_PID, &arg);
 }
 
-int addToExp_child(float relative_cpu_speed, u32 n_round_instructions,
-                pid_t pid ) {
+int add_processes_to_tracer_sq(int tracer_id, int* pids, int num_pids) {
+  if (tracer_id < 0 || num_pids <= 0) {
+    print("add_processes_to_tracer_sq: incorrect parameters for tracer: %d\n",
+          tracer_id);
+    return -1;
+  }
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  sprintf(arg.cmd_buf, '%d,', tracer_id);
+  if (append_to_ioctl_arg(&arg, pids, num_pids) < 0) return -1;
 
-	if (n_round_instructions <= 0 || relative_cpu_speed <= 0.0)
-		return -1;
-
-	int rel_cpu_speed = (int)(1000.0 * relative_cpu_speed);
-
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,%d,%d,2,%d", REGISTER_TRACER, rel_cpu_speed,
-		        (int)n_round_instructions, pid);
-		return send_to_kronos(command);
-	}
-	return -1;
+  return send_to_vt_module(VT_ADD_PROCESSES_TO_SQ, &arg);
 }
 
-/*
-Register Tracer and do not create a spinner task for the tracer
-*/
-int addToExp(float relative_cpu_speed, u32 n_round_instructions) {
-
-	if (n_round_instructions <= 0 || relative_cpu_speed <= 0.0)
-		return -1;
-
-	int rel_cpu_speed = (int)(1000.0 * relative_cpu_speed);
-
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,%d,%d,0,", REGISTER_TRACER, rel_cpu_speed,
-		        (int)n_round_instructions);
-		return send_to_kronos(command);
-	}
-	return -1;
+int initializeExp(int num_expected_tracers) {
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  if (num_expected_tracers < 0) {
+    print("initializeExp: num expected tracers: %d < 0 !\n",
+          num_expected_tracers);
+    return -1;
+  }
+  sprintf(arg.cmd_buf, '%d', num_expected_tracers);
+  return send_to_vt_module(VT_INITIALIZE_EXP, &arg);
 }
 
-/*
-Starts a CBE Experiment
-*/
-int startExp() {
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,", START_EXP);
-		return send_to_kronos(command);
-	}
-	return -1;
+int synchronizeAndFreeze() {
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  return send_to_vt_module(VT_SYNC_AND_FREEZE, &arg);
 }
 
-int initializeExp(int exp_type) {
-
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,%d", INITIALIZE_EXP, exp_type);
-		return send_to_kronos(command);
-	}
-	return -1;
-
-}
-
-/*
-Given all Pids added to experiment, will set all their virtual times to be the same,
-then freeze them all (CBE and CS)
-*/
-int synchronizeAndFreeze(int n_expected_tracers) {
-
-	if (n_expected_tracers <= 0)
-		return -1;
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,%d,", SYNC_AND_FREEZE, n_expected_tracers);
-		return send_to_kronos(command);
-	}
-	return -1;
-}
-
-
-/*
-Stop a running experiment (CBE or CS) **Do not call stopExp if you are waiting
-for a s3fProgress to return!!**
-*/
 int stopExp() {
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,", STOP_EXP);
-		return send_to_kronos(command);
-	}
-	return -1;
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  return send_to_vt_module(VT_STOP_EXP, &arg);
 }
 
-
-int update_tracer_params(int tracer_pid, float relative_cpu_speed,
-                         u32 n_round_instructions) {
-	if (tracer_pid <= 0 || relative_cpu_speed <= 0.0
-	        || n_round_instructions == 0)
-		return -1;
-
-	int rel_cpu_speed = (int)(1000.0 * relative_cpu_speed);
-
-
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,%d,%d,%d,", UPDATE_TRACER_PARAMS, tracer_pid,
-		        rel_cpu_speed, (int)n_round_instructions);
-		return send_to_kronos(command);
-	}
-	return -1;
+int progressBy(s64 duration) {
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  arg.cmd_value = duration;
+  return send_to_vt_module(VT_PROGRESS_BY, &arg);
 }
 
-int set_netdevice_owner(int tracer_pid, char * intf_name) {
-	if (tracer_pid <= 0 || intf_name == NULL || strlen(intf_name) > IFNAMESIZ)
-		return -1;
-
-
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,%d,%s", SET_NETDEVICE_OWNER, tracer_pid,
-		        intf_name);
-		return send_to_kronos(command);
-	}
-
-	return -1;
-
-}
-int gettimepid(int pid) {
-
-	if (pid <= 0)
-		return -1;
-
-
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,%d,", GETTIMEPID, pid);
-		return send_to_kronos(command);
-	}
-
-	return -1;
-}
-
-
-int progress_n_rounds(int n_rounds) {
-
-	if (n_rounds <= 0)
-		return -1;
-
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,%d,", PROGRESS_N_ROUNDS, n_rounds);
-		return send_to_kronos(command);
-	}
-
-	return -1;
-}
-int progress() {
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,", PROGRESS);
-		return send_to_kronos(command);
-	}
-	return -1;
-}
-
-int fire_timers() {
-	if (isModuleLoaded()) {
-		char command[100];
-		flush_buffer(command, 100);
-		sprintf(command, "%c,", RUN_DILATED_HRTIMERS);
-		return send_to_kronos(command);
-	}
-	return -1;
-}
-
-int write_tracer_results(char * result) {
-
-	if (result == NULL || strlen(result) > MAX_BUF_SIZ)
-		return -1;
-
-
-	if (isModuleLoaded()) {
-	    int fp = open("/proc/status", O_RDWR);
-	    int ret = 0;
-	    if (fp < 0) {
-		printf("Error communicating with Kronos\n");
-		return -1;
-	    }
-	    ret = ioctl(fp, TK_IO_WRITE_RESULTS, result);
-	    close(fp);
-	    return ret;
-	}
-
-	return -1;
+int set_netdevice_owner(int tracer_id, char* intf_name) {
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  if (tracer_id < 0 || !intf_name || strlen(intf_name) > IFNAMESIZ) {
+    print("Set net device owner: incorrect arguments for tracer: %d!\n",
+          tracer_id);
+    return -1;
+  }
+  sprintf(arg.cmd_buf, '%d,%s', tracer_id, intf_name);
+  return send_to_vt_module(VT_SET_NETDEVICE_OWNER, &arg);
 }
