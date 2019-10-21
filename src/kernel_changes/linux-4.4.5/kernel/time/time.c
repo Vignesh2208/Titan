@@ -61,27 +61,33 @@ EXPORT_SYMBOL(sys_tz);
  * architectures that need it).
  */
 SYSCALL_DEFINE1(time, time_t __user *, tloc) {
-  struct timeval ktv;
-  do_gettimeofday(&ktv);
-  if (current->virt_start_time != 0) {
-    s64 now = current->curr_virtual_time;
-    struct timespec tmp = ns_to_timespec(now);
-    if (tloc) {
-      if (put_user(tmp.tv_sec, tloc)) return -EFAULT;
-    }
-    force_successful_syscall_return();
-    return tmp.tv_sec;
+	struct timeval ktv;
+	s64 now;
+	do_gettimeofday(&ktv);
+	if (current->virt_start_time != 0) {
 
-  } else {
-    time_t i = get_seconds();
+		if (current->tracer_clock != NULL)
+			now = *(s64 *)current->tracer_clock;
+		else
+			now = current->curr_virtual_time;
 
-    if (tloc) {
-      if (put_user(i, tloc)) return -EFAULT;
-    }
+		struct timespec tmp = ns_to_timespec(now);
+		if (tloc) {
+			if (put_user(tmp.tv_sec, tloc)) return -EFAULT;
+		}
+		force_successful_syscall_return();
+		return tmp.tv_sec;
 
-    force_successful_syscall_return();
-    return i;
-  }
+	} else {
+		time_t i = get_seconds();
+
+		if (tloc) {
+			if (put_user(i, tloc)) return -EFAULT;
+		}
+
+		force_successful_syscall_return();
+		return i;
+	}
 }
 
 /*
@@ -113,55 +119,64 @@ SYSCALL_DEFINE1(stime, time_t __user *, tptr)
 
 SYSCALL_DEFINE3(gettimepid, pid_t, pid, struct timeval __user *, tv,
                 struct timezone __user *, tz) {
-  if (likely(tv != NULL)) {
-    struct timeval ktv;
-    do_gettimeofday(&ktv);
-    struct task_struct *task;
-    rcu_read_lock();
-    task = pid_task(find_vpid(pid), PIDTYPE_PID);
-    rcu_read_unlock();
-    if (task == NULL) {
-      return -EFAULT;
-    }
-    if (task->virt_start_time != 0) {
-      s64 now = task->curr_virtual_time;
-      ktv = ns_to_timeval(now);
-    }
-    if (copy_to_user(tv, &ktv, sizeof(ktv))) return -EFAULT;
-  }
-  if (unlikely(tz != NULL)) {
-    if (copy_to_user(tz, &sys_tz, sizeof(sys_tz))) return -EFAULT;
-  }
-  return 0;
+	if (likely(tv != NULL)) {
+		struct timeval ktv;
+		do_gettimeofday(&ktv);
+		struct task_struct *task;
+		rcu_read_lock();
+		task = pid_task(find_vpid(pid), PIDTYPE_PID);
+		rcu_read_unlock();
+		if (task == NULL) {
+			return -EFAULT;
+		}
+		if (task->virt_start_time != 0) {
+			s64 now;
+			if (task->tracer_clock != NULL)
+				now = *(s64 *)task->tracer_clock;
+			else
+				now = task->curr_virtual_time;
+
+			ktv = ns_to_timeval(now);
+		}
+		if (copy_to_user(tv, &ktv, sizeof(ktv))) return -EFAULT;
+	}
+	if (unlikely(tz != NULL)) {
+		if (copy_to_user(tz, &sys_tz, sizeof(sys_tz))) return -EFAULT;
+	}
+	return 0;
 }
 
 SYSCALL_DEFINE2(gettimeofday, struct timeval __user *, tv,
                 struct timezone __user *, tz) {
-  if (likely(tv != NULL)) {
-    struct timeval ktv;
-    do_gettimeofday(&ktv);
-    if (current->virt_start_time != 0) {
-      s64 now = current->curr_virtual_time;
-      ktv = ns_to_timeval(now);
-    }
-    if (copy_to_user(tv, &ktv, sizeof(ktv))) return -EFAULT;
-  }
-  if (unlikely(tz != NULL)) {
-    if (copy_to_user(tz, &sys_tz, sizeof(sys_tz))) return -EFAULT;
-  }
-  return 0;
+	if (likely(tv != NULL)) {
+		struct timeval ktv;
+		do_gettimeofday(&ktv);
+		if (current->virt_start_time != 0) {
+			s64 now;
+			if (current->tracer_clock != NULL)
+				now = *(s64 *)current->tracer_clock;
+			else
+				now = current->curr_virtual_time;
+			ktv = ns_to_timeval(now);
+		}
+		if (copy_to_user(tv, &ktv, sizeof(ktv))) return -EFAULT;
+	}
+	if (unlikely(tz != NULL)) {
+		if (copy_to_user(tz, &sys_tz, sizeof(sys_tz))) return -EFAULT;
+	}
+	return 0;
 }
 
 SYSCALL_DEFINE2(gettimeofdayreal, struct timeval __user *, tv,
                 struct timezone __user *, tz) {
-  if (likely(tv != NULL)) {
-    struct timeval ktv;
-    do_gettimeofday(&ktv);
-    if (copy_to_user(tv, &ktv, sizeof(ktv))) return -EFAULT;
-  }
-  if (unlikely(tz != NULL)) {
-    if (copy_to_user(tz, &sys_tz, sizeof(sys_tz))) return -EFAULT;
-  }
+	if (likely(tv != NULL)) {
+		struct timeval ktv;
+		do_gettimeofday(&ktv);
+		if (copy_to_user(tv, &ktv, sizeof(ktv))) return -EFAULT;
+	}
+	if (unlikely(tz != NULL)) {
+		if (copy_to_user(tz, &sys_tz, sizeof(sys_tz))) return -EFAULT;
+	}
   return 0;
 }
 

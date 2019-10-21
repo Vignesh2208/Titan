@@ -380,6 +380,44 @@ skip:
   return;
 }
 
+
+static enum hrtimer_restart dilated_sleep_wakeup(struct hrtimer_dilated *timer) {
+	s64 current_dilated_time = 0;
+	struct dilated_hrtimer_sleeper *sleeper =
+		container_of(timer, struct dilated_hrtimer_sleeper, timer_dilated);
+
+	if (sleeper && sleeper->task) {
+		wake_up_process(sleeper->task);
+	}
+	return HRTIMER_NORESTART;
+}
+
+// sleeper should be allocated on heap using kmalloc
+int dilated_hrtimer_sleep(ktime_t duration) {
+
+	struct dilated_hrtimer_sleeper * sleeper;
+	if (duration.tv64 <= 0)
+		return 0;
+
+	if (current->virt_start_time == 0)
+		return 0 ;
+
+	sleeper = (struct dilated_hrtimer_sleeper *)kmalloc(
+			sizeof(struct dilated_hrtimer_sleeper), GFP_KERNEL);
+	if (!sleeper)
+		return -ENOMEM;
+	
+	sleeper->task = current;
+	dilated_hrtimer_init(&sleeper->timer_dilated, 0, HRTIMER_MODE_REL);
+	sleeper->timer_dilated.function = dilated_sleep_wakeup;
+	set_current_state(TASK_INTERRUPTIBLE);
+	dilated_hrtimer_start_range_ns(&sleeper->timer_dilated, duration, HRTIMER_MODE_REL);
+	schedule();
+	kfree(sleeper);
+	printk("Resuming from dilated sleep. Pid = %d\n", current->pid);
+	return 0;
+} 
+
 EXPORT_SYMBOL_GPL(dilated_hrtimer_run_queues);
 
 /** TK specific code end **/
@@ -1316,8 +1354,8 @@ static inline ktime_t hrtimer_update_lowres(struct hrtimer *timer, ktime_t tim,
  *		relative (HRTIMER_MODE_REL)
  */
 void hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
-                            unsigned long delta_ns,
-                            const enum hrtimer_mode mode) {
+			    unsigned long delta_ns, const enum hrtimer_mode mode)
+{
   struct hrtimer_clock_base *base, *new_base;
   unsigned long flags;
   int leftmost;
@@ -1578,8 +1616,9 @@ EXPORT_SYMBOL_GPL(hrtimer_active);
  */
 
 static void __run_hrtimer(struct hrtimer_cpu_base *cpu_base,
-                          struct hrtimer_clock_base *base,
-                          struct hrtimer *timer, ktime_t *now) {
+			  struct hrtimer_clock_base *base,
+			  struct hrtimer *timer, ktime_t *now)
+{
   enum hrtimer_restart (*fn)(struct hrtimer *);
   int restart;
   struct task_struct *calling_task = NULL;
@@ -2003,6 +2042,8 @@ SYSCALL_DEFINE2(nanosleep, struct timespec __user *, rqtp,
 		struct timespec __user *, rmtp)
 {
 	struct timespec tu;
+	struct timespec rmt;
+	ktime_t rem;
 
 	if (copy_from_user(&tu, rqtp, sizeof(tu)))
 		return -EFAULT;
@@ -2010,7 +2051,15 @@ SYSCALL_DEFINE2(nanosleep, struct timespec __user *, rqtp,
 	if (!timespec_valid(&tu))
 		return -EINVAL;
 
-	return hrtimer_nanosleep(&tu, rmtp, HRTIMER_MODE_REL, CLOCK_MONOTONIC);
+	if (current->virt_start_time == 0)
+		return hrtimer_nanosleep(&tu, rmtp, HRTIMER_MODE_REL, CLOCK_MONOTONIC);
+	rem.tv64 = 0;
+	rmt = ktime_to_timespec(rem);
+
+	if (copy_to_user(rmtp, &rmt, sizeof(struct timespec)))
+		return -EFAULT;
+
+	return dilated_hrtimer_sleep(timespec_to_ktime(*tu));
 }
 
 /*

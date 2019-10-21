@@ -1537,12 +1537,12 @@ enum netdev_priv_flags {
  */
 
 struct net_device {
-	char name[IFNAMSIZ];
+	char			name[IFNAMSIZ];
 	struct pid *owner_pid; // to be used with vt manager
 
 	/* device name hash chain, please keep it close to name[] */
-	struct hlist_node name_hlist;
-	char *ifalias;
+	struct hlist_node	name_hlist;
+	char 			*ifalias;
 	/*
 	 *	I/O specific fields
 	 *	FIXME: Merge these and struct ifmap into one

@@ -1515,6 +1515,7 @@ struct task_struct {
 	s64 burst_target;
 	int associated_tracer_id;
 	int ready;
+	int buffer_window_len;
 	spinlock_t dialation_lock;
 	unsigned long ptrace_mflags;
 	unsigned long ptrace_msteps;

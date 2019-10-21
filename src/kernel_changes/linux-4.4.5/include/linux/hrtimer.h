@@ -71,8 +71,8 @@ enum hrtimer_restart {
  *
  * All state transitions are protected by cpu_base->lock.
  */
-#define HRTIMER_STATE_INACTIVE 0x00
-#define HRTIMER_STATE_ENQUEUED 0x01
+#define HRTIMER_STATE_INACTIVE	0x00
+#define HRTIMER_STATE_ENQUEUED	0x01
 
 /**
  * struct hrtimer - the basic hrtimer structure
@@ -122,6 +122,11 @@ struct hrtimer_dilated {
 	u8 state;
 };
 
+struct dilated_hrtimer_sleeper {
+	struct hrtimer_dilated timer_dilated;
+	struct task_struct * task;
+}
+
 /**
  * struct hrtimer_sleeper - simple sleeper structure
  * @timer:	embedded timer structure
@@ -170,7 +175,7 @@ enum  hrtimer_base_type {
 struct hrtimer_dilated_clock_base {
 	struct hrtimer_cpu_base *cpu_base;
 	int clock_active; // indicates whether dilated clock is active i.e whether
-		// Kronos experiment is running. If not new dilated hrtimer
+		// VT experiment is running. If not new dilated hrtimer
 		// init should fail and existing hrtimer callbacks should
 		// end.
 	struct timerqueue_head active;
@@ -530,5 +535,6 @@ extern int dilated_hrtimer_forward(struct hrtimer_dilated *timer,
 extern void dilated_hrtimer_start_range_ns(struct hrtimer_dilated *timer,
 					   ktime_t expiry_time,
 					   const enum hrtimer_mode mode);
+extern int dilated_hrtimer_sleep(ktime_t duration);
 
 #endif

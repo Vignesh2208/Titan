@@ -615,11 +615,6 @@ dotraplinkage void do_debug(struct pt_regs *regs, long error_code)
 
 	ist_enter(regs);
 
-	/*if(current->ptrace_msteps > 1 ) {
-          current->ptrace_msteps --;
-          goto exit;
-  }*/
-
 	get_debugreg(dr6, 6);
 
 	/* Filter out all the reserved bits which are preset to 1 */
@@ -702,7 +697,6 @@ dotraplinkage void do_debug(struct pt_regs *regs, long error_code)
 	debug_stack_usage_dec();
 
 exit:
-	// trace_printk("Do_DEBUG: Finished processing for: %d\n", tsk->pid);
 	ist_exit(regs);
 }
 NOKPROBE_SYMBOL(do_debug);

@@ -57,9 +57,18 @@ void syscall_enter_mwork(struct pt_regs *regs)
 		current->ptrace_msteps = 1;
 		trace_printk("Setting ENTER FORK FLAG bit for Pid: %d\n",
 			     current->pid);
+	} else if (current->virt_start_time != 0 && current->ptrace_msteps == 0) {
+		set_bit(PTRACE_ENTER_SYSCALL_FLAG, &current->ptrace_mflags);
+		BUG_ON(test_bit(PTRACE_ENTER_FORK_FLAG,
+				&current->ptrace_mflags));
+		BUG_ON(test_bit(PTRACE_BREAK_WAITPID_FLAG,
+				&current->ptrace_mflags));
+		trace_printk(
+			"Setting ENTER SYSCALL FLAG bit for APP-VT Pid: %d. Syscall no: %lu\n",
+			 current->pid, regs->orig_ax);
 	}
 	spin_unlock_irqrestore(&current->dialation_lock, flags);
-	if (current->virt_start_time != 0) {
+	if (current->virt_start_time != 0 && current->ptrace_msteps > 0) {
 		current->curr_virtual_time++;
 	}
 }
@@ -394,6 +403,14 @@ __visible inline void syscall_return_slowpath(struct pt_regs *regs)
 	 */
 	if (unlikely(cached_flags & SYSCALL_EXIT_WORK_FLAGS))
 		syscall_slow_exit_work(regs, cached_flags);
+
+#ifdef CONFIG_COMPAT
+	/*
+	 * Compat syscalls set TS_COMPAT.  Make sure we clear it before
+	 * returning to user mode.
+	 */
+	ti->status &= ~TS_COMPAT;
+#endif
 
 	local_irq_disable();
 	prepare_exit_to_usermode(regs);

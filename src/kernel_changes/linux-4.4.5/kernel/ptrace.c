@@ -1157,21 +1157,21 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, unsigned long, addr,
     if (__get_user(n_steps, datalp)) {
       ret = -EFAULT;
     } else {
-      child->burst_target = n_steps;
+      child->buffer_window_len = n_steps;
       trace_printk("Ptrace: Pid: %d, set rem delta buffer window size: %lu\n",
-                   child->pid, child->burst_target);
+                   child->pid, child->buffer_window_len);
       ret = 0;
     }
     goto out_put_task_struct;
 
   } else if (request == PTRACE_GET_OVERSHOOT_ERROR) {
-    unsigned long error = child->overshoot_error;
-    child->overshoot_error = 0;
+    unsigned long error = child->buffer_window_len;
+    child->buffer_window_len = 0;
     if (copy_to_user(datalp, &error, sizeof(unsigned long))) {
       ret = -EFAULT;
     } else {
       trace_printk("Ptrace: Pid: %d, overshoot error: %lu\n", child->pid,
-                   child->overshoot_error);
+                   error);
       ret = 0;
     }
     goto out_put_task_struct;

@@ -393,6 +393,8 @@ static inline void wait_key_set(poll_table *wait, unsigned long in,
 		wait->_key |= POLLOUT_SET;
 }
 
+
+
 int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 {
 	ktime_t expire, *to = NULL;
@@ -402,6 +404,9 @@ int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 	unsigned long slack = 0;
 	unsigned int busy_flag = net_busy_loop_on() ? POLL_BUSY_LOOP : 0;
 	unsigned long busy_end = 0;
+	s64 sleep_used_up_ns = 0;
+	s64 min_sleep_quanta_ns = 10000;
+	ktime_t time_to_sleep = 0;
 
 	rcu_read_lock();
 	retval = max_select_fd(n, fds);
@@ -416,7 +421,10 @@ int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 	if (end_time && !end_time->tv_sec && !end_time->tv_nsec) {
 		wait->_qproc = NULL;
 		timed_out = 1;
+		time_to_sleep = timespec_to_ktime(*end_time);
 	}
+
+	
 
 	if (end_time && !timed_out)
 		slack = select_estimate_accuracy(end_time);
@@ -426,20 +434,14 @@ int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 		unsigned long *rinp, *routp, *rexp, *inp, *outp, *exp;
 		bool can_busy_loop = false;
 
-		inp = fds->in;
-		outp = fds->out;
-		exp = fds->ex;
-		rinp = fds->res_in;
-		routp = fds->res_out;
-		rexp = fds->res_ex;
+		inp = fds->in; outp = fds->out; exp = fds->ex;
+		rinp = fds->res_in; routp = fds->res_out; rexp = fds->res_ex;
 
 		for (i = 0; i < n; ++rinp, ++routp, ++rexp) {
 			unsigned long in, out, ex, all_bits, bit = 1, mask, j;
 			unsigned long res_in = 0, res_out = 0, res_ex = 0;
 
-			in = *inp++;
-			out = *outp++;
-			ex = *exp++;
+			in = *inp++; out = *outp++; ex = *exp++;
 			all_bits = in | out | ex;
 			if (all_bits == 0) {
 				i += BITS_PER_LONG;
@@ -458,10 +460,9 @@ int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 					f_op = f.file->f_op;
 					mask = DEFAULT_POLLMASK;
 					if (f_op->poll) {
-						wait_key_set(wait, in, out, bit,
-							     busy_flag);
-						mask = (*f_op->poll)(f.file,
-								     wait);
+						wait_key_set(wait, in, out,
+							     bit, busy_flag);
+						mask = (*f_op->poll)(f.file, wait);
 					}
 					fdput(f);
 					if ((mask & POLLIN_SET) && (in & bit)) {
@@ -469,8 +470,7 @@ int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 						retval++;
 						wait->_qproc = NULL;
 					}
-					if ((mask & POLLOUT_SET) &&
-					    (out & bit)) {
+					if ((mask & POLLOUT_SET) && (out & bit)) {
 						res_out |= bit;
 						retval++;
 						wait->_qproc = NULL;
@@ -531,9 +531,20 @@ int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 			to = &expire;
 		}
 
-		if (!poll_schedule_timeout(&table, TASK_INTERRUPTIBLE,
-					   to, slack))
-			timed_out = 1;
+		if (!timed_out && current->virt_start_time == 0) {
+			if (!poll_schedule_timeout(&table, TASK_INTERRUPTIBLE,
+						   to, slack))
+				timed_out = 1;
+		} else {
+
+			if (time_to_sleep == 0 || sleep_used_up_ns >= time_to_sleep.tv64) {
+				timed_out = 1;
+			} else {
+				dilated_hrtimer_sleep(ns_to_ktime(min_sleep_quanta_ns));
+				sleep_used_up_ns += min_sleep_quanta_ns;
+			}
+			
+		}
 	}
 
 	poll_freewait(&table);
@@ -629,7 +640,9 @@ SYSCALL_DEFINE5(select, int, n, fd_set __user *, inp, fd_set __user *, outp,
 {
 	struct timespec end_time, *to = NULL;
 	struct timeval tv;
+	struct timeval tmp;
 	int ret;
+
 
 	if (tvp) {
 		if (copy_from_user(&tv, tvp, sizeof(tv)))
@@ -643,7 +656,13 @@ SYSCALL_DEFINE5(select, int, n, fd_set __user *, inp, fd_set __user *, outp,
 	}
 
 	ret = core_sys_select(n, inp, outp, exp, to);
-	ret = poll_select_copy_remaining(&end_time, tvp, 1, ret);
+	if (current->virt_start_time > 0) {
+		memset(&tmp, 0, sizeof(tmp));
+		if (copy_to_user(tvp, &tmp, sizeof(tmp)))
+			return -EFAULT;
+	} else {
+		ret = poll_select_copy_remaining(&end_time, tvp, 1, ret);
+	}
 
 	return ret;
 }

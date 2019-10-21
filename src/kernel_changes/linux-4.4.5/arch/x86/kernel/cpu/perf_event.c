@@ -649,7 +649,7 @@ struct sched_state {
 };
 
 /* Total max is X86_PMC_IDX_MAX, but we are O(n!) limited */
-#define SCHED_STATES_MAX 2
+#define	SCHED_STATES_MAX	2
 
 struct perf_sched {
 	int			max_weight;
@@ -1394,7 +1394,6 @@ int x86_pmu_handle_irq(struct pt_regs *regs)
 		event = cpuc->events[idx];
 
 		val = x86_perf_event_update(event);
-
 		if (val & (1ULL << (x86_pmu.cntval_bits - 1)))
 			continue;
 
@@ -1426,21 +1425,22 @@ void perf_events_lapic_init(void)
 		return;
 
 	/*
-   * Always use NMI for PMU
-   */
+	 * Always use NMI for PMU
+	 */
 	apic_write(APIC_LVTPC, APIC_DM_NMI);
 }
 
-static int perf_event_nmi_handler(unsigned int cmd, struct pt_regs *regs)
+static int
+perf_event_nmi_handler(unsigned int cmd, struct pt_regs *regs)
 {
 	u64 start_clock;
 	u64 finish_clock;
 	int ret;
 
 	/*
-   * All PMUs/events that share this PMI handler should make sure to
-   * increment active_events for their events.
-   */
+	 * All PMUs/events that share this PMI handler should make sure to
+	 * increment active_events for their events.
+	 */
 	if (!atomic_read(&active_events))
 		return NMI_DONE;
 

@@ -5017,7 +5017,7 @@ static void perf_pending_event(struct irq_work *entry) {
   if (event->attr.config == PERF_COUNT_HW_INSTRUCTIONS) {
     if (event->hw.target != NULL) {
       tsk = event->hw.target;
-      if (tsk->burst_target > 0) burst_target = tsk->burst_target;
+      if (tsk->buffer_window_len > 0) burst_target = tsk->buffer_window_len;
 
       sample_period = event->attr.sample_period;
 
@@ -5025,7 +5025,7 @@ static void perf_pending_event(struct irq_work *entry) {
       counter_val = perf_event_read_value(event, &enabled, &running);
       if (counter_val > sample_period) {
         // overshoot error magnitude
-        tsk->overshoot_error = (counter_val - sample_period);
+        tsk->buffer_window_len = (counter_val - sample_period);
       }
       if (n_ints > counter_val)
         counter_val = 0;
@@ -6453,14 +6453,14 @@ static void perf_log_itrace_start(struct perf_event *event)
  * Generic event overflow handling, sampling.
  */
 
-static int __perf_event_overflow(struct perf_event *event, int throttle,
-                                 struct perf_sample_data *data,
-                                 struct pt_regs *regs) {
-  int events = atomic_read(&event->event_limit);
-  struct hw_perf_event *hwc = &event->hw;
-  u64 seq;
-  int ret = 0;
-  u64 counter_val, enabled, running;
+static int __perf_event_overflow(struct perf_event *event,
+				   int throttle, struct perf_sample_data *data,
+				   struct pt_regs *regs)
+{
+	int events = atomic_read(&event->event_limit);
+	struct hw_perf_event *hwc = &event->hw;
+	u64 seq;
+	int ret = 0;
 
 	/*
 	 * Non-sampling counters might still use the PMI to fold short
@@ -6645,10 +6645,14 @@ static int perf_exclude_event(struct perf_event *event,
 	return 0;
 }
 
-static int perf_swevent_match(struct perf_event *event, enum perf_type_id type,
-                              u32 event_id, struct perf_sample_data *data,
-                              struct pt_regs *regs) {
-  if (!event) return 0;
+static int perf_swevent_match(struct perf_event *event,
+				enum perf_type_id type,
+				u32 event_id,
+				struct perf_sample_data *data,
+				struct pt_regs *regs)
+{
+	if (!event)
+		return 0;
 
 	if (event->attr.config != event_id)
 		return 0;

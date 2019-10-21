@@ -3102,12 +3102,13 @@ again:
  *
  * WARNING: must be called with preemption disabled!
  */
-static void __sched notrace __schedule(bool preempt) {
-  struct task_struct *prev, *next;
-  unsigned long *switch_count;
-  struct rq *rq;
-  int cpu;
-  int wake_tracer = 0;
+static void __sched notrace __schedule(bool preempt)
+{
+	struct task_struct *prev, *next;
+	unsigned long *switch_count;
+	struct rq *rq;
+	int cpu;
+	int wake_tracer = 0;
 
 	cpu = smp_processor_id();
 	rq = cpu_rq(cpu);
@@ -3156,6 +3157,20 @@ static void __sched notrace __schedule(bool preempt) {
 		trace_printk("Set BREAK WAITPID FLAG for Pid %d\n", prev->pid);
 		try_to_wake_up_local(prev->parent);
 	      }
+	    } else {
+
+		if (prev->virt_start_time > 0
+		   && prev->ptrace_msteps == 0
+		   && prev->ready == 0 && prev->burst_target > 0
+		   && test_bit(PTRACE_ENTER_SYSCALL_FLAG, &prev->ptrace_mflags)) {
+			trace_printk("Waking up vt exec manager task or Pid %d\n", prev-pid);
+			if (!prev->vt_exec_task_wqueue) {
+				trace_printk("ERROR: VT exec task wqueue is NULL\n");
+			} else {
+				wake_up_interruptible(prev->vt_exec_task_wqueue);
+				prev->burst_target = 0;
+			}
+		}
 	    }
 	  }
 	switch_count = &prev->nivcsw;
