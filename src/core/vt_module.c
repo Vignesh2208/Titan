@@ -305,6 +305,14 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         current->wakeup_time = 0;
         current->vt_exec_task_wqueue = NULL;
         current->tracer_clock = NULL;
+        api_info_tmp.return_value = 0;
+        if (copy_to_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+          PDEBUG_I(
+              "Status Read: Tracer : %d, Process: %d Resuming from wait. "
+              "Error copying to user buf\n",
+              tracer_id, current->pid);
+          return -EFAULT;
+        }
         PDEBUG_I("VT-IO: Tracer: %d, Process: %d STOPPING\n", tracer_id,
                  current->pid);
 

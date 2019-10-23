@@ -3,7 +3,7 @@
 #include <sys/ioctl.h>
 #include "utility_functions.h"
 
-int register_tracer(int tracer_id, int tracer_type, int registration_type,
+s64 register_tracer(int tracer_id, int tracer_type, int registration_type,
                     int optional_pid) {
   ioctl_args arg;
   if (tracer_id < 0 || optional_pid < 0 ||
@@ -37,7 +37,7 @@ int update_tracer_clock(int tracer_id, s64 increment) {
   arg.cmd_value = increment;
   return send_to_vt_module(VT_UPDATE_TRACER_CLOCK, &arg);
 }
-int write_tracer_results(int tracer_id, int* results, int num_results) {
+s64 write_tracer_results(int tracer_id, int* results, int num_results) {
   if (tracer_id < 0 || num_results < 0) {
     print("Write tracer results: incorrect parameters for tracer: %d\n",
           tracer_id);

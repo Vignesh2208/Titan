@@ -21,10 +21,10 @@ typedef unsigned long u32;
 
 // These functions can only be called from inside a tracer process or its
 // children
-int register_tracer(int tracer_id, int tracer_type, int registration_type,
+s64 register_tracer(int tracer_id, int tracer_type, int registration_type,
                     int optional_pid);
 int update_tracer_clock(int tracer_id, s64 increment);
-int write_tracer_results(int tracer_id, int* results, int num_results);
+s64 write_tracer_results(int tracer_id, int* results, int num_results);
 int add_processes_to_tracer_sq(int tracer_id, int* pids, int num_pids);
 
 // These functions can be called by the orchestrater script which may be in c,

@@ -1,6 +1,6 @@
 
 home_dir=$(HOME)
-tracer_dir=${home_dir}/Kronos/src/tracer
+tracer_dir=${home_dir}/Titan/src/tracer
 EXTRA_CFLAGS += 
 KERNEL_SRC:= /lib/modules/$(shell uname -r)/build
 SUBDIR= $(shell pwd)
@@ -14,7 +14,7 @@ libs:
 build_tracer:
 	 @gcc -w -I/usr/local/include/perf -I/usr/local/lib/perf/include -I${tracer_dir}/utils \
 	 ${tracer_dir}/tracer.c ${tracer_dir}/utils.c ${tracer_dir}/utils/linkedlist.c \
-	 ${tracer_dir}/utils/hashmap.c -o tracer -lperf -lkronosapi
+	 ${tracer_dir}/utils/hashmap.c -o tracer -lperf -lvtapi
 	 @gcc  -w ${tracer_dir}/tests/cmd_sender.c -o cmd_sender
 	 @chmod 777 tracer
 	 @chmod 777 cmd_sender
@@ -26,26 +26,15 @@ build_tracer:
 build_tracer_debug:
 	@gcc -w -I/usr/local/include/perf -I/usr/local/lib/perf/include -I${tracer_dir}/utils \
 	-D DEBUG ${tracer_dir}/tracer.c ${tracer_dir}/utils.c ${tracer_dir}/utils/linkedlist.c \
-	${tracer_dir}/utils/hashmap.c -o tracer -lperf -lkronosapi
+	${tracer_dir}/utils/hashmap.c -o tracer -lperf -lvtapi
 	@gcc  -w ${tracer_dir}/tests/cmd_sender.c -o cmd_sender
 	@chmod 777 tracer
 	@chmod 777 cmd_sender
 	@mv tracer /usr/bin
-	@mv cmd_sender /usr/bins
-	@cp /usr/local/lib/libperf.so.0 /usr/lib/
-	@cd ${tracer_dir}/utils && $(MAKE) build
-
-build_tracer_test: 
-	@gcc -w -I/usr/local/include/perf -I/usr/local/lib/perf/include -I${tracer_dir}/utils \
-	-D TEST -D DEBUG_VERBOSE ${tracer_dir}/tracer.c ${tracer_dir}/utils.c ${tracer_dir}/utils/linkedlist.c \
-	${tracer_dir}/utils/hashmap.c -o tracer_test -lperf -lkronosapi
-	@gcc  -w ${tracer_dir}/tests/cmd_sender.c -o cmd_sender
-	@chmod 777 tracer_test
-	@chmod 777 cmd_sender
-	@mv tracer_test /usr/bin
 	@mv cmd_sender /usr/bin
 	@cp /usr/local/lib/libperf.so.0 /usr/lib/
 	@cd ${tracer_dir}/utils && $(MAKE) build
+
 
 clean: 
 	@cd ${tracer_dir}/libperf && ./configure && $(MAKE) clean

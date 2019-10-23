@@ -1,5 +1,5 @@
 home_dir=$(HOME)
-tracer_dir=${home_dir}/Kronos/src/tracer
+tracer_dir=${home_dir}/Titan/src/tracer
 test_dir=${tracer_dir}/tests/vfork-test
 
 clean:
@@ -14,7 +14,7 @@ build:
 
 run:
 	@echo "Starting Vfork Test ..."
-	tracer_test -f ${test_dir}/cmds.txt
+	python ${home_dir}/Titan/examples/example_vt_experiment.py --cmds_to_run_file=${test_dir}/cmds.txt
 	@echo "VFork test Finished ..."
 
 start: run

@@ -1,5 +1,5 @@
 home_dir=$(HOME)
-tracer_dir=${home_dir}/Kronos/src/tracer
+tracer_dir=${home_dir}/Titan/src/tracer
 benchmarking_dir=${tracer_dir}/tests/benchmarking
 clean:
 

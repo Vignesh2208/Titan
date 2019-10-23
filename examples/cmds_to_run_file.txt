@@ -1,0 +1,1 @@
+/home/kronos/cmd_executor -f /home/kronos/test_cmds.txt
