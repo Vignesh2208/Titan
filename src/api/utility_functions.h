@@ -42,9 +42,9 @@ typedef struct ioctl_args_struct {
 #define VT_SET_NETDEVICE_OWNER _IOW(VT_IOC_MAGIC, 11, int)
 
 s64 send_to_vt_module(unsigned int cmd, ioctl_args* arg);
-int gettid();
-int is_root();
-int isModuleLoaded();
+int gettid(void);
+int is_root(void);
+int isModuleLoaded(void);
 void init_ioctl_arg(ioctl_args* arg);
 void flush_buffer(char* buf, int size);
 void init_ioctl_arg(ioctl_args* arg);

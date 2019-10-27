@@ -756,7 +756,7 @@ int main(int argc, char * argv[]) {
 				created_pids[num_created++] = tracee->pid;
 				tracee->added = 1;
 			} else if (tracee->added == -1) {
-				exited_pids[num_exited++] = tracee->pid
+				exited_pids[num_exited++] = tracee->pid;
 			}
 			tracee->n_insns_share = SMALLEST_PROCESS_QUANTA_INSNS;
 			head = head->next;

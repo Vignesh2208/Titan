@@ -29,11 +29,11 @@ int add_processes_to_tracer_sq(int tracer_id, int* pids, int num_pids);
 
 // These functions can be called by the orchestrater script which may be in c,
 // c++ or python
-s64 get_current_virtual_time();
+s64 get_current_virtual_time(void);
 s64 get_current_time_pid(int pid);
 int initializeExp(int num_expected_tracers);
-int synchronizeAndFreeze();
-int stopExp();
+int synchronizeAndFreeze(void);
+int stopExp(void);
 int progressBy(s64 duration);
 int set_netdevice_owner(int tracer_id, char* intf_name);
 

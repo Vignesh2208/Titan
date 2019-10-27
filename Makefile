@@ -9,7 +9,7 @@ nCpus=$(shell nproc --all)
 
 all: clean build
 
-clean: clean_build clean_core clean_utils clean_api clean_tracer
+clean: clean_core clean_utils clean_api clean_tracer
 
 build: build_core build_api build_tracer
 

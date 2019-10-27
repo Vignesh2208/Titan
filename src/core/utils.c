@@ -81,23 +81,23 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id, int tracer
 	if (!new_tracer)
 		return;
 		
-    new_tracer->proc_to_control_pid = -1;
-    new_tracer->cpu_assignment = 0;
+	new_tracer->proc_to_control_pid = -1;
+	new_tracer->cpu_assignment = 0;
 	new_tracer->tracer_id = tracer_id;
-	new_tracer->trace_pid = 0;
+	new_tracer->tracer_pid = 0;
 	new_tracer->round_start_virt_time = 0;
-    new_tracer->nxt_round_burst_length = 0;
-    new_tracer->curr_virt_time = 0;
-    new_tracer->round_overshoot = 0;
-    new_tracer->tracer_type = tracer_type;
+	new_tracer->nxt_round_burst_length = 0;
+	new_tracer->curr_virtual_time = 0;
+	new_tracer->round_overshoot = 0;
+	new_tracer->tracer_type = tracer_type;
 	new_tracer->w_queue_wakeup_pid = 0;
 	new_tracer->last_run = NULL;
-	
+
 	llist_destroy(&new_tracer->schedule_queue);
-    llist_destroy(&new_tracer->run_queue);
+	llist_destroy(&new_tracer->run_queue);
 
 	llist_init(&new_tracer->schedule_queue);
-    llist_init(&new_tracer->run_queue);	
+	llist_init(&new_tracer->run_queue);	
 
 	rwlock_init(&new_tracer->tracer_lock);
 
@@ -112,11 +112,11 @@ tracer * alloc_tracer_entry(uint32_t tracer_id, int tracer_type) {
 	if (!new_tracer)
 		return NULL;
 
-    memset(new_tracer, 0, sizeof(tracer));
+	memset(new_tracer, 0, sizeof(tracer));
 
-    BUG_ON(tracer_type != TRACER_TYPE_INS_VT && tracer_type != TRACER_TYPE_APP_VT);
+	BUG_ON(tracer_type != TRACER_TYPE_INS_VT && tracer_type != TRACER_TYPE_APP_VT);
 
-	initialize_tracer_entry(new_tracer, tracer_id, tracer_type)
+	initialize_tracer_entry(new_tracer, tracer_id, tracer_type);
 
 	return new_tracer;
 
@@ -126,7 +126,7 @@ void free_tracer_entry(tracer * tracer_entry) {
 
 
 	llist_destroy(&tracer_entry->schedule_queue);
-    llist_destroy(&tracer_entry->run_queue);
+    	llist_destroy(&tracer_entry->run_queue);
 	kfree(tracer_entry);
 
 }

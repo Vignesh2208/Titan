@@ -138,7 +138,7 @@ void clean_up_schedule_list(tracer * tracer_entry) {
 			task = pid_task(pid_struct, PIDTYPE_PID);
 			if (task != NULL) {
 				task->virt_start_time = 0;
-				task->curr_virtual_time = 0;
+				task->curr_virt_time = 0;
 				task->wakeup_time = 0;
 				task->burst_target = 0;
 				task->associated_tracer_id = -1;
@@ -221,7 +221,6 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	new_elem->pid = tracee->pid;
 	new_elem->curr_task = tracee;
 	tracee->associated_tracer_id = tracer_entry->tracer_id;
-	tracee->associated_vcpu_id = tracer_entry->cpu_assignement - 2;
 
 	new_elem->base_quanta = PROCESS_MIN_QUANTA_NS;
 	new_elem->quanta_left_from_prev_round = 0;
@@ -233,7 +232,7 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	if (tracer_entry->tracer_type == TRACER_TYPE_APP_VT) {
 		BUG_ON(!aligned_tracer_clock_array);
 		tracee->tracer_clock = (s64 *)&aligned_tracer_clock_array[tracee->associated_tracer_id - 1];
-		tracee->vt_exec_task_wqueue = tracer_wqueue[tracer_entry->cpu_assignment - 2];
+		tracee->vt_exec_task_wqueue = &tracer_wqueue[tracer_entry->cpu_assignment - 2];
 		tracee->ready = 0;
 	} else {
 		tracee->vt_exec_task_wqueue = NULL;
@@ -242,7 +241,7 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 
 	if (!tracee->virt_start_time) {
 		tracee->virt_start_time = virt_exp_start_time;
-		tracee->curr_virtual_time = tracer_entry->curr_virtual_time;
+		tracee->curr_virt_time = tracer_entry->curr_virtual_time;
 		tracee->wakeup_time = 0;
 		tracee->burst_target = 0;
 	}
@@ -273,7 +272,7 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid)
 	struct task_struct * tracee = find_task_by_pid(tracee_pid);
 
 	llist_elem * head_1;
-	llist_elem * head_2
+	llist_elem * head_2;
 	int pos = 0;
 
 	
@@ -313,8 +312,8 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid)
 		pos ++;
 	}
 
-	if (removed_item) 
-		kfree(removed_item);
+	if (removed_elem) 
+		kfree(removed_elem);
 }
 
 
@@ -484,17 +483,17 @@ void update_all_children_virtual_time(tracer * tracer_entry, s64 time_increment)
 		tracer_entry->round_start_virt_time += time_increment;
 		tracer_entry->curr_virtual_time = tracer_entry->round_start_virt_time;
 
-		if (schedule_list_size(curr_tracer) > 0)
+		if (schedule_list_size(tracer_entry) > 0)
 			set_children_time(tracer_entry, tracer_entry->tracer_task,
 								tracer_entry->curr_virtual_time, 0);
 
 		if (tracer_entry->spinner_task)
-			tracer_entry->spinner_task->curr_virtual_time =
+			tracer_entry->spinner_task->curr_virt_time =
 			    tracer_entry->curr_virtual_time;
 
 		if (tracer_entry->proc_to_control_task != NULL) {
 			if (find_task_by_pid(tracer_entry->proc_to_control_pid) != NULL)
-				tracer_entry->proc_to_control_task->curr_virtual_time =
+				tracer_entry->proc_to_control_task->curr_virt_time =
 				    tracer_entry->curr_virtual_time;
 		}
 
@@ -527,7 +526,7 @@ void update_all_tracers_virtual_time(int cpuID) {
 		get_tracer_struct_write(curr_tracer);
 		target_increment = curr_tracer->nxt_round_burst_length;
 
-		if (target_increment > 0)
+		if (target_increment > 0) {
 			if (curr_tracer && curr_tracer->tracer_type == TRACER_TYPE_APP_VT) {
 				BUG_ON(!aligned_tracer_clock_array);
 				WARN_ON(aligned_tracer_clock_array[curr_tracer->tracer_id - 1] < curr_tracer->round_start_virt_time +  target_increment);
@@ -681,8 +680,8 @@ int handle_set_netdevice_owner_cmd(char * write_buffer) {
 	        && *(write_buffer + next_idx + i) != ','  && i < IFNAMSIZ ; i++)
 		dev_name[i] = *(write_buffer + next_idx + i);
 
-	PDEBUG_A("Set Net Device Owner: Received Pid: %d, Dev Name: %s\n",
-	         pid, dev_name);
+	PDEBUG_A("Set Net Device Owner: Received tracer id: %d, Dev Name: %s\n",
+	         tracer_id, dev_name);
 
 	struct net_device * dev;
 	curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);

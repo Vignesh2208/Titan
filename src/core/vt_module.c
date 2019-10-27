@@ -1,7 +1,5 @@
 #include "vt_module.h"
-
 #include "common.h"
-#include "module.h"
 #include "sync_experiment.h"
 
 /*
@@ -49,6 +47,12 @@ atomic_t n_waiting_tracers = ATOMIC_INIT(0);
 
 extern wait_queue_head_t progress_sync_proc_wqueue;
 extern int round_sync_task(void *data);
+
+loff_t vt_llseek(struct file *filp, loff_t pos, int whence);
+int vt_release(struct inode *inode, struct file *filp);
+int vt_mmap(struct file *filp, struct vm_area_struct *vma);
+long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
+
 
 static const struct file_operations proc_file_fops = {
     .unlocked_ioctl = vt_ioctl,
@@ -129,7 +133,7 @@ loff_t vt_llseek(struct file *filp, loff_t pos, int whence) { return 0; }
 
 int vt_release(struct inode *inode, struct file *filp) { return 0; }
 
-static int vt_mmap(struct file *filp, struct vm_area_struct *vma) {
+int vt_mmap(struct file *filp, struct vm_area_struct *vma) {
   if (aligned_tracer_clock_array) {
     unsigned long pfn =
         virt_to_phys((void *)aligned_tracer_clock_array) >> PAGE_SHIFT;
@@ -208,7 +212,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       }
 
       num_integer_args = convert_string_to_array(
-          api_info_tmp.api_agrument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+          api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args != 1) {
         PDEBUG_E(
@@ -258,7 +262,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       }
 
       num_integer_args = convert_string_to_array(
-          api_info_tmp.api_agrument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+          api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args < 1) {
         PDEBUG_E("VT_RM_PROCESS_FROM_SQ: Not enough arguments !");
@@ -301,7 +305,6 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         current->virt_start_time = 0;
         current->curr_virt_time = 0;
         current->associated_tracer_id = 0;
-        current->associated_vcpu_id = 0;
         current->wakeup_time = 0;
         current->vt_exec_task_wqueue = NULL;
         current->tracer_clock = NULL;
@@ -373,10 +376,10 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
 
-      ret_val = register_tracer_process(api_info_tmp.api_argument);
-      if (ret_val == FAIL) return -EFAULT;
+      retval = register_tracer_process(api_info_tmp.api_argument);
+      if (retval == FAIL) return -EFAULT;
 
-      api_info_tmp.return_value = ret_val;
+      api_info_tmp.return_value = retval;
 
       if (copy_to_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
         PDEBUG_I(
@@ -406,7 +409,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
       num_integer_args = convert_string_to_array(
-          api_info_tmp.api_agrument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+          api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args <= 1) {
         PDEBUG_E("VT_ADD_PROCESS_TO_SQ: Not enough arguments !");
@@ -491,7 +494,11 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       if (copy_from_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
         return -EFAULT;
       }
-      pi_info_tmp.return_value = handle_gettimepid(api_info_tmp.api_argument);
+      api_info_tmp.return_value = handle_gettimepid(api_info_tmp.api_argument);
+      if (copy_to_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+        PDEBUG_I("VT_GETTIME_PID: Error copying to user buf\n");
+        return -EFAULT;
+      }
       return 0;
 
     case VT_STOP_EXP:
@@ -534,7 +541,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
         return -EFAULT;
       }
-      return progress_by(api_info.return_value);
+      return progress_by(api_info_tmp.return_value);
 
     case VT_SET_NETDEVICE_OWNER:
       // Any process can invoke this call.
@@ -621,7 +628,7 @@ int __init my_module_init(void) {
     EXP_CPUS = 1;
 
   expected_time = 0;
-  tracer_wqueue = kmalloc(EXP_CPUS * sizeof(wait_queue_head_t));
+  tracer_wqueue = kmalloc(EXP_CPUS * sizeof(wait_queue_head_t), GFP_KERNEL);
 
   if (!tracer_wqueue) {
     PDEBUG_E("Error: Could not allot memory for tracer wait queue\n");

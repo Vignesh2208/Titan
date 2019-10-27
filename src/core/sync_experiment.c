@@ -1,4 +1,4 @@
-#include "module.h"
+#include "vt_module.h"
 #include "utils.h"
 
 /** EXTERN VARIABLES **/
@@ -448,7 +448,6 @@ int per_cpu_worker(void *data) {
 		round++;
 		set_current_state(TASK_INTERRUPTIBLE);
 		atomic_dec(&n_workers_running);
-		run_cpu = get_cpu();
 		PDEBUG_V("#### per_cpu_worker: Sending wake up from per_cpu_worker "
 		         "on behalf of all Tracers on CPU = %d\n",
 		         cpuID);
@@ -646,7 +645,7 @@ struct task_struct * search_tracer(struct task_struct * aTask, int pid) {
 }
 
 
-void prune_tracer_queue(tracer * curr_tracer, int is_schedule_queue=0){
+void prune_tracer_queue(tracer * curr_tracer, int is_schedule_queue){
 	struct pid *pid_struct;
 	struct task_struct *task;
 	llist_elem *head ;
@@ -909,7 +908,7 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 			} else {
 				curr_elem->quanta_curr_round += curr_elem->base_quanta;
 				curr_elem->quanta_left_from_prev_round = 0;
-				alotted_quanta += curr_elem->base_quamta;
+				alotted_quanta += curr_elem->base_quanta;
 			}
 
 			if (alotted_quanta == total_quanta) {

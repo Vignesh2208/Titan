@@ -9,8 +9,8 @@ RM:=rm
 
 all: clean modules
 
-obj-m:= test_module.o
-test_module-objs := ../src/core/test_module.o
+obj-m:= vt_module.o
+vt_module-objs := ../src/core/vt_module.o ../src/core/common.o ../src/core/sync_experiment.o ../src/core/utils.o ../src/utils/hashmap.o ../src/utils/linkedlist.o
 
 modules:
 	$(MAKE) -C $(KERNEL_SRC) M=$(SUBDIR)/build modules 
