@@ -1,14 +1,15 @@
 #ifndef __NET_PKT_SCHED_H
 #define __NET_PKT_SCHED_H
 
-#include <linux/fs.h>
-#include <linux/if_vlan.h>
 #include <linux/jiffies.h>
 #include <linux/ktime.h>
+#include <linux/if_vlan.h>
+#include <net/sch_generic.h>
+
+#include <linux/fs.h>
 #include <linux/pid.h>
 #include <linux/reciprocal_div.h>
 #include <linux/types.h>
-#include <net/sch_generic.h>
 
 #include <net/inet_ecn.h>
 #include <net/netlink.h>

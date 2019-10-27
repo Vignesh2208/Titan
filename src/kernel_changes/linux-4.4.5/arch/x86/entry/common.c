@@ -7,26 +7,26 @@
  * in ptrace.c and signal.c.
  */
 
-#include <linux/audit.h>
-#include <linux/context_tracking.h>
-#include <linux/errno.h>
-#include <linux/export.h>
 #include <linux/kernel.h>
-#include <linux/mm.h>
-#include <linux/ptrace.h>
 #include <linux/sched.h>
+#include <linux/mm.h>
+#include <linux/smp.h>
+#include <linux/errno.h>
+#include <linux/ptrace.h>
+#include <linux/tracehook.h>
+#include <linux/audit.h>
 #include <linux/seccomp.h>
 #include <linux/signal.h>
-#include <linux/smp.h>
-#include <linux/tracehook.h>
-#include <linux/uprobes.h>
+#include <linux/export.h>
+#include <linux/context_tracking.h>
 #include <linux/user-return-notifier.h>
+#include <linux/uprobes.h>
 
 #include <asm/desc.h>
 #include <asm/traps.h>
+#include <asm/vdso.h>
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
-#include <asm/vdso.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/syscalls.h>
@@ -69,7 +69,7 @@ void syscall_enter_mwork(struct pt_regs *regs)
 	}
 	spin_unlock_irqrestore(&current->dialation_lock, flags);
 	if (current->virt_start_time != 0 && current->ptrace_msteps > 0) {
-		current->curr_virtual_time++;
+		current->curr_virt_time++;
 	}
 }
 
@@ -286,7 +286,7 @@ static void exit_to_usermode_loop(struct pt_regs *regs, u32 cached_flags)
 
 		if (cached_flags & _TIF_NEED_RESCHED) {
 			if (current->pid != init_task.pid &&
-			    current->curr_virtual_time > 0 &&
+			    current->curr_virt_time > 0 &&
 			    current->virt_start_time == 0) {
 				set_current_state(TASK_RUNNING);
 				schedule();

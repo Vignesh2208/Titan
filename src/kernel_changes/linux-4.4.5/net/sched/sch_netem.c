@@ -24,11 +24,12 @@
 #include <linux/rtnetlink.h>
 #include <linux/reciprocal_div.h>
 #include <linux/rbtree.h>
-#include <linux/fs.h>
 
 #include <net/netlink.h>
 #include <net/pkt_sched.h>
 #include <net/inet_ecn.h>
+
+#include <linux/fs.h>
 #include <linux/pid.h>
 #include <net/sock.h>
 

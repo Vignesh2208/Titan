@@ -607,7 +607,7 @@ s64 get_current_dilated_time(struct task_struct *task)
 
 	virt_start_time = task->virt_start_time;
 	if (virt_start_time > 0) {
-		return task->curr_virtual_time;
+		return task->curr_virt_time;
 	}
 	return now;
 }
@@ -627,7 +627,7 @@ struct task_struct *get_task_struct_from_qdisc(struct Qdisc *qdisc)
 		return result;
 	}
 
-	if (qdisc && qdisc->dev_queue && qdisc->dev_queue->dev) 
+	if (qdisc && qdisc->dev_queue && qdisc->dev_queue->dev) {
 		read_lock(&dev_base_lock);
 		if (qdisc->dev_queue->dev->owner_pid > 0) {
 			owner_pid = qdisc->dev_queue->dev->owner_pid;

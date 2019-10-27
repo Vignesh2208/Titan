@@ -13,6 +13,19 @@ clean: clean_build clean_core clean_utils clean_api clean_tracer
 
 build: build_core build_api build_tracer
 
+setup_kernel: download_4_4_kernel compile_4_4_kernel
+
+patch_kernel: update_kernel compile_4_4_kernel
+
+update_kernel:
+	@cd src/kernel_changes/linux-4.4.5 && ./patch_kernel.sh
+
+download_4_4_kernel:
+	@cd src/kernel_changes/linux-4.4.5 && ./setup.sh
+
+compile_4_4_kernel:
+	@cd /src/linux-4.4.5 && sudo cp -v /boot/config-`uname -r` .config && $(MAKE) menuconfig && $(MAKE) -j$(nCpus) && $(MAKE) modules_install && $(MAKE) install;
+
 build_core: 
 	$(MAKE) -C $(KERNEL_SRC) M=$(SUBDIR)/build modules
 

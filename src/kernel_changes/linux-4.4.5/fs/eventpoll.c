@@ -11,37 +11,37 @@
  *
  */
 
-#include <asm/io.h>
-#include <asm/mman.h>
-#include <asm/uaccess.h>
-#include <linux/anon_inodes.h>
-#include <linux/atomic.h>
-#include <linux/bitops.h>
-#include <linux/compat.h>
-#include <linux/device.h>
-#include <linux/errno.h>
-#include <linux/eventpoll.h>
-#include <linux/file.h>
-#include <linux/fs.h>
-#include <linux/hash.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
-#include <linux/list.h>
-#include <linux/mm.h>
-#include <linux/mount.h>
-#include <linux/mutex.h>
-#include <linux/poll.h>
-#include <linux/proc_fs.h>
-#include <linux/rbtree.h>
-#include <linux/rculist.h>
 #include <linux/sched.h>
-#include <linux/seq_file.h>
+#include <linux/fs.h>
+#include <linux/file.h>
 #include <linux/signal.h>
+#include <linux/errno.h>
+#include <linux/mm.h>
 #include <linux/slab.h>
-#include <linux/spinlock.h>
+#include <linux/poll.h>
 #include <linux/string.h>
+#include <linux/list.h>
+#include <linux/hash.h>
+#include <linux/spinlock.h>
 #include <linux/syscalls.h>
+#include <linux/rbtree.h>
 #include <linux/wait.h>
+#include <linux/eventpoll.h>
+#include <linux/mount.h>
+#include <linux/bitops.h>
+#include <linux/mutex.h>
+#include <linux/anon_inodes.h>
+#include <linux/device.h>
+#include <asm/uaccess.h>
+#include <asm/io.h>
+#include <asm/mman.h>
+#include <linux/atomic.h>
+#include <linux/proc_fs.h>
+#include <linux/seq_file.h>
+#include <linux/compat.h>
+#include <linux/rculist.h>
 
 /*
  * LOCKING:
@@ -1592,7 +1592,8 @@ static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
 	ktime_t expires, *to = NULL;
 	s64 sleep_used_up_ns = 0;
 	s64 min_sleep_quanta_ns = 10000;
-	ktime_t time_to_sleep = 0;
+	ktime_t time_to_sleep;
+	time_to_sleep.tv64 = 0;
 
 	if (current->virt_start_time != 0 && timeout > 0) {
 		printk(KERN_INFO "Epoll Dialated: Pid: %d, Timeout: %lu\n",
@@ -1605,7 +1606,7 @@ static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
 		slack = select_estimate_accuracy(&end_time);
 		to = &expires;
 		*to = timespec_to_ktime(end_time);
-		time_to_sleep = timespec_to_ktime(*end_time);
+		time_to_sleep = timespec_to_ktime(end_time);
 	} else if (timeout == 0) {
 		/*
 		 * Avoid the unnecessary trip to the wait queue loop, if the
@@ -1648,7 +1649,7 @@ fetch_events:
 				if (!schedule_hrtimeout_range(to, slack, HRTIMER_MODE_ABS))
 					timed_out = 1;
 			} else {
-				if (time_to_sleep == 0 || sleep_used_up_ns >= time_to_sleep.tv64) {
+				if (time_to_sleep.tv64 == 0 || sleep_used_up_ns >= time_to_sleep.tv64) {
 					timed_out = 1;
 				} else {
 					dilated_hrtimer_sleep(ns_to_ktime(min_sleep_quanta_ns));

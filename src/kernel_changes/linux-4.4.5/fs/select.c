@@ -14,20 +14,20 @@
  *     of fds to overcome nfds < 16390 descriptors limit (Tigran Aivazian).
  */
 
-#include <linux/export.h>
-#include <linux/fdtable.h>
-#include <linux/file.h>
-#include <linux/freezer.h>
-#include <linux/fs.h>
-#include <linux/hrtimer.h>
 #include <linux/kernel.h>
-#include <linux/personality.h> /* for STICKY_TIMEOUTS */
-#include <linux/poll.h>
-#include <linux/rcupdate.h>
 #include <linux/sched.h>
-#include <linux/sched/rt.h>
-#include <linux/slab.h>
 #include <linux/syscalls.h>
+#include <linux/export.h>
+#include <linux/slab.h>
+#include <linux/poll.h>
+#include <linux/personality.h> /* for STICKY_TIMEOUTS */
+#include <linux/file.h>
+#include <linux/fdtable.h>
+#include <linux/fs.h>
+#include <linux/rcupdate.h>
+#include <linux/hrtimer.h>
+#include <linux/sched/rt.h>
+#include <linux/freezer.h>
 #include <net/busy_poll.h>
 
 #include <asm/uaccess.h>
@@ -406,7 +406,8 @@ int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 	unsigned long busy_end = 0;
 	s64 sleep_used_up_ns = 0;
 	s64 min_sleep_quanta_ns = 10000;
-	ktime_t time_to_sleep = 0;
+	ktime_t time_to_sleep;
+	time_to_sleep.tv64 = 0;
 
 	rcu_read_lock();
 	retval = max_select_fd(n, fds);
@@ -425,7 +426,7 @@ int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 	} else if (end_time) {
 		time_to_sleep = timespec_to_ktime(*end_time);
 	} else {
-		time_to_sleep = 0;
+		time_to_sleep.tv64 = 0;
 	}
 
 	
@@ -541,7 +542,7 @@ int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 				timed_out = 1;
 		} else {
 
-			if (time_to_sleep == 0 || sleep_used_up_ns >= time_to_sleep.tv64) {
+			if (time_to_sleep.tv64 == 0 || sleep_used_up_ns >= time_to_sleep.tv64) {
 				timed_out = 1;
 			} else {
 				dilated_hrtimer_sleep(ns_to_ktime(min_sleep_quanta_ns));
@@ -835,7 +836,8 @@ static int do_poll(unsigned int nfds,  struct poll_list *list,
 	unsigned long busy_end = 0;
 	s64 sleep_used_up_ns = 0;
 	s64 min_sleep_quanta_ns = 10000;
-	ktime_t time_to_sleep = 0;
+	ktime_t time_to_sleep;
+	time_to_sleep.tv64 = 0;
 
 	/* Optimise the no-wait case */
 	if (end_time && !end_time->tv_sec && !end_time->tv_nsec) {
@@ -845,7 +847,7 @@ static int do_poll(unsigned int nfds,  struct poll_list *list,
 	} else if (end_time) {
 		time_to_sleep = timespec_to_ktime(*end_time);
 	} else {
-		time_to_sleep = 0;
+		time_to_sleep.tv64 = 0;
 	}
 
 	if (end_time && !timed_out)
@@ -918,7 +920,7 @@ static int do_poll(unsigned int nfds,  struct poll_list *list,
 				timed_out = 1;
 		} else {
 
-			if (time_to_sleep == 0 || sleep_used_up_ns >= time_to_sleep.tv64) {
+			if (time_to_sleep.tv64 == 0 || sleep_used_up_ns >= time_to_sleep.tv64) {
 				timed_out = 1;
 			} else {
 				dilated_hrtimer_sleep(ns_to_ktime(min_sleep_quanta_ns));

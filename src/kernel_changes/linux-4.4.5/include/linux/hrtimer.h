@@ -15,14 +15,14 @@
 #ifndef _LINUX_HRTIMER_H
 #define _LINUX_HRTIMER_H
 
-#include <linux/init.h>
-#include <linux/ktime.h>
-#include <linux/list.h>
-#include <linux/percpu.h>
 #include <linux/rbtree.h>
+#include <linux/ktime.h>
+#include <linux/init.h>
+#include <linux/list.h>
+#include <linux/wait.h>
+#include <linux/percpu.h>
 #include <linux/timer.h>
 #include <linux/timerqueue.h>
-#include <linux/wait.h>
 
 struct hrtimer_clock_base;
 struct hrtimer_dilated_clock_base;
@@ -125,7 +125,7 @@ struct hrtimer_dilated {
 struct dilated_hrtimer_sleeper {
 	struct hrtimer_dilated timer_dilated;
 	struct task_struct * task;
-}
+};
 
 /**
  * struct hrtimer_sleeper - simple sleeper structure

@@ -385,11 +385,11 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
 	tsk->ptrace_mflags = 0;
 	tsk->ptrace_msteps = 0;
 	tsk->n_ints = 0;
-	tsk->curr_virtual_time = orig->curr_virtual_time;
+	tsk->curr_virt_time = orig->curr_virt_time;
 	tsk->wakeup_time = orig->wakeup_time;
 	tsk->virt_start_time = orig->virt_start_time;
 	tsk->burst_target = 0;
-	tsk->buffer_win_len = orig->buffer_win_len;
+	tsk->buffer_window_len = orig->buffer_window_len;
 	tsk->associated_tracer_id = orig->associated_tracer_id;
 	tsk->ready = 0;	
 

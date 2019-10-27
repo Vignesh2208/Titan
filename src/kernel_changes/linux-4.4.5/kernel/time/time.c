@@ -69,7 +69,7 @@ SYSCALL_DEFINE1(time, time_t __user *, tloc) {
 		if (current->tracer_clock != NULL)
 			now = *(s64 *)current->tracer_clock;
 		else
-			now = current->curr_virtual_time;
+			now = current->curr_virt_time;
 
 		struct timespec tmp = ns_to_timespec(now);
 		if (tloc) {
@@ -134,7 +134,7 @@ SYSCALL_DEFINE3(gettimepid, pid_t, pid, struct timeval __user *, tv,
 			if (task->tracer_clock != NULL)
 				now = *(s64 *)task->tracer_clock;
 			else
-				now = task->curr_virtual_time;
+				now = task->curr_virt_time;
 
 			ktv = ns_to_timeval(now);
 		}
@@ -156,7 +156,7 @@ SYSCALL_DEFINE2(gettimeofday, struct timeval __user *, tv,
 			if (current->tracer_clock != NULL)
 				now = *(s64 *)current->tracer_clock;
 			else
-				now = current->curr_virtual_time;
+				now = current->curr_virt_time;
 			ktv = ns_to_timeval(now);
 		}
 		if (copy_to_user(tv, &ktv, sizeof(ktv))) return -EFAULT;

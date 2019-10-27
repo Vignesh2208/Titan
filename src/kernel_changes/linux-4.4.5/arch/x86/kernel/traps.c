@@ -12,69 +12,69 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-#include <linux/bug.h>
 #include <linux/context_tracking.h>
+#include <linux/interrupt.h>
+#include <linux/kallsyms.h>
+#include <linux/spinlock.h>
+#include <linux/kprobes.h>
+#include <linux/uaccess.h>
+#include <linux/kdebug.h>
+#include <linux/kgdb.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/ptrace.h>
+#include <linux/uprobes.h>
+#include <linux/string.h>
 #include <linux/delay.h>
 #include <linux/errno.h>
-#include <linux/init.h>
-#include <linux/interrupt.h>
-#include <linux/io.h>
-#include <linux/kallsyms.h>
-#include <linux/kdebug.h>
-#include <linux/kernel.h>
 #include <linux/kexec.h>
-#include <linux/kgdb.h>
-#include <linux/kprobes.h>
-#include <linux/mm.h>
-#include <linux/module.h>
-#include <linux/nmi.h>
-#include <linux/ptrace.h>
 #include <linux/sched.h>
-#include <linux/smp.h>
-#include <linux/spinlock.h>
-#include <linux/string.h>
 #include <linux/timer.h>
-#include <linux/uaccess.h>
-#include <linux/uprobes.h>
+#include <linux/init.h>
+#include <linux/bug.h>
+#include <linux/nmi.h>
+#include <linux/mm.h>
+#include <linux/smp.h>
+#include <linux/io.h>
 
 #ifdef CONFIG_EISA
-#include <linux/eisa.h>
 #include <linux/ioport.h>
+#include <linux/eisa.h>
 #endif
 
 #if defined(CONFIG_EDAC)
 #include <linux/edac.h>
 #endif
 
-#include <asm/alternative.h>
-#include <asm/debugreg.h>
-#include <asm/desc.h>
-#include <asm/fixmap.h>
-#include <asm/fpu/internal.h>
-#include <asm/fpu/xstate.h>
-#include <asm/ftrace.h>
 #include <asm/kmemcheck.h>
-#include <asm/mach_traps.h>
-#include <asm/mce.h>
-#include <asm/mpx.h>
-#include <asm/processor.h>
 #include <asm/stacktrace.h>
-#include <asm/trace/mpx.h>
-#include <asm/traps.h>
-#include <asm/vm86.h>
+#include <asm/processor.h>
+#include <asm/debugreg.h>
 #include <linux/atomic.h>
+#include <asm/ftrace.h>
+#include <asm/traps.h>
+#include <asm/desc.h>
+#include <asm/fpu/internal.h>
+#include <asm/mce.h>
+#include <asm/fixmap.h>
+#include <asm/mach_traps.h>
+#include <asm/alternative.h>
+#include <asm/fpu/xstate.h>
+#include <asm/trace/mpx.h>
+#include <asm/mpx.h>
+#include <asm/vm86.h>
 
 #ifdef CONFIG_X86_64
+#include <asm/x86_init.h>
 #include <asm/pgalloc.h>
 #include <asm/proto.h>
-#include <asm/x86_init.h>
 
 /* No need to be aligned, but done to keep all IDTs defined the same way. */
 gate_desc debug_idt_table[NR_VECTORS] __page_aligned_bss;
 #else
 #include <asm/processor-flags.h>
-#include <asm/proto.h>
 #include <asm/setup.h>
+#include <asm/proto.h>
 #endif
 
 /* Must be page-aligned because the real IDT is used in a fixmap. */

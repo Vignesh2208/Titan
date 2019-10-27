@@ -89,6 +89,7 @@
 #include <linux/errqueue.h>
 #include <linux/net_tstamp.h>
 #include <linux/percpu.h>
+#include <linux/pid.h>
 #include <linux/reciprocal_div.h>
 #ifdef CONFIG_INET
 #include <net/inet_common.h>
@@ -2129,7 +2130,7 @@ static int tpacket_rcv(struct sk_buff *skb, struct net_device *dev,
     result = pid_task(skb->dev->owner_pid, PIDTYPE_PID);
 
     if (result != NULL && result->virt_start_time != 0 &&
-        (skb->tstamp.tv64 > result->curr_virtual_time ||
+        (skb->tstamp.tv64 > result->curr_virt_time ||
          skb->tstamp.tv64 == 0)) {
       dilated_time = get_current_dilated_time(result);
       skb->tstamp.tv64 = dilated_time;

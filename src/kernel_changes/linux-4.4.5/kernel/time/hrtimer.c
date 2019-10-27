@@ -49,6 +49,7 @@
 #include <linux/sched/deadline.h>
 #include <linux/timer.h>
 #include <linux/freezer.h>
+#include <linux/slab.h> 
 
 #include <asm/uaccess.h>
 
@@ -66,11 +67,11 @@ ktime_t get_curr_dilated_time(void) {
   ktime_t tmp;
 
   do_gettimeofday(&ktv);
-  if (init_task.curr_virtual_time == 0) {
+  if (init_task.curr_virt_time == 0) {
     tmp.tv64 = timeval_to_ns(&ktv);
     ;
   } else {
-    tmp.tv64 = init_task.curr_virtual_time;
+    tmp.tv64 = init_task.curr_virt_time;
   }
   return tmp;
 }
@@ -214,7 +215,7 @@ void dilated_hrtimer_start_range_ns(struct hrtimer_dilated *timer,
   remove_dilated_hrtimer(timer, base, true);
 
   if (mode & HRTIMER_MODE_REL) {
-    expiry_time.tv64 = expiry_time.tv64 + init_task.curr_virtual_time;
+    expiry_time.tv64 = expiry_time.tv64 + init_task.curr_virt_time;
   }
 
   timer->_softexpires.tv64 = expiry_time.tv64;
@@ -362,7 +363,7 @@ void dilated_hrtimer_run_queues(int cpu) {
   if (!cpu_base || cpu_base->dilated_clock_base.clock_active == 0) return;
 
   // curr_virt_time = cpu_base->dilated_clock_base.get_time();
-  curr_virt_time.tv64 = init_task.curr_virtual_time;
+  curr_virt_time.tv64 = init_task.curr_virt_time;
   raw_spin_lock(&cpu_base->lock);
 
   /* Reevaluate the clock bases for the next expiry */
@@ -1387,12 +1388,12 @@ should sleep in virtual time
   if (current->virt_start_time != 0) {
     tmp = base->get_time();
     if (tim.tv64 > tmp.tv64 && (mode & HRTIMER_MODE_REL)) {
-      current->wakeup_time = current->curr_virtual_time + duration.tv64;
+      current->wakeup_time = current->curr_virt_time + duration.tv64;
       tim.tv64 = tmp.tv64 + 100000;
     } else {
       if (mode & HRTIMER_MODE_REL) {
         // wakeup immediately because tim.tv64 > tmp.tv64 and mode is REL
-        current->wakeup_time = current->curr_virtual_time;
+        current->wakeup_time = current->curr_virt_time;
         tim.tv64 = current->wakeup_time;
       } else {
         // else mode is abs => tim.tv64 should have
@@ -1667,7 +1668,7 @@ static void __run_hrtimer(struct hrtimer_cpu_base *cpu_base,
   raw_spin_unlock(&cpu_base->lock);
   trace_hrtimer_expire_entry(timer, now);
   if (calling_task != NULL && calling_task->virt_start_time != 0 &&
-      calling_task->wakeup_time > calling_task->curr_virtual_time) {
+      calling_task->wakeup_time > calling_task->curr_virt_time) {
     // calling task is dilated and not ready to be woken yet
     // note we do not actually call the function here.
     restart = HRTIMER_RESTART;
@@ -1684,10 +1685,10 @@ static void __run_hrtimer(struct hrtimer_cpu_base *cpu_base,
         if (timer->_softexpires.tv64 > tmp.tv64) {
           duration.tv64 = timer->_softexpires.tv64 - tmp.tv64;
           calling_task->wakeup_time =
-              calling_task->curr_virtual_time + duration.tv64;
+              calling_task->curr_virt_time + duration.tv64;
         } else {
           // wakeup immediately.
-          calling_task->wakeup_time = calling_task->curr_virtual_time;
+          calling_task->wakeup_time = calling_task->curr_virt_time;
         }
       }
     }
@@ -2059,7 +2060,7 @@ SYSCALL_DEFINE2(nanosleep, struct timespec __user *, rqtp,
 	if (copy_to_user(rmtp, &rmt, sizeof(struct timespec)))
 		return -EFAULT;
 
-	return dilated_hrtimer_sleep(timespec_to_ktime(*tu));
+	return dilated_hrtimer_sleep(timespec_to_ktime(tu));
 }
 
 /*

@@ -1,19 +1,19 @@
 #ifndef _LINUX__INIT_TASK_H
 #define _LINUX__INIT_TASK_H
 
+#include <linux/rcupdate.h>
+#include <linux/irqflags.h>
+#include <linux/utsname.h>
+#include <linux/lockdep.h>
 #include <linux/ftrace.h>
 #include <linux/ipc.h>
-#include <linux/irqflags.h>
-#include <linux/lockdep.h>
 #include <linux/pid_namespace.h>
-#include <linux/rbtree.h>
-#include <linux/rcupdate.h>
-#include <linux/sched/rt.h>
+#include <linux/user_namespace.h>
 #include <linux/securebits.h>
 #include <linux/seqlock.h>
-#include <linux/user_namespace.h>
-#include <linux/utsname.h>
+#include <linux/rbtree.h>
 #include <net/net_namespace.h>
+#include <linux/sched/rt.h>
 
 #ifdef CONFIG_SMP
 # define INIT_PUSHABLE_TASKS(tsk)					\
@@ -217,7 +217,7 @@ extern struct task_group root_task_group;
 	.ptraced	= LIST_HEAD_INIT(tsk.ptraced),			\
 	.ptrace_entry	= LIST_HEAD_INIT(tsk.ptrace_entry),		\
 	.virt_start_time = 0,						\
-	.curr_virtual_time = 0,   					\
+	.curr_virt_time = 0,   					\
 	.burst_target = 0,						\
 	.associated_tracer_id = 0,					\
 	.ready = 0,       						\

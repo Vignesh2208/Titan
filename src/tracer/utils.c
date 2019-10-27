@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "tracer.h"
 
 /***
  Convert string to integer
@@ -166,37 +167,4 @@ int run_command(char *full_command_str, pid_t *child_pid) {
 
   *child_pid = child;
   return 0;
-}
-
-int get_next_command_tuple(char *buffer, int resume_ptr, pid_t *pid,
-                           u32 *n_insns) {
-  int i = resume_ptr;
-  int nxt_idx = 0;
-  if (strcmp(buffer + resume_ptr, "STOP") == 0 || resume_ptr < 0) {
-    *pid = -1;
-    *n_insns = 0;
-    return -1;
-  }
-
-  *pid = 0;
-  *n_insns = 0;
-
-  if (buffer[i] != '|' || buffer[i] == '\0') return -1;
-
-  *pid = str_to_i(buffer + i + 1);
-
-  nxt_idx = get_next_value(buffer + i);
-
-  if (nxt_idx == -1) {
-    *pid = 0;
-    *n_insns = 0;
-    return -1;
-  } else {
-    nxt_idx = nxt_idx + i;
-    *n_insns = str_to_i(buffer + nxt_idx);
-
-    resume_ptr = nxt_idx + get_next_value(buffer + nxt_idx);
-    resume_ptr = resume_ptr - 1;
-    return resume_ptr;
-  }
 }

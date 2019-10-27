@@ -12,30 +12,30 @@
  *  For licencing details see kernel-base/COPYING
  */
 
-#include <linux/bitops.h>
+#include <linux/perf_event.h>
 #include <linux/capability.h>
-#include <linux/cpu.h>
-#include <linux/device.h>
+#include <linux/notifier.h>
 #include <linux/hardirq.h>
-#include <linux/kdebug.h>
 #include <linux/kprobes.h>
 #include <linux/module.h>
-#include <linux/notifier.h>
-#include <linux/perf_event.h>
+#include <linux/kdebug.h>
 #include <linux/sched.h>
-#include <linux/slab.h>
 #include <linux/uaccess.h>
+#include <linux/slab.h>
+#include <linux/cpu.h>
+#include <linux/bitops.h>
+#include <linux/device.h>
 
-#include <asm/alternative.h>
 #include <asm/apic.h>
-#include <asm/desc.h>
-#include <asm/ldt.h>
-#include <asm/mmu_context.h>
+#include <asm/stacktrace.h>
 #include <asm/nmi.h>
 #include <asm/smp.h>
-#include <asm/stacktrace.h>
-#include <asm/timer.h>
+#include <asm/alternative.h>
+#include <asm/mmu_context.h>
 #include <asm/tlbflush.h>
+#include <asm/timer.h>
+#include <asm/desc.h>
+#include <asm/ldt.h>
 
 #include "perf_event.h"
 

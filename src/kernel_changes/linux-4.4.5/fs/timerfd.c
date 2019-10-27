@@ -9,22 +9,22 @@
  */
 
 #include <linux/alarmtimer.h>
-#include <linux/anon_inodes.h>
-#include <linux/compat.h>
 #include <linux/file.h>
-#include <linux/fs.h>
-#include <linux/hrtimer.h>
-#include <linux/init.h>
-#include <linux/kernel.h>
-#include <linux/list.h>
 #include <linux/poll.h>
-#include <linux/rcupdate.h>
+#include <linux/init.h>
+#include <linux/fs.h>
 #include <linux/sched.h>
+#include <linux/kernel.h>
 #include <linux/slab.h>
+#include <linux/list.h>
 #include <linux/spinlock.h>
-#include <linux/syscalls.h>
 #include <linux/time.h>
+#include <linux/hrtimer.h>
+#include <linux/anon_inodes.h>
 #include <linux/timerfd.h>
+#include <linux/syscalls.h>
+#include <linux/compat.h>
+#include <linux/rcupdate.h>
 
 struct timerfd_ctx {
 	union {
@@ -57,7 +57,7 @@ s64 get_dilated_task_time(struct task_struct *task)
 	now = timeval_to_ns(&tv);
 
 	if (task->virt_start_time != 0) {
-		return task->curr_virtual_time;
+		return task->curr_virt_time;
 	}
 	return now;
 }
@@ -85,7 +85,7 @@ void timerfd_triggered(struct timerfd_ctx *ctx)
 
 	if (ctx->owner_task && ctx->owner_task->virt_start_time > 0)
 		trace_printk("Fired TimerFD timer at %llu, pid: %d\n",
-			     ctx->owner_task->curr_virtual_time,
+			     ctx->owner_task->curr_virt_time,
 			     ctx->owner_task->pid);
 }
 
@@ -286,7 +286,7 @@ static int timerfd_setup(struct timerfd_ctx *ctx, int flags,
 				// HRTIMER_MODE_REL);
 				trace_printk(
 					"Started TimerFD timer at : %llu, for : %llu, pid: %d\n",
-					ctx->owner_task->curr_virtual_time,
+					ctx->owner_task->curr_virt_time,
 					relative_expiry_duration,
 					ctx->owner_task->pid);
 				dilated_hrtimer_start(
