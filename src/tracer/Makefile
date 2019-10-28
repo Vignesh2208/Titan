@@ -42,7 +42,7 @@ build_tests:
 	@cd ${tracer_dir}/tests && $(MAKE) build
 	@cd ${tracer_dir}/utils && $(MAKE) build
 
-build: libs build_tracer build_tracer_debug build_tests
+build: libs build_tracer build_tests
 
 debug: libs build_tracer_test build_tracer_debug build_tests
 

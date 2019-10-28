@@ -508,6 +508,12 @@ void run_processes_in_round(int tracer_id,
 			if (!curr_tracee)
 				break;
 
+			if (curr_tracee->added < 0) {
+				n_checked_processes ++;
+				llist_remove(blocked_tracees, curr_tracee);
+				continue;
+			}
+
 			if (is_tracee_blocked(curr_tracee) == FAIL) {
 				llist_pop(blocked_tracees);
 				llist_append(run_queue, curr_tracee);
@@ -520,8 +526,15 @@ void run_processes_in_round(int tracer_id,
 		}
 
 
-		tracee = llist_get(run_queue, 0);
-#
+		while(1) {
+			tracee = llist_get(run_queue, 0);
+			if (tracee && tracee->added < 0) {
+				llist_remove(run_queue, tracee);
+				continue;
+			}
+			break;
+		}		
+
 		if (!tracee) {
 
 			if ((n_round_insns - n_insns_run) > base_insn_share) {
@@ -768,6 +781,7 @@ int main(int argc, char * argv[]) {
 				hmap_remove_abs(&tracees, exited_pids[i]);
 				llist_remove(&tracee_list, tracee);
 				llist_remove(&run_queue, tracee);
+				llist_remove(&blocked_tracees, tracee);
 				free(tracee);
 			}
 		}
