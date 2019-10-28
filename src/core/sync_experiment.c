@@ -1,5 +1,6 @@
 #include "vt_module.h"
 #include "utils.h"
+#include "sync_experiment.h"
 
 /** EXTERN VARIABLES **/
 
@@ -97,7 +98,7 @@ void free_all_tracers() {
     int i;
 
     for (i = 1; i <= tracer_num; i++) {
-        tracer * curr_tracer = hmap_get_abs(&get_next_value, i);
+        tracer * curr_tracer = hmap_get_abs(&get_tracer_by_id, i);
         if (curr_tracer) {
             hmap_remove_abs(&get_tracer_by_pid, curr_tracer->tracer_pid);
             hmap_remove_abs(&get_tracer_by_id, i);
@@ -131,7 +132,7 @@ int initialize_experiment_components(int num_expected_tracers) {
         // Free all tracer structs from previous experiment
         free_all_tracers();
 		if (tracer_clock_array) {
-			num_prev_alotted_pages = (PAGE_SIZE * sizeof(s64))/tracer_num;
+			num_prev_alotted_pages = (tracer_num * sizeof(s64))/PAGE_SIZE;
 			num_prev_alotted_pages ++;
 			free_mmap_pages(tracer_clock_array, num_prev_alotted_pages);
 	    }
@@ -143,9 +144,11 @@ int initialize_experiment_components(int num_expected_tracers) {
     WARN_ON(tracer_clock_array != NULL);
     WARN_ON(aligned_tracer_clock_array != NULL);
 
-    num_required_pages = (PAGE_SIZE * sizeof(s64))/num_expected_tracers;
+    num_required_pages = (num_expected_tracers * sizeof(s64))/PAGE_SIZE;
     num_required_pages ++;
-
+    PDEBUG_I("Num required pages = %d\n", num_required_pages); 
+    
+    
     tracer_clock_array = alloc_mmap_pages(num_required_pages);
 
     if (!tracer_clock_array) {
@@ -210,7 +213,7 @@ int initialize_experiment_components(int num_expected_tracers) {
 
 	experiment_status = NOTRUNNING;
 	initialization_status = INITIALIZED;
-
+        total_expected_tracers = num_expected_tracers;
 
 	PDEBUG_V("Init experiment components: Finished\n");
 	return SUCCESS;
@@ -520,6 +523,9 @@ redo:
 			init_task.curr_virt_time = 0;
 			clean_exp();
 			round_count = 0;
+			current_progress_duration = -1;
+			PDEBUG_V("Waking up Progress control process to finish EXP STOP !\n");
+			wake_up_interruptible(&progress_call_proc_wqueue);
 			continue;
 		}
 
@@ -540,7 +546,7 @@ redo:
 
 			PDEBUG_I("$$$$$$$$$$$$$$$$$$$$$$$ round_sync_task: "
 			         "Round %d Starting. Waking up worker threads "
-			         "$$$$$$$$$$$$$$$$$$$$$$$$$$\n", round_count);
+			         "$$$$$$$$$$$$$$$$$$$$$$$$$$\n", round_count - 1);
 			atomic_set(&n_workers_running, EXP_CPUS);
 
 
@@ -812,6 +818,7 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 				alteast_one_task_runnable = 1;
 			}
 		}
+		head = head->next;
 	}
 
 	if (curr_tracer->tracer_type == TRACER_TYPE_INS_VT) {
@@ -1042,7 +1049,7 @@ void clean_exp() {
 			clean_up_run_queue(curr_tracer);
 			clean_up_schedule_list(curr_tracer);
 			put_tracer_struct_write(curr_tracer);
-			wake_up_interruptible(&curr_tracer->w_queue);
+			wake_up_interruptible(curr_tracer->w_queue);
 		}
 	}
 	mutex_unlock(&exp_lock);

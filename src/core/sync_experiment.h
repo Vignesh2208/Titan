@@ -4,7 +4,6 @@
 #include "includes.h"
 #include "vt_module.h"
 
-int handle_progress_by(s64 progress_duration);
 void clean_exp();
 int unfreeze_proc_exp_recurse(tracer * curr_tracer);
 lxc_schedule_elem * get_next_runnable_task(tracer * curr_tracer);

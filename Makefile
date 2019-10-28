@@ -37,6 +37,13 @@ build_tracer:
 	@cd src/tracer; $(MAKE) build;
 
 
+load:
+	sudo insmod build/vt_module.ko
+
+unload:
+	sudo rmmod build/vt_module.ko
+
+
 clean_tests:
 	@echo "Cleaning test files ..."
 	@cd tests && $(MAKE) clean

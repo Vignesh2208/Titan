@@ -6,12 +6,12 @@ import sys
 import argparse
 
 
-def start_new_dilated_process(cmd_to_run, rel_cpu_speed, log_file_fd):
+def start_new_dilated_process(tracer_id, cmd_to_run, rel_cpu_speed, log_file_fd):
     newpid = os.fork()
     if newpid == 0:
         os.dup2(log_file_fd, sys.stdout.fileno())
         os.dup2(log_file_fd, sys.stderr.fileno())
-        args = ["tracer", "-c", cmd_to_run, "-r", str(rel_cpu_speed)]
+        args = ["tracer", "-c", cmd_to_run, "-r", str(rel_cpu_speed), "-i", str(tracer_id)]
         os.execvp(args[0], args)
     else:
         return newpid
@@ -21,7 +21,7 @@ def start_all_cmds_in_one_tracer(cmds_to_run_file_path, rel_cpu_speed, log_file_
     if newpid == 0:
         os.dup2(log_file_fd, sys.stdout.fileno())
         os.dup2(log_file_fd, sys.stderr.fileno())
-        args = ["tracer", "-f", cmds_to_run_file_path, "-r", str(rel_cpu_speed)]
+        args = ["tracer", "-f", cmds_to_run_file_path, "-r", str(rel_cpu_speed), "-i", "1"]
         os.execvp(args[0], args)
     else:
         return newpid
@@ -50,13 +50,15 @@ def main():
 
     parser.add_argument('--num_progress_rounds', dest='num_progress_rounds',
                         help='Number of rounds to run', type=int,
-                        default=2500)
+                        default=2000)
 
     args = parser.parse_args()
     
     log_fds = []
     tracer_pids = []
     cmds_to_run = []
+
+    raw_input('Press any key to continue !')
 
     if args.run_in_one_tracer == "True":
         fd = os.open( "/tmp/tracer_log.txt", os.O_RDWR | os.O_CREAT )
@@ -82,6 +84,7 @@ def main():
             the dilated kernel and kronos module is loaded !"
         sys.exit(0)
 
+    raw_input('Press any key to continue !')
     
     print "Starting all commands to run !"
     if args.run_in_one_tracer == "True":
@@ -89,12 +92,14 @@ def main():
     else:
         for i in xrange(0, len(cmds_to_run)):
             print "Starting tracer for cmd: %s" %(cmds_to_run[i])
-            start_new_dilated_process(cmds_to_run[i], args.rel_cpu_speed, log_fds[i])
+            start_new_dilated_process(i + 1, cmds_to_run[i], args.rel_cpu_speed, log_fds[i])
     
     print "Synchronizing anf freezing tracers ..."
     while kf.synchronizeAndFreeze() <= 0:
         print "VT Module >> Synchronize and Freeze failed. Retrying in 1 sec"
         time.sleep(1)
+
+    raw_input('Press any key to continue !')
 
 
     print "Starting Synchronized Experiment !"
@@ -103,9 +108,9 @@ def main():
 
         num_finised_rounds = 0
         step_size = 100
-        while num_finised_rounds <= args.num_progress_rounds:
-            kf.progressBy(args.num_progress_rounds)
-            num_finised_rounds += step_size
+        while num_finised_rounds < args.num_progress_rounds:
+            kf.progressBy(args.num_insns_per_round)
+            num_finised_rounds += 1
             print "Ran %d rounds ..." %(num_finised_rounds)
 
 

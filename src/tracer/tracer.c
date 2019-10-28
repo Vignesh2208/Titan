@@ -658,7 +658,7 @@ int main(int argc, char * argv[]) {
 	llist_set_equality_checker(&run_queue, llist_elem_comparer);
 	llist_set_equality_checker(&blocked_tracees, llist_elem_comparer);
 
-	if (argc < 6 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
+	if (argc < 5 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
 		print_usage(argc, argv);
 		exit(FAIL);
 	}

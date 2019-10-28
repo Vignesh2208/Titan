@@ -32,6 +32,7 @@ static struct proc_dir_entry *dilation_dir = NULL;
 static struct proc_dir_entry *dilation_file = NULL;
 struct task_struct *loop_task;
 struct task_struct *round_task = NULL;
+struct task_struct ** chaintask;
 
 // hashmaps
 hashmap get_tracer_by_id;
@@ -309,7 +310,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         current->vt_exec_task_wqueue = NULL;
         current->tracer_clock = NULL;
         api_info_tmp.return_value = 0;
-        if (copy_to_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+        if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
           PDEBUG_I(
               "Status Read: Tracer : %d, Process: %d Resuming from wait. "
               "Error copying to user buf\n",
@@ -323,7 +324,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       }
 
       api_info_tmp.return_value = current->burst_target;
-      if (copy_to_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+      if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
         PDEBUG_I(
             "Status Read: Tracer : %d, Process: %d Resuming from wait. "
             "Error copying to user buf\n",
@@ -381,7 +382,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       api_info_tmp.return_value = retval;
 
-      if (copy_to_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+      if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
         PDEBUG_I(
             "VT_REGISTER_TRACER: Tracer : %d, "
             "Error copying to user buf\n",
@@ -495,7 +496,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
       api_info_tmp.return_value = handle_gettimepid(api_info_tmp.api_argument);
-      if (copy_to_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+      if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
         PDEBUG_I("VT_GETTIME_PID: Error copying to user buf\n");
         return -EFAULT;
       }
@@ -674,7 +675,7 @@ void __exit my_module_exit(void) {
     // Free all tracer structs from previous experiment if any
     free_all_tracers();
     if (tracer_clock_array) {
-      num_prev_alotted_pages = (PAGE_SIZE * sizeof(s64)) / tracer_num;
+      num_prev_alotted_pages = (tracer_num * sizeof(s64)) / PAGE_SIZE;
       num_prev_alotted_pages++;
       free_mmap_pages(tracer_clock_array, num_prev_alotted_pages);
     }

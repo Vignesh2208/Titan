@@ -131,6 +131,13 @@ void clean_up_schedule_list(tracer * tracer_entry) {
 	struct pid *pid_struct;
 	struct task_struct * task;
 
+	if (tracer_entry && tracer_entry->tracer_task) {
+		tracer_entry->tracer_task->associated_tracer_id = -1;
+		tracer_entry->tracer_task->virt_start_time = 0;
+		tracer_entry->tracer_task->curr_virt_time = 0;
+		tracer_entry->tracer_task->wakeup_time = 0;
+		tracer_entry->tracer_task->burst_target = 0;
+	}
 	while ( pid != 0) {
 		pid = pop_schedule_list(tracer_entry);
 		if (pid) {
@@ -619,14 +626,14 @@ void signal_cpu_worker_resume(tracer * curr_tracer) {
 		return;
 
 	if (curr_tracer->tracer_type == TRACER_TYPE_INS_VT) {
-		PDEBUG_V("Signal INSVT Tracer resume. Tracer ID: %d\n",
+		PDEBUG_V("INSVT Tracer signalling resume. Tracer ID: %d\n",
 	             curr_tracer->tracer_id);
 
 		curr_tracer->w_queue_wakeup_pid = 1;
 		wake_up_interruptible(curr_tracer->w_queue);
 	} else {
 		if (current->burst_target > 0) {
-			PDEBUG_V("Signal APPVT Tracer resume. Tracer ID: %d\n",
+			PDEBUG_V("APPVT Tracer signalling resume. Tracer ID: %d\n",
 	            curr_tracer->tracer_id);
 			curr_tracer->w_queue_wakeup_pid = 1;
 			wake_up_interruptible(curr_tracer->w_queue);
@@ -636,7 +643,7 @@ void signal_cpu_worker_resume(tracer * curr_tracer) {
 }
 
 int handle_stop_exp_cmd() {
-	if (handle_progress_by(0) == SUCCESS)
+	if (progress_by(0) == SUCCESS)
 		return cleanup_experiment_components();
 	return FAIL;
 }

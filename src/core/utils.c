@@ -257,9 +257,9 @@ void print_schedule_list(tracer* tracer_entry) {
 			if (curr != NULL) {
 				PDEBUG_V("Schedule List Item No: %d, TRACER PID: %d, "
 				         "TRACEE PID: %d, N_insns_curr_round: %d, "
-				         "N_insns_left: %d, Size OF SCHEDULE QUEUE: %d\n", i,
+				         "Size OF SCHEDULE QUEUE: %d\n", i,
 				         tracer_entry->tracer_task->pid, curr->pid,
-				         curr->n_insns_curr_round, curr->n_insns_left,
+				         curr->quanta_curr_round,
 				         schedule_list_size(tracer_entry));
 			}
 		}
