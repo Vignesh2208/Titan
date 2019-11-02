@@ -1652,8 +1652,9 @@ fetch_events:
 				if (time_to_sleep.tv64 == 0 || sleep_used_up_ns >= time_to_sleep.tv64) {
 					timed_out = 1;
 				} else {
+					s64 start_time = current->curr_virt_time;
 					dilated_hrtimer_sleep(ns_to_ktime(min_sleep_quanta_ns));
-					sleep_used_up_ns += min_sleep_quanta_ns;
+					sleep_used_up_ns += (current->curr_virt_time - start_time);
 				}
 			}
 

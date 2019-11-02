@@ -546,7 +546,7 @@ void run_processes_in_round(int tracer_id,
 
 			}
 			usleep((n_insns_to_run * rel_cpu_speed) / 1000);
-			LOG("No Runnable tracees. !");
+			LOG("No Runnable tracees. !\n");
 			if (n_insns_run < n_round_insns)
 				continue;
 			else

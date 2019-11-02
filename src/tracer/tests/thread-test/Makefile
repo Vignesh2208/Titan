@@ -15,12 +15,12 @@ build:
 
 run:
 	@echo "Starting Thread Test ..."
-	tracer_test -f ${test_dir}/cmds.txt
+	python ${home_dir}/Titan/examples/example_vt_experiment.py --cmds_to_run_file=${test_dir}/cmds.txt
 	@echo "Thread Test Finished ..."
 
 run_python:
 	@echo "Starting Thread Test ..."
-	@echo "python thread.py" > ${test_dir}/cmds.txt
+	@echo "python ${test_dir}/thread.py" > ${test_dir}/cmds.txt
 	python ${home_dir}/Titan/examples/example_vt_experiment.py --cmds_to_run_file=${test_dir}/cmds.txt
 	@echo "Thread Test Finished ..."
 

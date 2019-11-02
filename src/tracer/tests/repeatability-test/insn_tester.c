@@ -52,6 +52,7 @@ struct sched_param param;
 #define PTRACE_MULTISTEP 0x42f0
 #define PTRACE_GET_REM_MULTISTEP 0x42f1
 #define PTRACE_SET_REM_MULTISTEP 0x42f2
+#define PTRACE_SET_DELTA_BUFFER_WINDOW 0x42f4
 #define WTRACE_DESCENDENTS	0x00100000
 
 struct sockaddr_nl src_addr, dest_addr;
@@ -403,8 +404,9 @@ int run_commanded_process(llist * active_tids, pid_t pid,
 	int poll_count = 0;
 	char buffer[100];
 	int singlestepmode = 1;
+	unsigned long buffer_window_length = 500;
 
-	if (n_insns < 500)
+	if (n_insns < buffer_window_length)
 		singlestepmode = 1;
 	else
 		singlestepmode = 0;
@@ -421,13 +423,16 @@ int run_commanded_process(llist * active_tids, pid_t pid,
 			ptrace(PTRACE_SET_REM_MULTISTEP, pid, 0, (unsigned long *)&n_insns);
 			ptrace(PTRACE_MULTISTEP, pid, 0, (unsigned long *)&n_insns);
 		} else {
-			n_insns = n_insns - 500;
+			n_insns = n_insns - buffer_window_length;
+			ptrace(PTRACE_SET_DELTA_BUFFER_WINDOW, pid, 0,
+			       (unsigned long *)&buffer_window_length);
 			libperf_ioctlrefresh(pd, LIBPERF_COUNT_HW_INSTRUCTIONS,
 			                     (uint64_t )n_insns);
 			libperf_enablecounter(pd, LIBPERF_COUNT_HW_INSTRUCTIONS);
 			libperf_enablecounter(pd, LIBPERF_COUNT_SW_PAGE_FAULTS);
 			libperf_enablecounter(pd, LIBPERF_COUNT_SW_CONTEXT_SWITCHES);
 			libperf_enablecounter(pd, LIBPERF_COUNT_SW_CPU_MIGRATIONS);
+			
 			ptrace(PTRACE_SET_REM_MULTISTEP, pid, 0, (unsigned long *)&n_insns);
 			ptrace(PTRACE_CONT, pid, 0, 0);
 		}
@@ -471,7 +476,7 @@ int main(int argc, char * argv[]) {
 	struct libperf_data * pd;
 	int n_cmds = 0, n_max_insns = 100000;
 	time_t start, end;
-    double cpu_time_used;
+    	double cpu_time_used;
 
 
 	unsigned long ret_acc = 0;

@@ -7,7 +7,7 @@ clean:
 
 build:
 	@echo "Building Socket Test ..."
-	@echo "python udp_server.py\npython udp_client.py" > ${test_dir}/cmds.txt
+	@echo "python ${test_dir}/udp_server.py\npython ${test_dir}/udp_client.py" > ${test_dir}/cmds.txt
 
 run:
 	@echo "Starting Socket test ..."

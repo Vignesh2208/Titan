@@ -277,7 +277,11 @@ int poll_select_set_timeout(struct timespec *to, long sec, long nsec)
 	if (!sec && !nsec) {
 		to->tv_sec = to->tv_nsec = 0;
 	} else {
-		ktime_get_ts(to);
+		if (current->virt_start_time == 0) 
+			ktime_get_ts(to);
+		else {
+			to->tv_sec = to->tv_nsec = 0;
+		}
 		*to = timespec_add_safe(*to, ts);
 	}
 	return 0;
@@ -545,8 +549,9 @@ int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 			if (time_to_sleep.tv64 == 0 || sleep_used_up_ns >= time_to_sleep.tv64) {
 				timed_out = 1;
 			} else {
+				s64 start_time = current->curr_virt_time;
 				dilated_hrtimer_sleep(ns_to_ktime(min_sleep_quanta_ns));
-				sleep_used_up_ns += min_sleep_quanta_ns;
+				sleep_used_up_ns += (current->curr_virt_time - start_time);
 			}
 			
 		}
@@ -663,7 +668,7 @@ SYSCALL_DEFINE5(select, int, n, fd_set __user *, inp, fd_set __user *, outp,
 	ret = core_sys_select(n, inp, outp, exp, to);
 	if (current->virt_start_time > 0) {
 		memset(&tmp, 0, sizeof(tmp));
-		if (copy_to_user(tvp, &tmp, sizeof(tmp)))
+		if (tvp && copy_to_user(tvp, &tmp, sizeof(tmp)))
 			return -EFAULT;
 	} else {
 		ret = poll_select_copy_remaining(&end_time, tvp, 1, ret);
@@ -923,8 +928,9 @@ static int do_poll(unsigned int nfds,  struct poll_list *list,
 			if (time_to_sleep.tv64 == 0 || sleep_used_up_ns >= time_to_sleep.tv64) {
 				timed_out = 1;
 			} else {
+				s64 start_time = current->curr_virt_time;
 				dilated_hrtimer_sleep(ns_to_ktime(min_sleep_quanta_ns));
-				sleep_used_up_ns += min_sleep_quanta_ns;
+				sleep_used_up_ns += (current->curr_virt_time - start_time);
 			}
 			
 		}

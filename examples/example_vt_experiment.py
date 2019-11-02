@@ -103,6 +103,7 @@ def main():
 
 
     print "Starting Synchronized Experiment !"
+    start_time = float(time.time())
     if args.num_progress_rounds > 0 :
         print "Running for %d rounds ... " %(args.num_progress_rounds)
 
@@ -113,7 +114,8 @@ def main():
             num_finised_rounds += 1
             print "Ran %d rounds ..." %(num_finised_rounds)
 
-
+    elapsed_time = float(time.time()) - start_time
+    print "Total time elapsed (secs) = ", elapsed_time
     raw_input("Press Enter to continue...")
     print "Stopping Synchronized Experiment !"
     kf.stopExp()

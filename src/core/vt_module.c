@@ -378,8 +378,10 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       }
 
       retval = register_tracer_process(api_info_tmp.api_argument);
-      if (retval == FAIL) return -EFAULT;
-
+      if (retval == FAIL) {
+	PDEBUG_E("Tracer Registration failed for tracer: %d\n", current->pid);
+	return -EFAULT;
+      }
       api_info_tmp.return_value = retval;
 
       if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {

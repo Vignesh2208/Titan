@@ -397,16 +397,20 @@ static enum hrtimer_restart dilated_sleep_wakeup(struct hrtimer_dilated *timer) 
 int dilated_hrtimer_sleep(ktime_t duration) {
 
 	struct dilated_hrtimer_sleeper * sleeper;
-	if (duration.tv64 <= 0)
+	if (duration.tv64 <= 0) {
+		printk(KERN_INFO "dilated hrtimer sleep. 0 Duration. Pid = %d\n", current->pid);
 		return 0;
-
+	}
 	if (current->virt_start_time == 0)
 		return 0 ;
 
 	sleeper = (struct dilated_hrtimer_sleeper *)kmalloc(
 			sizeof(struct dilated_hrtimer_sleeper), GFP_KERNEL);
-	if (!sleeper)
+	if (!sleeper) {
+		printk(KERN_INFO "dilated hrtimer sleep. NOMEM. Pid = %d\n", current->pid);
 		return -ENOMEM;
+
+	}
 	
 	sleeper->task = current;
 	dilated_hrtimer_init(&sleeper->timer_dilated, 0, HRTIMER_MODE_REL);
@@ -415,7 +419,7 @@ int dilated_hrtimer_sleep(ktime_t duration) {
 	dilated_hrtimer_start_range_ns(&sleeper->timer_dilated, duration, HRTIMER_MODE_REL);
 	schedule();
 	kfree(sleeper);
-	printk("Resuming from dilated sleep. Pid = %d\n", current->pid);
+	printk(KERN_INFO "Resuming from dilated sleep. Pid = %d\n", current->pid);
 	return 0;
 } 
 
@@ -2054,12 +2058,17 @@ SYSCALL_DEFINE2(nanosleep, struct timespec __user *, rqtp,
 
 	if (current->virt_start_time == 0)
 		return hrtimer_nanosleep(&tu, rmtp, HRTIMER_MODE_REL, CLOCK_MONOTONIC);
+
+	printk(KERN_INFO "Called dilated nanosleep for: %d\n", current->pid);
 	rem.tv64 = 0;
 	rmt = ktime_to_timespec(rem);
 
-	if (copy_to_user(rmtp, &rmt, sizeof(struct timespec)))
+	if (rmtp && copy_to_user(rmtp, &rmt, sizeof(struct timespec))) {
+		printk(KERN_INFO "Error copy to user in dilated nanosleep for: %d\n", current->pid);
 		return -EFAULT;
+	}
 
+	printk(KERN_INFO "Calling dilated nanosleep for: %d\n", current->pid);
 	return dilated_hrtimer_sleep(timespec_to_ktime(tu));
 }
 

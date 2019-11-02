@@ -325,7 +325,7 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid)
 
 
 /**
-* write_buffer: <tracer_type>,<tracer_id>,<meta_task_type>,<spinner_pid> or <proc_to_control_pid>
+* write_buffer: <tracer_id>,<tracer_type>,<meta_task_type>,<spinner_pid> or <proc_to_control_pid>
 **/
 int register_tracer_process(char * write_buffer) {
 
@@ -346,8 +346,8 @@ int register_tracer_process(char * write_buffer) {
 
 	BUG_ON(num_args <= 2);
 
-	tracer_type = api_args[0];
-	tracer_id = api_args[1];
+	tracer_type = api_args[1];
+	tracer_id = api_args[0];
 	meta_task_type = api_args[2];
 
 	if (tracer_type != TRACER_TYPE_INS_VT && tracer_type != TRACER_TYPE_APP_VT) {
@@ -392,7 +392,7 @@ int register_tracer_process(char * write_buffer) {
 	}
 
 
-	PDEBUG_I("Register Tracer: Starting ...\n");
+	PDEBUG_I("Register Tracer: Starting for tracer: %d\n", tracer_id);
 
 	new_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
 
@@ -473,6 +473,7 @@ int register_tracer_process(char * write_buffer) {
 	}
 
 	put_tracer_struct_write(new_tracer);
+	PDEBUG_I("Register Tracer: Finished for tracer: %d\n", tracer_id);
 	return new_tracer->cpu_assignment;	//return the allotted cpu back to the tracer.
 }
 
@@ -546,6 +547,8 @@ void update_all_tracers_virtual_time(int cpuID) {
 			} else {
 				update_all_children_virtual_time(curr_tracer, target_increment);
 			}
+		} else {
+			PDEBUG_E("Tracer nxt round burst length is 0\n");
 		}
 		curr_tracer->nxt_round_burst_length = 0;
 		put_tracer_struct_write(curr_tracer);
