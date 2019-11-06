@@ -14,6 +14,6 @@ int sync_and_freeze();
 int cleanup_experiment_components();
 int initialize_experiment_components(int num_expected_tracers);
 void free_all_tracers();
-int progress_by(s64 progress_duration);
+int progress_by(s64 progress_duration, int num_rounds);
 
 #endif

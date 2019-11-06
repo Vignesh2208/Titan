@@ -34,7 +34,7 @@ s64 get_current_time_pid(int pid);
 int initializeExp(int num_expected_tracers);
 int synchronizeAndFreeze(void);
 int stopExp(void);
-int progressBy(s64 duration);
+int progressBy(s64 duration, int num_rounds);
 int set_netdevice_owner(int tracer_id, char* intf_name);
 
 #endif

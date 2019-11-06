@@ -108,9 +108,12 @@ int stopExp() {
   return send_to_vt_module(VT_STOP_EXP, &arg);
 }
 
-int progressBy(s64 duration) {
+int progressBy(s64 duration, int num_rounds) {
+  if (num_rounds <= 0)
+     num_rounds = 1;
   ioctl_args arg;
   init_ioctl_arg(&arg);
+  sprintf(arg.cmd_buf, "%d,", num_rounds);
   arg.cmd_value = duration;
   return send_to_vt_module(VT_PROGRESS_BY, &arg);
 }

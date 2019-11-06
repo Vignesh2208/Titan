@@ -646,7 +646,7 @@ void signal_cpu_worker_resume(tracer * curr_tracer) {
 }
 
 int handle_stop_exp_cmd() {
-	if (progress_by(0) == SUCCESS)
+	if (progress_by(0, 1) == SUCCESS)
 		return cleanup_experiment_components();
 	return FAIL;
 }

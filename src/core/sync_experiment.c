@@ -12,6 +12,7 @@ extern int initialization_status;
 extern s64 expected_time;
 extern s64 virt_exp_start_time;
 extern s64 current_progress_duration;
+extern int current_progress_n_rounds;
 extern int total_expected_tracers;
 
 // pointers
@@ -52,7 +53,7 @@ wait_queue_head_t progress_sync_proc_wqueue;
 * Progress experiment for specified number of rounds
 * write_buffer: <number of rounds>
 ***/
-int progress_by(s64 progress_duration) {
+int progress_by(s64 progress_duration, int num_rounds) {
 
 	int progress_rounds = 0;
 	int ret = 0;
@@ -62,6 +63,9 @@ int progress_by(s64 progress_duration) {
 		return FAIL;
 
 
+	current_progress_n_rounds = 1;
+	if (num_rounds)
+		current_progress_n_rounds = num_rounds;
 	current_progress_duration = progress_duration;
 
 	atomic_set(&progress_n_enabled, 1);
@@ -74,7 +78,7 @@ int progress_by(s64 progress_duration) {
 	}
 
 	PDEBUG_V("progress_by for fixed duration initiated."
-	        " Progress duration = %lu\n", current_progress_duration);
+	        " Progress duration = %lu, Num rounds = %d\n", current_progress_duration, current_progress_n_rounds);
 
 	wake_up_interruptible(&progress_sync_proc_wqueue);
 	experiment_status = RUNNING;
@@ -88,6 +92,7 @@ int progress_by(s64 progress_duration) {
 			set_current_state(TASK_RUNNING);
 
 	} while (ret == 0);
+	current_progress_n_rounds = 0;
 
 	return SUCCESS;
 }
@@ -534,8 +539,14 @@ redo:
 		wait_event_interruptible(
 		    progress_sync_proc_wqueue, (atomic_read(&progress_n_enabled) == 1 && current_progress_duration >= 0));
 
-		atomic_set(&progress_n_enabled, 0);
+		
+		if (current_progress_n_rounds == 0) {
+			atomic_set(&progress_n_enabled, 0);
+		}
+
 		if (current_progress_duration == 0) {
+			current_progress_n_rounds = 0;
+			atomic_set(&progress_n_enabled, 0);
 			experiment_status = STOPPING;
 			continue;
 		}
@@ -581,9 +592,16 @@ redo:
 		local_irq_enable();
 		preempt_enable();
 
-		current_progress_duration = -1;
-		PDEBUG_V("Waking up Progress control process\n");
-		wake_up_interruptible(&progress_call_proc_wqueue);
+		if (current_progress_n_rounds == 0) {
+			current_progress_duration = -1;
+			PDEBUG_V("Waking up Progress control process\n");
+			wake_up_interruptible(&progress_call_proc_wqueue);
+
+		} else {
+			current_progress_n_rounds --;
+			round_count++;
+			continue;
+		}
 
 end:
 		set_current_state(TASK_INTERRUPTIBLE);

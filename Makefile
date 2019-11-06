@@ -9,9 +9,9 @@ nCpus=$(shell nproc --all)
 
 all: clean build
 
-clean: clean_core clean_utils clean_api clean_tracer
+clean: clean_core clean_utils clean_api clean_tracer clean_scripts
 
-build: build_core build_api build_tracer
+build: build_core build_api build_tracer build_scripts
 
 setup_kernel: download_4_4_kernel compile_4_4_kernel
 
@@ -36,6 +36,9 @@ build_api:
 build_tracer:
 	@cd src/tracer; $(MAKE) build;
 
+build_scripts:
+	@cd scripts; $(MAKE) build;
+
 
 load:
 	sudo insmod build/vt_module.ko
@@ -44,6 +47,10 @@ unload:
 	sudo rmmod build/vt_module.ko
 
 
+clean_scripts:
+	@echo "Cleaning scripts ..."
+	@cd scripts && $(MAKE) clean
+	
 clean_tests:
 	@echo "Cleaning test files ..."
 	@cd tests && $(MAKE) clean

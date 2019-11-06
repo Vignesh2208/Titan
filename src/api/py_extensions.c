@@ -45,10 +45,11 @@ static PyObject *py_initializeExp(PyObject *self, PyObject *args) {
 
 static PyObject *py_progress_by(PyObject *self, PyObject *args) {
   s64 duration;
+  int num_rounds;
   int ret;
 
-  if (!PyArg_ParseTuple(args, "L", &duration)) return NULL;
-  ret = progressBy(duration);
+  if (!PyArg_ParseTuple(args, "Li", &duration, &num_rounds)) return NULL;
+  ret = progressBy(duration, num_rounds);
   return Py_BuildValue("i", ret);
 }
 

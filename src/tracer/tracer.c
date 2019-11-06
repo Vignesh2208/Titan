@@ -376,11 +376,11 @@ int run_commanded_process(hashmap * tracees, llist * tracee_list,
 		errno = 0;
 		if (is_tracee_blocked(curr_tracee) == TID_PROCESS_BLOCKED) {
 
-			int sleep_duration = (int)n_insns * ((float)
+			/*int sleep_duration = (int)n_insns * ((float)
 			                                     rel_cpu_speed / 1000.0);
 			if (sleep_duration >= 1) {
 				usleep(sleep_duration);
-			}
+			}*/
 
 			LOG("Unblocked tracee %d blocked again\n", curr_tracee->pid);
 			return SUCCESS;
@@ -520,7 +520,8 @@ void run_processes_in_round(int tracer_id,
 
 			} else {
 				curr_tracee->n_sleeps ++;
-				llist_requeue(blocked_tracees);
+				if (n_blocked_processes > 1)
+					llist_requeue(blocked_tracees);
 			}
 			n_checked_processes ++;
 		}
@@ -545,7 +546,7 @@ void run_processes_in_round(int tracer_id,
 				n_insns_run = n_round_insns;
 
 			}
-			usleep((n_insns_to_run * rel_cpu_speed) / 1000);
+			//usleep((n_insns_to_run * rel_cpu_speed) / 1000);
 			LOG("No Runnable tracees. !\n");
 			if (n_insns_run < n_round_insns)
 				continue;
@@ -597,7 +598,7 @@ void run_processes_in_round(int tracer_id,
 
 		if (status == SUCCESS) {
 
-			if (is_tracee_blocked(tracee) == TID_PROCESS_BLOCKED ) {
+			if (tracee->syscall_blocked) {
 				// tracee is blocked after running
 				tracee->n_insns_left = 0;
 				llist_pop(run_queue);
@@ -800,13 +801,13 @@ int main(int argc, char * argv[]) {
 			goto end;
 		}
 
-		LOG("TracerID: %d, ################## ROUND: %d ########################\n",
-		    tracer_id, round_no);
+		LOG("TracerID: %d, ################## ROUND: %d, Num round Insns: %d ########################\n",
+		    tracer_id, round_no, n_round_insns);
 		
 		run_processes_in_round(tracer_id, &tracees, &tracee_list,
 		                       n_round_insns, &run_queue,
-							   &blocked_tracees, cpu_assigned,
-							   rel_cpu_speed);
+				       &blocked_tracees, cpu_assigned,
+				       rel_cpu_speed);
 
 	}
 

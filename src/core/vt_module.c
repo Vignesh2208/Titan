@@ -17,6 +17,7 @@ int initialization_status;
 s64 expected_time = 0;
 s64 virt_exp_start_time = 0;
 s64 current_progress_duration = 0;
+int current_progress_n_rounds = 0;
 int total_expected_tracers;
 // locks
 struct mutex exp_lock;
@@ -158,6 +159,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
   int retval = 0;
   int i = 0, cpu_assignment;
   uint8_t mask = 0;
+  int num_rounds = 0;
   unsigned long flags;
   overshoot_info *args;
   invoked_api *api_info;
@@ -544,7 +546,18 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
         return -EFAULT;
       }
-      return progress_by(api_info_tmp.return_value);
+
+      num_integer_args = convert_string_to_array(
+          api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+      if (num_integer_args < 1) {
+        PDEBUG_E("VT_PROGRESS_BY: Not enough arguments !");
+        return -EFAULT;
+      }
+
+      num_rounds = api_integer_args[0];
+
+      return progress_by(api_info_tmp.return_value, num_rounds);
 
     case VT_SET_NETDEVICE_OWNER:
       // Any process can invoke this call.
