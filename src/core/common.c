@@ -572,6 +572,7 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 	struct pid *pid_struct;
 	struct task_struct * task;
 	int i, pid_to_remove;
+	int wakeup = 0;
 
 	if (!curr_tracer)
 		return FAIL;
@@ -586,13 +587,30 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 			     "Ignoring Process: %d\n", curr_tracer->tracer_task->pid,
 			     curr_tracer->tracer_id, pid_to_remove);
 		struct task_struct * mappedTask = get_task_ns(pid_to_remove, curr_tracer->tracer_task);
+		if (curr_tracer->tracer_type == TRACER_TYPE_APP_VT) {
+			WARN_ON(mappedTask && mappedTask->pid != current->pid);
+			if (mappedTask && mappedTask->pid == current->pid && current->burst_target > 0) {
+				wakeup = 1;
+			}
+		}
 		if (mappedTask != NULL) {
 			remove_from_tracer_schedule_queue(curr_tracer, mappedTask->pid);
 		}
+
+		
 	}
 
 	put_tracer_struct_write(curr_tracer);
-	signal_cpu_worker_resume(curr_tracer);
+
+	if (wakeup) {
+		PDEBUG_V("APPVT Tracer signalling resume. Tracer ID: %d\n",
+	            curr_tracer->tracer_id);
+		curr_tracer->w_queue_wakeup_pid = 1;
+		wake_up_interruptible(curr_tracer->w_queue);
+
+	} else {
+		signal_cpu_worker_resume(curr_tracer);
+	}
 	return SUCCESS;
 }
 

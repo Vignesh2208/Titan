@@ -592,7 +592,8 @@ redo:
 		local_irq_enable();
 		preempt_enable();
 
-		if (current_progress_n_rounds == 0) {
+		if (current_progress_n_rounds <= 1) {
+			current_progress_n_rounds = 0;
 			current_progress_duration = -1;
 			PDEBUG_V("Waking up Progress control process\n");
 			wake_up_interruptible(&progress_call_proc_wqueue);
@@ -788,12 +789,15 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 	llist* schedule_queue = &curr_tracer->schedule_queue;
 	llist * run_queue = &curr_tracer->run_queue;
 	llist_elem* head = schedule_queue->head;
+        llist_elem * tmp_head;
 	lxc_schedule_elem* curr_elem;
+	lxc_schedule_elem* tmp_elem;
 	lxc_schedule_elem* tmp;
 	unsigned long flags;
 	s64 total_quanta = curr_tracer->nxt_round_burst_length;
 	s64 alotted_quanta = 0;
 	int alteast_one_task_runnable = 0;
+        int found = 0;
 
 	put_tracer_struct_read(curr_tracer);
 	get_tracer_struct_write(curr_tracer);
@@ -804,6 +808,8 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 		if (!curr_elem) {
 			PDEBUG_V("Update all runnable task timeslices: "
 			         "Curr elem is NULL\n");
+			put_tracer_struct_write(curr_tracer);
+			get_tracer_struct_read(curr_tracer);
 			return 0;
 		}
 		PDEBUG_V("Update all runnable task timeslices: "
@@ -811,9 +817,10 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 		PDEBUG_V("Update all runnable task timeslices: "
 		         "Curr elem is %d. \n", curr_elem->pid);
 
-		curr_elem->blocked = 1;
+		
 
 		if (curr_tracer->tracer_type == TRACER_TYPE_INS_VT) {
+			curr_elem->blocked = 1;
 			if (curr_elem->curr_task && (!test_bit(
 										PTRACE_BREAK_WAITPID_FLAG,
 										&curr_elem->curr_task->ptrace_mflags)
@@ -831,8 +838,21 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 					WARN_ON(curr_elem->curr_task->burst_target != 0);
 					curr_elem->curr_task->burst_target = 0;
 					curr_elem->blocked = 0;
-					llist_append(&curr_tracer->run_queue, curr_elem);
+					
 				} 
+				tmp_head = run_queue->head;
+				found = 0;
+				while (tmp_head != NULL) {
+					tmp_elem = (lxc_schedule_elem *)tmp_head->item;
+					if (tmp_elem->pid == curr_elem->pid) {
+						found = 1;
+						break;
+					}
+					tmp_head = tmp_head->next;
+				}
+				if (!found) {
+					llist_append(&curr_tracer->run_queue, curr_elem);
+				}
 				alteast_one_task_runnable = 1;
 			}
 		}
@@ -871,6 +891,7 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 				curr_elem->quanta_curr_round = curr_elem->quanta_left_from_prev_round;
 				curr_elem->quanta_left_from_prev_round = 0;
 				alotted_quanta += curr_elem->quanta_curr_round;
+				PDEBUG_E("Finished 1 base quanta for : %d. Base quanta length = %llu\n", curr_elem->pid, curr_elem->base_quanta);
 			}
 			curr_tracer->last_run = curr_elem;
 
@@ -898,11 +919,12 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 				head = head->next;
 			}
 
-			if (head == NULL) {
-				//last run task no longer exists in schedule queue
-				//reset to head of schedule queue for now.
-				head = schedule_queue->head;
-			}
+		}
+
+		if (head == NULL) {
+			//last run task no longer exists in schedule queue
+			//reset to head of schedule queue for now.
+			head = run_queue->head;
 		}
 
 		while (alotted_quanta < total_quanta) {
@@ -910,8 +932,6 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 
 			curr_elem = (lxc_schedule_elem *)head->item;
 			if (!curr_elem) {
-				put_tracer_struct_write(curr_tracer);
-				get_tracer_struct_read(curr_tracer);
 				return alteast_one_task_runnable;
 			}
 
@@ -925,7 +945,7 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 			}
 
 			
-			if (alotted_quanta + curr_elem->base_quanta > total_quanta) {
+			if (alotted_quanta + curr_elem->base_quanta >= total_quanta) {
 				curr_elem->quanta_curr_round = total_quanta - alotted_quanta;
 				curr_elem->quanta_left_from_prev_round =
 					curr_elem->base_quanta - (total_quanta - alotted_quanta);
@@ -938,6 +958,7 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 
 			if (alotted_quanta == total_quanta) {
 				curr_tracer->last_run = curr_elem;
+				PDEBUG_E("Starting new base quanta for : %d. Base quanta length = %llu. Run queue size = %d\n", curr_elem->pid, curr_elem->base_quanta, llist_size(run_queue));
 				put_tracer_struct_write(curr_tracer);
 				get_tracer_struct_read(curr_tracer);
 				return alteast_one_task_runnable;
@@ -1022,6 +1043,8 @@ int unfreeze_proc_exp_single_core_mode(tracer * curr_tracer) {
 	}
 
 	total_quanta = curr_tracer->nxt_round_burst_length;
+	if (curr_tracer->last_run)
+		PDEBUG_V("Tracer: %d, LAST RUN = %d\n", curr_tracer->tracer_id, curr_tracer->last_run->pid);
 
 	while (used_quanta < total_quanta) {
 		curr_elem = get_next_runnable_task(curr_tracer);

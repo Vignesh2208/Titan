@@ -6,7 +6,7 @@ import sys
 import argparse
 
 
-def start_new_dilated_process(tracer_id, total_num_tracers log_file_fd):
+def start_new_dilated_process(tracer_id, total_num_tracers, log_file_fd):
     newpid = os.fork()
     if newpid == 0:
         os.dup2(log_file_fd, sys.stdout.fileno())
@@ -30,7 +30,7 @@ def main():
 
     parser.add_argument('--num_progress_rounds', dest='num_progress_rounds',
                         help='Number of rounds to run', type=int,
-                        default=10)
+                        default=1000)
 
     parser.add_argument('--num_tracers', dest='num_tracers',
                         help='Number of tracers to run', type=int,

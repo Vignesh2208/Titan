@@ -31,7 +31,7 @@ void thread_exit() {
 	exit(0);
 }
 
-int fibonacci(int max, s64 * thread_target_clock, s64 * thread_increment) {
+int fibonacci(int max, int thread_id, s64 * thread_target_clock, s64 * thread_increment) {
    
 
 
@@ -46,13 +46,16 @@ int fibonacci(int max, s64 * thread_target_clock, s64 * thread_increment) {
 
 	#ifdef APP_VT_TEST
 	if (*thread_increment <= 0 || *my_clock >= *thread_target_clock) {
+		
 	   *thread_increment = write_tracer_results(my_tracer_id, NULL, 0);
 	   if (*thread_increment <= 0)
 	       thread_exit();
 	   *thread_target_clock = *my_clock + *thread_increment;
         } else {
+		*my_clock += 100;
 		*thread_increment -= 100;
         }
+	printf("Thread_id = %d, My clock = %llu, Increment = %llu\n", thread_id, *my_clock, *thread_increment);
         #endif
    }
    
@@ -74,6 +77,8 @@ void *myThreadFun(void *vargp)
 	printf("Thread: %d Add to TRACER SQ failed !\n", *myid);
         return NULL;
     }
+    printf("Thread: %d, added to  sq\n", *myid);
+    fflush(stdout);
     #endif
 
     #ifdef APP_VT_TEST
@@ -84,10 +89,12 @@ void *myThreadFun(void *vargp)
     #endif
 
     printf("Starting Fibonacci from Thread: %d\n", *myid); 
-    fib_value = fibonacci(10000, &thread_target_clock, &thread_increment);
+    fib_value = fibonacci(10000, *myid, &thread_target_clock, &thread_increment);
     printf("Finished Fibonacci from Thread: %d. Value = %d\n", *myid, fib_value); 
+    fflush(stdout);
     sleep(1); 
     printf("Finished from Thread: %d\n", *myid); 
+    fflush(stdout);
 
     #ifdef APP_VT_TEST
     thread_increment = write_tracer_results(my_tracer_id, &x, 1);
@@ -134,19 +141,19 @@ int main(int argc, char **argv)
     }
 
 
-    fd = open("/proc/dilation/status", O_RDWR | O_SYNC);
+    fd = open("/proc/status", O_RDWR | O_SYNC);
     if (fd < 0) {
         perror("open");
         assert(0);
     }
     printf("fd = %d, attempting to MMAP: %d pages\n", fd, num_pages);
     puts("mmaping /proc/dilation/status");
-    tracer_clock_array = mmap(NULL, page_size*num_pages, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    tracer_clock_array = (s64 *)mmap(NULL, page_size*num_pages, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (tracer_clock_array == MAP_FAILED) {
         perror("mmap failed !");
         assert(0);
     }
-    my_clock = &tracer_clock_array[my_tracer_id - 1];
+    my_clock = (s64 *)&tracer_clock_array[my_tracer_id - 1];
     #endif
 
 
