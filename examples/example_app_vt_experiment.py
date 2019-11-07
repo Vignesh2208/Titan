@@ -30,7 +30,7 @@ def main():
 
     parser.add_argument('--num_progress_rounds', dest='num_progress_rounds',
                         help='Number of rounds to run', type=int,
-                        default=1000)
+                        default=2000000)
 
     parser.add_argument('--num_tracers', dest='num_tracers',
                         help='Number of tracers to run', type=int,
@@ -78,7 +78,7 @@ def main():
     if args.num_progress_rounds > 0 :
         print "Running for %d rounds ... " %(args.num_progress_rounds)
         num_finised_rounds = 0
-        step_size = 1
+        step_size = 100
         while num_finised_rounds < args.num_progress_rounds:
             kf.progressBy(args.num_insns_per_round, step_size)
             num_finised_rounds += step_size

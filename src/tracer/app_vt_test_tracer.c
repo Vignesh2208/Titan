@@ -88,6 +88,12 @@ void *myThreadFun(void *vargp)
     thread_target_clock = *my_clock + thread_increment;
     #endif
 
+    printf("Sleep start from Thread: %d\n", *myid); 
+    fflush(stdout);
+    sleep(1); 
+    printf("Sleep Finished from Thread: %d\n", *myid); 
+    fflush(stdout);
+
     printf("Starting Fibonacci from Thread: %d\n", *myid); 
     fib_value = fibonacci(10000, *myid, &thread_target_clock, &thread_increment);
     printf("Finished Fibonacci from Thread: %d. Value = %d\n", *myid, fib_value); 

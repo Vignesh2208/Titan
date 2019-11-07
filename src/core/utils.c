@@ -211,11 +211,11 @@ void set_children_time(tracer * tracer_entry,
 
 
 	// do not set for any threads of tracer itself
-	if (aTask->pid != tracer_entry->tracer_task->pid) {
+	if (tracer_entry->tracer_type == TRACER_TYPE_APP_VT || aTask->pid != tracer_entry->tracer_task->pid) {
 		do {
 			/* set it for all threads */
-			if (t->pid != aTask->pid) {
-                t->virt_start_time = virt_exp_start_time;
+			if (t->pid != aTask->pid && t->pid != tracer_entry->tracer_task->pid) {
+                		t->virt_start_time = virt_exp_start_time;
 				if (increment) {	
 					t->curr_virt_time += time;
 				} else {
@@ -232,7 +232,7 @@ void set_children_time(tracer * tracer_entry,
 		if (taskRecurse->pid == 0) {
 			return;
 		}
-        taskRecurse->virt_start_time = virt_exp_start_time;
+        	taskRecurse->virt_start_time = virt_exp_start_time;
 		if (increment) {
 			taskRecurse->curr_virt_time += time;
 		} else {

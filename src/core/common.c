@@ -537,7 +537,11 @@ void update_all_tracers_virtual_time(int cpuID) {
 		if (target_increment > 0) {
 			if (curr_tracer && curr_tracer->tracer_type == TRACER_TYPE_APP_VT) {
 				BUG_ON(!aligned_tracer_clock_array);
-				WARN_ON(aligned_tracer_clock_array[curr_tracer->tracer_id - 1] < curr_tracer->round_start_virt_time +  target_increment);
+				//WARN_ON(aligned_tracer_clock_array[curr_tracer->tracer_id - 1] < curr_tracer->round_start_virt_time +  target_increment);
+				if (aligned_tracer_clock_array[curr_tracer->tracer_id - 1] < curr_tracer->round_start_virt_time +  target_increment) {
+					// this can happen if no process belonging to tracer was runnable in the previous round.
+					aligned_tracer_clock_array[curr_tracer->tracer_id - 1] = curr_tracer->round_start_virt_time +  target_increment;
+				}
 				overshoot_err = aligned_tracer_clock_array[curr_tracer->tracer_id - 1] - (curr_tracer->round_start_virt_time +  target_increment);
 				curr_tracer->round_overshoot = overshoot_err;
 				target_increment = target_increment + overshoot_err;

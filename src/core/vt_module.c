@@ -671,7 +671,7 @@ void __exit my_module_exit(void) {
 
   // remove_proc_entry(DILATION_FILE, dilation_dir);
   remove_proc_entry(DILATION_FILE, NULL);
-  PDEBUG_A(" /proc/%s/%s deleted\n", DILATION_DIR, DILATION_FILE);
+  PDEBUG_A(" /proc/%s deleted\n", DILATION_FILE);
   remove_proc_entry(DILATION_DIR, NULL);
   PDEBUG_A(" /proc/%s deleted\n", DILATION_DIR);
 

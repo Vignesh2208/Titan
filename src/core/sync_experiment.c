@@ -333,7 +333,7 @@ int sync_and_freeze() {
 	now = timeval_to_ns(&now_timeval);
 	expected_time = now;
 	init_task.curr_virt_time = now;
-    virt_exp_start_time = now;
+    	virt_exp_start_time = now;
 
 	for (i = 1; i <= tracer_num; i++) {
 		curr_tracer = hmap_get_abs(&get_tracer_by_id, i);
@@ -348,7 +348,7 @@ int sync_and_freeze() {
 				curr_tracer->spinner_task->virt_start_time = now;
 				curr_tracer->spinner_task->curr_virt_time = now;
 				curr_tracer->spinner_task->wakeup_time = 0;
-                curr_tracer->spinner_task->burst_target = 0;
+                		curr_tracer->spinner_task->burst_target = 0;
 
 			}
 
@@ -356,15 +356,15 @@ int sync_and_freeze() {
 				curr_tracer->proc_to_control_task->virt_start_time = now;
 				curr_tracer->proc_to_control_task->curr_virt_time = now;
 				curr_tracer->proc_to_control_task->wakeup_time = 0;
-                curr_tracer->proc_to_control_task->burst_target = 0;
+                		curr_tracer->proc_to_control_task->burst_target = 0;
 			}
 
 			curr_tracer->tracer_task->virt_start_time = 0;
 			curr_tracer->tracer_task->curr_virt_time = now;
 			curr_tracer->tracer_task->wakeup_time = 0;
-            curr_tracer->tracer_task->burst_target = 0;
+			curr_tracer->tracer_task->burst_target = 0;
 
-            aligned_tracer_clock_array[i-1] = now;
+            		aligned_tracer_clock_array[i-1] = now;
 		}
 		put_tracer_struct_write(curr_tracer);
 	}
@@ -521,7 +521,7 @@ redo:
 			init_task.curr_virt_time = KTIME_MAX;
 			preempt_disable();
 			local_irq_disable();
-			dilated_hrtimer_run_queues_flush(0);
+			dilated_hrtimer_run_queues(0);
 			local_irq_enable();
 			preempt_enable();
 
