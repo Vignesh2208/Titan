@@ -14,5 +14,8 @@
 #define VT_STOP_EXP _IOW(VT_IOC_MAGIC, 9, int)
 #define VT_PROGRESS_BY _IOW(VT_IOC_MAGIC, 10, int)
 #define VT_SET_NETDEVICE_OWNER _IOW(VT_IOC_MAGIC, 11, int)
+#define VT_WAIT_FOR_EXIT _IOW(VT_IOC_MAGIC, 12, int)
 
+#define VT_ADD_TO_SQ 'a'
+#define VT_WRITE_RES 'b'
 #endif

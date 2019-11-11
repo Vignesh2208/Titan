@@ -85,7 +85,7 @@
 #ifdef KRONOS_DEBUG_INFO
 #define PDEBUG_I(fmt, args...) printk(KERN_INFO "Titan: <INFO> " fmt, ## args)
 #else
-#define PDEBUG_I(fmt,args...) //printk(KERN_INFO "Titan: <INFO> " fmt, ## args)
+#define PDEBUG_I(fmt,args...) printk(KERN_INFO "Titan: <INFO> " fmt, ## args)
 #endif
 
 
@@ -93,7 +93,7 @@
 #ifdef KRONOS_DEBUG_VERBOSE
 #define PDEBUG_V(fmt,args...) printk(KERN_INFO "Titan: <VERBOSE> " fmt, ## args)
 #else
-#define PDEBUG_V(fmt,args...) //printk(KERN_INFO "Titan: <VERBOSE> " fmt, ## args)
+#define PDEBUG_V(fmt,args...) printk(KERN_INFO "Titan: <VERBOSE> " fmt, ## args)
 #endif
 
 #define PDEBUG_A(fmt, args...) printk(KERN_INFO "Titan: <NOTICE> " fmt, ## args)

@@ -241,6 +241,8 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 		tracee->tracer_clock = (s64 *)&aligned_tracer_clock_array[tracee->associated_tracer_id - 1];
 		tracee->vt_exec_task_wqueue = &tracer_wqueue[tracer_entry->cpu_assignment - 2];
 		tracee->ready = 0;
+		tracee->ptrace_msteps = 0;
+		tracee->n_ints = 0;
 	} else {
 		tracee->vt_exec_task_wqueue = NULL;
 		tracee->ready = 0;
@@ -547,7 +549,7 @@ void update_all_tracers_virtual_time(int cpuID) {
 				target_increment = target_increment + overshoot_err;
 				update_all_children_virtual_time(curr_tracer, target_increment);
 
-				BUG_ON(aligned_tracer_clock_array[curr_tracer->tracer_id - 1] != curr_tracer->curr_virtual_time);
+				WARN_ON(aligned_tracer_clock_array[curr_tracer->tracer_id - 1] != curr_tracer->curr_virtual_time);
 			} else {
 				update_all_children_virtual_time(curr_tracer, target_increment);
 			}

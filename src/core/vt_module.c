@@ -54,12 +54,14 @@ loff_t vt_llseek(struct file *filp, loff_t pos, int whence);
 int vt_release(struct inode *inode, struct file *filp);
 int vt_mmap(struct file *filp, struct vm_area_struct *vma);
 long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
+ssize_t vt_write(struct file *file, const char __user *buffer, size_t count, loff_t *data);
 
 
 static const struct file_operations proc_file_fops = {
     .unlocked_ioctl = vt_ioctl,
     .llseek = vt_llseek,
     .release = vt_release,
+    .write = vt_write,
     .mmap = vt_mmap,
     .owner = THIS_MODULE,
 };
@@ -152,6 +154,146 @@ int vt_mmap(struct file *filp, struct vm_area_struct *vma) {
   }
 
   return 0;
+}
+
+ssize_t vt_write(struct file *file, const char __user *buffer, size_t count, loff_t *data)
+{
+	char write_buffer[MAX_API_ARGUMENT_SIZE];
+	unsigned long buffer_size;
+	int i = 0;
+	int ret = 0;
+	int num_integer_args;
+  	int api_integer_args[MAX_API_ARGUMENT_SIZE];
+	int tracer_id;
+	tracer *curr_tracer;
+
+ 	if(count > MAX_API_ARGUMENT_SIZE)
+	{
+    		buffer_size = MAX_API_ARGUMENT_SIZE;
+  	}
+	else
+	{
+		buffer_size = count;
+
+	}
+
+	for(i = 0; i < MAX_API_ARGUMENT_SIZE; i++)
+		write_buffer[i] = '\0';
+
+  	if(copy_from_user(write_buffer, buffer, buffer_size))
+	{
+	    return -EFAULT;
+	}
+
+	/* Use +2 to skip over the first two characters (i.e. the switch and the ,) */
+	if (write_buffer[0] == VT_ADD_TO_SQ) {
+        	if (initialization_status != INITIALIZED &&
+		  experiment_status == STOPPING) {
+			PDEBUG_E(
+			    "VT_ADD_PROCESSES_TO_SQ: Operation cannot be performed when "
+			    "experiment is not initialized !");
+			return -EFAULT;
+		}
+
+		num_integer_args = convert_string_to_array(
+		  write_buffer + 2, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+		if (num_integer_args <= 1) {
+			PDEBUG_E("VT_ADD_PROCESS_TO_SQ: Not enough arguments !");
+			return -EFAULT;
+		}
+
+		tracer_id = api_integer_args[0];
+		curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+		if (!curr_tracer) {
+			PDEBUG_I("VT_ADD_PROCESS_TO_SQ: Tracer : %d, not registered\n", tracer_id);
+			return -EFAULT;
+		}
+
+		get_tracer_struct_write(curr_tracer);
+		for (i = 1; i < num_integer_args; i++) {
+			add_to_tracer_schedule_queue(curr_tracer, api_integer_args[i]);
+			PDEBUG_E("VT_ADD_PROCESS_TO_SQ: Tracer : %d, process: %d\n", tracer_id, api_integer_args[i]);
+		}
+		put_tracer_struct_write(curr_tracer);
+		return 0;
+
+	} else if (write_buffer[0] == VT_WRITE_RES) {
+
+		if (initialization_status != INITIALIZED) {
+			/*PDEBUG_E(
+			    "VT_WRITE_RESULTS: Operation cannot be performed when experiment "
+			    "is not initialized !");*/
+			return 0;
+		}
+
+		if (current->associated_tracer_id <= 0) {
+			PDEBUG_E("Process: %d is not associated with any tracer !\n");
+			return 0;
+		}
+
+		num_integer_args = convert_string_to_array(
+		  write_buffer + 2, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+		if (num_integer_args < 1) {
+			PDEBUG_E("VT_RM_PROCESS_FROM_SQ: Not enough arguments !");
+			return 0;
+		}
+
+		tracer_id = api_integer_args[0];
+		curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+		if (!curr_tracer) {
+			PDEBUG_I("VT-IO: Tracer : %d, not registered\n", current->pid);
+			return 0;
+		}
+
+		current->ready = 1;
+
+		mutex_lock(&file_lock);
+		handle_tracer_results(curr_tracer, &api_integer_args[1],
+				    num_integer_args - 1);
+		mutex_unlock(&file_lock);
+
+		wait_event_interruptible(
+		  *curr_tracer->w_queue,
+		  current->associated_tracer_id <= 0 ||
+		      (curr_tracer->w_queue_wakeup_pid == current->pid &&
+		       current->burst_target > 0));
+		PDEBUG_E(
+		  "VT_WRITE_RES: Associated Tracer : %d, Process: %d, resuming from wait. Ptrace_mstepd = %d\n",
+		  tracer_id, current->pid, current->ptrace_msteps);
+
+		current->ready = 0;
+
+		// Ensure that for INS_VT tracer, only the tracer process can invoke this
+		// call
+		if (current->associated_tracer_id)
+			BUG_ON(curr_tracer->tracer_task->pid != current->pid &&
+			       curr_tracer->tracer_type == TRACER_TYPE_INS_VT);
+
+		if (current->associated_tracer_id <= 0) {
+			current->burst_target = 0;
+			current->virt_start_time = 0;
+			current->curr_virt_time = 0;
+			current->associated_tracer_id = 0;
+			current->wakeup_time = 0;
+			current->vt_exec_task_wqueue = NULL;
+			current->tracer_clock = NULL;
+			PDEBUG_I("VT_WRITE_RESULTS: Tracer: %d, Process: %d STOPPING\n", tracer_id,
+				 current->pid);
+			return 0;
+		}
+
+		PDEBUG_V("VT-IO: Tracer: %d, Process: %d Returning !\n", tracer_id,
+		       current->pid);
+		return (ssize_t) current->burst_target;
+
+	}
+	else {
+		PDEBUG_E("VT Module Write: Invalid Write Command: %s\n", write_buffer);
+		return -EFAULT;
+	}
+	return 0;
 }
 
 long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
@@ -575,6 +717,48 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
       return handle_set_netdevice_owner_cmd(api_info_tmp.api_argument);
+
+    case VT_WAIT_FOR_EXIT:
+
+      if (initialization_status != INITIALIZED) {
+        PDEBUG_E(
+            "VT_WAIT_FOR_EXIT: Operation cannot be performed when experiment "
+            "is not initialized !");
+        return -EFAULT;
+      }
+
+      if (current->associated_tracer_id <= 0) {
+        PDEBUG_E("Process: %d is not associated with any tracer !\n");
+        return -EFAULT;
+      }
+
+      api_info = (invoked_api *)arg;
+      if (!api_info) return -EFAULT;
+      if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+        return -EFAULT;
+      }
+
+      num_integer_args = convert_string_to_array(
+          api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+      if (num_integer_args < 1) {
+        PDEBUG_E("VT_WAIT_FOR_EXIT: Not enough arguments !");
+        return -EFAULT;
+      }
+
+      tracer_id = api_integer_args[0];
+      curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+      if (!curr_tracer) {
+        PDEBUG_I("VT_WAIT_FOR_EXIT: Tracer : %d, not registered\n", current->pid);
+        return -EFAULT;
+      }
+
+      wait_event_interruptible(
+          *curr_tracer->w_queue, current->associated_tracer_id <= 0);
+      PDEBUG_V(
+          "VT_WAIT_FOR_EXIT: Associated Tracer : %d, Process: %d, resuming from wait for exit\n",
+          tracer_id, current->pid);
+      return 0;
 
     default:
       return -ENOTTY;

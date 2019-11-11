@@ -19,6 +19,8 @@ build_tracer:
 	@mv tracer /usr/bin
 	@gcc ${tracer_dir}/app_vt_test_tracer.c -o app_vt_test_tracer -lpthread -lvtapi
 	@mv app_vt_test_tracer /usr/bin
+	@gcc ${tracer_dir}/app_vt_tracer.c -o app_vt_tracer -lpthread -lvtapi
+	@mv app_vt_tracer /usr/bin
 	@cp /usr/local/lib/libperf.so.0 /usr/lib/
 	@cd ${tracer_dir}/utils && $(MAKE) build
 
@@ -28,6 +30,8 @@ build_tracer_debug:
 	${tracer_dir}/utils/hashmap.c -o tracer -lperf -lvtapi
 	@gcc ${tracer_dir}/app_vt_test_tracer.c -o app_vt_test_tracer -lpthread -lvtapi
 	@mv app_vt_test_tracer /usr/bin
+	@gcc ${tracer_dir}/app_vt_tracer.c -o app_vt_tracer -lpthread -lvtapi
+	@mv app_vt_tracer /usr/bin
 	@chmod 777 tracer
 	@mv tracer /usr/bin
 	@cp /usr/local/lib/libperf.so.0 /usr/lib/
@@ -41,6 +45,7 @@ clean:
 	@rm -f /usr/bin/tracer > /dev/null
 	@rm -f /usr/bin/tracer_test > /dev/null
 	@rm -f /usr/bin/app_vt_test_tracer > /dev/null
+	@rm -f /usr/bin/app_vt_tracer > /dev/null
 	@cd ${tracer_dir}/utils && $(MAKE) clean
 
 build_tests:

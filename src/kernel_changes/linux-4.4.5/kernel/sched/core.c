@@ -3157,6 +3157,20 @@ static void __sched notrace __schedule(bool preempt)
 		trace_printk("Set BREAK WAITPID FLAG for Pid %d\n", prev->pid);
 		try_to_wake_up_local(prev->parent);
 	      }
+
+	      if (prev->virt_start_time > 0
+		   && prev->ptrace_msteps == 0
+		   && prev->ready == 0 && prev->burst_target > 0
+		   && test_bit(PTRACE_ENTER_SYSCALL_FLAG, &prev->ptrace_mflags)) {
+			printk(KERN_INFO "Waking up vt exec manager task or Pid %d\n", prev->pid);
+			if (!prev->vt_exec_task_wqueue) {
+				printk(KERN_INFO "Titan-Kernel: ERROR: VT exec task wqueue is NULL\n");
+			} else {
+				prev->burst_target = 0;
+				wake_up_interruptible(prev->vt_exec_task_wqueue);
+				
+			}
+		}
 	    } else {
 
 		if (prev->virt_start_time > 0

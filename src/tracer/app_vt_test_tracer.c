@@ -12,13 +12,19 @@
 #include <unistd.h> /* sysconf */
 #include <sys/types.h>
 #include <sys/syscall.h>
+#include <sys/ptrace.h>
 
+//#define APP_VT_TEST
 
+#define PTRACE_FORCE_SINGLESTEP 0x42f5
 
+//#ifdef APP_VT_TEST
 #include "VT_functions.h"
-#define APP_VT_TEST
+//#endif
 
-#define NUM_THREADS 5
+
+#define NUM_THREADS 1
+#define NUM_PROCESSES 5
  
 int total_number_of_tracers;
 int my_tracer_id;
@@ -94,6 +100,7 @@ void *myThreadFun(void *vargp)
     printf("Sleep Finished from Thread: %d\n", *myid); 
     fflush(stdout);
 
+    for (int i = 0; i < 100; i++) {
     printf("Starting Fibonacci from Thread: %d\n", *myid); 
     fib_value = fibonacci(10000, *myid, &thread_target_clock, &thread_increment);
     printf("Finished Fibonacci from Thread: %d. Value = %d\n", *myid, fib_value); 
@@ -101,6 +108,7 @@ void *myThreadFun(void *vargp)
     sleep(1); 
     printf("Finished from Thread: %d\n", *myid); 
     fflush(stdout);
+    }
 
     #ifdef APP_VT_TEST
     thread_increment = write_tracer_results(my_tracer_id, &x, 1);
@@ -108,14 +116,63 @@ void *myThreadFun(void *vargp)
     #endif
     return NULL; 
 } 
+
+void ProcessFn(int id) {
+
+    int *myid = (int *)&id;
+    int fib_value;
+    int x = (int)syscall(__NR_getpid);
+    int ret;
+    s64 thread_increment, thread_target_clock;
+    printf("Process: %d, PID = %d\n", *myid, x);
+    #ifdef APP_VT_TEST
+    ret = add_processes_to_tracer_sq(my_tracer_id, &x, 1);
+    if (ret < 0) {
+	printf("Process: %d Add to TRACER SQ failed !\n", *myid);
+        return NULL;
+    }
+    printf("Process: %d, added to  sq\n", *myid);
+    fflush(stdout);
+    #endif
+
+    #ifdef APP_VT_TEST
+    thread_increment = write_tracer_results(my_tracer_id, NULL, 0);
+    if (thread_increment <= 0)
+	 thread_exit();
+    thread_target_clock = *my_clock + thread_increment;
+    #endif
+
+    printf("Sleep start from Process: %d\n", *myid); 
+    fflush(stdout);
+    sleep(1); 
+    printf("Sleep Finished from Process: %d\n", *myid); 
+    fflush(stdout);
+
+    for (int i = 0; i < 10; i++) {
+    printf("Starting Fibonacci from Process: %d\n", *myid); 
+    fib_value = fibonacci(10000, *myid, &thread_target_clock, &thread_increment);
+    printf("Finished Fibonacci from Process: %d. Value = %d\n", *myid, fib_value); 
+    fflush(stdout);
+    sleep(1); 
+    printf("Finished from Process: %d\n", *myid); 
+    fflush(stdout);
+    }
+
+    #ifdef APP_VT_TEST
+    thread_increment = write_tracer_results(my_tracer_id, &x, 1);
+    assert(thread_increment <= 0);
+    #endif
+    return NULL; 
+}
    
 int main(int argc, char **argv) 
 { 
     pthread_t thread_id[NUM_THREADS]; 
     int i;
     int id[NUM_THREADS];
+    int pids[NUM_PROCESSES];
     int fd;
-    int num_pages, ret, page_size;
+    int num_pages, ret, page_size, status;
 
     if (argc < 3) {
         printf("Usage: %s <total_num_tracers> <my_tracer_id>\n", argv[0]);
@@ -163,13 +220,29 @@ int main(int argc, char **argv)
     #endif
 
 
-    for (i = 0; i < NUM_THREADS; i++) {
+    for (i = 0; i < NUM_THREADS - 1; i++) {
         id[i] = i;
         pthread_create(&thread_id[i], NULL, myThreadFun, (void *)&id[i]); 
     }
 
-    for (i = 0; i < NUM_THREADS; i++) {
+    for (i = 0; i < NUM_THREADS - 1; i++) {
     	pthread_join(thread_id[i], NULL);
+    } 
+
+    for(i = 0; i < NUM_PROCESSES -1; i++) {
+	pid_t pid = fork();
+	if (pid > 0) {
+	    pids[i] = pid;
+	} else {
+	    printf("Starting Process: %d\n", i);
+	    ProcessFn(i);
+            exit(0);
+	}
+    }
+
+    printf("Waiting for processes to finish !\n");
+    for(i = 0; i < NUM_PROCESSES - 1; i++) {
+  	waitpid(pids[i], &status, 0);
     } 
     close(fd);
     exit(0); 

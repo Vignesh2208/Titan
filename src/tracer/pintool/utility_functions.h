@@ -43,7 +43,6 @@ typedef struct ioctl_args_struct {
 #define VT_WAIT_FOR_EXIT _IOW(VT_IOC_MAGIC, 12, int)
 
 s64 send_to_vt_module(unsigned int cmd, ioctl_args* arg);
-int gettid(void);
 int is_root(void);
 int isModuleLoaded(void);
 void init_ioctl_arg(ioctl_args* arg);
