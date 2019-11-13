@@ -7,6 +7,7 @@ extern int tracer_num;
 extern int EXP_CPUS;
 extern int TOTAL_CPUS;
 extern struct task_struct *round_task;
+extern struct task_struct ** chaintask;
 extern int experiment_status;
 extern int initialization_status;
 extern s64 virt_exp_start_time;
@@ -238,13 +239,16 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 
 	if (tracer_entry->tracer_type == TRACER_TYPE_APP_VT) {
 		BUG_ON(!aligned_tracer_clock_array);
+		BUG_ON(!chaintask[tracer_entry->cpu_assignment - 2]);
 		tracee->tracer_clock = (s64 *)&aligned_tracer_clock_array[tracee->associated_tracer_id - 1];
-		tracee->vt_exec_task_wqueue = &tracer_wqueue[tracer_entry->cpu_assignment - 2];
+		//tracee->vt_exec_task_wqueue = &tracer_wqueue[tracer_entry->cpu_assignment - 2];
+		tracee->vt_exec_task = chaintask[tracer_entry->cpu_assignment - 2];
 		tracee->ready = 0;
 		tracee->ptrace_msteps = 0;
 		tracee->n_ints = 0;
 	} else {
-		tracee->vt_exec_task_wqueue = NULL;
+		//tracee->vt_exec_task_wqueue = NULL;
+		tracee->vt_exec_task = NULL;
 		tracee->ready = 0;
 	}
 
@@ -427,8 +431,15 @@ int register_tracer_process(char * write_buffer) {
 	new_tracer->w_queue = &tracer_wqueue[new_tracer->cpu_assignment - 2];
 	new_tracer->tracer_pid = current->pid;
 
+	BUG_ON(!chaintask[new_tracer->cpu_assignment - 2]);
+	new_tracer->vt_exec_task = chaintask[new_tracer->cpu_assignment - 2];
+
 	current->associated_tracer_id = tracer_id;
 	current->ready = 0;
+	current->ptrace_msteps = 0;
+	current->n_ints = 0;
+	current->ptrace_mflags = 0; 
+	current->vt_exec_task = NULL;
 
 	++tracer_num;
 	llist_append(&per_cpu_tracer_list[best_cpu], new_tracer);
@@ -612,7 +623,8 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 		PDEBUG_V("APPVT Tracer signalling resume. Tracer ID: %d\n",
 	            curr_tracer->tracer_id);
 		curr_tracer->w_queue_wakeup_pid = 1;
-		wake_up_interruptible(curr_tracer->w_queue);
+		//wake_up_interruptible(curr_tracer->w_queue);
+		wake_up_process(curr_tracer->vt_exec_task);
 
 	} else {
 		signal_cpu_worker_resume(curr_tracer);
@@ -638,11 +650,36 @@ void wait_for_appvt_tracer_completion(tracer * curr_tracer, struct task_struct *
 	if (!curr_tracer || !relevant_task) {
 		return;
 	}
-
+	int ret;
 	BUG_ON(curr_tracer->tracer_type != TRACER_TYPE_APP_VT);
+	PDEBUG_V("Waiting for Tracer completion for Tracer ID: %d\n", curr_tracer->tracer_id);
 	curr_tracer->w_queue_wakeup_pid = relevant_task->pid;
+	set_current_state(TASK_INTERRUPTIBLE);
 	wake_up_interruptible(curr_tracer->w_queue);
-	wait_event_interruptible(*curr_tracer->w_queue, relevant_task->burst_target == 0 || curr_tracer->w_queue_wakeup_pid == 1);
+	//wait_event_interruptible(*curr_tracer->w_queue, relevant_task->burst_target == 0 || curr_tracer->w_queue_wakeup_pid == 1);
+	
+	/*do {
+		ret = wait_event_interruptible_timeout(
+		          *curr_tracer->w_queue, relevant_task->burst_target == 0 || curr_tracer->w_queue_wakeup_pid == 1, HZ);
+		if (ret == 0)
+			set_current_state(TASK_INTERRUPTIBLE);
+		else
+			set_current_state(TASK_RUNNING);
+
+	} while (ret == 0);*/
+	do {
+		
+		if (relevant_task->burst_target == 0 || curr_tracer->w_queue_wakeup_pid == 1) {
+			set_current_state(TASK_RUNNING);
+			relevant_task->burst_target = 0;
+			curr_tracer->w_queue_wakeup_pid = 1;
+			break;
+		} else {
+			//set_current_state(TASK_INTERRUPTIBLE);
+			schedule();
+			set_current_state(TASK_INTERRUPTIBLE);
+		}
+	} while (1);
 	PDEBUG_V("Resuming from Tracer completion for Tracer ID: %d\n", curr_tracer->tracer_id);
 
 }
@@ -663,7 +700,8 @@ void signal_cpu_worker_resume(tracer * curr_tracer) {
 			PDEBUG_V("APPVT Tracer signalling resume. Tracer ID: %d\n",
 	            curr_tracer->tracer_id);
 			curr_tracer->w_queue_wakeup_pid = 1;
-			wake_up_interruptible(curr_tracer->w_queue);
+			//wake_up_interruptible(curr_tracer->w_queue);
+			wake_up_process(curr_tracer->vt_exec_task);
 		}
 	}
 

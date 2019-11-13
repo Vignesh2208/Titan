@@ -227,7 +227,7 @@ extern struct task_group root_task_group;
 	.ptrace_mflags = 0,						\
 	.ptrace_msteps = 0,						\
 	.n_ints = 0,            					\
-	.vt_exec_task_wqueue = NULL,					\
+	.vt_exec_task = NULL,					\
 	.tracer_clock = NULL,						\
 	.real_parent	= &tsk,						\
 	.parent		= &tsk,						\

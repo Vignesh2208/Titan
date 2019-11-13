@@ -228,7 +228,7 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count, lof
 		}
 
 		if (current->associated_tracer_id <= 0) {
-			PDEBUG_E("Process: %d is not associated with any tracer !\n");
+			PDEBUG_E("Process: %d is not associated with any tracer !\n", current->pid);
 			return 0;
 		}
 
@@ -249,18 +249,18 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count, lof
 
 		current->ready = 1;
 
-		mutex_lock(&file_lock);
+		//mutex_lock(&file_lock);
 		handle_tracer_results(curr_tracer, &api_integer_args[1],
 				    num_integer_args - 1);
-		mutex_unlock(&file_lock);
+		//mutex_unlock(&file_lock);
 
 		wait_event_interruptible(
 		  *curr_tracer->w_queue,
 		  current->associated_tracer_id <= 0 ||
 		      (curr_tracer->w_queue_wakeup_pid == current->pid &&
 		       current->burst_target > 0));
-		PDEBUG_E(
-		  "VT_WRITE_RES: Associated Tracer : %d, Process: %d, resuming from wait. Ptrace_mstepd = %d\n",
+		PDEBUG_V(
+		  "VT_WRITE_RES: Associated Tracer : %d, Process: %d, resuming from wait. Ptrace_msteps = %d\n",
 		  tracer_id, current->pid, current->ptrace_msteps);
 
 		current->ready = 0;
@@ -277,7 +277,7 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count, lof
 			current->curr_virt_time = 0;
 			current->associated_tracer_id = 0;
 			current->wakeup_time = 0;
-			current->vt_exec_task_wqueue = NULL;
+			current->vt_exec_task = NULL;
 			current->tracer_clock = NULL;
 			PDEBUG_I("VT_WRITE_RESULTS: Tracer: %d, Process: %d STOPPING\n", tracer_id,
 				 current->pid);
@@ -451,7 +451,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         current->curr_virt_time = 0;
         current->associated_tracer_id = 0;
         current->wakeup_time = 0;
-        current->vt_exec_task_wqueue = NULL;
+        current->vt_exec_task = NULL;
         current->tracer_clock = NULL;
         api_info_tmp.return_value = 0;
         if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {

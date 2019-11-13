@@ -3158,32 +3158,33 @@ static void __sched notrace __schedule(bool preempt)
 		try_to_wake_up_local(prev->parent);
 	      }
 
-	      if (prev->virt_start_time > 0
+	      if (!prev->in_iowait && !preempt && prev->virt_start_time > 0
 		   && prev->ptrace_msteps == 0
 		   && prev->ready == 0 && prev->burst_target > 0
 		   && test_bit(PTRACE_ENTER_SYSCALL_FLAG, &prev->ptrace_mflags)) {
-			printk(KERN_INFO "Waking up vt exec manager task or Pid %d\n", prev->pid);
-			if (!prev->vt_exec_task_wqueue) {
-				printk(KERN_INFO "Titan-Kernel: ERROR: VT exec task wqueue is NULL\n");
+			trace_printk("Waking up vt exec manager task or Pid %d\n", prev->pid);
+			if (!prev->vt_exec_task) {
+				trace_printk("Titan-Kernel: ERROR: VT exec task is NULL\n");
 			} else {
 				prev->burst_target = 0;
-				wake_up_interruptible(prev->vt_exec_task_wqueue);
+				//try_to_wake_up_local(prev->vt_exec_task);
+				wake_up_process(prev->vt_exec_task);
 				
 			}
 		}
 	    } else {
 
-		if (prev->virt_start_time > 0
+		if (!prev->in_iowait && !preempt && prev->virt_start_time > 0
 		   && prev->ptrace_msteps == 0
 		   && prev->ready == 0 && prev->burst_target > 0
 		   && test_bit(PTRACE_ENTER_SYSCALL_FLAG, &prev->ptrace_mflags)) {
-			printk(KERN_INFO "Waking up vt exec manager task or Pid %d\n", prev->pid);
-			if (!prev->vt_exec_task_wqueue) {
-				printk(KERN_INFO "Titan-Kernel: ERROR: VT exec task wqueue is NULL\n");
+			trace_printk("Waking up vt exec manager task or Pid %d\n", prev->pid);
+			if (!prev->vt_exec_task) {
+				trace_printk("Titan-Kernel: ERROR: VT exec task wqueue is NULL\n");
 			} else {
 				prev->burst_target = 0;
-				wake_up_interruptible(prev->vt_exec_task_wqueue);
-				
+				//try_to_wake_up_local(prev->vt_exec_task);
+				wake_up_process(prev->vt_exec_task);				
 			}
 		}
 	    }

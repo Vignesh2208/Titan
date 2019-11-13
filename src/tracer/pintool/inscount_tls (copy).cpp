@@ -214,14 +214,12 @@ ostream* OutFile = NULL;
 class thread_data_t
 {
   public:
-    thread_data_t() : _increment(0), _curr_clock(0), _target_clock(0), _vt_enabled(0), _fp(0) {}
+    thread_data_t() : _increment(0), _curr_clock(0), _target_clock(0), _vt_enabled(0) {}
     UINT64 _increment;
     UINT64 _curr_clock;
     UINT64 _target_clock;
     UINT8 _vt_enabled;
-    INT32 _fp;
-    UINT8 _buf[10];
-    //UINT8 _pad[PADSIZE - 14];
+    UINT8 _pad[PADSIZE];
 };
 
 // key for accessing TLS storage in the threads. initialized once in main()
@@ -242,19 +240,8 @@ VOID PIN_FAST_ANALYSIS_CALL docount(UINT32 c, THREADID threadid)
     if (*myClock >= (s64)tdata->_target_clock || tdata->_curr_clock >= tdata->_target_clock) {
 	if (tdata->_vt_enabled) {
 		// stop here
-		//tdata->_increment = write_tracer_results(monitorTracerId, NULL, 0);
-		if (tdata->_fp < 0) {
-		    printf("Opening communication with VT module\n");
-		    tdata->_fp = open(FILENAME, O_RDWR);
-		    if (tdata->_fp < 0 ) {
-			printf("ERROR Opening communication with VT module\n");
-		    	PIN_ExitApplication(0);
-		    }
-		    sprintf((char *)tdata->_buf, "%c,%d",  VT_WRITE_RES, (int)monitorTracerId);
-		}
-		tdata->_increment = write(tdata->_fp, (char *)tdata->_buf, strlen((char *)tdata->_buf));
-		
-		//cout << "Thread Count for Thread: " << threadid <<" PID = " << PIN_GetTid() << " Increment = " <<  tdata->_increment << " Buf = " << (char *)tdata->_buf <<  endl;
+		tdata->_increment = write_tracer_results(monitorTracerId, NULL, 0);
+		//cout << "Thread Count for Thread: " << threadid <<" PID = " << PIN_GetTid() << " Increment = " <<  tdata->_increment << endl;
 
 		if (tdata->_increment <= 0) {
 			tdata->_vt_enabled = 0;
@@ -294,17 +281,13 @@ VOID ThreadStart(THREADID threadid, CONTEXT *ctxt, INT32 flags, VOID *v)
 	tdata->_vt_enabled = 0;
         tdata->_curr_clock = 0;
         tdata->_target_clock = 0;
-	tdata->_fp = -1;
-	memset((char *)tdata->_buf, 0, 10);
 	cout << "Thread: "<< myPid << "  Add to TRACER SQ failed !" << endl;
     } else {
 	tdata->_vt_enabled = 1;
 	tdata->_curr_clock = *myClock;
 	tdata->_target_clock = *myClock;
-	tdata->_fp = -1;
-	memset(tdata->_buf, 0, 10);
     }
-    cout << "Calling ThreadStart for thread: " << threadid << ", PID: " << PIN_GetPid() << " Successfull !" << " FP = " << tdata->_fp << endl;
+    cout << "Calling ThreadStart for thread: " << threadid << ", PID: " << PIN_GetPid() << " Successfull !" << endl;
 }
 
 
@@ -334,16 +317,12 @@ VOID AfterForkInChild(THREADID threadid, const CONTEXT* ctxt, VOID * arg)
 	tdata->_vt_enabled = 0;
         tdata->_curr_clock = 0;
         tdata->_target_clock = 0;
-	tdata->_fp = -1;
-	memset((char *)tdata->_buf, 0, 10);
 	cout << "Process: "<< myPid << "  Add to TRACER SQ failed !" << endl;
     } else {
         
 	tdata->_vt_enabled = 1;
 	tdata->_curr_clock = *myClock;
 	tdata->_target_clock = *myClock;
-	tdata->_fp = -1;
-	memset((char *)tdata->_buf, 0, 10);
     }
     
 }
@@ -361,7 +340,6 @@ VOID ThreadFini(THREADID threadIndex, const CONTEXT *ctxt, INT32 code, VOID *v)
 	ret = write_tracer_results(monitorTracerId, &myPid, 1);
 	cout << "Remove from tracer queue. Ret = " << ret << endl;
     }
-    close(tdata->_fp);
 
     cout << "ThreadFini successfull ..." << threadIndex << endl;    
     delete tdata;

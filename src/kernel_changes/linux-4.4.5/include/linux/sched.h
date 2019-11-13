@@ -1520,7 +1520,7 @@ struct task_struct {
 	unsigned long ptrace_mflags;
 	unsigned long ptrace_msteps;
 	unsigned long n_ints;
-	wait_queue_head_t * vt_exec_task_wqueue;
+	struct task_struct * vt_exec_task;
 	s64 * tracer_clock;
 	/* PID/PID hash table linkage. */
 	struct pid_link pids[PIDTYPE_MAX];

@@ -5000,7 +5000,7 @@ static void perf_pending_event(struct irq_work *entry) {
   u64 n_ints = 0;
   u64 sample_period;
   u64 delta = 0;
-  u64 burst_target = 500;
+  u64 burst_target = 50;
   // int cpu = raw_smp_processor_id();
 
   rctx = perf_swevent_get_recursion_context();

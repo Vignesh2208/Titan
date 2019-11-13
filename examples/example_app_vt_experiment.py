@@ -12,6 +12,7 @@ def start_new_dilated_process(tracer_id, total_num_tracers, cmd_to_run, log_file
         os.dup2(log_file_fd, sys.stdout.fileno())
         os.dup2(log_file_fd, sys.stderr.fileno())
         args = ["app_vt_tracer", "-n", str(total_num_tracers), "-i", str(tracer_id), "-c", cmd_to_run]
+        #args = ["app_vt_test_tracer", str(total_num_tracers), str(tracer_id)]
         os.execvp(args[0], args)
     else:
         return newpid
@@ -30,11 +31,11 @@ def main():
 
     parser.add_argument('--num_insns_per_round', dest='num_insns_per_round',
                         help='Number of insns per round', type=int,
-                        default=1000)
+                        default=100000)
 
     parser.add_argument('--num_progress_rounds', dest='num_progress_rounds',
                         help='Number of rounds to run', type=int,
-                        default=100000)
+                        default=200)
 
     args = parser.parse_args()
     log_fds = []
@@ -89,11 +90,13 @@ def main():
     if args.num_progress_rounds > 0 :
         print "Running for %d rounds ... " %(args.num_progress_rounds)
         num_finised_rounds = 0
-        step_size = min(100, args.num_progress_rounds)
+        step_size = min(1, args.num_progress_rounds)
         while num_finised_rounds < args.num_progress_rounds:
             kf.progressBy(args.num_insns_per_round, step_size)
             num_finised_rounds += step_size
-            print "Ran %d rounds ..." %(num_finised_rounds)
+            print "Ran %d rounds ..." %(num_finised_rounds), " elapsed time ...", float(time.time()) - start_time
+            #time.sleep(0.1)
+            #raw_input("Press Enter to continue...")
 
     elapsed_time = float(time.time()) - start_time
     print "Total time elapsed (secs) = ", elapsed_time

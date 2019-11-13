@@ -14,7 +14,7 @@
 #include <sys/syscall.h>
 #include <sys/ptrace.h>
 
-//#define APP_VT_TEST
+#define APP_VT_TEST
 
 #define PTRACE_FORCE_SINGLESTEP 0x42f5
 
@@ -23,8 +23,8 @@
 //#endif
 
 
-#define NUM_THREADS 1
-#define NUM_PROCESSES 5
+#define NUM_THREADS 5
+#define NUM_PROCESSES 1
  
 int total_number_of_tracers;
 int my_tracer_id;
@@ -94,18 +94,19 @@ void *myThreadFun(void *vargp)
     thread_target_clock = *my_clock + thread_increment;
     #endif
 
+    /*
     printf("Sleep start from Thread: %d\n", *myid); 
     fflush(stdout);
     sleep(1); 
     printf("Sleep Finished from Thread: %d\n", *myid); 
-    fflush(stdout);
+    fflush(stdout);*/
 
     for (int i = 0; i < 100; i++) {
     printf("Starting Fibonacci from Thread: %d\n", *myid); 
     fib_value = fibonacci(10000, *myid, &thread_target_clock, &thread_increment);
     printf("Finished Fibonacci from Thread: %d. Value = %d\n", *myid, fib_value); 
     fflush(stdout);
-    sleep(1); 
+    //sleep(1); 
     printf("Finished from Thread: %d\n", *myid); 
     fflush(stdout);
     }

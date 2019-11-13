@@ -34,7 +34,7 @@ def main():
 
     parser.add_argument('--cmds_to_run_file', dest='cmds_to_run_file',
                         help='path to file containing commands to run', \
-                        type=str, required=True)
+                        type=str, default='cmds_to_run_file.txt')
 
     parser.add_argument('--run_in_one_tracer', dest='run_in_one_tracer',
             help='True/False runs all commands in one tracer if True',
@@ -50,7 +50,7 @@ def main():
 
     parser.add_argument('--num_progress_rounds', dest='num_progress_rounds',
                         help='Number of rounds to run', type=int,
-                        default=10000)
+                        default=50000)
 
     args = parser.parse_args()
     
@@ -108,11 +108,11 @@ def main():
         print "Running for %d rounds ... " %(args.num_progress_rounds)
 
         num_finised_rounds = 0
-        step_size = 100
+        step_size = min(100, args.num_progress_rounds)
         while num_finised_rounds < args.num_progress_rounds:
             kf.progressBy(args.num_insns_per_round, step_size)
             num_finised_rounds += step_size
-            print "Ran %d rounds ..." %(num_finised_rounds)
+            print "Ran %d rounds ..." %(num_finised_rounds), " elapsed time ...", float(time.time()) - start_time
 
     elapsed_time = float(time.time()) - start_time
     print "Total time elapsed (secs) = ", elapsed_time

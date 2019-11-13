@@ -43,22 +43,23 @@ typedef struct tracer_struct {
 	struct task_struct * tracer_task;
 	struct task_struct * spinner_task;
 	struct task_struct * proc_to_control_task;
+	struct task_struct * vt_exec_task;
 
 	int proc_to_control_pid;
 	int create_spinner;
 	int tracer_id;
 	int tracer_pid;
-    int tracer_type;
+    	int tracer_type;
 	u32 cpu_assignment;
 	s64 curr_virtual_time;
 	s64 round_overshoot;
 	s64 round_start_virt_time;
-    s64 nxt_round_burst_length;
+    	s64 nxt_round_burst_length;
 
 	rwlock_t tracer_lock;
 
 	llist schedule_queue;
-    llist run_queue;
+    	llist run_queue;
 	wait_queue_head_t * w_queue;
 	int w_queue_wakeup_pid;
 	lxc_schedule_elem * last_run;
