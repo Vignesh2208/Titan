@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/libsyscall_intercept_hook_point.h
+
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/filter_test.c
+stdbool.h
+-
+stdio.h
+-
+string.h
+-
+syscall.h
+-
+libsyscall_intercept_hook_point.h
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/libsyscall_intercept_hook_point.h
+

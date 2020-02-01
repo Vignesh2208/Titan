@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/libsyscall_intercept_hook_point.h
+
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/test_clone_thread_preload.c
+libsyscall_intercept_hook_point.h
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/libsyscall_intercept_hook_point.h
+assert.h
+-
+syscall.h
+-
+stdio.h
+-
+

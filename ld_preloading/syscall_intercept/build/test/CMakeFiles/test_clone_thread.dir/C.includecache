@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/test_clone_thread.c
+assert.h
+-
+pthread.h
+-
+stdlib.h
+-
+stdio.h
+-
+

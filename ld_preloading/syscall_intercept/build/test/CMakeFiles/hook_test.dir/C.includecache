@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../src/magic_syscalls.h
+syscall.h
+-
+unistd.h
+-
+
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/hook_test.c
+assert.h
+-
+stdint.h
+-
+stdlib.h
+-
+unistd.h
+-
+syscall.h
+-
+string.h
+-
+magic_syscalls.h
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/magic_syscalls.h
+hook_test_data.h
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/hook_test_data.h
+
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/hook_test_data.h
+unistd.h
+-
+stdbool.h
+-
+

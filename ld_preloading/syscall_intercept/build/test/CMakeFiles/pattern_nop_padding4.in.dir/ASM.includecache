@@ -1,0 +1,14 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/mock_trampoline_table.S
+
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/pattern_nop_padding4.in.S
+mock_trampoline_table.S
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/mock_trampoline_table.S
+

@@ -1,0 +1,14 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/src/intercept_template.S
+
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/src/intercept_wrapper.S
+
+/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/src/util.S
+
