@@ -4,9 +4,9 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/utils/check_license/check-license.c" "/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/build/CMakeFiles/check_license_executable.dir/utils/check_license/check-license.c.o"
+  "/home/vignesh/Titan/ld_preloading/syscall_intercept/utils/check_license/check-license.c" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/check_license_executable.dir/utils/check_license/check-license.c.o"
   )
-set(CMAKE_C_COMPILER_ID "Clang")
+set(CMAKE_C_COMPILER_ID "GNU")
 
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_C

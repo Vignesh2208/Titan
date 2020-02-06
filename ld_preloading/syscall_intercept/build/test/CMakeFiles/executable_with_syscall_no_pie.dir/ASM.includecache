@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,5 +6,5 @@
 
 #IncludeRegexTransform: 
 
-/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/executable_with_syscall.S
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/executable_with_syscall.S
 

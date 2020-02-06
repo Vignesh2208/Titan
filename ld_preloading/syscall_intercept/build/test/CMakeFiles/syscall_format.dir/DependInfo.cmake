@@ -4,9 +4,9 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/syscall_format.c" "/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/build/test/CMakeFiles/syscall_format.dir/syscall_format.c.o"
+  "/home/vignesh/Titan/ld_preloading/syscall_intercept/test/syscall_format.c" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/syscall_format.dir/syscall_format.c.o"
   )
-set(CMAKE_C_COMPILER_ID "Clang")
+set(CMAKE_C_COMPILER_ID "GNU")
 
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_C
@@ -23,7 +23,7 @@ set(CMAKE_C_TARGET_INCLUDE_PATH
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
-  "/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/build/CMakeFiles/syscall_intercept_shared.dir/DependInfo.cmake"
+  "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_shared.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

@@ -1,1 +1,1 @@
-/usr/bin/clang  -fPIC  -Werror -Wall -Wextra -pedantic -Wno-missing-field-initializers -O3 -DNDEBUG  -shared -Wl,-soname,libfork_ban.so -o libfork_ban.so CMakeFiles/fork_ban.dir/fork_ban.c.o ../libsyscall_intercept.so.0.1.0 -Wl,-rpath,/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/build 
+/usr/bin/gcc -fPIC  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -O3 -DNDEBUG  -shared -Wl,-soname,libfork_ban.so -o libfork_ban.so CMakeFiles/fork_ban.dir/fork_ban.c.o  -Wl,-rpath,/home/vignesh/Titan/ld_preloading/syscall_intercept/build ../libsyscall_intercept.so.0.1.0 

@@ -4,14 +4,15 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_ASM
-  "/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/pattern2.in.S" "/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/build/test/CMakeFiles/pattern2.in.dir/pattern2.in.S.o"
+  "/home/vignesh/Titan/ld_preloading/syscall_intercept/test/pattern2.in.S" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/pattern2.in.dir/pattern2.in.S.o"
   )
-set(CMAKE_ASM_COMPILER_ID "Clang")
+set(CMAKE_ASM_COMPILER_ID "GNU")
 
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_ASM
   "HAS_GCC_PRAGMA_SYSH"
   "_GNU_SOURCE"
+  "pattern2_in_EXPORTS"
   )
 
 # The include file search paths:

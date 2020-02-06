@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/syscall_logger.dir/syscall_logger.c.o"
   "CMakeFiles/syscall_logger.dir/syscall_desc.c.o"
+  "CMakeFiles/syscall_logger.dir/syscall_logger.c.o"
   "libsyscall_logger.pdb"
   "libsyscall_logger.so"
 )

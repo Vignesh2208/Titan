@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/asm_pattern.dir/asm_pattern.c.o"
-  "asm_pattern.pdb"
   "asm_pattern"
+  "asm_pattern.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

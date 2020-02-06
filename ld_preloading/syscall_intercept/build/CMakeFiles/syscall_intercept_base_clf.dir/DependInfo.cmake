@@ -4,9 +4,9 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/src/cmdline_filter.c" "/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/build/CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.o"
+  "/home/vignesh/Titan/ld_preloading/syscall_intercept/src/cmdline_filter.c" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.o"
   )
-set(CMAKE_C_COMPILER_ID "Clang")
+set(CMAKE_C_COMPILER_ID "GNU")
 
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_C

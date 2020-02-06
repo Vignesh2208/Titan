@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_template.S.o"
-  "CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o"
   "CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_wrapper.S.o"
+  "CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o"
 )
 
 # Per-language clean rules from dependency scanning.

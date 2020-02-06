@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,9 +6,9 @@
 
 #IncludeRegexTransform: 
 
-/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/mock_trampoline_table.S
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/mock_trampoline_table.S
 
-/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/pattern_symbol_boundary3.out.S
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/pattern_symbol_boundary3.out.S
 mock_trampoline_table.S
-/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/mock_trampoline_table.S
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/mock_trampoline_table.S
 

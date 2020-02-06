@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -14,7 +14,7 @@ syscall.h
 unistd.h
 -
 
-/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/syscall_format.c
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/syscall_format.c
 asm/prctl.h
 -
 assert.h
@@ -128,7 +128,7 @@ unistd.h
 utime.h
 -
 libsyscall_intercept_hook_point.h
-/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/libsyscall_intercept_hook_point.h
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/libsyscall_intercept_hook_point.h
 magic_syscalls.h
-/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/magic_syscalls.h
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/magic_syscalls.h
 

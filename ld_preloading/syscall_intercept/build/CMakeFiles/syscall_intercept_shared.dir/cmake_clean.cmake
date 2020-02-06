@@ -1,10 +1,10 @@
 file(REMOVE_RECURSE
-  "syscall_intercept_scoped.o"
-  "syscall_intercept_unscoped.o"
   "libsyscall_intercept.pdb"
   "libsyscall_intercept.so"
-  "libsyscall_intercept.so.0.1.0"
   "libsyscall_intercept.so.0"
+  "libsyscall_intercept.so.0.1.0"
+  "syscall_intercept_scoped.o"
+  "syscall_intercept_unscoped.o"
 )
 
 # Per-language clean rules from dependency scanning.

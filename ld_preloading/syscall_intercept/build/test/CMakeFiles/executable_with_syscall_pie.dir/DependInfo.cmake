@@ -4,9 +4,9 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_ASM
-  "/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/executable_with_syscall.S" "/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/build/test/CMakeFiles/executable_with_syscall_pie.dir/executable_with_syscall.S.o"
+  "/home/vignesh/Titan/ld_preloading/syscall_intercept/test/executable_with_syscall.S" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/executable_with_syscall_pie.dir/executable_with_syscall.S.o"
   )
-set(CMAKE_ASM_COMPILER_ID "Clang")
+set(CMAKE_ASM_COMPILER_ID "GNU")
 
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_ASM

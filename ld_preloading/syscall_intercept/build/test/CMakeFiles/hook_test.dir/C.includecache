@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -12,7 +12,7 @@ syscall.h
 unistd.h
 -
 
-/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/hook_test.c
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/hook_test.c
 assert.h
 -
 stdint.h
@@ -26,11 +26,11 @@ syscall.h
 string.h
 -
 magic_syscalls.h
-/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/magic_syscalls.h
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/magic_syscalls.h
 hook_test_data.h
-/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/hook_test_data.h
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/hook_test_data.h
 
-/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/hook_test_data.h
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/hook_test_data.h
 unistd.h
 -
 stdbool.h

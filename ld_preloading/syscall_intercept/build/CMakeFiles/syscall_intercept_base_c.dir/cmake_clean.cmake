@@ -4,8 +4,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.o"
   "CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.o"
   "CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.o"
-  "CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.o"
   "CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.o"
+  "CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.o"
   "CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.o"
 )
 

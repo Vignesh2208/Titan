@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/vignesh/Desktop/Lookahead_Testing/syscall_intercept/test/test_clone_thread.c
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/test_clone_thread.c
 assert.h
 -
 pthread.h

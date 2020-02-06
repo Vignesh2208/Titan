@@ -1,1 +1,1 @@
-/usr/bin/clang  -fPIC  -Werror -Wall -Wextra -pedantic -Wno-missing-field-initializers -O3 -DNDEBUG  -shared -Wl,-soname,libhook_test_preload_with_static.so -o libhook_test_preload_with_static.so CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.o ../libsyscall_intercept.a -ldl -lcapstone 
+/usr/bin/gcc -fPIC  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -O3 -DNDEBUG  -shared -Wl,-soname,libhook_test_preload_with_static.so -o libhook_test_preload_with_static.so CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.o  ../libsyscall_intercept.a -ldl -lcapstone 
