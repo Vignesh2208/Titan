@@ -17,6 +17,21 @@
 #define BUF_MAX_SIZE MAX_API_ARGUMENT_SIZE
 
 
+struct dilated_task_struct {
+	s64 curr_virt_time;
+	s64 wakeup_time;
+	s64 virt_start_time;
+	s64 burst_target;
+	s64 lookahead;
+	int associated_tracer_id;
+	int ready;
+	int buffer_window_len;
+	int pid;
+	struct task_struct * vt_exec_task;
+	struct task_struct * base_task;
+}
+
+
 typedef struct overshoot_info_struct {
 	s64 round_error;
 	s64 n_rounds;
@@ -35,36 +50,31 @@ typedef struct sched_queue_element {
 	s64 quanta_curr_round;
 	int pid;
 	int blocked;
-	struct task_struct * curr_task;
+	struct dilated_task_struct * curr_task;
 } lxc_schedule_elem;
 
 
 typedef struct tracer_struct {
-	struct task_struct * tracer_task;
-	struct task_struct * spinner_task;
-	struct task_struct * proc_to_control_task;
+	struct dilated_task_struct * main_task;
 	struct task_struct * vt_exec_task;
-
-	int proc_to_control_pid;
-	int create_spinner;
 	int tracer_id;
 	int tracer_pid;
-    	int tracer_type;
-	u32 cpu_assignment;
+	u32 timeline_assignment;
+
 	s64 curr_virtual_time;
 	s64 round_overshoot;
 	s64 round_start_virt_time;
-    	s64 nxt_round_burst_length;
-
+   	s64 nxt_round_burst_length;
+	s64 running_task_lookahead;
 	rwlock_t tracer_lock;
 
 	llist schedule_queue;
-    	llist run_queue;
+   	llist run_queue;
 	wait_queue_head_t * w_queue;
 	int w_queue_wakeup_pid;
 	lxc_schedule_elem * last_run;
-} tracer;
 
+} tracer;
 
 
 

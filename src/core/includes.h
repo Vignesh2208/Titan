@@ -65,6 +65,7 @@
 
 #define SUCCESS 1
 #define FAIL -1
+#define START_VIRTUAL_TIME 1000000000
 
 //Number of Instructions per uSec or 1 instruction per nano sec
 #define REF_CPU_SPEED	1000
@@ -83,22 +84,46 @@
 
 
 #ifdef KRONOS_DEBUG_INFO
-#define PDEBUG_I(fmt, args...) printk(KERN_INFO "Titan: <INFO> " fmt, ## args)
+#define PDEBUG_I(fmt, args...) \
+ 	do {                                \
+        printk(KERN_DEBUG "Titan: <INFO> [Process: %d] (%s:%d): %s: ",    \
+               current->pid, __FILE__, __LINE__, __func__);          \
+        printk(KERN_INFO fmt, ## args);	\
+    } while (0)
+	
 #else
-#define PDEBUG_I(fmt,args...) //printk(KERN_INFO "Titan: <INFO> " fmt, ## args)
+#define PDEBUG_I(fmt,args...)
 #endif
 
 
 
 #ifdef KRONOS_DEBUG_VERBOSE
-#define PDEBUG_V(fmt,args...) printk(KERN_INFO "Titan: <VERBOSE> " fmt, ## args)
+#define PDEBUG_V(fmt, args...) \
+ 	do {                                \
+        printk(KERN_DEBUG "Titan: <VERBOSE> [Process: %d] (%s:%d): %s: ",    \
+               current->pid, __FILE__, __LINE__, __func__);          \
+        printk(KERN_INFO fmt, ## args);	\
+    } while (0)
 #else
-#define PDEBUG_V(fmt,args...) //printk(KERN_INFO "Titan: <VERBOSE> " fmt, ## args)
+#define PDEBUG_V(fmt,args...)
 #endif
 
-#define PDEBUG_A(fmt, args...) printk(KERN_INFO "Titan: <NOTICE> " fmt, ## args)
-#define PDEBUG_E(fmt, args...) printk(KERN_ERR "Titan: <ERROR> " fmt, ## args)
 
+#define PDEBUG_A(fmt, args...) \
+ 	do {                                \
+        printk(KERN_DEBUG "Titan: <NOTICE> [Process: %d] (%s:%d): %s: ",    \
+               current->pid, __FILE__, __LINE__, __func__);          \
+        printk(KERN_INFO fmt, ## args);	\
+    } while (0)
+
+
+#define PDEBUG_E(fmt, args...) \
+ 	do {                                \
+        printk(KERN_DEBUG "Titan: <ERROR> [Process: %d] (%s:%d): %s: ",    \
+               current->pid, __FILE__, __LINE__, __func__);          \
+        printk(KERN_INFO fmt, ## args);	\
+		BUG_ON(true);
+    } while (0)
 
 
 #ifdef ENABLE_IRQ_LOCKING

@@ -10,13 +10,11 @@ void free_mmap_pages(void *mem, int npages);
 int get_next_value (char *write_buffer);
 int atoi(char *s);
 struct task_struct* find_task_by_pid(unsigned int nr);
-void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id, int tracer_type);
-tracer * alloc_tracer_entry(uint32_t tracer_id, int tracer_type);
+void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id);
+tracer * alloc_tracer_entry(uint32_t tracer_id);
 void free_tracer_entry(tracer * tracer_entry);
 void set_children_cpu(struct task_struct *aTask, int cpu);
-void set_children_time(tracer * tracer_entry,
-                       struct task_struct *aTask, s64 time,
-                       int increment);
+void set_children_time(tracer * tracer_entry, s64 time, int increment);
 void print_schedule_list(tracer* tracer_entry);
 int kill_p(struct task_struct *killTask, int sig);
 tracer * get_tracer_for_task(struct task_struct * aTask);

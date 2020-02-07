@@ -6,6 +6,7 @@ extern s64 virt_exp_start_time;
 extern int tracer_num;
 extern int schedule_list_size(tracer * tracer_entry);
 extern hashmap get_tracer_by_id;
+extern hashmap get_associated_tracer;
 extern struct mutex exp_lock;
 
 
@@ -76,22 +77,39 @@ struct task_struct* find_task_by_pid(unsigned int nr) {
 	return task;
 }
 
-void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id, int tracer_type) {
+void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id) {
 
 	if (!new_tracer)
 		return;
-		
-	new_tracer->proc_to_control_pid = -1;
-	new_tracer->cpu_assignment = 0;
+
+	struct dilated_task_struct * main_task;
+
+	main_task = (struct dilated_task_struct *)kmalloc(
+		sizeof(struct dilated_task_struct), GFP_KERNEL);
+	if (!main_task) {
+		PDEBUG_E("Failed to Allot Memory For Tracer Task !\n");
+		BUG_ON(true);
+	}
+
+	memset(main_task, 0, sizeof(struct dilated_task_struct))
+	main_task->associated_tracer_id = tracer_id;
+	main_task->virt_start_time = START_VIRTUAL_TIME;
+	main_task->curr_virt_time = START_VIRTUAL_TIME;
+	main_task->pid = current->pid;
+	main_task->base_task = current;
+
+
+	new_tracer->timeline_assignment = 0;
 	new_tracer->tracer_id = tracer_id;
 	new_tracer->tracer_pid = 0;
 	new_tracer->round_start_virt_time = 0;
 	new_tracer->nxt_round_burst_length = 0;
-	new_tracer->curr_virtual_time = 0;
+	new_tracer->curr_virtual_time = START_VIRTUAL_TIME;
 	new_tracer->round_overshoot = 0;
-	new_tracer->tracer_type = tracer_type;
 	new_tracer->w_queue_wakeup_pid = 0;
+	new_tracer->running_task_lookahead = 0;
 	new_tracer->last_run = NULL;
+	new_tracer->main_task = main_task;
 
 	llist_destroy(&new_tracer->schedule_queue);
 	llist_destroy(&new_tracer->run_queue);
@@ -100,11 +118,9 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id, int tracer
 	llist_init(&new_tracer->run_queue);	
 
 	rwlock_init(&new_tracer->tracer_lock);
-
-
 }
 
-tracer * alloc_tracer_entry(uint32_t tracer_id, int tracer_type) {
+tracer * alloc_tracer_entry(uint32_t tracer_id) {
 
 	tracer * new_tracer = NULL;
 
@@ -114,19 +130,14 @@ tracer * alloc_tracer_entry(uint32_t tracer_id, int tracer_type) {
 
 	memset(new_tracer, 0, sizeof(tracer));
 
-	BUG_ON(tracer_type != TRACER_TYPE_INS_VT && tracer_type != TRACER_TYPE_APP_VT);
-
-	initialize_tracer_entry(new_tracer, tracer_id, tracer_type);
-
+	initialize_tracer_entry(new_tracer, tracer_id);
 	return new_tracer;
-
 }
 
 void free_tracer_entry(tracer * tracer_entry) {
 
-
 	llist_destroy(&tracer_entry->schedule_queue);
-    	llist_destroy(&tracer_entry->run_queue);
+    llist_destroy(&tracer_entry->run_queue);
 	kfree(tracer_entry);
 
 }
@@ -189,59 +200,32 @@ void set_children_cpu(struct task_struct *aTask, int cpu) {
 Set the time variables to be consistent with all children.
 Assumes tracer write lock is acquired prior to call
 ***/
-void set_children_time(tracer * tracer_entry,
-                       struct task_struct *aTask, s64 time,
-                       int increment) {
+void set_children_time(tracer * tracer_entry, s64 time, int increment) {
 
-	struct list_head *list;
-	struct task_struct *taskRecurse;
-	struct task_struct *me;
-	struct task_struct *t;
+
 	unsigned long flags;
+	lxc_schedule_elem* curr_elem;
 
-	if (aTask == NULL) {
-		PDEBUG_E("Set Children Time: Task does not exist\n");
-		return;
-	}
-	if (aTask->pid == 0) {
-		return;
-	}
-	me = aTask;
-	t = me;
+	BUG_ON(!tracer_entry || time <= 0);
 
+	llist* schedule_queue = &tracer_entry->schedule_queue;
+	llist_elem* head = schedule_queue->head;
 
-	// do not set for any threads of tracer itself
-	if (tracer_entry->tracer_type == TRACER_TYPE_APP_VT || aTask->pid != tracer_entry->tracer_task->pid) {
-		do {
-			/* set it for all threads */
-			if (t->pid != aTask->pid && t->pid != tracer_entry->tracer_task->pid) {
-                		t->virt_start_time = virt_exp_start_time;
-				if (increment) {	
-					t->curr_virt_time += time;
-				} else {
-					t->curr_virt_time = time;
-				}
-				if (experiment_status != RUNNING)
-					t->wakeup_time = 0;
-			}
-		} while_each_thread(me, t);
-	}
-
-	list_for_each(list, &aTask->children) {
-		taskRecurse = list_entry(list, struct task_struct, sibling);
-		if (taskRecurse->pid == 0) {
-			return;
+	while (head != NULL) {
+		curr_elem = (lxc_schedule_elem *)head->item;
+		if (!curr_elem || !curr_elem->curr_task) {
+			break;
 		}
-        	taskRecurse->virt_start_time = virt_exp_start_time;
-		if (increment) {
-			taskRecurse->curr_virt_time += time;
+
+		if (increment) {	
+			curr_elem->curr_task->curr_virt_time += time;
 		} else {
-			taskRecurse->curr_virt_time = time;
+			curr_elem->curr_task->curr_virt_time = time;
 		}
-        
+
 		if (experiment_status != RUNNING)
-			taskRecurse->wakeup_time = 0;
-		set_children_time(tracer_entry, taskRecurse, time, increment);
+			curr_elem->curr_task->wakeup_time = 0;
+		head = head->next;
 	}
 }
 
@@ -289,20 +273,9 @@ int kill_p(struct task_struct *killTask, int sig) {
 
 tracer * get_tracer_for_task(struct task_struct * aTask) {
 
-	int i = 0, tracer_id;
-	tracer * curr_tracer;
-	if (!aTask)
+	if (!aTask || experiment_status != RUNNING)
 		return NULL;
-
-	if (experiment_status != RUNNING)
-		return NULL;
-
-    tracer_id = aTask->associated_tracer_id;
-
-    if (!tracer_id)
-        return NULL;
-    
-    return hmap_get_abs(&get_tracer_by_id, tracer_id);
+	return (tracer *)hmap_get_abs(&get_associated_tracer, aTask->pid);
 }
 
 

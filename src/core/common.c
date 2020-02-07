@@ -21,6 +21,7 @@ extern s64 * aligned_tracer_clock_array;
 
 extern hashmap get_tracer_by_id;
 extern hashmap get_tracer_by_pid;
+extern hashmap get_associated_tracer;
 
 
 extern atomic_t experiment_stopping;
@@ -60,7 +61,8 @@ struct task_struct* get_task_ns(pid_t pid, struct task_struct * parent) {
 	
 
 	list_for_each(list, &parent->children) {
-		struct task_struct * taskRecurse = list_entry(list, struct task_struct, sibling);
+		struct task_struct * taskRecurse = list_entry(list
+			 struct task_struct, sibling);
 		if (task_pid_nr_ns(taskRecurse, task_active_pid_ns(taskRecurse)) == pid)
 			return taskRecurse;
 		t =  get_task_ns(pid, taskRecurse);
@@ -73,7 +75,7 @@ struct task_struct* get_task_ns(pid_t pid, struct task_struct * parent) {
 
 
 /***
-Remove head of schedule queue and return the task_struct of the head element.
+Remove head of schedule queue and return the pid of the head element.
 Assumes tracer write lock is acquired prior to call.
 ***/
 int pop_schedule_list(tracer * tracer_entry) {
@@ -81,10 +83,10 @@ int pop_schedule_list(tracer * tracer_entry) {
 		return 0;
 	lxc_schedule_elem * head;
 	head = llist_pop(&tracer_entry->schedule_queue);
-	struct task_struct * curr_task;
 	int pid;
 	if (head != NULL) {
 		pid = head->pid;
+		kfree(head->curr_task);
 		kfree(head);
 		return pid;
 	}
@@ -132,28 +134,16 @@ void clean_up_schedule_list(tracer * tracer_entry) {
 	struct pid *pid_struct;
 	struct task_struct * task;
 
-	if (tracer_entry && tracer_entry->tracer_task) {
-		tracer_entry->tracer_task->associated_tracer_id = -1;
-		tracer_entry->tracer_task->virt_start_time = 0;
-		tracer_entry->tracer_task->curr_virt_time = 0;
-		tracer_entry->tracer_task->wakeup_time = 0;
-		tracer_entry->tracer_task->burst_target = 0;
-	}
+	BUG_ON(!tracer_entry || !tracer_entry->main_task);
+	
+	lxc_schedule_elem* curr_elem;
+	llist* schedule_queue = &tracer_entry->schedule_queue;
+	llist_elem* head = schedule_queue->head;
+
 	while ( pid != 0) {
 		pid = pop_schedule_list(tracer_entry);
-		if (pid) {
-			pid_struct = find_get_pid(pid);
-			task = pid_task(pid_struct, PIDTYPE_PID);
-			if (task != NULL) {
-				task->virt_start_time = 0;
-				task->curr_virt_time = 0;
-				task->wakeup_time = 0;
-				task->burst_target = 0;
-				task->associated_tracer_id = -1;
-			}
-		} else
-			break;
 	}
+	tracer_entry->main_task = NULL;
 }
 
 void clean_up_run_queue(tracer * tracer_entry) {
@@ -189,7 +179,7 @@ int run_queue_size(tracer * tracer_entry) {
 
 /*
 Assumes tracer write lock is acquired prior to call. Must return with lock still
-acquired.
+acquired. It is assumed that tracee_pid is according to the outermost namespace
 */
 void add_to_tracer_schedule_queue(tracer * tracer_entry,
                                   int tracee_pid) {
@@ -202,14 +192,17 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	s32 rem = 0;
 	struct sched_param sp;
 	struct task_struct * tracee = find_task_by_pid(tracee_pid);
+	struct dilated_task_struct * tracee_dilated_task_struct;
 
 	if (!tracee) {
-		PDEBUG_E("add_to_tracer_schedule_queue: tracee: %d not found!\n", tracee_pid);
+		PDEBUG_E("add_to_tracer_schedule_queue: tracee: %d not found!\n",
+				 tracee_pid);
 		return;
 	}
 	
 	if (experiment_status == STOPPING) {
-		PDEBUG_E("add_to_tracer_schedule_queue: cannot add when experiment is stopping !\n");
+		PDEBUG_E("add_to_tracer_schedule_queue: cannot add when experiment is "
+				 "stopping !\n");
 		return;
 	}
 
@@ -217,65 +210,68 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	         "Adding new tracee %d to tracer-id: %d\n",
 	         tracee->pid, tracer_entry->tracer_id);
 
-	new_elem = (lxc_schedule_elem *)kmalloc(sizeof(lxc_schedule_elem), GFP_KERNEL);
-	memset(new_elem, 0, sizeof(lxc_schedule_elem));
+	new_elem = (lxc_schedule_elem *)kmalloc(sizeof(lxc_schedule_elem),
+				GFP_KERNEL);
+	
 	if (!new_elem) {
-		PDEBUG_E("add_to_tracer_schedule_queue: "
-		         "Tracer %d, tracee %d. Failed to alot Memory\n",
+		PDEBUG_E("Tracer %d, tracee: %d. Failed to alot Memory to add tracee\n",
 		         tracer_entry->tracer_id, tracee->pid);
-		return;
+	}
+	memset(new_elem, 0, sizeof(lxc_schedule_elem));
+
+	tracee_dilated_task_struct = (struct dilated_task_struct *)kmalloc(
+		sizeof(struct dilated_task_struct), GFP_KERNEL);
+	if (!tracee_dilated_task_struct) {
+		PDEBUG_E("Tracer %d, tracee: %d. Failed to alot Memory to add tracee\n",
+		         tracer_entry->tracer_id, tracee->pid);
 	}
 
-	new_elem->pid = tracee->pid;
-	new_elem->curr_task = tracee;
-	tracee->associated_tracer_id = tracer_entry->tracer_id;
 
+	new_elem->pid = tracee->pid;
+	new_elem->curr_task = tracee_dilated_task_struct;
 	new_elem->base_quanta = PROCESS_MIN_QUANTA_NS;
 	new_elem->quanta_left_from_prev_round = 0;
 	new_elem->quanta_curr_round = 0;
 	new_elem->blocked = 0;
 
-		
+	tracee_dilated_task_struct->associated_tracer_id = tracer_entry->tracer_id;
+	tracee_dilated_task_struct->base_task = tracee;
+	tracee_dilated_task_struct->pid = tracee->pid;
 
-	if (tracer_entry->tracer_type == TRACER_TYPE_APP_VT) {
-		BUG_ON(!aligned_tracer_clock_array);
-		BUG_ON(!chaintask[tracer_entry->cpu_assignment - 2]);
-		tracee->tracer_clock = (s64 *)&aligned_tracer_clock_array[tracee->associated_tracer_id - 1];
-		//tracee->vt_exec_task_wqueue = &tracer_wqueue[tracer_entry->cpu_assignment - 2];
-		tracee->vt_exec_task = chaintask[tracer_entry->cpu_assignment - 2];
-		tracee->ready = 0;
-		tracee->ptrace_msteps = 0;
-		tracee->n_ints = 0;
-	} else {
-		//tracee->vt_exec_task_wqueue = NULL;
-		tracee->vt_exec_task = NULL;
-		tracee->ready = 0;
+	if (!tracee_dilated_task_struct->virt_start_time) {
+		tracee_dilated_task_struct->virt_start_time = virt_exp_start_time;
+		tracee_dilated_task_struct->curr_virt_time 
+			= tracer_entry->curr_virtual_time;
+		tracee_dilated_task_struct->wakeup_time = 0;
+		tracee_dilated_task_struct->burst_target = 0;
+		tracee_dilated_task_struct->buffer_window_len = 0;
+		tracee_dilated_task_struct->lookahead = 0;
 	}
 
-	if (!tracee->virt_start_time) {
-		tracee->virt_start_time = virt_exp_start_time;
-		tracee->curr_virt_time = tracer_entry->curr_virtual_time;
-		tracee->wakeup_time = 0;
-		tracee->burst_target = 0;
-	}
 
+	
+	BUG_ON(!chaintask[tracer_entry->timeline_assignment]);
+	BUG_ON(tracer_entry->vt_exec_task 
+		!= chaintask[tracer_entry->timeline_assignment]);
+	tracee_dilated_task_struct->vt_exec_task = tracer_entry->vt_exec_task;
+	tracee_dilated_task_struct->ready = 0;
+	
 	llist_append(&tracer_entry->schedule_queue, new_elem);
-
-
 	bitmap_zero((&tracee->cpus_allowed)->bits, 8);
 	cpumask_set_cpu(tracer_entry->cpu_assignment, &tracee->cpus_allowed);
 	sp.sched_priority = 99;
+
 	sched_setscheduler(tracee, SCHED_RR, &sp);
-	PDEBUG_E("add_to_tracer_schedule_queue:  "
-	         "Tracee %d added successfully to tracer-id: %d. schedule list size: %d\n",
-	         tracee->pid, tracer_entry->tracer_id, schedule_list_size(tracer_entry));
+	PDEBUG_I("add_to_tracer_schedule_queue:  Tracee %d added successfully to "
+			"tracer-id: %d. schedule list size: %d\n", tracee->pid,
+			tracer_entry->tracer_id, schedule_list_size(tracer_entry));
 }
 
 
 
 /*
 Assumes tracer write lock is acquired prior to call. Must return with lock still
-acquired.
+acquired. It is assumed that tracee_pid is according to the outermost namespace
 */
 void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid) 
 {
@@ -288,29 +284,20 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid)
 	llist_elem * head_2;
 	int pos = 0;
 
-	
-
-	PDEBUG_I("remove_from_tracer_schedule_queue: "
-	         "Removing tracee %d from tracer-id: %d\n",
+	PDEBUG_I("Removing tracee %d from tracer-id: %d\n",
 	         tracee_pid, tracer_entry->tracer_id);
 
 	head_1 = tracer_entry->schedule_queue.head;
 	head_2 = tracer_entry->run_queue.head;
 
-	if (tracee) {
-		tracee->associated_tracer_id = -1;
-		tracee->virt_start_time = 0;
-		tracee->curr_virt_time = 0;
-		tracee->wakeup_time = 0;
-		tracee->burst_target = 0;
-	}
 
 	while (head_1 != NULL || head_2 != NULL) {
 
 		if (head_1) {
 			curr_elem = (lxc_schedule_elem *)head_1->item;
 			if (curr_elem && curr_elem->pid == tracee_pid) {
-				removed_elem = llist_remove_at(&tracer_entry->schedule_queue, pos);
+				removed_elem = llist_remove_at(&tracer_entry->schedule_queue,
+					pos);
 			}
 			head_1 = head_1->next;
 		}
@@ -325,8 +312,10 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid)
 		pos ++;
 	}
 
-	if (removed_elem) 
+	if (removed_elem) {
+		kfree(removed_elem->curr_task);
 		kfree(removed_elem);
+	}
 }
 
 
@@ -497,47 +486,28 @@ Assumes tracer write lock is acquired prior to call. Must return with write lock
 still acquired.
 */
 void update_all_children_virtual_time(tracer * tracer_entry, s64 time_increment) {
-
-
 	if (tracer_entry && tracer_entry->tracer_task) {
 
 		tracer_entry->round_start_virt_time += time_increment;
 		tracer_entry->curr_virtual_time = tracer_entry->round_start_virt_time;
 
 		if (schedule_list_size(tracer_entry) > 0)
-			set_children_time(tracer_entry, tracer_entry->tracer_task,
-								tracer_entry->curr_virtual_time, 0);
-
-		if (tracer_entry->spinner_task)
-			tracer_entry->spinner_task->curr_virt_time =
-			    tracer_entry->curr_virtual_time;
-
-		if (tracer_entry->proc_to_control_task != NULL) {
-			if (find_task_by_pid(tracer_entry->proc_to_control_pid) != NULL)
-				tracer_entry->proc_to_control_task->curr_virt_time =
-				    tracer_entry->curr_virtual_time;
-		}
-
+			set_children_time(tracer_entry, tracer_entry->curr_virtual_time, 0);
 	}
-
 }
 
 
-void update_init_task_virtual_time(s64 time_to_set) {
-	init_task.curr_virt_time = time_to_set;
-}
 
 /*
 Assumes no tracer lock is acquired prior to call
 */
-void update_all_tracers_virtual_time(int cpuID) {
+void update_all_tracers_virtual_time(int timelineID) {
 	llist_elem * head;
 	llist * tracer_list;
 	tracer * curr_tracer;
-	s64 overshoot_err;
 	s64 target_increment;
 
-	tracer_list =  &per_cpu_tracer_list[cpuID];
+	tracer_list =  &per_cpu_tracer_list[timelineID];
 	head = tracer_list->head;
 
 
@@ -548,22 +518,7 @@ void update_all_tracers_virtual_time(int cpuID) {
 		target_increment = curr_tracer->nxt_round_burst_length;
 
 		if (target_increment > 0) {
-			if (curr_tracer && curr_tracer->tracer_type == TRACER_TYPE_APP_VT) {
-				BUG_ON(!aligned_tracer_clock_array);
-				//WARN_ON(aligned_tracer_clock_array[curr_tracer->tracer_id - 1] < curr_tracer->round_start_virt_time +  target_increment);
-				if (aligned_tracer_clock_array[curr_tracer->tracer_id - 1] < curr_tracer->round_start_virt_time +  target_increment) {
-					// this can happen if no process belonging to tracer was runnable in the previous round.
-					aligned_tracer_clock_array[curr_tracer->tracer_id - 1] = curr_tracer->round_start_virt_time +  target_increment;
-				}
-				overshoot_err = aligned_tracer_clock_array[curr_tracer->tracer_id - 1] - (curr_tracer->round_start_virt_time +  target_increment);
-				curr_tracer->round_overshoot = overshoot_err;
-				target_increment = target_increment + overshoot_err;
-				update_all_children_virtual_time(curr_tracer, target_increment);
-
-				WARN_ON(aligned_tracer_clock_array[curr_tracer->tracer_id - 1] != curr_tracer->curr_virtual_time);
-			} else {
-				update_all_children_virtual_time(curr_tracer, target_increment);
-			}
+			update_all_children_virtual_time(curr_tracer, target_increment);
 		} else {
 			PDEBUG_E("Tracer nxt round burst length is 0\n");
 		}
@@ -725,89 +680,21 @@ int handle_initialize_exp_cmd(char * buffer) {
 }
 
 
-/**
-* write_buffer: <tracer_id>,<network device name>
-* Can be called after successfull synchronize and freeze command
-**/
-int handle_set_netdevice_owner_cmd(char * write_buffer) {
-
-
-	char dev_name[IFNAMSIZ];
-	int tracer_id;
-	struct pid * pid_struct = NULL;
-	int i = 0;
-	struct net * net;
-	struct task_struct * task;
-	tracer * curr_tracer;
-	int found = 0;
-
-	for (i = 0; i < IFNAMSIZ; i++)
-		dev_name[i] = '\0';
-
-	tracer_id = atoi(write_buffer);
-	int next_idx = get_next_value(write_buffer);
-
-
-	for (i = 0; * (write_buffer + next_idx + i) != '\0'
-	        && *(write_buffer + next_idx + i) != ','  && i < IFNAMSIZ ; i++)
-		dev_name[i] = *(write_buffer + next_idx + i);
-
-	PDEBUG_A("Set Net Device Owner: Received tracer id: %d, Dev Name: %s\n",
-	         tracer_id, dev_name);
-
-	struct net_device * dev;
-	curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
-
-	if (!curr_tracer)
-		return FAIL;
-
-	task = curr_tracer->spinner_task;
-	if (!task) {
-		PDEBUG_E("Must have spinner task to "
-				 "be able to set net device owner\n");
-		return FAIL;
-	}
-
-	pid_struct = get_task_pid(task, PIDTYPE_PID);
-	if (!pid_struct) {
-		PDEBUG_E("Pid Struct of spinner task not found for tracer: %d\n",
-					curr_tracer->tracer_task->pid);
-		return FAIL;
-	}
-
-	write_lock_bh(&dev_base_lock);
-	for_each_net(net) {
-		for_each_netdev(net, dev) {
-			if (dev != NULL) {
-				if (strcmp(dev->name, dev_name) == 0 && !found) {
-					PDEBUG_A("Set Net Device Owner: "
-							 "Found Specified Net Device: %s\n", dev_name);
-					dev->owner_pid = pid_struct;
-					found = 1;
-				} else if (found) {
-					break;
-				}
-			}
-		}
-	}
-	write_unlock_bh(&dev_base_lock);
-	return SUCCESS;
-}
-
 
 s64 get_dilated_time(struct task_struct * task) {
 	struct timeval tv;
+	tracer * associated_tracer;
+	lxc_schedule_elem * curr_elem;
+	llist_elem * head;
+
 	do_gettimeofday(&tv);
 	s64 now = timeval_to_ns(&tv);
 
-	if (task->virt_start_time != 0) {
+	associated_tracer = hmap_get_abs(&get_associated_tracer, task->pid);
 
-		if (task->tracer_clock != NULL) {
-			return *(task->tracer_clock);
-		}
-		return task->curr_virt_time;
+	if (associated_tracer && associated_tracer->curr_virt_time) {
+		return associated_tracer->curr_virt_time;
 	}
-
 	return now;
 
 }
@@ -823,7 +710,7 @@ s64 handle_gettimepid(char * write_buffer) {
 
 	pid = atoi(write_buffer);
 
-	PDEBUG_V("Handle gettimepid: Received Pid = %d\n", pid);
+	PDEBUG_V("Handling gettimepid: Received Pid = %d\n", pid);
 
 	task = find_task_by_pid(pid);
 	if (!task)
