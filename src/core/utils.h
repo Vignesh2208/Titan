@@ -23,6 +23,11 @@ void put_tracer_struct_read(tracer* tracer_entry);
 void get_tracer_struct_write(tracer* tracer_entry);
 void put_tracer_struct_write(tracer* tracer_entry);
 
+struct dilated_task_struct * get_dilated_task_struct(
+	struct task_struct * task);
+
+struct dilated_task_struct * find_dilated_task_by_pid(int pid);
+
 int convert_string_to_array(char * str, int * arr, int arr_size);
 
 #endif

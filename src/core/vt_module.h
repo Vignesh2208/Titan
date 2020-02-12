@@ -60,6 +60,7 @@ typedef struct tracer_struct {
 	int tracer_id;
 	int tracer_pid;
 	u32 timeline_assignment;
+	u32 cpu_assignment;
 
 	s64 curr_virtual_time;
 	s64 round_overshoot;

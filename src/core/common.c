@@ -13,8 +13,8 @@ extern int initialization_status;
 extern s64 virt_exp_start_time;
 
 extern struct mutex exp_lock;
-extern int *per_cpu_chain_length;
-extern llist * per_cpu_tracer_list;
+extern int *per_timeline_chain_length;
+extern llist * per_timeline_tracer_list;
 
 extern s64 * tracer_clock_array;
 extern s64 * aligned_tracer_clock_array;
@@ -320,7 +320,7 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid)
 
 
 /**
-* write_buffer: <tracer_id>,<tracer_type>,<meta_task_type>,<spinner_pid> or <proc_to_control_pid>
+* write_buffer: <tracer_id>,<registration_type>,<optional_timeline_id>
 **/
 int register_tracer_process(char * write_buffer) {
 
@@ -328,62 +328,40 @@ int register_tracer_process(char * write_buffer) {
 	uint32_t tracer_id;
 	int i;
 	int best_cpu = 0;
-	int meta_task_type = 0;
-	int tracer_type;
-	int spinner_pid = 0, process_to_control_pid = 0;
-	struct task_struct * spinner_task = NULL;
-	struct task_struct * process_to_control = NULL;
+	int registration_type = 0;
+	int assigned_timeline_id = 0;
+	int assigned_cpu = 0;
 	int api_args[MAX_API_ARGUMENT_SIZE];
 	int num_args;
 
 
 	num_args = convert_string_to_array(write_buffer, api_args, MAX_API_ARGUMENT_SIZE);
 
-	BUG_ON(num_args <= 2);
+	BUG_ON(num_args < 2);
 
-	tracer_type = api_args[1];
 	tracer_id = api_args[0];
-	meta_task_type = api_args[2];
+	registration_type = api_args[1];
 
-	if (tracer_type != TRACER_TYPE_INS_VT && tracer_type != TRACER_TYPE_APP_VT) {
-		PDEBUG_E("Unknown Tracer Type !");
-		return FAIL;
-	}
 
-	if (meta_task_type == 1) {
-		BUG_ON(num_args != 4);
-		spinner_pid  = api_args[3];
-		if (spinner_pid <= 0) {
-			PDEBUG_E("Spinner pid must be greater than zero. "
-			         "Received value: %d\n", spinner_pid);
+	if (registration_type == 1) {
+		BUG_ON(num_args != 3);
+		assigned_timeline_id  = api_args[3];
+		if (assigned_timeline_id < 0) {
+			PDEBUG_E("assigned_timeline_id pid must be >=0 zero. "
+			         "Received value: %d\n", assigned_timeline_id);
 			return FAIL;
 		}
+		assigned_cpu = (assigned_timeline_id % EXP_CPUS);
 
-		spinner_task = get_task_ns(spinner_pid, current);
-
-		if (!spinner_task) {
-			PDEBUG_E("Spinner pid task not found. "
-			         "Received pid: %d\n", spinner_pid);
-			return FAIL;
+	} else {
+		registration_type = 0;
+		for (i = 0; i < EXP_CPUS; i++) {
+			if (per_timeline_chain_length[i] < per_timeline_chain_length[best_cpu])
+				best_cpu = i;
 		}
-
-
-	} else if (meta_task_type != 0) {
-		meta_task_type = 0;
-		BUG_ON(num_args != 4);
-		process_to_control_pid = api_args[3];
-		if (process_to_control_pid <= 0) {
-			PDEBUG_E("proccess_to_control_pid must be greater than zero. "
-			         "Received value: %d\n", process_to_control_pid);
-			return FAIL;
-		}
-
-		process_to_control = find_task_by_pid(process_to_control_pid);
-		if (!process_to_control) {
-			PDEBUG_E("proccess_to_control_pid task not found. "
-			         "Received pid: %d\n", process_to_control_pid);
-			return FAIL;
-		}
+		BUG_ON(num_args != 2);
+		assigned_timeline_id = best_cpu;
+		assigned_cpu = best_cpu;
 	}
 
 
@@ -392,91 +370,50 @@ int register_tracer_process(char * write_buffer) {
 	new_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
 
 	if (!new_tracer) {
-		new_tracer = alloc_tracer_entry(tracer_id, tracer_type);
+		new_tracer = alloc_tracer_entry(tracer_id);
 		hmap_put_abs(&get_tracer_by_id, tracer_id, new_tracer);
 		hmap_put_abs(&get_tracer_by_pid, current->pid, new_tracer);
 	} else {
-		initialize_tracer_entry(new_tracer, tracer_id, tracer_type);
+		initialize_tracer_entry(new_tracer, tracer_id);
 		hmap_put_abs(&get_tracer_by_pid, current->pid, new_tracer);
 	}
 
 	if (!new_tracer)
 		return FAIL;
 
-	for (i = 0; i < EXP_CPUS; i++) {
-		if (per_cpu_chain_length[i] < per_cpu_chain_length[best_cpu])
-			best_cpu = i;
-	}
+	
 
 	mutex_lock(&exp_lock);
 	
-	per_cpu_chain_length[best_cpu] ++;
+	if (registration_type == 0)
+		per_timeline_chain_length[best_cpu] ++;
+
 	new_tracer->tracer_id = tracer_id;
-	new_tracer->cpu_assignment = best_cpu + 2;
-	new_tracer->tracer_task = current;
-	new_tracer->create_spinner = meta_task_type;
-	new_tracer->proc_to_control_task = NULL;
-	new_tracer->spinner_task = NULL;
-	new_tracer->w_queue = &tracer_wqueue[new_tracer->cpu_assignment - 2];
+	new_tracer->timeline_assignment = assigned_timeline_id;
+	new_tracer->cpu_assignment = assigned_cpu;
+	new_tracer->w_queue = &tracer_wqueue[new_tracer->timeline_assignment];
 	new_tracer->tracer_pid = current->pid;
+	new_tracer->vt_exec_task = chaintask[new_tracer->timeline_assignment];
 
-	BUG_ON(!chaintask[new_tracer->cpu_assignment - 2]);
-	new_tracer->vt_exec_task = chaintask[new_tracer->cpu_assignment - 2];
-
-	current->associated_tracer_id = tracer_id;
-	current->ready = 0;
-	current->ptrace_msteps = 0;
-	current->n_ints = 0;
-	current->ptrace_mflags = 0; 
-	current->vt_exec_task = NULL;
-
+	BUG_ON(!chaintask[new_tracer->timeline_assignment]);
+	
 	++tracer_num;
-	llist_append(&per_cpu_tracer_list[best_cpu], new_tracer);
+	llist_append(&per_timeline_tracer_list[assigned_timeline_id], new_tracer);
 	mutex_unlock(&exp_lock);
 
-	if (meta_task_type) {
-		PDEBUG_I("Register Tracer: Pid: %d, ID: %d "
-		 "assigned cpu: %d, spinner pid = %d\n",
-		 current->pid, new_tracer->tracer_id,
-		 new_tracer->cpu_assignment, spinner_pid);
-
-	} 
-
-	if (process_to_control != NULL) {
-		PDEBUG_I("Register Tracer: Pid: %d, ID: %d "
-		"assigned cpu: %d, process_to_control pid = %d\n",
-		current->pid, new_tracer->tracer_id,
-		new_tracer->cpu_assignment, process_to_control_pid);
-
-	}
+	
+	PDEBUG_I("Register Tracer: ID: %d assigned timeline: %d\n",
+			 new_tracer->tracer_id, new_tracer->timeline_assignment);
 
 	bitmap_zero((&current->cpus_allowed)->bits, 8);
-
 	get_tracer_struct_write(new_tracer);
-	cpumask_set_cpu(new_tracer->cpu_assignment, &current->cpus_allowed);
-
-
-	if (meta_task_type && spinner_task) {
-		PDEBUG_I("Set Spinner Task for Tracer: %d, Spinner: %d\n",
-		         current->pid, spinner_task->pid);
-		new_tracer->spinner_task = spinner_task;
-		kill_p(spinner_task, SIGSTOP);
-		bitmap_zero((&spinner_task->cpus_allowed)->bits, 8);
-		cpumask_set_cpu(1, &spinner_task->cpus_allowed);
-
-	} 
-	
-	if (!meta_task_type && process_to_control != NULL) {
-		add_to_tracer_schedule_queue(new_tracer, process_to_control_pid);
-		new_tracer->proc_to_control_pid = process_to_control_pid;
-		new_tracer->proc_to_control_task = process_to_control;
-	} else {
-		new_tracer->proc_to_control_pid = -1;
-	}
+	cpumask_set_cpu(new_tracer->timeline_assignment, &current->cpus_allowed);
 
 	put_tracer_struct_write(new_tracer);
 	PDEBUG_I("Register Tracer: Finished for tracer: %d\n", tracer_id);
-	return new_tracer->cpu_assignment;	//return the allotted cpu back to the tracer.
+
+	//return the allotted timeline_id back to the tracer.
+	return new_tracer->timeline_assignment;	
 }
 
 
@@ -507,7 +444,7 @@ void update_all_tracers_virtual_time(int timelineID) {
 	tracer * curr_tracer;
 	s64 target_increment;
 
-	tracer_list =  &per_cpu_tracer_list[timelineID];
+	tracer_list =  &per_timeline_tracer_list[timelineID];
 	head = tracer_list->head;
 
 
@@ -532,19 +469,18 @@ void update_all_tracers_virtual_time(int timelineID) {
 
 
 
+
 /**
-* write_buffer: result which indicates overflow number of instructions.
-  It specifies the total number of instructions by which the tracer overshot
-  in the current round. The overshoot is ignored if experiment type is CS.
-  Assumes no tracer lock is acquired prior to call.
+* write_buffer: result specifies process-IDs to remove from tracer schedule
+  and run queues. These process-IDs are no longer a part of the VT experiment.
 **/
 
 int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 
 	struct pid *pid_struct;
 	struct task_struct * task;
+	struct dilated_task_struct * dilated_task;
 	int i, pid_to_remove;
-	int wakeup = 0;
 
 	if (!curr_tracer)
 		return FAIL;
@@ -555,87 +491,38 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 		if (pid_to_remove <= 0)
 			break;
 
-		PDEBUG_I("Handle tracer results: Pid: %d, Tracer ID: %d, "
-			     "Ignoring Process: %d\n", curr_tracer->tracer_task->pid,
-			     curr_tracer->tracer_id, pid_to_remove);
-		struct task_struct * mappedTask = get_task_ns(pid_to_remove, curr_tracer->tracer_task);
-		if (curr_tracer->tracer_type == TRACER_TYPE_APP_VT) {
-			WARN_ON(mappedTask && mappedTask->pid != current->pid);
-			if (mappedTask && mappedTask->pid == current->pid && current->burst_target > 0) {
-				wakeup = 1;
-			}
-		}
+		PDEBUG_I("Handle tracer results: Tracer ID: %d, "
+			     "Ignoring Process: %d\n", curr_tracer->tracer_id,
+				 pid_to_remove);
+		struct task_struct * mappedTask = get_task_ns(pid_to_remove,
+			curr_tracer->main_task->base_task);
+
+		WARN_ON(mappedTask && mappedTask->pid != current->pid);
+		
 		if (mappedTask != NULL) {
 			remove_from_tracer_schedule_queue(curr_tracer, mappedTask->pid);
 		}
-
-		
 	}
 
 	put_tracer_struct_write(curr_tracer);
-
-	if (wakeup) {
-		PDEBUG_V("APPVT Tracer signalling resume. Tracer ID: %d\n",
-	            curr_tracer->tracer_id);
-		curr_tracer->w_queue_wakeup_pid = 1;
-		//wake_up_interruptible(curr_tracer->w_queue);
-		wake_up_process(curr_tracer->vt_exec_task);
-
-	} else {
-		signal_cpu_worker_resume(curr_tracer);
-	}
+	signal_cpu_worker_resume(curr_tracer);
 	return SUCCESS;
 }
 
-void wait_for_insvt_tracer_completion(tracer * curr_tracer)
-{
-
-	if (!curr_tracer)
-		return;
-	BUG_ON(curr_tracer->tracer_type != TRACER_TYPE_INS_VT);
-	curr_tracer->w_queue_wakeup_pid = curr_tracer->tracer_pid;
-	wake_up_interruptible(curr_tracer->w_queue);
-	wait_event_interruptible(*curr_tracer->w_queue, curr_tracer->w_queue_wakeup_pid == 1);
-	PDEBUG_V("Resuming from Tracer completion for Tracer ID: %d\n", curr_tracer->tracer_id);
-
-}
-
-void wait_for_appvt_tracer_completion(tracer * curr_tracer, struct task_struct * relevant_task)
-{
+void wait_for_task_completion(tracer * curr_tracer,
+							  struct task_struct * relevant_task) {
 	if (!curr_tracer || !relevant_task) {
 		return;
 	}
 	int ret;
-	BUG_ON(curr_tracer->tracer_type != TRACER_TYPE_APP_VT);
-	PDEBUG_V("Waiting for Tracer completion for Tracer ID: %d\n", curr_tracer->tracer_id);
+	PDEBUG_V("Waiting for Tracer completion for Tracer ID: %d\n",
+			 curr_tracer->tracer_id);
 	curr_tracer->w_queue_wakeup_pid = relevant_task->pid;
-	set_current_state(TASK_INTERRUPTIBLE);
 	wake_up_interruptible(curr_tracer->w_queue);
-	//wait_event_interruptible(*curr_tracer->w_queue, relevant_task->burst_target == 0 || curr_tracer->w_queue_wakeup_pid == 1);
-	
-	/*do {
-		ret = wait_event_interruptible_timeout(
-		          *curr_tracer->w_queue, relevant_task->burst_target == 0 || curr_tracer->w_queue_wakeup_pid == 1, HZ);
-		if (ret == 0)
-			set_current_state(TASK_INTERRUPTIBLE);
-		else
-			set_current_state(TASK_RUNNING);
-
-	} while (ret == 0);*/
-	do {
-		
-		if (relevant_task->burst_target == 0 || curr_tracer->w_queue_wakeup_pid == 1) {
-			set_current_state(TASK_RUNNING);
-			relevant_task->burst_target = 0;
-			curr_tracer->w_queue_wakeup_pid = 1;
-			break;
-		} else {
-			//set_current_state(TASK_INTERRUPTIBLE);
-			schedule();
-			set_current_state(TASK_INTERRUPTIBLE);
-		}
-	} while (1);
-	PDEBUG_V("Resuming from Tracer completion for Tracer ID: %d\n", curr_tracer->tracer_id);
+	wait_event_interruptible(*curr_tracer->w_queue,
+							 curr_tracer->w_queue_wakeup_pid == 1);
+	PDEBUG_V("Resuming from Tracer completion for Tracer ID: %d\n",
+			 curr_tracer->tracer_id);
 
 }
 
@@ -644,22 +531,11 @@ void signal_cpu_worker_resume(tracer * curr_tracer) {
 	if (!curr_tracer)
 		return;
 
-	if (curr_tracer->tracer_type == TRACER_TYPE_INS_VT) {
-		PDEBUG_V("INSVT Tracer signalling resume. Tracer ID: %d\n",
-	             curr_tracer->tracer_id);
-
-		curr_tracer->w_queue_wakeup_pid = 1;
-		wake_up_interruptible(curr_tracer->w_queue);
-	} else {
-		if (current->burst_target > 0) {
-			PDEBUG_V("APPVT Tracer signalling resume. Tracer ID: %d\n",
-	            curr_tracer->tracer_id);
-			curr_tracer->w_queue_wakeup_pid = 1;
-			//wake_up_interruptible(curr_tracer->w_queue);
-			wake_up_process(curr_tracer->vt_exec_task);
-		}
-	}
-
+	
+	PDEBUG_V("Tracer signalling resume. Tracer ID: %d\n",
+			curr_tracer->tracer_id);
+	curr_tracer->w_queue_wakeup_pid = 1;
+	wake_up_interruptible(curr_tracer->w_queue);
 }
 
 int handle_stop_exp_cmd() {

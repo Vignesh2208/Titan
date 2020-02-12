@@ -100,6 +100,7 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id) {
 
 
 	new_tracer->timeline_assignment = 0;
+	new_tracer->cpu_assignment = 0;
 	new_tracer->tracer_id = tracer_id;
 	new_tracer->tracer_pid = 0;
 	new_tracer->round_start_virt_time = 0;
@@ -301,6 +302,39 @@ void put_tracer_struct_write(tracer* tracer_entry) {
 	if (tracer_entry) {
 		write_unlock(&tracer_entry->tracer_lock);
 	}
+}
+
+struct dilated_task_struct * get_dilated_task_struct(
+	struct task_struct * task) {
+	if (!tsk)
+		return NULL;
+
+	tracer * associated_tracer;
+	associated_tracer = hmap_get_abs(&get_associated_tracer, task->pid);
+
+	if (!associated_tracer)
+		return NULL;
+
+	llist_elem * head_1;
+	
+	head_1 = associated_tracer->schedule_queue.head;
+	
+	while (head_1 != NULL) {
+
+		if (head_1) {
+			curr_elem = (lxc_schedule_elem *)head_1->item;
+			if (curr_elem && curr_elem->pid == task->pid) {
+				return curr_elem->curr_task;
+			}
+			head_1 = head_1->next;
+		}
+	}
+	return NULL;
+}
+
+
+struct dilated_task_struct * find_dilated_task_by_pid(int pid) {
+	return get_dilated_task_struct(find_task_by_pid(pid));
 }
 
 int convert_string_to_array(char * str, int * arr, int arr_size) 

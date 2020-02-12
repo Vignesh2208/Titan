@@ -24,8 +24,8 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args);
 int handle_stop_exp_cmd();
 s64 get_dilated_time(struct task_struct * task) ;
 s64 handle_gettimepid(char * write_buffer);
-void wait_for_insvt_tracer_completion(tracer * curr_tracer);
-void wait_for_appvt_tracer_completion(tracer * curr_tracer, struct task_struct * relevant_task);
+void wait_for_task_completion(tracer * curr_tracer, struct task_struct * relevant_task);
 void signal_cpu_worker_resume(tracer * curr_tracer);
+
 
 #endif
