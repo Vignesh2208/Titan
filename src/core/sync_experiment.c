@@ -33,6 +33,7 @@ extern struct mutex exp_lock;
 // hashmaps
 extern hashmap get_tracer_by_id;
 extern hashmap get_tracer_by_pid;
+extern hashmap get_associated_tracer;
 
 // atomic variables
 extern atomic_t n_waiting_tracers;
@@ -101,22 +102,45 @@ int progress_by(s64 progress_duration, int num_rounds) {
 }
 
 
+int progress_timeline_by(int timeline_id, s64 progress_duration,
+						 int num_rounds) {
+
+	return SUCCESS;
+}
+
 
 void free_all_tracers() {
     int i;
-
+	llist_elem * head;
+	lxc_schedule_elem * curr_elem;
     for (i = 1; i <= tracer_num; i++) {
         tracer * curr_tracer = hmap_get_abs(&get_tracer_by_id, i);
+		head = curr_tracer->schedule_queue.head;
+		while (head != NULL) {
+
+			if (head) {
+				curr_elem = (lxc_schedule_elem *)head->item;
+				if (curr_elem) {
+					hmap_remove_abs(&get_associated_tracer, curr_elem->pid);
+				}
+			}
+			head = head->next;
+		}
         if (curr_tracer) {
             hmap_remove_abs(&get_tracer_by_pid, curr_tracer->tracer_pid);
             hmap_remove_abs(&get_tracer_by_id, i);
-            free_tracer_entry(curr_tracer);
+			free_tracer_entry(curr_tracer);
         }
     }
     hmap_destroy(&get_tracer_by_id);
 	hmap_destroy(&get_tracer_by_pid);
+	hmap_destroy(&get_associated_tracer);
 }
 
+
+int per_timeline_worker(void *data) {
+	return 0;
+}
 
 int initialize_experiment_components(int exp_type, int num_timelines,
 									 int num_expected_tracers) {
@@ -161,37 +185,40 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 			(int *) kmalloc(EXP_CPUS * sizeof(int), GFP_KERNEL);
 		per_timeline_tracer_list =
 			(llist *) kmalloc(EXP_CPUS * sizeof(llist), GFP_KERNEL);
+		values = (int *)kmalloc(EXP_CPUS * sizeof(int), GFP_KERNEL);
+		chaintask = kmalloc(EXP_CPUS * sizeof(struct task_struct*), GFP_KERNEL);
+		total_num_timelines = EXP_CPUS;
 	} else {
 		per_timeline_chain_length =
 			(int *) kmalloc(total_num_timelines * sizeof(int), GFP_KERNEL);
 		per_timeline_tracer_list =
 			(llist *) kmalloc(total_num_timelines * sizeof(llist), GFP_KERNEL);
+		values = (int *)kmalloc(total_num_timelines * sizeof(int), GFP_KERNEL);
+		chaintask = kmalloc(total_num_timelines * sizeof(struct task_struct*),
+							GFP_KERNEL);
 	}
-	values = (int *)kmalloc(EXP_CPUS * sizeof(int), GFP_KERNEL);
-	chaintask = kmalloc(EXP_CPUS * sizeof(struct task_struct*), GFP_KERNEL);
+	
 
-	if (!per_timeline_tracer_list || !per_timeline_chain_length
-	    || !values || !chaintask) {
+	if (!per_timeline_tracer_list || !per_timeline_chain_length || !values ||
+		!chaintask) {
 		PDEBUG_E("Error Allocating memory for per cpu structures.\n");
 		BUG();
 	}
 
-	for (i = 0; i < EXP_CPUS; i++) {
+	for (i = 0; i < total_num_timelines; i++) {
 		llist_init(&per_timeline_tracer_list[i]);
 		per_timeline_chain_length[i] = 0;
         values[i] = i;
 	}
 
 
-	expected_time = 0;
     current_progress_duration = 0;
     virt_exp_start_time = 0;
-    init_task.curr_virt_time = 0;
 
 	mutex_init(&exp_lock);
-
 	hmap_init(&get_tracer_by_id, "int", 0);
 	hmap_init(&get_tracer_by_pid, "int", 0);
+	hmap_init(&get_associated_tracer, "int", 0);
 
 	init_waitqueue_head(&progress_call_proc_wqueue);
 	init_waitqueue_head(&progress_sync_proc_wqueue);
@@ -206,38 +233,55 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 	PDEBUG_V("Init experiment components: Initialized Variables\n");
 
 
-	if (!round_task) {
-		round_task = kthread_create(&round_sync_task, NULL, "round_sync_task");
-		if (!IS_ERR(round_task)) {
-			kthread_bind(round_task, 0);
-			wake_up_process(round_task);
-		} else {
-			PDEBUG_E("Error Starting Round Sync Task\n");
-			return -EFAULT;
+	if (experiment_type == EXP_CBE) {
+		if (!round_task) {
+			round_task = kthread_create(&round_sync_task, NULL,
+										"round_sync_task");
+			if (!IS_ERR(round_task)) {
+				kthread_bind(round_task, EXP_CPUS);
+				wake_up_process(round_task);
+			} else {
+				PDEBUG_E("Error Starting Round Sync Task\n");
+				return -EFAULT;
+			}
 		}
 
-	}
+		if (!round_task) {
+			PDEBUG_A("Sync And Freeze: Round sync task not started error !\n");
+			return FAIL;
+		}
+		PDEBUG_A("Round Sync Task Pid = %d\n", round_task->pid);
 
-	if (!round_task) {
-		PDEBUG_A("Sync And Freeze: Round sync task not started error !\n");
-		return FAIL;
-	}
-	PDEBUG_A("Round Sync Task Pid = %d\n", round_task->pid);
-
-	for (i = 0; i < EXP_CPUS; i++) {
-		PDEBUG_A("Init experiment components: Adding Worker Thread %d\n", i);
-		chaintask[i] = kthread_create(&per_cpu_worker, &values[i],
-		                              "per_cpu_worker");
-		if (!IS_ERR(chaintask[i])) {
-			kthread_bind(chaintask[i], i % (TOTAL_CPUS - EXP_CPUS));
-			wake_up_process(chaintask[i]);
-			PDEBUG_A("Chain Task %d: Pid = %d\n", i, chaintask[i]->pid);
+		for (i = 0; i < total_num_timelines; i++) {
+			PDEBUG_A("Init experiment components: Adding Worker Thread %d\n",
+					 i);
+			chaintask[i] = kthread_create(&per_cpu_worker, &values[i],
+										"per_cpu_worker");
+			if (!IS_ERR(chaintask[i])) {
+				kthread_bind(chaintask[i],
+							 EXP_CPUS + i % (TOTAL_CPUS - EXP_CPUS));
+				wake_up_process(chaintask[i]);
+				PDEBUG_A("Cpu Worker %d: Pid = %d\n", i, chaintask[i]->pid);
+			}
+		}
+	} else {
+		for (i = 0; i < total_num_timelines; i++) {
+			PDEBUG_A("Init experiment components: Adding Tmeline Thread %d\n",
+					 i);
+			chaintask[i] = kthread_create(&per_timeline_worker, &values[i],
+										"per_timeline_worker");
+			if (!IS_ERR(chaintask[i])) {
+				kthread_bind(chaintask[i], i % EXP_CPUS);
+				wake_up_process(chaintask[i]);
+				PDEBUG_A("Timeline Worker %d: Pid = %d\n", i,
+						 chaintask[i]->pid);
+			}
 		}
 	}
 
 	experiment_status = NOTRUNNING;
 	initialization_status = INITIALIZED;
-        total_expected_tracers = num_expected_tracers;
+    total_expected_tracers = num_expected_tracers;
 
 	PDEBUG_V("Init experiment components: Finished\n");
 	return SUCCESS;

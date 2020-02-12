@@ -264,6 +264,7 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	llist_append(&tracer_entry->schedule_queue, new_elem);
 	bitmap_zero((&tracee->cpus_allowed)->bits, 8);
 	cpumask_set_cpu(tracer_entry->cpu_assignment, &tracee->cpus_allowed);
+	hmap_put_abs(&get_associated_tracer, current->pid, tracer_entry);
 	sp.sched_priority = 99;
 
 	sched_setscheduler(tracee, SCHED_RR, &sp);
@@ -318,6 +319,7 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid)
 	}
 
 	if (removed_elem) {
+		hmap_remove_abs(&get_associated_tracer, removed_elem->pid);
 		kfree(removed_elem->curr_task);
 		kfree(removed_elem);
 	}
