@@ -199,6 +199,11 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 				 tracee_pid);
 		return;
 	}
+
+	if (find_dilated_task_by_pid(tracee_pid)) {
+		PDEBUG_I("Tracee : %d already exists !\n", tracee_pid);
+		return;
+	}
 	
 	if (experiment_status == STOPPING) {
 		PDEBUG_E("add_to_tracer_schedule_queue: cannot add when experiment is "

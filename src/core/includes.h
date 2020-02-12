@@ -81,6 +81,7 @@
 #define FSEC_PER_SEC    1000000000000000L
 
 #define EXP_CBE 1
+#define EXP_CS 2
 
 
 #ifdef KRONOS_DEBUG_INFO

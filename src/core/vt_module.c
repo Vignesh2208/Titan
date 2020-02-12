@@ -62,7 +62,6 @@ static const struct file_operations proc_file_fops = {
     .llseek = vt_llseek,
     .release = vt_release,
     .write = vt_write,
-    .mmap = vt_mmap,
     .owner = THIS_MODULE,
 };
 
@@ -89,7 +88,6 @@ int run_usermode_synchronizer_process(char *path, char **argv, char **envp,
   info = call_usermodehelper_setup(path, argv, envp, gfp_mask, getSpinnerPid,
                                    NULL, NULL);
   if (info == NULL) return -ENOMEM;
-
   return call_usermodehelper_exec(info, wait);
 }
 
@@ -97,25 +95,6 @@ int run_usermode_synchronizer_process(char *path, char **argv, char **envp,
 loff_t vt_llseek(struct file *filp, loff_t pos, int whence) { return 0; }
 
 int vt_release(struct inode *inode, struct file *filp) { return 0; }
-
-int vt_mmap(struct file *filp, struct vm_area_struct *vma) {
-  if (aligned_tracer_clock_array) {
-    unsigned long pfn =
-        virt_to_phys((void *)aligned_tracer_clock_array) >> PAGE_SHIFT;
-    unsigned long len = vma->vm_end - vma->vm_start;
-    int ret;
-
-    ret = remap_pfn_range(vma, vma->vm_start, pfn, len, vma->vm_page_prot);
-    if (ret < 0) {
-      pr_err("could not map the address area\n");
-      return -EIO;
-    }
-  } else {
-    return -EFAULT;
-  }
-
-  return 0;
-}
 
 
 void handle_add_processes_to_sq(int * api_args, int num_args) {
@@ -139,7 +118,7 @@ void handle_add_processes_to_sq(int * api_args, int num_args) {
 }
 
 ssize_t handle_write_results_cmd(struct dilation_task_struct * dilation_task,
-                              int *api_args, int num_args) {
+                                 int *api_args, int num_args) {
 
   int tracer_id;
 	tracer *curr_tracer;
@@ -189,8 +168,8 @@ ssize_t handle_write_results_cmd(struct dilation_task_struct * dilation_task,
   return (ssize_t) dilation_task->burst_target;
 }
 
-ssize_t vt_write(struct file *file, const char __user *buffer, size_t count, loff_t *data)
-{
+ssize_t vt_write(struct file *file, const char __user *buffer, size_t count,
+                 loff_t *data) {
 	char write_buffer[MAX_API_ARGUMENT_SIZE];
 	unsigned long buffer_size;
 	int i = 0;
@@ -200,14 +179,10 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count, lof
   struct dilated_task_struct * dilated_task = get_dilated_task_struct(current);
 	
 
- 	if(count > MAX_API_ARGUMENT_SIZE)
-	{
-    		buffer_size = MAX_API_ARGUMENT_SIZE;
-  	}
-	else
-	{
+ 	if(count > MAX_API_ARGUMENT_SIZE) {
+    buffer_size = MAX_API_ARGUMENT_SIZE;
+  } else {
 		buffer_size = count;
-
 	}
 
 	for(i = 0; i < MAX_API_ARGUMENT_SIZE; i++)
@@ -245,7 +220,7 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count, lof
 			return 0;
 		}
 
-		if (!dilated_task) {
+		if (!dilated_task || dilated_task->associated_tracer_id <= 0) {
 			PDEBUG_I("VT_WRITE_RESULTS: Process: %d is not associated with any "
                "tracer !\n", current->pid);
 			return 0;
@@ -255,7 +230,7 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count, lof
 		  write_buffer + 2, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
 		if (num_integer_args < 1) {
-			PDEBUG_E("VT_WRITE_RESULTS: Not enough arguments !");
+			PDEBUG_I("VT_WRITE_RESULTS: Not enough arguments !");
 			return 0;
 		}
 
@@ -275,7 +250,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
   int retval = 0;
   int i = 0, cpu_assignment;
   uint8_t mask = 0;
-  int num_rounds = 0;
+  int num_rounds = 0, timeline_id;
   unsigned long flags;
   overshoot_info *args;
   invoked_api *api_info;
@@ -287,7 +262,8 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
   int api_integer_args[MAX_API_ARGUMENT_SIZE];
   tracer *curr_tracer;
   int tracer_id;
-
+  struct dilated_task_struct * dilated_task = get_dilated_task_struct(current);
+	
   memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
   memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
 
@@ -318,9 +294,9 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       if (initialization_status != INITIALIZED ||
           experiment_status == NOTRUNNING) {
-        PDEBUG_E(
+        PDEBUG_I(
             "VT_UPDATE_TRACER_CLOCK: Operation cannot be performed when "
-            "experiment is not running !");
+            "experiment is not running !\n");
         return -EFAULT;
       }
 
@@ -334,11 +310,13 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args != 1) {
-        PDEBUG_E(
-            "VT_UPDATE_TRACER_CLOCK: Not enough arguments. Missing tracer_id "
-            "!");
+        PDEBUG_I("VT_UPDATE_TRACER_CLOCK: Not enough arguments. "
+                 "Missing tracer_id !\n");
         return -EFAULT;
       }
+
+      if (!dilated_task || dilated_task->associated_tracer_id <= 0)
+        return 0;
 
       tracer_id = api_integer_args[0];
       curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
@@ -347,14 +325,8 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
 
-      // Noop for APP VT tracers and its associated processes
-      if (curr_tracer->tracer_type == TRACER_TYPE_APP_VT ||
-          current->associated_tracer_id <= 0)
-        return 0;
-
       curr_tracer->curr_virtual_time += api_info_tmp.return_value;
-      set_children_time(curr_tracer, curr_tracer->tracer_task,
-                        curr_tracer->curr_virtual_time, 0);
+      set_children_time(curr_tracer, curr_tracer->curr_virtual_time, 0);
       return 0;
 
     case VT_WRITE_RESULTS:
@@ -363,14 +335,14 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       // tracer process can invoke this ioctl
 
       if (initialization_status != INITIALIZED) {
-        PDEBUG_E(
-            "VT_WRITE_RESULTS: Operation cannot be performed when experiment "
-            "is not initialized !");
+        PDEBUG_I("VT_WRITE_RESULTS: Operation cannot be performed when "
+                 "experiment is not initialized !\n");
         return -EFAULT;
       }
 
-      if (current->associated_tracer_id <= 0) {
-        PDEBUG_E("Process: %d is not associated with any tracer !\n");
+      if (!dilated_task || dilated_task->associated_tracer_id <= 0) {
+        PDEBUG_E("VT_WRITE_RESULTS: Process is not associated with "
+                 "any tracer !\n");
         return -EFAULT;
       }
 
@@ -384,90 +356,43 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args < 1) {
-        PDEBUG_I("VT_RM_PROCESS_FROM_SQ: Not enough arguments !");
+        PDEBUG_I("VT_WRITE_RESULTS: Not enough arguments !");
         return -EFAULT;
       }
 
       tracer_id = api_integer_args[0];
       curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
       if (!curr_tracer) {
-        PDEBUG_I("VT-IO: Tracer : %d, not registered\n", current->pid);
+        PDEBUG_I("VT_WRITE_RESULTS: Tracer : %d, not registered\n", current->pid);
         return -EFAULT;
       }
 
-      current->ready = 1;
+      handle_write_results_cmd(dilated_task, api_integer_args,
+                               num_integer_args);
 
-      mutex_lock(&file_lock);
-      handle_tracer_results(curr_tracer, &api_integer_args[1],
-                            num_integer_args - 1);
-      mutex_unlock(&file_lock);
-
-      wait_event_interruptible(
-          *curr_tracer->w_queue,
-          current->associated_tracer_id <= 0 ||
-              (curr_tracer->w_queue_wakeup_pid == current->pid &&
-               current->burst_target > 0));
-      PDEBUG_V(
-          "VT-IO: Associated Tracer : %d, Process: %d, resuming from wait\n",
-          tracer_id, current->pid);
-
-      current->ready = 0;
-
-      // Ensure that for INS_VT tracer, only the tracer process can invoke this
-      // call
-      if (current->associated_tracer_id)
-        BUG_ON(curr_tracer->tracer_task->pid != current->pid &&
-               curr_tracer->tracer_type == TRACER_TYPE_INS_VT);
-
-      if (current->associated_tracer_id <= 0) {
-        current->burst_target = 0;
-        current->virt_start_time = 0;
-        current->curr_virt_time = 0;
-        current->associated_tracer_id = 0;
-        current->wakeup_time = 0;
-        current->vt_exec_task = NULL;
-        current->tracer_clock = NULL;
+      if (dilated_task->associated_tracer_id <= 0) {
         api_info_tmp.return_value = 0;
         if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
-          PDEBUG_I(
-              "Status Read: Tracer : %d, Process: %d Resuming from wait. "
-              "Error copying to user buf\n",
-              tracer_id, current->pid);
+          PDEBUG_I("VT_WRITE_RESULTS: Tracer : %d, Process: %d "
+                   "Resuming from wait. Error copying to user buf\n",
+                   tracer_id, current->pid);
           return -EFAULT;
         }
-        PDEBUG_I("VT-IO: Tracer: %d, Process: %d STOPPING\n", tracer_id,
-                 current->pid);
-
+        PDEBUG_I("VT_WRITE_RESULTS: Tracer: %d, Process: %d STOPPING\n",
+                 tracer_id, current->pid);
         return 0;
       }
 
-      api_info_tmp.return_value = current->burst_target;
+      api_info_tmp.return_value = dilated_task->burst_target;
       if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
-        PDEBUG_I(
-            "Status Read: Tracer : %d, Process: %d Resuming from wait. "
-            "Error copying to user buf\n",
-            tracer_id, current->pid);
+        PDEBUG_I("VT_WRITE_RESULTS: Tracer : %d, Process: %d "
+                 "Resuming from wait. Error copying to user buf\n",
+                 tracer_id, current->pid);
         return -EFAULT;
       }
 
-      PDEBUG_V("VT-IO: Tracer: %d, Process: %d Returning !\n", tracer_id,
-               current->pid);
-      return 0;
-
-    case VT_GET_CURRENT_VIRTUAL_TIME:
-      // Any process can invoke this call.
-      tv = (struct timeval *)arg;
-      if (!tv) return -EFAULT;
-
-      struct timeval ktv;
-      if (expected_time == 0)
-        do_gettimeofday(&ktv);
-      else {
-        ktv = ns_to_timeval(expected_time);
-      }
-
-      if (copy_to_user(tv, &ktv, sizeof(ktv))) return -EFAULT;
-
+      PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d Returning !\n",
+               tracer_id, current->pid);
       return 0;
 
     case VT_REGISTER_TRACER:
@@ -475,7 +400,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       // tracer
 
       if (initialization_status != INITIALIZED) {
-        PDEBUG_E(
+        PDEBUG_I(
             "VT_REGISTER_TRACER: Operation cannot be performed when experiment "
             "is not initialized !");
         return -EFAULT;
@@ -487,26 +412,23 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
 
-      if (current->associated_tracer_id) {
-        PDEBUG_E(
-            "Process: %d, already associated with another tracer. "
-            "It cannot be registered as a new tracer !",
-            current->pid);
+      if (dilated_task != NULL && dilated_task->associated_tracer_id) {
+        PDEBUG_I("VT_REGISTER_TRACER: Process: %d, already associated with "
+                 "another tracer. It cannot be registered as a new tracer !",
+                 current->pid);
         return -EFAULT;
       }
 
       retval = register_tracer_process(api_info_tmp.api_argument);
       if (retval == FAIL) {
-	PDEBUG_E("Tracer Registration failed for tracer: %d\n", current->pid);
-	return -EFAULT;
+        PDEBUG_I("VT_REGISTER_TRACER: Tracer Registration failed for \n");
+        return -EFAULT;
       }
       api_info_tmp.return_value = retval;
 
       if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
-        PDEBUG_I(
-            "VT_REGISTER_TRACER: Tracer : %d, "
-            "Error copying to user buf\n",
-            current->pid);
+        PDEBUG_I("VT_REGISTER_TRACER: Tracer : %d, Error copying to user buf\n",
+                 current->pid);
         return -EFAULT;
       }
       atomic_inc(&n_waiting_tracers);
@@ -518,7 +440,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       if (initialization_status != INITIALIZED &&
           experiment_status == STOPPING) {
-        PDEBUG_E(
+        PDEBUG_I(
             "VT_ADD_PROCESSES_TO_SQ: Operation cannot be performed when "
             "experiment is not initialized !");
         return -EFAULT;
@@ -533,14 +455,15 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args <= 1) {
-        PDEBUG_E("VT_ADD_PROCESS_TO_SQ: Not enough arguments !");
+        PDEBUG_I("VT_ADD_PROCESS_TO_SQ: Not enough arguments !");
         return -EFAULT;
       }
 
       tracer_id = api_integer_args[0];
       curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
       if (!curr_tracer) {
-        PDEBUG_I("VT-IO: Tracer : %d, not registered\n", tracer_id);
+        PDEBUG_I("VT_ADD_PROCESS_TO_SQ: Tracer : %d, not registered\n",
+                 tracer_id);
         return -EFAULT;
       }
 
@@ -597,14 +520,14 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       // Any process can invoke this call.
 
       if (initialization_status != INITIALIZED) {
-        PDEBUG_E(
+        PDEBUG_I(
             "VT_GETTIME_PID: Operation cannot be performed when experiment is "
             "not initialized !");
         return -EFAULT;
       }
 
       if (experiment_status == NOTRUNNING) {
-        PDEBUG_E(
+        PDEBUG_I(
             "VT_GETTIME_PID: Operation cannot be performed when experiment is "
             "not running!");
         return -EFAULT;
@@ -625,14 +548,14 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
     case VT_STOP_EXP:
       // Any process can invoke this call.
       if (initialization_status != INITIALIZED) {
-        PDEBUG_E(
+        PDEBUG_I(
             "VT_STOP_EXP: Operation cannot be performed when experiment is not "
             "initialized !");
         return -EFAULT;
       }
 
       if (experiment_status == NOTRUNNING) {
-        PDEBUG_E(
+        PDEBUG_I(
             "VT_STOP_EXP: Operation cannot be performed when experiment is not "
             "running!");
         return -EFAULT;
@@ -644,14 +567,14 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       // Any process can invoke this call.
 
       if (initialization_status != INITIALIZED) {
-        PDEBUG_E(
+        PDEBUG_I(
             "VT_PROGRESS_BY: Operation cannot be performed when experiment is "
             "not initialized !");
         return -EFAULT;
       }
 
       if (experiment_status == NOTRUNNING) {
-        PDEBUG_E(
+        PDEBUG_I(
             "VT_PROGRESS_BY: Operation cannot be performed when experiment is "
             "not running!");
         return -EFAULT;
@@ -667,21 +590,27 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args < 1) {
-        PDEBUG_E("VT_PROGRESS_BY: Not enough arguments !");
+        PDEBUG_I("VT_PROGRESS_BY: Not enough arguments !");
         return -EFAULT;
       }
 
       num_rounds = api_integer_args[0];
-
       return progress_by(api_info_tmp.return_value, num_rounds);
 
-    case VT_SET_NETDEVICE_OWNER:
+    case VT_PROGRESS_TIMELINE_BY:
       // Any process can invoke this call.
 
       if (initialization_status != INITIALIZED) {
-        PDEBUG_E(
-            "VT_SET_NETDEVICE_OWNER: Operation cannot be performed when "
+        PDEBUG_I(
+            "VT_PROGRESS_TIMELINE_BY: Operation cannot be performed when "
             "experiment is not initialized !");
+        return -EFAULT;
+      }
+
+      if (experiment_status == NOTRUNNING) {
+        PDEBUG_I(
+            "VT_PROGRESS_TIMELINE_BY: Operation cannot be performed when "
+            "experiment is not running!");
         return -EFAULT;
       }
 
@@ -690,19 +619,32 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
         return -EFAULT;
       }
-      return handle_set_netdevice_owner_cmd(api_info_tmp.api_argument);
+
+      num_integer_args = convert_string_to_array(
+          api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+      if (num_integer_args < 2) {
+        PDEBUG_I("VT_PROGRESS_TIMELINE_BY: Not enough arguments !");
+        return -EFAULT;
+      }
+
+      timeline_id = api_integer_args[0];
+      num_rounds = api_integer_args[1];
+      return progress_timeline_by(timeline_id, api_info_tmp.return_value,
+                                  num_rounds);
 
     case VT_WAIT_FOR_EXIT:
 
       if (initialization_status != INITIALIZED) {
-        PDEBUG_E(
+        PDEBUG_I(
             "VT_WAIT_FOR_EXIT: Operation cannot be performed when experiment "
-            "is not initialized !");
+            "is not initialized !\n");
         return -EFAULT;
       }
 
-      if (current->associated_tracer_id <= 0) {
-        PDEBUG_E("Process: %d is not associated with any tracer !\n");
+      if (!dilated_task || dilated_task->associated_tracer_id <= 0) {
+        PDEBUG_I("VT_WAIT_FOR_EXIT: Process is not associated with "
+                 "any tracer !\n");
         return -EFAULT;
       }
 
@@ -716,22 +658,21 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args < 1) {
-        PDEBUG_E("VT_WAIT_FOR_EXIT: Not enough arguments !");
+        PDEBUG_I("VT_WAIT_FOR_EXIT: Not enough arguments !");
         return -EFAULT;
       }
 
       tracer_id = api_integer_args[0];
       curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
       if (!curr_tracer) {
-        PDEBUG_I("VT_WAIT_FOR_EXIT: Tracer : %d, not registered\n", current->pid);
+        PDEBUG_I("VT_WAIT_FOR_EXIT: Tracer : %d, not registered\n", tracer_id);
         return -EFAULT;
       }
 
-      wait_event_interruptible(
-          *curr_tracer->w_queue, current->associated_tracer_id <= 0);
-      PDEBUG_V(
-          "VT_WAIT_FOR_EXIT: Associated Tracer : %d, Process: %d, resuming from wait for exit\n",
-          tracer_id, current->pid);
+      wait_event_interruptible(*curr_tracer->w_queue,
+                               dilated_task->associated_tracer_id <= 0);
+      PDEBUG_V("VT_WAIT_FOR_EXIT: Tracer : %d, Process: %d, "
+               "resuming from wait for exit\n", tracer_id, current->pid);
       return 0;
 
     default:
@@ -761,9 +702,6 @@ int __init my_module_init(void) {
 
   PDEBUG_A(" /proc/%s created\n", DILATION_DIR);
   dilation_file = proc_create(DILATION_FILE, 0666, NULL, &proc_file_fops);
-
-  tracer_clock_array = NULL;
-  aligned_tracer_clock_array = NULL;
 
   mutex_init(&file_lock);
 
@@ -801,11 +739,10 @@ int __init my_module_init(void) {
   else
     EXP_CPUS = 1;
 
-  expected_time = 0;
   tracer_wqueue = kmalloc(EXP_CPUS * sizeof(wait_queue_head_t), GFP_KERNEL);
 
   if (!tracer_wqueue) {
-    PDEBUG_E("Error: Could not allot memory for tracer wait queue\n");
+    PDEBUG_I("Error: Could not allot memory for tracer wait queue\n");
     return -ENOMEM;
   }
 
@@ -827,33 +764,23 @@ void __exit my_module_exit(void) {
   s64 i;
   int num_prev_alotted_pages;
 
-  // remove_proc_entry(DILATION_FILE, dilation_dir);
   remove_proc_entry(DILATION_FILE, NULL);
   PDEBUG_A(" /proc/%s deleted\n", DILATION_FILE);
   remove_proc_entry(DILATION_DIR, NULL);
   PDEBUG_A(" /proc/%s deleted\n", DILATION_DIR);
 
   /* Busy wait briefly for tasks to finish -Not the best approach */
-  for (i = 0; i < 1000000000; i++) {
-  }
+  for (i = 0; i < 1000000000; i++) {}
 
   if (kthread_stop(round_task)) {
     PDEBUG_E("Stopping round_task error\n");
   }
 
-  for (i = 0; i < 1000000000; i++) {
-  }
+  for (i = 0; i < 1000000000; i++) {}
 
   if (tracer_num > 0) {
     // Free all tracer structs from previous experiment if any
     free_all_tracers();
-    if (tracer_clock_array) {
-      num_prev_alotted_pages = (tracer_num * sizeof(s64)) / PAGE_SIZE;
-      num_prev_alotted_pages++;
-      free_mmap_pages(tracer_clock_array, num_prev_alotted_pages);
-    }
-    tracer_clock_array = NULL;
-    aligned_tracer_clock_array = NULL;
     tracer_num = 0;
   }
 

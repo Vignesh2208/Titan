@@ -7,7 +7,9 @@
 extern int tracer_num;
 extern int EXP_CPUS;
 extern int TOTAL_CPUS;
+extern int total_num_timelines;
 extern int experiment_status;
+extern int experiment_type;
 extern int initialization_status;
 extern s64 expected_time;
 extern s64 virt_exp_start_time;
@@ -18,8 +20,8 @@ extern int total_expected_tracers;
 // pointers
 extern struct task_struct * loop_task;
 extern struct task_struct * round_task;
-extern int * per_cpu_chain_length;
-extern llist * per_cpu_tracer_list;
+extern int * per_timeline_chain_length;
+extern llist * per_timeline_tracer_list;
 extern struct task_struct ** chaintask;
 extern s64 * tracer_clock_array;
 extern s64 * aligned_tracer_clock_array;
@@ -59,7 +61,7 @@ int progress_by(s64 progress_duration, int num_rounds) {
 	int ret = 0;
 
 
-	if (experiment_status == NOTRUNNING)
+	if (experiment_status == NOTRUNNING || experiment_type != EXP_CBE)
 		return FAIL;
 
 
@@ -78,8 +80,8 @@ int progress_by(s64 progress_duration, int num_rounds) {
 	}
 
 	PDEBUG_V("progress_by for fixed duration initiated."
-	        " Progress duration = %lu, Num rounds = %d, ptrace_msteps = %d, ptrace_mflags = %d\n", current_progress_duration, current_progress_n_rounds,
-		current->ptrace_msteps, current->ptrace_mflags);
+	        "Progress duration = %lu, Num rounds = %d\n",
+			current_progress_duration, current_progress_n_rounds);
 
 	wake_up_interruptible(&progress_sync_proc_wqueue);
 	experiment_status = RUNNING;
@@ -116,7 +118,8 @@ void free_all_tracers() {
 }
 
 
-int initialize_experiment_components(int num_expected_tracers) {
+int initialize_experiment_components(int exp_type, int num_timelines,
+									 int num_expected_tracers) {
 
 	int i;
 	int j;
@@ -125,59 +128,57 @@ int initialize_experiment_components(int num_expected_tracers) {
 
 	PDEBUG_V("Entering Experiment Initialization\n");
 	if (initialization_status == INITIALIZED) {
-		PDEBUG_E("Experiment Already initialized !\n");
+		PDEBUG_I("Experiment Already initialized !\n");
+		return FAIL;
+	}
+
+	if (exp_type != EXP_CBE && exp_type != EXP_CS) {
+		PDEBUG_I("Unknown Experiment Type !\n");
 		return FAIL;
 	}
 
     if (num_expected_tracers <= 0) {
-        PDEBUG_E("Num expected tracers must be positive !\n");
+        PDEBUG_I("Num expected tracers must be positive !\n");
 		return FAIL;
     }
+
+	if (exp_type == EXP_CS && num_timelines <= 0) {
+		PDEBUG_I("Number of Timelines must be positive !\n");
+		return FAIL;
+	}
 
     if (tracer_num > 0) {
         // Free all tracer structs from previous experiment
         free_all_tracers();
-		if (tracer_clock_array) {
-			num_prev_alotted_pages = (tracer_num * sizeof(s64))/PAGE_SIZE;
-			num_prev_alotted_pages ++;
-			free_mmap_pages(tracer_clock_array, num_prev_alotted_pages);
-	    }
-    	tracer_clock_array = NULL;
-    	aligned_tracer_clock_array = NULL;
         tracer_num = 0;
     }
 
-    WARN_ON(tracer_clock_array != NULL);
-    WARN_ON(aligned_tracer_clock_array != NULL);
+	experiment_type = exp_type;
+	total_num_timelines = num_timelines;
 
-    num_required_pages = (num_expected_tracers * sizeof(s64))/PAGE_SIZE;
-    num_required_pages ++;
-    PDEBUG_I("Num required pages = %d\n", num_required_pages); 
-    
-    
-    tracer_clock_array = alloc_mmap_pages(num_required_pages);
-
-    if (!tracer_clock_array) {
-        PDEBUG_E("Failed to allot memory for tracer clock array !\n");
-        return FAIL;
-    }
-
-    aligned_tracer_clock_array = PAGE_ALIGN((unsigned long)tracer_clock_array);
-	per_cpu_chain_length =
-	    (int *) kmalloc(EXP_CPUS * sizeof(int), GFP_KERNEL);
-	per_cpu_tracer_list =
-	    (llist *) kmalloc(EXP_CPUS * sizeof(llist), GFP_KERNEL);
+	if (experiment_type == EXP_CBE) {
+		per_timeline_chain_length =
+			(int *) kmalloc(EXP_CPUS * sizeof(int), GFP_KERNEL);
+		per_timeline_tracer_list =
+			(llist *) kmalloc(EXP_CPUS * sizeof(llist), GFP_KERNEL);
+	} else {
+		per_timeline_chain_length =
+			(int *) kmalloc(total_num_timelines * sizeof(int), GFP_KERNEL);
+		per_timeline_tracer_list =
+			(llist *) kmalloc(total_num_timelines * sizeof(llist), GFP_KERNEL);
+	}
 	values = (int *)kmalloc(EXP_CPUS * sizeof(int), GFP_KERNEL);
 	chaintask = kmalloc(EXP_CPUS * sizeof(struct task_struct*), GFP_KERNEL);
 
-	if (!per_cpu_tracer_list || !per_cpu_chain_length || !values || !chaintask) {
+	if (!per_timeline_tracer_list || !per_timeline_chain_length
+	    || !values || !chaintask) {
 		PDEBUG_E("Error Allocating memory for per cpu structures.\n");
 		BUG();
 	}
 
 	for (i = 0; i < EXP_CPUS; i++) {
-		llist_init(&per_cpu_tracer_list[i]);
-		per_cpu_chain_length[i] = 0;
+		llist_init(&per_timeline_tracer_list[i]);
+		per_timeline_chain_length[i] = 0;
         values[i] = i;
 	}
 
@@ -268,11 +269,11 @@ int cleanup_experiment_components() {
 
 
 	for (i = 0; i < EXP_CPUS; i++) {
-		llist_destroy(&per_cpu_tracer_list[i]);
+		llist_destroy(&per_timeline_tracer_list[i]);
 	}
 
-	kfree(per_cpu_tracer_list);
-	kfree(per_cpu_chain_length);
+	kfree(per_timeline_tracer_list);
+	kfree(per_timeline_chain_length);
 	kfree(values);
 	kfree(chaintask);
 
@@ -415,7 +416,7 @@ int per_cpu_worker(void *data) {
 
 	PDEBUG_I("#### per_cpu_worker: Started per cpu worker thread for "
 	         " Tracers alotted to CPU = %d\n", cpuID + 2);
-	tracer_list =  &per_cpu_tracer_list[cpuID];
+	tracer_list =  &per_timeline_tracer_list[cpuID];
 
 	/* if it is the very first round, don't try to do any work, just rest */
 	if (round == 0) {
