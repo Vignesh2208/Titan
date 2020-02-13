@@ -82,6 +82,7 @@
 
 #define EXP_CBE 1
 #define EXP_CS 2
+#define NOT_SET 0
 
 
 #ifdef KRONOS_DEBUG_INFO

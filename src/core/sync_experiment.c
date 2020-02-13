@@ -294,17 +294,14 @@ int cleanup_experiment_components() {
     int num_alotted_pages;
 
 	if (initialization_status == NOT_INITIALIZED) {
-		PDEBUG_E("Experiment Already Cleaned up ...\n");
+		PDEBUG_I("Experiment Already Cleaned up ...\n");
 		return FAIL;
 	}
 
 	PDEBUG_I("Cleaning up experiment components ...\n");
 
-
-    expected_time = 0;
     current_progress_duration = 0;
     virt_exp_start_time = 0;
-    init_task.curr_virt_time = 0;
 
 	atomic_set(&progress_n_enabled, 0);
 	atomic_set(&experiment_stopping, 0);
@@ -312,7 +309,7 @@ int cleanup_experiment_components() {
 	atomic_set(&n_waiting_tracers, 0);
 
 
-	for (i = 0; i < EXP_CPUS; i++) {
+	for (i = 0; i < total_num_timelines; i++) {
 		llist_destroy(&per_timeline_tracer_list[i]);
 	}
 
@@ -323,6 +320,7 @@ int cleanup_experiment_components() {
 
 	initialization_status = NOT_INITIALIZED;
 	experiment_status = NOTRUNNING;
+	experiment_type = NOT_SET;
 	return SUCCESS;
 }
 
@@ -342,26 +340,28 @@ int sync_and_freeze() {
 
 
 
-	if (initialization_status != INITIALIZED || experiment_status != NOTRUNNING || total_expected_tracers <= 0) {
+	if (initialization_status != INITIALIZED
+		|| experiment_status != NOTRUNNING || total_expected_tracers <= 0) {
 		return FAIL;
 	}
 
 
 	PDEBUG_A("Sync And Freeze: ** Starting Experiment Synchronization **\n");
-	PDEBUG_A("Sync And Freeze: N expected tracers: %d\n", total_expected_tracers);
+	PDEBUG_A("Sync And Freeze: expected number of tracers: %d\n",
+			 total_expected_tracers);
 
 	wait_event_interruptible(progress_sync_proc_wqueue,
 	    atomic_read(&n_waiting_tracers) == total_expected_tracers);
 
 
 	if (tracer_num <= 0) {
-		PDEBUG_E("Sync And Freeze: Nothing added to experiment, dropping out\n");
+		PDEBUG_A("Sync And Freeze: Nothing added to experiment, dropping out\n");
 		return FAIL;
 	}
 
 
 	if (tracer_num != total_expected_tracers) {
-		PDEBUG_E("Sync And Freeze: Expected number of tracers: %d not present."
+		PDEBUG_A("Sync And Freeze: Expected number of tracers: %d not present."
 		         " Actual number of registered tracers: %d\n",
 		         total_expected_tracers, tracer_num);
 		return FAIL;
@@ -374,29 +374,10 @@ int sync_and_freeze() {
 		         "when an experiment is already running!\n");
 		return FAIL;
 	}
-	/*
-	if (!round_task) {
-		PDEBUG_A("Sync And Freeze: Round sync task not started error !\n");
-		return FAIL;
-	}
-	PDEBUG_A("Round Sync Task Pid = %d\n", round_task->pid);
-
-	for (i = 0; i < EXP_CPUS; i++) {
-		PDEBUG_A("Sync And Freeze: Adding Worker Thread %d\n", i);
-		chaintask[i] = kthread_create(&per_cpu_worker, &values[i],
-		                              "per_cpu_worker");
-		if (!IS_ERR(chaintask[i])) {
-			kthread_bind(chaintask[i], i % (TOTAL_CPUS - EXP_CPUS));
-			wake_up_process(chaintask[i]);
-			PDEBUG_A("Chain Task %d: Pid = %d\n", i, chaintask[i]->pid);
-		}
-	}*/
 
 	do_gettimeofday(&now_timeval);
 	now = timeval_to_ns(&now_timeval);
-	expected_time = now;
-	init_task.curr_virt_time = now;
-    	virt_exp_start_time = now;
+   	virt_exp_start_time = now;
 
 	for (i = 1; i <= tracer_num; i++) {
 		curr_tracer = hmap_get_abs(&get_tracer_by_id, i);
@@ -404,30 +385,13 @@ int sync_and_freeze() {
 		if (curr_tracer) {
 			PDEBUG_A("Sync And Freeze: "
 			         "Setting Virt time for Tracer %d and its children\n", i);
-			set_children_time(curr_tracer, curr_tracer->tracer_task, now, 0);
+			set_children_time(curr_tracer, now, 0);
 			curr_tracer->round_start_virt_time = virt_exp_start_time;
 			curr_tracer->curr_virtual_time = virt_exp_start_time;
-			if (curr_tracer->spinner_task) {
-				curr_tracer->spinner_task->virt_start_time = now;
-				curr_tracer->spinner_task->curr_virt_time = now;
-				curr_tracer->spinner_task->wakeup_time = 0;
-                		curr_tracer->spinner_task->burst_target = 0;
-
-			}
-
-			if (curr_tracer->proc_to_control_task != NULL) {
-				curr_tracer->proc_to_control_task->virt_start_time = now;
-				curr_tracer->proc_to_control_task->curr_virt_time = now;
-				curr_tracer->proc_to_control_task->wakeup_time = 0;
-                		curr_tracer->proc_to_control_task->burst_target = 0;
-			}
-
-			curr_tracer->tracer_task->virt_start_time = 0;
-			curr_tracer->tracer_task->curr_virt_time = now;
-			curr_tracer->tracer_task->wakeup_time = 0;
-			curr_tracer->tracer_task->burst_target = 0;
-
-            		aligned_tracer_clock_array[i-1] = now;
+			curr_tracer->main_task->virt_start_time = virt_exp_start_time;
+			curr_tracer->main_task->curr_virt_time = virt_exp_start_time;
+			curr_tracer->main_task->wakeup_time = 0;
+			curr_tracer->main_task->burst_target = 0;
 		}
 		put_tracer_struct_write(curr_tracer);
 	}
@@ -472,8 +436,6 @@ int per_cpu_worker(void *data) {
 	while (!kthread_should_stop()) {
 
 		if (experiment_status == STOPPING) {
-
-
 			atomic_dec(&n_workers_running);
 			PDEBUG_I("#### per_cpu_worker: Stopping. Sending wake up from "
 			         "worker process for tracers on CPU = %d.\n", cpuID);
@@ -488,24 +450,19 @@ int per_cpu_worker(void *data) {
 
 			curr_tracer = (tracer *)head->item;
 			get_tracer_struct_read(curr_tracer);
-			if (current_progress_duration + expected_time > curr_tracer->curr_virtual_time) {
-				curr_tracer->nxt_round_burst_length = (current_progress_duration + expected_time - curr_tracer->curr_virtual_time);
-			} else {
-				curr_tracer->nxt_round_burst_length = 0;
+			
+			curr_tracer->nxt_round_burst_length = current_progress_duration;
 			}
 
-			if (curr_tracer->tracer_type == TRACER_TYPE_INS_VT) {
-				WARN_ON(curr_tracer->nxt_round_burst_length != current_progress_duration);
-			} else {
-				WARN_ON(curr_tracer->nxt_round_burst_length > current_progress_duration);
-			}
-			
-			if (schedule_list_size(curr_tracer) > 0 && curr_tracer->nxt_round_burst_length) {
+			if (schedule_list_size(curr_tracer) > 0
+				&& curr_tracer->nxt_round_burst_length) {
 				PDEBUG_V("per_cpu_worker: Called "
-				         "UnFreeze Proc Recurse for tracer: %d on CPU: %d\n", curr_tracer->tracer_id, cpuID);
+				         "UnFreeze Proc Recurse for tracer: %d on CPU: %d\n",
+						 curr_tracer->tracer_id, cpuID);
 				unfreeze_proc_exp_recurse(curr_tracer);
-				PDEBUG_V("per_cpu_worker: "
-				         "Finished Unfreeze Proc Recurse for tracer: %d on CPU: %d\n", curr_tracer->tracer_id, cpuID);
+				PDEBUG_V("per_cpu_worker: Finished Unfreeze Proc Recurse for "
+						 "tracer: %d on CPU: %d\n", curr_tracer->tracer_id,
+						 cpuID);
 
 			}
 			put_tracer_struct_read(curr_tracer);
@@ -520,15 +477,15 @@ int per_cpu_worker(void *data) {
 		set_current_state(TASK_INTERRUPTIBLE);
 		atomic_dec(&n_workers_running);
 		PDEBUG_V("#### per_cpu_worker: Sending wake up from per_cpu_worker "
-		         "on behalf of all Tracers on CPU = %d\n",
-		         cpuID);
+		         "on behalf of all Tracers on CPU = %d\n", cpuID);
 		wake_up_interruptible(&sync_worker_wqueue);
 
 
 startWork:
 		schedule();
 		set_current_state(TASK_RUNNING);
-		PDEBUG_V("#### per_cpu_worker: Woken up for Tracers on CPU =  %d\n", cpuID);
+		PDEBUG_V("#### per_cpu_worker: Woken up for Tracers on CPU =  %d\n",
+				 cpuID);
 
 	}
 	return 0;
@@ -552,6 +509,7 @@ int round_sync_task(void *data) {
 
 
 	set_current_state(TASK_INTERRUPTIBLE);
+	BUG_ON(experiment_type != EXP_CBE || total_num_timelines != EXP_CPUS);
 	PDEBUG_I("round_sync_task: Started.\n");
 
 	while (!kthread_should_stop()) {
@@ -566,8 +524,8 @@ redo:
 			PDEBUG_I("round_sync_task: Cleaning experiment via catchup task. "
 			         "Waiting for all cpu workers to exit...\n");
 			BUG_ON(atomic_read(&n_workers_running) != 0);
-			atomic_set(&n_workers_running, EXP_CPUS);
-			for (i = 0; i < EXP_CPUS; i++) {
+			atomic_set(&n_workers_running, total_num_timelines);
+			for (i = 0; i < total_num_timelines; i++) {
 				/* chaintask refers to per_cpu_worker */
 				if (wake_up_process(chaintask[i]) == 1) {
 					PDEBUG_V("round_sync_task: Sync thread %d wake up\n", i);
@@ -581,26 +539,29 @@ redo:
 			                         atomic_read(&n_workers_running) == 0);
 			PDEBUG_I("round_sync_task: "
 			         "All cpu workers exited !\n");
-			init_task.curr_virt_time = KTIME_MAX;
 			preempt_disable();
 			local_irq_disable();
-			dilated_hrtimer_run_queues(0);
+			for (i = 0; i < total_num_timelines; i++) {
+				dilated_hrtimer_run_queues_flush(i + 1);
+			}
 			local_irq_enable();
 			preempt_enable();
 
-			init_task.curr_virt_time = 0;
 			clean_exp();
 			round_count = 0;
 			current_progress_duration = -1;
-			PDEBUG_V("Waking up Progress control process to finish EXP STOP !\n");
+			PDEBUG_V(
+				"Waking up Progress control process to finish EXP STOP !\n");
 			wake_up_interruptible(&progress_call_proc_wqueue);
 			continue;
 		}
 
-		PDEBUG_V("round_sync_task: Waiting for progress sync proc queue to resume. \n");
+		PDEBUG_V("round_sync_task: Waiting for progress sync proc queue to "
+			"resume.\n");
 		BUG_ON(atomic_read(&n_workers_running) != 0);
-		wait_event_interruptible(
-		    progress_sync_proc_wqueue, (atomic_read(&progress_n_enabled) == 1 && current_progress_duration >= 0));
+		wait_event_interruptible(progress_sync_proc_wqueue, 
+			(atomic_read(&progress_n_enabled) == 1
+			 && current_progress_duration >= 0));
 
 		
 		if (current_progress_n_rounds == 0) {
@@ -616,15 +577,15 @@ redo:
 
 		/* wait up each synchronization worker thread,
 		then wait til they are all done */
-		if (EXP_CPUS > 0 && tracer_num  > 0) {
+		if (total_num_timelines > 0 && tracer_num  > 0) {
 
 			PDEBUG_I("$$$$$$$$$$$$$$$$$$$$$$$ round_sync_task: "
 			         "Round %d Starting. Waking up worker threads "
 			         "$$$$$$$$$$$$$$$$$$$$$$$$$$\n", round_count - 1);
-			atomic_set(&n_workers_running, EXP_CPUS);
+			atomic_set(&n_workers_running, total_num_timelines);
 
 
-			for (i = 0; i < EXP_CPUS; i++) {
+			for (i = 0; i < total_num_timelines; i++) {
 
 				/* chaintask refers to per_cpu_worker */
 				if (wake_up_process(chaintask[i]) == 1) {
@@ -636,22 +597,19 @@ redo:
 					PDEBUG_V("round_sync_task: "
 					         "Sync thread %d already running\n", i);
 				}
-			}
-
-			
-			PDEBUG_V("round_sync_task: Waiting for per_cpu_workers to finish.\n");
+			}			
+			PDEBUG_V(
+				"round_sync_task: Waiting for per_cpu_workers to finish.\n");
 			wait_event_interruptible(sync_worker_wqueue,
 			                         atomic_read(&n_workers_running) == 0);
-
-
 			PDEBUG_I("round_sync_task: All per_cpu_workers finished\n");
 		}
 
-		expected_time += current_progress_duration;
-		update_init_task_virtual_time(expected_time);
 		preempt_disable();
 		local_irq_disable();
-		dilated_hrtimer_run_queues(0);
+		for (i = 0; i < total_num_timelines; i++) {
+			dilated_hrtimer_run_queues(i + 1);
+		}
 		local_irq_enable();
 		preempt_enable();
 
@@ -802,13 +760,16 @@ void prune_tracer_queue(tracer * curr_tracer, int is_schedule_queue){
 		} else {
 			put_tracer_struct_read(curr_tracer);
 			get_tracer_struct_write(curr_tracer);
+
+			
+			BUG_ON(!curr_elem->curr_task);
 			if (!is_schedule_queue) {
 
-				if (curr_tracer->tracer_type == TRACER_TYPE_APP_VT && task->ready == 0) {
+				if (curr_elem->curr_task->ready == 0) {
 					// This task was blocked in previous run. Remove from run queue
 					curr_elem->blocked = 1;
-					WARN_ON(task->burst_target != 0);
-					task->burst_target = 0;
+					WARN_ON(curr_elem->curr_task->burst_target != 0);
+					curr_elem->curr_task->burst_target = 0;
 					curr_elem->quanta_curr_round = 0;
 					curr_elem->quanta_left_from_prev_round = 0;
 					pop_run_queue(curr_tracer);
@@ -852,7 +813,7 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 	llist* schedule_queue = &curr_tracer->schedule_queue;
 	llist * run_queue = &curr_tracer->run_queue;
 	llist_elem* head = schedule_queue->head;
-        llist_elem * tmp_head;
+    llist_elem * tmp_head;
 	lxc_schedule_elem* curr_elem;
 	lxc_schedule_elem* last_run;
 	lxc_schedule_elem* tmp_elem;
@@ -861,7 +822,7 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 	s64 total_quanta = curr_tracer->nxt_round_burst_length;
 	s64 alotted_quanta = 0;
 	int alteast_one_task_runnable = 0;
-        int found = 0;
+    int found = 0;
 
 	put_tracer_struct_read(curr_tracer);
 	get_tracer_struct_write(curr_tracer);
@@ -881,61 +842,46 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 		PDEBUG_V("Update all runnable task timeslices: "
 		         "Curr elem is %d. \n", curr_elem->pid);
 
-		
-
-		if (curr_tracer->tracer_type == TRACER_TYPE_INS_VT) {
+	
+		if (curr_elem->curr_task && curr_elem->curr_task->ready == 0) {
 			curr_elem->blocked = 1;
-			if (curr_elem->curr_task && (!test_bit(
-										PTRACE_BREAK_WAITPID_FLAG,
-										&curr_elem->curr_task->ptrace_mflags)
-										|| curr_elem->curr_task->on_rq == 1)) {
+		} else if (curr_elem->curr_task && curr_elem->curr_task->ready) {
+			if (curr_elem->blocked == 1) {
+				// If it was previously marked as blocked, add it to run_queue
+				curr_elem->quanta_left_from_prev_round = 0;
+				curr_elem->quanta_curr_round = 0;
+				WARN_ON(curr_elem->curr_task->burst_target != 0);
+				curr_elem->curr_task->burst_target = 0;
 				curr_elem->blocked = 0;
-				alteast_one_task_runnable = 1;
-			}
-		} else {
-			if (curr_elem->curr_task && curr_elem->curr_task->ready == 0) {
-				curr_elem->blocked = 1;
-			} else if (curr_elem->curr_task && curr_elem->curr_task->ready) {
-				if (curr_elem->blocked == 1) { // If it was previously marked as blocked, add it to run_queue
-					curr_elem->quanta_left_from_prev_round = 0;
-					curr_elem->quanta_curr_round = 0;
-					WARN_ON(curr_elem->curr_task->burst_target != 0);
-					curr_elem->curr_task->burst_target = 0;
-					curr_elem->blocked = 0;
-					
-				} 
-				tmp_head = run_queue->head;
-				found = 0;
-				while (tmp_head != NULL) {
-					tmp_elem = (lxc_schedule_elem *)tmp_head->item;
-					if (tmp_elem->pid == curr_elem->pid) {
-						found = 1;
-						break;
-					}
-					tmp_head = tmp_head->next;
+				
+			} 
+			tmp_head = run_queue->head;
+			found = 0;
+			while (tmp_head != NULL) {
+				tmp_elem = (lxc_schedule_elem *)tmp_head->item;
+				if (tmp_elem->pid == curr_elem->pid) {
+					found = 1;
+					break;
 				}
-				if (!found) {
-					llist_append(&curr_tracer->run_queue, curr_elem);
-				}
-				alteast_one_task_runnable = 1;
+				tmp_head = tmp_head->next;
 			}
+			if (!found) {
+				llist_append(&curr_tracer->run_queue, curr_elem);
+			}
+			alteast_one_task_runnable = 1;
 		}
 		head = head->next;
 	}
 
-	if (curr_tracer->tracer_type == TRACER_TYPE_INS_VT) {
-		put_tracer_struct_write(curr_tracer);
-		get_tracer_struct_read(curr_tracer);
-		return alteast_one_task_runnable;
-	}
-
-
+	
 	head = run_queue->head;
 
-	if (curr_tracer->last_run != NULL && curr_tracer->last_run->quanta_left_from_prev_round) {
+	if (curr_tracer->last_run != NULL
+		&& curr_tracer->last_run->quanta_left_from_prev_round) {
 
 		last_run = curr_tracer->last_run;
-		if (alotted_quanta + last_run->quanta_left_from_prev_round > total_quanta) {
+		if (alotted_quanta + last_run->quanta_left_from_prev_round
+			> total_quanta) {
 			last_run->quanta_curr_round = total_quanta - alotted_quanta;
 			last_run->quanta_left_from_prev_round =
 				last_run->quanta_left_from_prev_round - last_run->quanta_curr_round;
@@ -975,18 +921,16 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 				curr_elem->quanta_curr_round = curr_elem->quanta_left_from_prev_round;
 				curr_elem->quanta_left_from_prev_round = 0;
 				alotted_quanta += curr_elem->quanta_curr_round;
-				PDEBUG_V("Finished 1 base quanta for : %d. Base quanta length = %llu\n", curr_elem->pid, curr_elem->base_quanta);
+				PDEBUG_V("Finished 1 base quanta for : %d. "
+					"Base quanta length = %llu\n", curr_elem->pid,
+					curr_elem->base_quanta);
 				
 			}
 			curr_tracer->last_run = curr_elem;
-			
-
 		} else {
 			curr_elem->quanta_left_from_prev_round = 0;
 			curr_elem->quanta_curr_round = 0;
 		}
-
-		
 		head = head->next;
 	}
 
@@ -1044,7 +988,12 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 
 			if (alotted_quanta == total_quanta) {
 				curr_tracer->last_run = curr_elem;
-				PDEBUG_V("Starting new base quanta for : %d. Base quanta length = %llu. Run queue size = %d\n", curr_elem->pid, curr_elem->base_quanta, llist_size(run_queue));
+				PDEBUG_V(
+					"Starting new base quanta for : %d. "
+					"Base quanta length = %llu. Run queue size = %d\n",
+					curr_elem->pid, curr_elem->base_quanta,
+					llist_size(run_queue));
+
 				put_tracer_struct_write(curr_tracer);
 				get_tracer_struct_read(curr_tracer);
 				return alteast_one_task_runnable;
@@ -1073,14 +1022,15 @@ lxc_schedule_elem * get_next_runnable_task(tracer * curr_tracer) {
 	int n_checked_processes = 0;
 	int n_scheduled_processes = 0;
 
-	if (!curr_tracer || curr_tracer->tracer_type == TRACER_TYPE_INS_VT)
+	if (!curr_tracer)
 		return NULL;
 
 	llist* run_queue = &curr_tracer->run_queue;
 	llist_elem* head = run_queue->head;
 
 
-	if (curr_tracer->last_run != NULL  && curr_tracer->last_run->quanta_left_from_prev_round > 0) {
+	if (curr_tracer->last_run != NULL 
+		&& curr_tracer->last_run->quanta_left_from_prev_round > 0) {
 		return curr_tracer->last_run;
 	}
 	while (head != NULL) {
@@ -1119,21 +1069,10 @@ int unfreeze_proc_exp_single_core_mode(tracer * curr_tracer) {
 	atleast_on_task_runnable = update_all_runnable_task_timeslices(curr_tracer);
 	print_schedule_list(curr_tracer);
 	
-
-	if (curr_tracer->tracer_type == TRACER_TYPE_INS_VT) {
-		if (!atleast_on_task_runnable)
-			return SUCCESS;
-
-		curr_tracer->tracer_task->burst_target = curr_tracer->nxt_round_burst_length;
-		put_tracer_struct_read(curr_tracer);
-		wait_for_insvt_tracer_completion(curr_tracer);
-		get_tracer_struct_read(curr_tracer);
-		return SUCCESS;
-	}
-
 	total_quanta = curr_tracer->nxt_round_burst_length;
 	if (curr_tracer->last_run)
-		PDEBUG_V("Tracer: %d, LAST RUN = %d\n", curr_tracer->tracer_id, curr_tracer->last_run->pid);
+		PDEBUG_V("Tracer: %d, LAST RUN = %d\n", curr_tracer->tracer_id,
+				 curr_tracer->last_run->pid);
 
 	while (used_quanta < total_quanta) {
 		curr_elem = get_next_runnable_task(curr_tracer);
@@ -1146,8 +1085,7 @@ int unfreeze_proc_exp_single_core_mode(tracer * curr_tracer) {
 		curr_elem->curr_task->burst_target = curr_elem->quanta_curr_round;
 		curr_elem->quanta_curr_round = 0; // reset to zero
 		put_tracer_struct_write(curr_tracer);
-		
-		wait_for_appvt_tracer_completion(curr_tracer, curr_elem->curr_task);
+		wait_for_task_completion(curr_tracer, curr_elem->curr_task);
 		get_tracer_struct_read(curr_tracer);
 	}
 	return SUCCESS;

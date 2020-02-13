@@ -416,6 +416,10 @@ int register_tracer_process(char * write_buffer) {
 	get_tracer_struct_write(new_tracer);
 	cpumask_set_cpu(new_tracer->timeline_assignment, &current->cpus_allowed);
 
+
+	add_to_tracer_schedule_queue(new_tracer, current->pid);
+
+	
 	put_tracer_struct_write(new_tracer);
 	PDEBUG_I("Register Tracer: Finished for tracer: %d\n", tracer_id);
 

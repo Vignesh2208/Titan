@@ -692,6 +692,10 @@ int __init my_module_init(void) {
 
   PDEBUG_A("Loading MODULE\n");
 
+  experiment_type = NOT_SET;
+  initialization_status = NOT_INITIALIZED;
+  experiment_status = NOTRUNNING;
+
   /* Set up Kronos status file in /proc */
   dilation_dir = proc_mkdir_mode(DILATION_DIR, 0555, NULL);
   if (dilation_dir == NULL) {
