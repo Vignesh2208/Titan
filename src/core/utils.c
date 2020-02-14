@@ -6,7 +6,7 @@ extern s64 virt_exp_start_time;
 extern int tracer_num;
 extern int schedule_list_size(tracer * tracer_entry);
 extern hashmap get_tracer_by_id;
-extern hashmap get_associated_tracer;
+extern hashmap get_dilated_task_struct_by_pid;
 extern struct mutex exp_lock;
 
 
@@ -276,7 +276,12 @@ tracer * get_tracer_for_task(struct task_struct * aTask) {
 
 	if (!aTask || experiment_status != RUNNING)
 		return NULL;
-	return (tracer *)hmap_get_abs(&get_associated_tracer, aTask->pid);
+	struct dilated_task_struct * dilated_task 
+		= hmap_get_abs(&get_dilated_task_struct_by_pid, aTask->pid);
+	
+	if (dilated_task)
+		return (tracer *)dilated_task->associated_tracer;
+	return NULL
 }
 
 
@@ -308,28 +313,7 @@ struct dilated_task_struct * get_dilated_task_struct(
 	struct task_struct * task) {
 	if (!tsk)
 		return NULL;
-
-	tracer * associated_tracer;
-	associated_tracer = hmap_get_abs(&get_associated_tracer, task->pid);
-
-	if (!associated_tracer)
-		return NULL;
-
-	llist_elem * head_1;
-	
-	head_1 = associated_tracer->schedule_queue.head;
-	
-	while (head_1 != NULL) {
-
-		if (head_1) {
-			curr_elem = (lxc_schedule_elem *)head_1->item;
-			if (curr_elem && curr_elem->pid == task->pid) {
-				return curr_elem->curr_task;
-			}
-			head_1 = head_1->next;
-		}
-	}
-	return NULL;
+	return hmap_get_abs(&get_dilated_task_struct_by_pid, task->pid);
 }
 
 

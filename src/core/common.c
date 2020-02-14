@@ -6,7 +6,7 @@
 extern int tracer_num;
 extern int EXP_CPUS;
 extern int TOTAL_CPUS;
-extern struct task_struct *round_task;
+extern int total_num_timelines;
 extern struct task_struct ** chaintask;
 extern int experiment_status;
 extern int initialization_status;
@@ -16,22 +16,11 @@ extern struct mutex exp_lock;
 extern int *per_timeline_chain_length;
 extern llist * per_timeline_tracer_list;
 
-extern s64 * tracer_clock_array;
-extern s64 * aligned_tracer_clock_array;
-
 extern hashmap get_tracer_by_id;
 extern hashmap get_tracer_by_pid;
-extern hashmap get_associated_tracer;
+extern hashmap get_dilated_task_struct_by_pid;
 
-
-extern atomic_t experiment_stopping;
-extern wait_queue_head_t expstop_call_proc_wqueue;
-
-extern atomic_t progress_n_rounds ;
-extern atomic_t progress_n_enabled ;
-extern atomic_t n_waiting_tracers;
-extern wait_queue_head_t progress_sync_proc_wqueue;
-extern wait_queue_head_t * tracer_wqueue;
+extern wait_queue_head_t * timeline_wqueue;
 
 
 extern int run_usermode_tracer_spin_process(char *path, char **argv,
@@ -86,7 +75,6 @@ int pop_schedule_list(tracer * tracer_entry) {
 	int pid;
 	if (head != NULL) {
 		pid = head->pid;
-		kfree(head->curr_task);
 		kfree(head);
 		return pid;
 	}
@@ -260,11 +248,13 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 		!= chaintask[tracer_entry->timeline_assignment]);
 	tracee_dilated_task_struct->vt_exec_task = tracer_entry->vt_exec_task;
 	tracee_dilated_task_struct->ready = 0;
+	tracee_dilated_task_struct->associated_tracer = tracer_entry;
 	
 	llist_append(&tracer_entry->schedule_queue, new_elem);
 	bitmap_zero((&tracee->cpus_allowed)->bits, 8);
 	cpumask_set_cpu(tracer_entry->cpu_assignment, &tracee->cpus_allowed);
-	hmap_put_abs(&get_associated_tracer, current->pid, tracer_entry);
+	hmap_put_abs(&get_dilated_task_struct_by_pid, current->pid,
+				tracee_dilated_task_struct);
 	sp.sched_priority = 99;
 
 	sched_setscheduler(tracee, SCHED_RR, &sp);
@@ -279,8 +269,7 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 Assumes tracer write lock is acquired prior to call. Must return with lock still
 acquired. It is assumed that tracee_pid is according to the outermost namespace
 */
-void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid) 
-{
+void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid) {
 
 	lxc_schedule_elem * curr_elem;
 	lxc_schedule_elem * removed_elem;
@@ -319,7 +308,7 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid)
 	}
 
 	if (removed_elem) {
-		hmap_remove_abs(&get_associated_tracer, removed_elem->pid);
+		hmap_remove_abs(&get_dilated_task_struct_by_pid, removed_elem->pid);
 		kfree(removed_elem->curr_task);
 		kfree(removed_elem);
 	}
@@ -342,7 +331,8 @@ int register_tracer_process(char * write_buffer) {
 	int num_args;
 
 
-	num_args = convert_string_to_array(write_buffer, api_args, MAX_API_ARGUMENT_SIZE);
+	num_args = convert_string_to_array(write_buffer, api_args,
+									   MAX_API_ARGUMENT_SIZE);
 
 	BUG_ON(num_args < 2);
 
@@ -398,7 +388,7 @@ int register_tracer_process(char * write_buffer) {
 	new_tracer->tracer_id = tracer_id;
 	new_tracer->timeline_assignment = assigned_timeline_id;
 	new_tracer->cpu_assignment = assigned_cpu;
-	new_tracer->w_queue = &tracer_wqueue[new_tracer->timeline_assignment];
+	new_tracer->w_queue = &timeline_wqueue[new_tracer->timeline_assignment];
 	new_tracer->tracer_pid = current->pid;
 	new_tracer->vt_exec_task = chaintask[new_tracer->timeline_assignment];
 
@@ -419,7 +409,7 @@ int register_tracer_process(char * write_buffer) {
 
 	add_to_tracer_schedule_queue(new_tracer, current->pid);
 
-	
+
 	put_tracer_struct_write(new_tracer);
 	PDEBUG_I("Register Tracer: Finished for tracer: %d\n", tracer_id);
 
@@ -550,19 +540,18 @@ void signal_cpu_worker_resume(tracer * curr_tracer) {
 }
 
 int handle_stop_exp_cmd() {
-	if (progress_by(0, 1) == SUCCESS)
-		return cleanup_experiment_components();
-	return FAIL;
+	experiment_status = STOPPING;
+	initiate_experiment_stop_operation();
+	return cleanup_experiment_components();
 }
 
-int handle_initialize_exp_cmd(char * buffer) {
-	int num_expected_tracers;
+int handle_initialize_exp_cmd(int exp_type, int num_timelines,
+							  int num_expected_tracers) {
 
-	num_expected_tracers = atoi(buffer);
 	if (num_expected_tracers) {
-		return initialize_experiment_components(num_expected_tracers);
+		return initialize_experiment_components(exp_type, num_timelines,
+												num_expected_tracers);
 	}
-
 	return FAIL;
 }
 
@@ -573,11 +562,16 @@ s64 get_dilated_time(struct task_struct * task) {
 	tracer * associated_tracer;
 	lxc_schedule_elem * curr_elem;
 	llist_elem * head;
+	struct dilated_task_struct * dilated_task 
+		= hmap_get_abs(&get_dilated_task_struct_by_pid, task->pid);
 
 	do_gettimeofday(&tv);
 	s64 now = timeval_to_ns(&tv);
 
-	associated_tracer = hmap_get_abs(&get_associated_tracer, task->pid);
+	if (!dilated_task)
+		return now;
+
+	associated_tracer = dilated_task->associated_tracer;
 
 	if (associated_tracer && associated_tracer->curr_virt_time) {
 		return associated_tracer->curr_virt_time;

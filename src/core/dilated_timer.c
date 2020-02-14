@@ -27,7 +27,7 @@
 
 
 extern struct dilated_timer_timeline_base ** global_dilated_timer_timeline_bases;
-extern hashmap get_associated_tracer;
+extern hashmap get_dilated_task_struct_by_pid;
 
 struct dilated_timer_timeline_base * __alloc_global_dilated_timer_timeline_base(
     int timeline_id, int total_num_timelines) {
@@ -408,9 +408,13 @@ int dilated_hrtimer_sleep(ktime_t duration) {
 		return 0;
 	}
 
-  struct tracer_struct * associated_tracer = hmap_get_abs(
-    &get_associated_tracer, current->pid);
-
+  struct dilation_task_struct * dilated_task = hmap_get_abs(
+    &get_dilated_task_struct_by_pid, current->pid);
+  
+  if (!dilated_task)
+    return 0;
+    
+  tracer * associated_tracer = dilated_task->associated_tracer;
 	if (!associated_tracer)
 		return 0;
 

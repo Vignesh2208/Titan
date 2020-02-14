@@ -12,8 +12,11 @@ void clean_up_all_irrelevant_processes(tracer * curr_tracer) ;
 struct task_struct * search_tracer(struct task_struct * aTask, int pid);
 int sync_and_freeze();
 int cleanup_experiment_components();
-int initialize_experiment_components(int num_expected_tracers);
+int initialize_experiment_components(int exp_type, int num_timelines,
+									 int num_expected_tracers);
 void free_all_tracers();
 int progress_by(s64 progress_duration, int num_rounds);
+int progress_timeline_by(int timeline_id, s64 progress_duration);
+void initiate_experiment_stop_operation();
 
 #endif

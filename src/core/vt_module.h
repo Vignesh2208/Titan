@@ -16,6 +16,7 @@
 #define MAX_API_ARGUMENT_SIZE 100
 #define BUF_MAX_SIZE MAX_API_ARGUMENT_SIZE
 
+struct tracer_struct;
 
 struct dilated_task_struct {
 	s64 curr_virt_time;
@@ -29,6 +30,7 @@ struct dilated_task_struct {
 	int pid;
 	struct task_struct * vt_exec_task;
 	struct task_struct * base_task;
+	tracer * associated_tracer;
 }
 
 
@@ -52,6 +54,13 @@ typedef struct sched_queue_element {
 	int blocked;
 	struct dilated_task_struct * curr_task;
 } lxc_schedule_elem;
+
+typedef struct timeline_struct {
+	int timeline_id;
+	s64 nxt_round_burst_length;
+	int status;
+	wait_queue_head_t * w_queue;
+} timeline;
 
 
 typedef struct tracer_struct {

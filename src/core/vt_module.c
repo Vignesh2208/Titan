@@ -24,20 +24,20 @@ struct mutex exp_lock;
 struct mutex file_lock;
 
 // pointers
-int *per_cpu_chain_length;
-llist *per_cpu_tracer_list;
-wait_queue_head_t *tracer_wqueue;
-s64 *tracer_clock_array = NULL;
-s64 *aligned_tracer_clock_array = NULL;
+int *per_timeline_chain_length;
+llist *per_timeline_tracer_list;
+wait_queue_head_t *timeline_wqueue;
+wait_queue_head_t *timeline_worker_wqueue;
 static struct proc_dir_entry *dilation_dir = NULL;
 static struct proc_dir_entry *dilation_file = NULL;
+timeline * timeline_info;
 struct task_struct *loop_task;
-struct task_struct *round_task = NULL;
 struct task_struct ** chaintask;
 
 // hashmaps
 hashmap get_tracer_by_id;
 hashmap get_tracer_by_pid;
+hashmap get_dilated_task_struct_by_pid;
 
 // atomic variables
 atomic_t n_workers_running = ATOMIC_INIT(0);
@@ -160,6 +160,7 @@ ssize_t handle_write_results_cmd(struct dilation_task_struct * dilation_task,
     dilation_task->base_task = NULL;
     PDEBUG_I("VT_WRITE_RESULTS: Tracer: %d, Process: %d STOPPING\n", tracer_id,
         current->pid);
+    
     return 0;
   }
 
@@ -234,8 +235,11 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count,
 			return 0;
 		}
 
-    return handle_write_results_cmd(dilated_task, api_integer_args,
+    ret =  handle_write_results_cmd(dilated_task, api_integer_args,
                                     num_integer_args);
+    hmap_remove_abs(&get_dilated_task_struct_by_pid, current->pid);
+    kfree(dilated_task);
+    return ret;
 
 	}
 	else {
@@ -262,6 +266,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
   int api_integer_args[MAX_API_ARGUMENT_SIZE];
   tracer *curr_tracer;
   int tracer_id;
+  ktime_t duration;
   struct dilated_task_struct * dilated_task = get_dilated_task_struct(current);
 	
   memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
@@ -380,6 +385,9 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         }
         PDEBUG_I("VT_WRITE_RESULTS: Tracer: %d, Process: %d STOPPING\n",
                  tracer_id, current->pid);
+
+        hmap_remove_abs(&get_dilated_task_struct_by_pid, current->pid);
+        kfree(dilated_task);
         return 0;
       }
 
@@ -514,7 +522,16 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
         return -EFAULT;
       }
-      return handle_initialize_exp_cmd(api_info_tmp.api_argument);
+      num_integer_args = convert_string_to_array(
+          api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+      if (num_integer_args != 3) {
+        PDEBUG_I("VT_INITIALIZE_EXP: Not enough arguments !");
+        return -EFAULT;
+      }
+
+      return handle_initialize_exp_cmd(api_integer_args[0],
+        api_integer_args[1], api_integer_args[2]);
 
     case VT_GETTIME_PID:
       // Any process can invoke this call.
@@ -673,7 +690,39 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
                                dilated_task->associated_tracer_id <= 0);
       PDEBUG_V("VT_WAIT_FOR_EXIT: Tracer : %d, Process: %d, "
                "resuming from wait for exit\n", tracer_id, current->pid);
+      hmap_remove_abs(&get_dilated_task_struct_by_pid, current->pid);
+      kfree(dilated_task);
       return 0;
+
+    case VT_SLEEP_FOR:
+
+      if (initialization_status != INITIALIZED) {
+        PDEBUG_I(
+            "VT_SLEEP_FOR: Operation cannot be performed when experiment "
+            "is not initialized !\n");
+        return -EFAULT;
+      }
+
+      if (experiment_status != RUNNING) {
+        PDEBUG_I(
+            "VT_SLEEP_FOR: Operation cannot be performed when experiment "
+            "is not running !\n");
+        return -EFAULT;
+      }
+
+      if (!dilated_task || dilated_task->associated_tracer_id <= 0) {
+        PDEBUG_I("VT_SLEEP_FOR: Process is not associated with "
+                 "any tracer !\n");
+        return -EFAULT;
+      }
+
+      api_info = (invoked_api *)arg;
+      if (!api_info) return -EFAULT;
+      if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+        return -EFAULT;
+      }
+      duration.tv64 = api_info_tmp.return_value;      
+      return dilated_hrtimer_sleep(duration);
 
     default:
       return -ENOTTY;
@@ -728,12 +777,6 @@ int __init my_module_init(void) {
   initialization_status = NOT_INITIALIZED;
   experiment_status = NOTRUNNING;
 
-  round_task = kthread_create(&round_sync_task, NULL, "round_sync_task");
-  if (!IS_ERR(round_task)) {
-    kthread_bind(round_task, 0);
-    wake_up_process(round_task);
-  }
-
   /* Acquire number of CPUs on system */
   TOTAL_CPUS = num_online_cpus();
   PDEBUG_A("Total Number of CPUS: %d\n", num_online_cpus());
@@ -743,16 +786,6 @@ int __init my_module_init(void) {
   else
     EXP_CPUS = 1;
 
-  tracer_wqueue = kmalloc(EXP_CPUS * sizeof(wait_queue_head_t), GFP_KERNEL);
-
-  if (!tracer_wqueue) {
-    PDEBUG_I("Error: Could not allot memory for tracer wait queue\n");
-    return -ENOMEM;
-  }
-
-  for (i = 0; i < EXP_CPUS; i++) {
-    init_waitqueue_head(&tracer_wqueue[i]);
-  }
 
   PDEBUG_A("Number of EXP_CPUS: %d\n", EXP_CPUS);
   PDEBUG_A("MODULE LOADED SUCCESSFULLY \n");
@@ -772,15 +805,6 @@ void __exit my_module_exit(void) {
   PDEBUG_A(" /proc/%s deleted\n", DILATION_FILE);
   remove_proc_entry(DILATION_DIR, NULL);
   PDEBUG_A(" /proc/%s deleted\n", DILATION_DIR);
-
-  /* Busy wait briefly for tasks to finish -Not the best approach */
-  for (i = 0; i < 1000000000; i++) {}
-
-  if (kthread_stop(round_task)) {
-    PDEBUG_E("Stopping round_task error\n");
-  }
-
-  for (i = 0; i < 1000000000; i++) {}
 
   if (tracer_num > 0) {
     // Free all tracer structs from previous experiment if any

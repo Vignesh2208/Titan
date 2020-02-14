@@ -22,6 +22,8 @@ void update_init_task_virtual_time(s64 time_to_set);
 void update_all_tracers_virtual_time(int cpuID);
 int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args);
 int handle_stop_exp_cmd();
+int handle_initialize_exp_cmd(int exp_type, int num_timelines,
+							  int num_expected_tracers)
 s64 get_dilated_time(struct task_struct * task) ;
 s64 handle_gettimepid(char * write_buffer);
 void wait_for_task_completion(tracer * curr_tracer, struct task_struct * relevant_task);
