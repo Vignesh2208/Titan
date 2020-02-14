@@ -413,7 +413,7 @@ int dilated_hrtimer_sleep(ktime_t duration) {
   
   if (!dilated_task)
     return 0;
-    
+
   tracer * associated_tracer = dilated_task->associated_tracer;
 	if (!associated_tracer)
 		return 0;
@@ -431,9 +431,19 @@ int dilated_hrtimer_sleep(ktime_t duration) {
                        HRTIMER_MODE_REL);
 	sleeper->timer_dilated.function = dilated_sleep_wakeup;
 	set_current_state(TASK_INTERRUPTIBLE);
+
+  // Wake-up tracer timeline worker
+
+
 	dilated_hrtimer_start_range_ns(&sleeper->timer_dilated, duration,
                                    HRTIMER_MODE_REL);
-	schedule();
+
+  dilated_task->ready = 0;
+  dilated_task->burst_target = 0;
+  associated_tracer->w_queue_wakeup_pid = 1;
+	wake_up_interruptible(associated_tracer->w_queue);
+	
+  schedule();
 	kfree(sleeper);
 	PDEBUG_V("Resuming from dilated sleep. Sleep Duration: %llu.\n",
            duration.tv64);

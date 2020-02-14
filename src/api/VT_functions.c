@@ -3,25 +3,21 @@
 #include <sys/ioctl.h>
 #include "utility_functions.h"
 
-s64 register_tracer(int tracer_id, int tracer_type, int registration_type,
-                    int optional_pid) {
+s64 register_tracer(int tracer_id, int experiment_type,
+                    int optional_timeline_id) {
   ioctl_args arg;
-  if (tracer_id < 0 || optional_pid < 0 ||
-      (tracer_type != TRACER_TYPE_INS_VT &&
-       tracer_type != TRACER_TYPE_APP_VT) ||
-      (registration_type < SIMPLE_REGISTRATION ||
-       registration_type > REGISTRATION_W_CONTROL_THREAD)) {
+  if (tracer_id < 0 || optional_timeline_id < 0 || 
+      (experiment_type != EXP_CBE && experiment_type != EXP_CS)) {
     printf("Tracer registration: incorrect parameters for tracer: %d\n",
           tracer_id);
     return -1;
   }
   init_ioctl_arg(&arg);
-  if (registration_type == SIMPLE_REGISTRATION) {
-    sprintf(arg.cmd_buf, "%d,%d,%d", tracer_id, tracer_type,
-            SIMPLE_REGISTRATION);
+  if (experiment_type == EXP_CBE) {
+    sprintf(arg.cmd_buf, "%d,%d,0", tracer_id, experiment_type);
   } else {
-    sprintf(arg.cmd_buf, "%d,%d,%d,%d", tracer_id, tracer_type,
-            registration_type, optional_pid);
+    sprintf(arg.cmd_buf, "%d,%d,%d", tracer_id, experiment_type,
+            optional_timeline_id);
   }
   return send_to_vt_module(VT_REGISTER_TRACER, &arg);
 }
@@ -50,22 +46,14 @@ int wait_for_exit(int tracer_id) {
   arg.cmd_value = 0;
   return send_to_vt_module(VT_WAIT_FOR_EXIT, &arg);
 }
-s64 write_tracer_results(int tracer_id, int* results, int num_results) {
-  if (tracer_id < 0 || num_results < 0) {
-    printf("Write tracer results: incorrect parameters for tracer: %d\n",
-          tracer_id);
+s64 write_tracer_results(int* results, int num_results) {
+  if (num_results <= 0) {
+    printf("Write tracer results: incorrect parameters\n");
     return -1;
   }
   ioctl_args arg;
   init_ioctl_arg(&arg);
-
-  if (num_results == 0)
-    sprintf(arg.cmd_buf, "%d", tracer_id);
-  else {
-    sprintf(arg.cmd_buf, "%d,", tracer_id);
-    if (append_to_ioctl_arg(&arg, results, num_results) < 0) return -1;
-  }
-
+  if (append_to_ioctl_arg(&arg, results, num_results) < 0) return -1;
   return send_to_vt_module(VT_WRITE_RESULTS, &arg);
 }
 
@@ -105,7 +93,33 @@ int initializeExp(int num_expected_tracers) {
           num_expected_tracers);
     return -1;
   }
-  sprintf(arg.cmd_buf, "%d", num_expected_tracers);
+  sprintf(arg.cmd_buf, "%d,0,%d", EXP_CBE, num_expected_tracers);
+  return send_to_vt_module(VT_INITIALIZE_EXP, &arg);
+}
+
+int initialize_VT_Exp(int exp_type, int num_timelines,
+                      int num_expected_tracers) {
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  if (num_expected_tracers < 0) {
+    printf("initialize_VT_Exp: num expected tracers: %d < 0 !\n",
+          num_expected_tracers);
+    return -1;
+  }
+
+  if (exp_type != EXP_CS && exp_type != EXP_CBE) {
+    printf("initialize_VT_Exp: Incorrect Experiment type !\n");
+    return -1;
+  }
+
+  if (num_timelines <= 0) {
+    printf("initialize_VT_Exp: Number of timelines cannot be <= 0\n");
+    return -1;
+  }
+
+  sprintf(arg.cmd_buf, "%d,%d,%d", exp_type, num_timelines,
+                                   num_expected_tracers);
+
   return send_to_vt_module(VT_INITIALIZE_EXP, &arg);
 }
 
@@ -131,14 +145,46 @@ int progressBy(s64 duration, int num_rounds) {
   return send_to_vt_module(VT_PROGRESS_BY, &arg);
 }
 
-int set_netdevice_owner(int tracer_id, char* intf_name) {
-  ioctl_args arg;
-  init_ioctl_arg(&arg);
-  if (tracer_id < 0 || !intf_name || strlen(intf_name) > IFNAMESIZ) {
-    printf("Set net device owner: incorrect arguments for tracer: %d!\n",
-          tracer_id);
+
+int progress_timeline_by(int timeline_id, s64 duration) {
+  if (timeline_id < 0 || duration <= 0) {
+    printf("progress_timeline_By: incorrect arguments !\n");
     return -1;
   }
-  sprintf(arg.cmd_buf, "%d,%s", tracer_id, intf_name);
-  return send_to_vt_module(VT_SET_NETDEVICE_OWNER, &arg);
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  sprintf(arg.cmd_buf, "%d,", timeline_id);
+  arg.cmd_value = duration;
+  return send_to_vt_module(VT_PROGRESS_BY, &arg);
+
+}
+
+int vt_sleep_for(s64 duration) {
+  if (duration <= 0) {
+    printf("vt_sleep_for: Duration must be positive !\n");
+    return -1;
+  }
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  arg.cmd_value = duration;
+
+  return send_to_vt_module(VT_SLEEP_FOR, &arg);
+}
+
+int release_worker() {
+  ioctl_args arg;
+  init_ioctl_arg(&arg); 
+  return send_to_vt_module(VT_RELEASE_WORKER, &arg);
+}
+
+s64 finish_burst() {
+  ioctl_args arg;
+  init_ioctl_arg(&arg); 
+  return send_to_vt_module(VT_SET_RUNNABLE, &arg);
+}
+
+
+s64 finish_burst_and_discard() {
+  int my_pid = gettid();
+  return write_tracer_results(&my_pid, 1);
 }

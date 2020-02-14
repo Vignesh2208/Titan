@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <sys/ioctl.h>
 
+#define EXP_CBE 1
+#define EXP_CS 2
+
 #define MAX_API_ARGUMENT_SIZE 100
 #define BUF_MAX_SIZE MAX_API_ARGUMENT_SIZE
 
@@ -39,8 +42,11 @@ typedef struct ioctl_args_struct {
 #define VT_GETTIME_PID _IOW(VT_IOC_MAGIC, 8, int)
 #define VT_STOP_EXP _IOW(VT_IOC_MAGIC, 9, int)
 #define VT_PROGRESS_BY _IOW(VT_IOC_MAGIC, 10, int)
-#define VT_SET_NETDEVICE_OWNER _IOW(VT_IOC_MAGIC, 11, int)
+#define VT_PROGRESS_TIMELINE_BY _IOW(VT_IOC_MAGIC, 11, int)
 #define VT_WAIT_FOR_EXIT _IOW(VT_IOC_MAGIC, 12, int)
+#define VT_SLEEP_FOR _IOW(VT_IOC_MAGIC, 13, int)
+#define VT_RELEASE_WORKER _IOW(VT_IOC_MAGIC, 14, int)
+#define VT_SET_RUNNABLE _IOW(VT_IOC_MAGIC, 15, int)
 
 s64 send_to_vt_module(unsigned int cmd, ioctl_args* arg);
 int gettid(void);

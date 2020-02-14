@@ -17,41 +17,32 @@ specified by FILENAME
 s64 send_to_vt_module(unsigned int cmd, ioctl_args *arg) {
   int fp = open(FILENAME, O_RDWR);
   int ret = 0;
-  struct timeval vt;
+
   if (fp < 0) {
     printf("ERROR communicating with VT module: Could not open proc file\n");
     return -1;
   }
 
-  if (cmd != VT_GET_CURRENT_VIRTUAL_TIME) {
-    if (!arg) {
-      printf("ERROR communicating with VT module: Missing argument !\n");
-      close(fp);
-      return -1;
-    }
-    if (strlen(arg->cmd_buf) > BUF_MAX_SIZE) {
-      printf("ERROR communicating with VT module: Too much data to copy !\n");
-      close(fp);
-      return -1;
-    }
-    ret = ioctl(fp, cmd, arg);
-    if (ret < 0) {
-      printf("Error executing cmd: %d\n", cmd);
-      close(fp);
-      return ret;
-    }
-  } else {
-    ret = ioctl(fp, VT_GET_CURRENT_VIRTUAL_TIME, (struct timeval *)&vt);
-    if (ret < 0) {
-      printf("Error executing VT_GET_CURRENT_VIRTUAL_TIME cmd\n");
-      close(fp);
-      return ret;
-    }
+  if (!arg) {
+    printf("ERROR communicating with VT module: Missing argument !\n");
     close(fp);
-    return (vt.tv_sec * 1000000 + vt.tv_usec) * 1000;
+    return -1;
   }
+  if (strlen(arg->cmd_buf) > BUF_MAX_SIZE) {
+    printf("ERROR communicating with VT module: Too much data to copy !\n");
+    close(fp);
+    return -1;
+  }
+  ret = ioctl(fp, cmd, arg);
+  if (ret < 0) {
+    printf("Error executing cmd: %d\n", cmd);
+    close(fp);
+    return ret;
+  }
+  
   close(fp);
-  if (cmd == VT_WRITE_RESULTS || cmd == VT_REGISTER_TRACER)
+  if (cmd == VT_WRITE_RESULTS || cmd == VT_REGISTER_TRACER
+      || cmd == VT_SET_RUNNABLE)
     return arg->cmd_value;
   return ret;
 }

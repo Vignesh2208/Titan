@@ -2,11 +2,6 @@
 #include "VT_functions.h"
 #include "utility_functions.h"
 
-static PyObject *py_get_current_virtual_time(PyObject *self, PyObject *args) {
-  s64 ret;
-  ret = get_current_virtual_time();
-  return Py_BuildValue("L", ret);
-}
 
 static PyObject *py_gettime_pid(PyObject *self, PyObject *args) {
   s64 ret;
@@ -16,16 +11,6 @@ static PyObject *py_gettime_pid(PyObject *self, PyObject *args) {
 
   ret = get_current_time_pid(pid);
   return Py_BuildValue("L", ret);
-}
-
-static PyObject *py_set_netdevice_owner(PyObject *self, PyObject *args) {
-  int tracer_id;
-  char *intf_name;
-  int ret;
-
-  if (!PyArg_ParseTuple(args, "is", &tracer_id, &intf_name)) return NULL;
-  ret = set_netdevice_owner(tracer_id, intf_name);
-  return Py_BuildValue("i", ret);
 }
 
 static PyObject *py_stopExp(PyObject *self, PyObject *args) {
@@ -62,8 +47,6 @@ static PyObject *py_synchronizeAndFreeze(PyObject *self, PyObject *args) {
 static PyMethodDef vt_functions_methods[] = {
     {"synchronizeAndFreeze", py_synchronizeAndFreeze, METH_VARARGS, NULL},
     {"getTimePID", py_gettime_pid, METH_VARARGS, NULL},
-    {"getCurrentVirtualTime", py_get_current_virtual_time, METH_VARARGS, NULL},
-    {"setNetDeviceOwner", py_set_netdevice_owner, METH_VARARGS, NULL},
     {"stopExp", py_stopExp, METH_VARARGS, NULL},
     {"initializeExp", py_initializeExp, METH_VARARGS, NULL},
     {"progressBy", py_progress_by, METH_VARARGS, NULL},

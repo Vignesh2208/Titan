@@ -16,6 +16,8 @@
 #define VT_PROGRESS_TIMELINE_BY _IOW(VT_IOC_MAGIC, 11, int)
 #define VT_WAIT_FOR_EXIT _IOW(VT_IOC_MAGIC, 12, int)
 #define VT_SLEEP_FOR _IOW(VT_IOC_MAGIC, 13, int)
+#define VT_RELEASE_WORKER _IOW(VT_IOC_MAGIC, 14, int)
+#define VT_SET_RUNNABLE _IOW(VT_IOC_MAGIC, 15, int)
 
 #define VT_ADD_TO_SQ 'a'
 #define VT_WRITE_RES 'b'

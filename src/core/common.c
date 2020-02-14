@@ -340,7 +340,7 @@ int register_tracer_process(char * write_buffer) {
 	registration_type = api_args[1];
 
 
-	if (registration_type == 1) {
+	if (registration_type == EXP_CS) {
 		BUG_ON(num_args != 3);
 		assigned_timeline_id  = api_args[3];
 		if (assigned_timeline_id < 0) {
