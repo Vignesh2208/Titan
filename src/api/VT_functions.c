@@ -47,13 +47,16 @@ int wait_for_exit(int tracer_id) {
   return send_to_vt_module(VT_WAIT_FOR_EXIT, &arg);
 }
 s64 write_tracer_results(int* results, int num_results) {
-  if (num_results <= 0) {
+  if (num_results < 0) {
     printf("Write tracer results: incorrect parameters\n");
     return -1;
   }
   ioctl_args arg;
   init_ioctl_arg(&arg);
-  if (append_to_ioctl_arg(&arg, results, num_results) < 0) return -1;
+
+  if (num_results > 0) {
+    if (append_to_ioctl_arg(&arg, results, num_results) < 0) return -1;
+  }
   return send_to_vt_module(VT_WRITE_RESULTS, &arg);
 }
 
@@ -178,11 +181,15 @@ int release_worker() {
 }
 
 s64 finish_burst() {
+  return write_tracer_results(NULL, 0);
+}
+
+s64 mark_burst_complete() {
+
   ioctl_args arg;
   init_ioctl_arg(&arg); 
   return send_to_vt_module(VT_SET_RUNNABLE, &arg);
 }
-
 
 s64 finish_burst_and_discard() {
   int my_pid = gettid();

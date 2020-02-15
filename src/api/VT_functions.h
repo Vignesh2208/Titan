@@ -44,5 +44,5 @@ int vt_sleep_for(s64 duration);
 int release_worker();
 s64 finish_burst();
 s64 finish_burst_and_discard();
-
+s64 mark_burst_complete();
 #endif

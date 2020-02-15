@@ -128,8 +128,31 @@ void clean_up_schedule_list(tracer * tracer_entry) {
 	llist* schedule_queue = &tracer_entry->schedule_queue;
 	llist_elem* head = schedule_queue->head;
 
+
+	while (head != NULL) {
+
+		if (head) {
+			curr_elem = (lxc_schedule_elem *)head->item;
+			if (curr_elem) {
+				curr_elem->curr_task->associated_tracer_id = -1;
+				curr_elem->curr_task->virt_start_time = 0;
+				curr_elem->curr_task->curr_virt_time = 0;
+				curr_elem->curr_task->wakeup_time = 0;
+				curr_elem->curr_task->burst_target = 0;
+			}
+		}
+		head = head->next;
+	}
+
 	while ( pid != 0) {
 		pid = pop_schedule_list(tracer_entry);
+	}
+	if (tracer_entry->main_task) {
+		tracer_entry->main_task->associated_tracer_id = -1;
+		tracer_entry->main_task->virt_start_time = 0;
+		tracer_entry->main_task->curr_virt_time = 0;
+		tracer_entry->main_task->wakeup_time = 0;
+		tracer_entry->main_task->burst_target = 0;
 	}
 	tracer_entry->main_task = NULL;
 }
@@ -230,18 +253,14 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	tracee_dilated_task_struct->associated_tracer_id = tracer_entry->tracer_id;
 	tracee_dilated_task_struct->base_task = tracee;
 	tracee_dilated_task_struct->pid = tracee->pid;
-
-	if (!tracee_dilated_task_struct->virt_start_time) {
-		tracee_dilated_task_struct->virt_start_time = virt_exp_start_time;
-		tracee_dilated_task_struct->curr_virt_time 
-			= tracer_entry->curr_virtual_time;
-		tracee_dilated_task_struct->wakeup_time = 0;
-		tracee_dilated_task_struct->burst_target = 0;
-		tracee_dilated_task_struct->buffer_window_len = 0;
-		tracee_dilated_task_struct->lookahead = 0;
-	}
-
-
+	tracee_dilated_task_struct->virt_start_time = virt_exp_start_time;
+	tracee_dilated_task_struct->curr_virt_time 
+		= tracer_entry->curr_virtual_time;
+	tracee_dilated_task_struct->wakeup_time = 0;
+	tracee_dilated_task_struct->burst_target = 0;
+	tracee_dilated_task_struct->buffer_window_len = 0;
+	tracee_dilated_task_struct->lookahead = 0;
+	
 	
 	BUG_ON(!chaintask[tracer_entry->timeline_assignment]);
 	BUG_ON(tracer_entry->vt_exec_task 
@@ -480,7 +499,8 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 
 	struct pid *pid_struct;
 	struct task_struct * task;
-	struct dilated_task_struct * dilated_task;
+	struct dilated_task_struct * dilated_task = hmap_get_abs(
+		&get_dilated_task_struct_by_pid, current->pid);
 	int i, pid_to_remove;
 
 	if (!curr_tracer)
@@ -506,7 +526,9 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 	}
 
 	put_tracer_struct_write(curr_tracer);
-	signal_cpu_worker_resume(curr_tracer);
+
+	if (!dilated_task && dilated_task->burst_target > 0);
+		signal_cpu_worker_resume(curr_tracer);
 	return SUCCESS;
 }
 
@@ -515,6 +537,7 @@ void wait_for_task_completion(tracer * curr_tracer,
 	if (!curr_tracer || !relevant_task) {
 		return;
 	}
+	
 	int ret;
 	PDEBUG_V("Waiting for Tracer completion for Tracer ID: %d\n",
 			 curr_tracer->tracer_id);
@@ -524,7 +547,7 @@ void wait_for_task_completion(tracer * curr_tracer,
 							 curr_tracer->w_queue_wakeup_pid == 1);
 	PDEBUG_V("Resuming from Tracer completion for Tracer ID: %d\n",
 			 curr_tracer->tracer_id);
-
+	
 }
 
 void signal_cpu_worker_resume(tracer * curr_tracer) {

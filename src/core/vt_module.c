@@ -231,11 +231,6 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count,
 		num_integer_args = convert_string_to_array(
 		  write_buffer + 2, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
-		if (num_integer_args < 1) {
-			PDEBUG_I("VT_WRITE_RESULTS: Not enough arguments !");
-			return 0;
-		}
-
     ret =  handle_write_results_cmd(dilated_task, api_integer_args,
                                     num_integer_args);
     hmap_remove_abs(&get_dilated_task_struct_by_pid, current->pid);
@@ -360,11 +355,6 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       num_integer_args = convert_string_to_array(
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
-
-      if (num_integer_args < 1) {
-        PDEBUG_I("VT_WRITE_RESULTS: Not enough arguments !");
-        return -EFAULT;
-      }
 
       tracer_id = dilated_task->associated_tracer_id;
       curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);

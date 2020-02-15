@@ -1055,6 +1055,7 @@ int unfreeze_proc_exp_single_core_mode(tracer * curr_tracer) {
 		put_tracer_struct_write(curr_tracer);
 		wait_for_task_completion(curr_tracer, curr_elem->curr_task);
 		get_tracer_struct_read(curr_tracer);
+		curr_elem->curr_task->burst_target = 0;
 	}
 	return SUCCESS;
 }
