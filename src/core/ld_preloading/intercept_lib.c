@@ -1,32 +1,14 @@
 
 
-#define _GNU_SOURCE
 
-#include <libsyscall_intercept_hook_point.h>
-#include <syscall.h>
-#include <errno.h>
-#include <dlfcn.h>
-#include <stdio.h>
-#include <pthread.h>
-#include <dlfcn.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <sys/time.h>
-#include <time.h>
-#include <poll.h>
-#include <sys/select.h>
-#include <linux/futex.h>
+#include "includes.h"
+#include "vt_management.h"
 
-
-int insn_counter;
-int * global_insn_ctr = NULL;
+extern int * globalCurrBurstLength = NULL;
 
 typedef int (*pthread_create_t)(pthread_t *, const pthread_attr_t *,
                                 void *(*)(void*), void *);
+
 void (*original_pthread_exit)(void * ret_val) = NULL;
 
 int (*orig_gettimeofday)(struct timeval *tv, struct timezone *tz) = NULL;
@@ -42,42 +24,37 @@ int (*orig_poll)(struct pollfd *fds, nfds_t nfds, int timeout) = NULL;
 
 pid_t (*orig_fork)(void) = NULL;
 
-
 int (*orig_futex)(int *uaddr, int futex_op, int val,
                  const struct timespec *timeout,   /* or: uint32_t val2 */
                  int *uaddr2, int val3) = NULL;
 
 long (*orig_syscall)(long number, ...);
 
+void (*orig_exit)(int status);
+
+void load_orig_functions();
 
 
-void (*orig__exit)(int status);
-
-
-int futex_pid = 0, futex_pid_after = 0, futex_count;
-int getpid_count;
-
-struct Thunk
-{
+struct Thunk {
     void *(*start_routine)(void *);
     void *arg;
 };
 
-static void * wrap_threadFn(void *thunk_vp)
-{
+static void * wrap_threadFn(void *thunk_vp) {
     
-    printf ("Start of thread: PID = %lu\n", syscall(SYS_gettid));
     struct Thunk *thunk_p = (struct Thunk *)thunk_vp;
+	printf ("Start of thread: PID = %lu\n", syscall(SYS_gettid));
+
     void *result = (thunk_p->start_routine)(thunk_p->arg);
-    free(thunk_p);
-    printf ("Thread Exiting. PID = %lu. futex_pid = %d, futex_after_pid = %d, futex_count = %d, getpid_count = %d\n", syscall(SYS_gettid), futex_pid, futex_pid_after, futex_count, getpid_count);
+
+	free(thunk_p);
+	printf ("Thread Exiting. PID = %lu\n", syscall(SYS_gettid));
     return result;
 }
 
 int
 pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
-               void *(*start_routine)(void*), void *arg)
-{
+               void *(*start_routine)(void*), void *arg) {
     static pthread_create_t real_pthread_create;
     
 
@@ -89,11 +66,7 @@ pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
             abort(); // "impossible"
     }
 
-    
-    if (global_insn_ctr) {
-	    printf("My pthread_create called. Global insn_counter = %d. futex_pid = %d, futex_after_pid = %d, futex_count = %d\n", *global_insn_ctr, futex_pid, futex_pid_after, futex_count);
-	    (*global_insn_ctr)++;
-    }
+
     struct Thunk *thunk_p = malloc(sizeof(struct Thunk));
     thunk_p->start_routine = start_routine;
     thunk_p->arg = arg;
@@ -104,20 +77,12 @@ pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
 /* LD_PRELOAD override that causes normal process termination to instead result
  * in abnormal process termination through a raised SIGABRT signal via abort(3)
  * (even if SIGABRT is ignored, or is caught by a handler that returns).
- * 
- * Loosely based on libminijailpreload.c by Chromium OS authors: 
- * https://android.googlesource.com/platform/external/minijail/+/master/libminijailpreload.c
  */
 
 void my_exit(void) {
 
-   printf("I am exiting main thread. PID = %d. Getpid count = %d\n",syscall(SYS_gettid), getpid_count);
-   /*if (original_pthread_exit == NULL) {
-        load_original_pthread_exit();
-    }
-    printf("I am exiting thread from my pthread_exit\n");
-    original_pthread_exit(retval);*/
-   //exit(0);
+   printf("I am exiting main thread. PID = %d\n", syscall(SYS_gettid));
+   
 }
 
 /* The address of the real main is stored here for fake_main to access */
@@ -129,7 +94,7 @@ static int fake_main(int argc, char **argv, char **envp)
 	/* Register abort(3) as an atexit(3) handler to be called at normal
 	 * process termination */
 	atexit(my_exit);
-        printf ("Starting main program: Pid = %d. Getpidcount = %d\n", syscall(SYS_gettid), getpid_count);
+    printf ("Starting main program: Pid = %d\n", syscall(SYS_gettid));
 
 	/* Finally call the real main function */
 	return real_main(argc, argv, envp);
@@ -159,7 +124,7 @@ int __libc_start_main(int (*main) (int, char **, char **),
 		      void (*stack_end))
 {
 	void *libc_handle, *sym;
-        void * lib_vt_clock_handle;
+    void * lib_vt_clock_handle;
 	/* This type punning is unfortunately necessary in C99 as casting
 	 * directly from void* to function pointers is left undefined in C99.
 	 * Strictly speaking, the conversion via union is still undefined
@@ -228,23 +193,23 @@ int __libc_start_main(int (*main) (int, char **, char **),
 	}
 
 
-        orig__exit = dlsym(libc_handle, "_exit");
-	if (!orig__exit) {
+    orig_exit = dlsym(libc_handle, "_exit");
+	if (!orig_exit) {
 		fprintf(stderr, "can't find _exit():%s\n",
 			dlerror());
 		_exit(EXIT_FAILURE);
 	}
 
 
-        if (!global_insn_ctr) {
-		lib_vt_clock_handle = dlopen("libvt_clock.so", RTLD_NOLOAD | RTLD_NOW);
+    if (!globalCurrBurstLength) {
+		lib_vt_clock_handle = dlopen("libvtlib.so", RTLD_NOLOAD | RTLD_NOW);
 
 		if (lib_vt_clock_handle) {
-			global_insn_ctr = dlsym(lib_vt_clock_handle, "global_insn_counter");
-			if (!global_insn_ctr) {
+			globalCurrBurstLength = dlsym(lib_vt_clock_handle,
+										  "currBurstLength");
+			if (!globalCurrBurstLength) {
 			    printf("GLOBAL insn counter not found !\n");
 			    abort();
-
 			}
 		}
 
@@ -253,10 +218,9 @@ int __libc_start_main(int (*main) (int, char **, char **),
 				dlerror());
 			_exit(EXIT_FAILURE);
 		}
-
 	}
 
-        orig_syscall = dlsym(libc_handle, "syscall");
+    orig_syscall = dlsym(libc_handle, "syscall");
 	if (!orig_syscall) {
 		fprintf(stderr, "can't find syscall():%s\n",
 			dlerror());
@@ -278,6 +242,8 @@ int __libc_start_main(int (*main) (int, char **, char **),
 		_exit(EXIT_FAILURE);
 	}
 
+	load_orig_functions();
+
 	/* Note that we swap fake_main in for main - fake_main should call
 	 * real_main after its setup is done. */
 	return real_libc_start_main.fn(fake_main, argc, ubp_av, init, fini,
@@ -295,76 +261,94 @@ void load_original_pthread_exit() {
 
 
 void __attribute__ ((noreturn)) _exit(int status) {
-	 printf("I am alternate exiting main thread. PID = %d. Getpid count = %d\n",syscall(SYS_gettid), getpid_count);
-	orig__exit(status);
+	printf("I am alternate exiting main thread\n", syscall(SYS_gettid));
+	orig_exit(status);
 }
 
 void  __attribute__ ((noreturn))  pthread_exit(void *retval) {
     if (!original_pthread_exit) {
-	load_original_pthread_exit();
+		load_original_pthread_exit();
     }
     printf ("Calling my pthread exit for PID = %d\n", syscall(SYS_gettid)); 
     original_pthread_exit(retval);
 }
 
 
+void load_orig_functions() {
+	void *libc_handle;
+	libc_handle = dlopen("libc.so.6", RTLD_NOLOAD | RTLD_NOW);
+	if (!libc_handle) {
+		fprintf(stderr, "can't open handle to libc.so.6: %s\n", dlerror());
+		/* We dare not use abort() here because it would run atexit(3)
+		   handlers and try to flush stdio. */
+		_exit(EXIT_FAILURE);
+	}
+	
+	if (!orig_fork) {
+		
+		orig_fork = dlsym(libc_handle, "fork");
+		if (!orig_fork) {
+			fprintf(stderr, "can't find fork():%s\n", dlerror());
+			_exit(EXIT_FAILURE);
+		}
+	}
+
+	if (!orig_gettimeofday) {
+		orig_gettimeofday = dlsym(libc_handle, "gettimeofday");
+		if (!orig_gettimeofday) {
+			fprintf(stderr, "can't find gettimeofday():%s\n", dlerror());
+			_exit(EXIT_FAILURE);
+		}
+	}
+
+	if (!orig_clock_gettime) {
+		orig_clock_gettime = dlsym(libc_handle, "clock_gettime");
+		if (!orig_clock_gettime) {
+			fprintf(stderr, "can't find orig_clock_gettime():%s\n", dlerror());
+			_exit(EXIT_FAILURE);
+		}
+
+	}
+
+	if (!orig_sleep) {
+		orig_sleep = dlsym(libc_handle, "sleep");
+		if (!orig_sleep) {
+			fprintf(stderr, "can't find orig_sleep():%s\n", dlerror());
+			_exit(EXIT_FAILURE);
+		}
+	}
+
+	if (!orig_poll) {
+		orig_poll = dlsym(libc_handle, "poll");
+		if (!orig_poll) {
+			fprintf(stderr, "can't find orig_poll():%s\n", dlerror());
+			_exit(EXIT_FAILURE);
+		}
+	}
+
+	if (!orig_select) {
+		orig_select = dlsym(libc_handle, "select");
+		if (!orig_select) {
+			fprintf(stderr, "can't find orig_select():%s\n", dlerror());
+			_exit(EXIT_FAILURE);
+		}
+	}
+
+
+	if(dlclose(libc_handle)) {
+		fprintf(stderr, "can't close handle to libc.so.6: %s\n", dlerror());
+		_exit(EXIT_FAILURE);
+	}
+}
+
+
 pid_t fork() {
 	printf("Before fork in parent: %d\n", syscall(SYS_gettid));
 	pid_t ret;
-        
-
-	if (!orig_fork) {
-		void *libc_handle;
-		libc_handle = dlopen("libc.so.6", RTLD_NOLOAD | RTLD_NOW);
-
-		if (!libc_handle) {
-			fprintf(stderr, "can't open handle to libc.so.6: %s\n",
-				dlerror());
-			/* We dare not use abort() here because it would run atexit(3)
-			 * handlers and try to flush stdio. */
-			_exit(EXIT_FAILURE);
-		}
 	
-		/* Our LD_PRELOAD will overwrite the real __libc_start_main, so we have
-		 * to look up the real one from libc and invoke it with a pointer to the
-		 * fake main we'd like to run before the real main function. */
-		orig_fork = dlsym(libc_handle, "fork");
-		if (!orig_fork) {
-			fprintf(stderr, "can't find fork():%s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-
-		
-		/* Close our handle to dynamically loaded libc. Since the libc object
-		 * was already loaded previously, this only decrements the reference
-		 * count to the shared object. Hence, we can be confident that the
-		 * symbol to the read __libc_start_main remains valid even after we
-		 * close our handle. In order to strictly adhere to the API, we could
-		 * defer closing the handle to our spliced-in fake main before it call
-		 * the real main function. */
-		if(dlclose(libc_handle)) {
-			fprintf(stderr, "can't close handle to libc.so.6: %s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-
-		
-	}
-
-	
-
 	ret = orig_fork();
 	if (ret == 0) {
-
-		if (global_insn_ctr) {
-                	(*global_insn_ctr)++;
-
-			printf("After fork in child: PID = %d. Global insn counter = %d\n", syscall(SYS_gettid), *global_insn_ctr);
-	                (*global_insn_ctr)++;
-		} else {
-			printf("After fork in child: PID = %d\n", syscall(SYS_gettid));
-		}
+		printf("After fork in child: PID = %d\n", syscall(SYS_gettid));
 	} else {
 		printf("After fork in parent: PID = %d\n", syscall(SYS_gettid));
 	}
@@ -377,194 +361,32 @@ pid_t fork() {
 
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
 	printf("In my gettimeofday: %d\n", syscall(SYS_gettid));
-	
-	if (!orig_gettimeofday) {
-		void *libc_handle;
-		libc_handle = dlopen("libc.so.6", RTLD_NOLOAD | RTLD_NOW);
-
-		if (!libc_handle) {
-			fprintf(stderr, "can't open handle to libc.so.6: %s\n",
-				dlerror());
-			/* We dare not use abort() here because it would run atexit(3)
-			 * handlers and try to flush stdio. */
-			_exit(EXIT_FAILURE);
-		}
-	
-		/* Our LD_PRELOAD will overwrite the real __libc_start_main, so we have
-		 * to look up the real one from libc and invoke it with a pointer to the
-		 * fake main we'd like to run before the real main function. */
-		orig_gettimeofday = dlsym(libc_handle, "gettimeofday");
-		if (!orig_gettimeofday) {
-			fprintf(stderr, "can't find gettimeofday():%s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-
-		
-		/* Close our handle to dynamically loaded libc. Since the libc object
-		 * was already loaded previously, this only decrements the reference
-		 * count to the shared object. Hence, we can be confident that the
-		 * symbol to the read __libc_start_main remains valid even after we
-		 * close our handle. In order to strictly adhere to the API, we could
-		 * defer closing the handle to our spliced-in fake main before it call
-		 * the real main function. */
-		if(dlclose(libc_handle)) {
-			fprintf(stderr, "can't close handle to libc.so.6: %s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-
-		
-	}
-
 	return orig_gettimeofday(tv, tz);
 }
 
 
 int clock_gettime(clockid_t clk_id, struct timespec *tp) {
 	//printf("In my clock_gettime: %d\n", syscall(SYS_gettid));
-	
-	if (!orig_clock_gettime) {
-		void *libc_handle;
-		libc_handle = dlopen("libc.so.6", RTLD_NOLOAD | RTLD_NOW);
-
-		if (!libc_handle) {
-			fprintf(stderr, "can't open handle to libc.so.6: %s\n",
-				dlerror());
-			/* We dare not use abort() here because it would run atexit(3)
-			 * handlers and try to flush stdio. */
-			_exit(EXIT_FAILURE);
-		}
-		orig_clock_gettime = dlsym(libc_handle, "clock_gettime");
-		if (!orig_clock_gettime) {
-			fprintf(stderr, "can't find orig_clock_gettime():%s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-
-		if(dlclose(libc_handle)) {
-			fprintf(stderr, "can't close handle to libc.so.6: %s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-
-		
-	}
-
 	return orig_clock_gettime(clk_id, tp);
 }
 
 
 unsigned int sleep(unsigned int seconds) {
-	printf("In my sleep: %d. Getpid count = %d\n", syscall(SYS_gettid), getpid_count);
-	
-	if (!orig_sleep) {
-		void *libc_handle;
-		libc_handle = dlopen("libc.so.6", RTLD_NOLOAD | RTLD_NOW);
-
-		if (!libc_handle) {
-			fprintf(stderr, "can't open handle to libc.so.6: %s\n",
-				dlerror());
-			/* We dare not use abort() here because it would run atexit(3)
-			 * handlers and try to flush stdio. */
-			_exit(EXIT_FAILURE);
-		}
-		orig_sleep = dlsym(libc_handle, "sleep");
-		if (!orig_sleep) {
-			fprintf(stderr, "can't find orig_sleep():%s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-
-		if(dlclose(libc_handle)) {
-			fprintf(stderr, "can't close handle to libc.so.6: %s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-
-		
-	}
-
+	printf("In my sleep: %d\n", syscall(SYS_gettid));
 	return orig_sleep(seconds);
 }
 
 
 int poll(struct pollfd *fds, nfds_t nfds, int timeout){
 	printf("In my poll: %d\n", syscall(SYS_gettid));
-	
-	if (!orig_poll) {
-		void *libc_handle;
-		libc_handle = dlopen("libc.so.6", RTLD_NOLOAD | RTLD_NOW);
-
-		if (!libc_handle) {
-			fprintf(stderr, "can't open handle to libc.so.6: %s\n",
-				dlerror());
-			/* We dare not use abort() here because it would run atexit(3)
-			 * handlers and try to flush stdio. */
-			_exit(EXIT_FAILURE);
-		}
-		orig_poll = dlsym(libc_handle, "poll");
-		if (!orig_poll) {
-			fprintf(stderr, "can't find orig_poll():%s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-
-		if(dlclose(libc_handle)) {
-			fprintf(stderr, "can't close handle to libc.so.6: %s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-
-		
-	}
-
 	return orig_poll(fds, nfds, timeout);
 }
 
 int select(int nfds, fd_set *readfds, fd_set *writefds,
            fd_set *exceptfds, struct timeval *timeout) {
 	printf("In my select: %d\n", syscall(SYS_gettid));
-	
-	if (!orig_select) {
-		void *libc_handle;
-		libc_handle = dlopen("libc.so.6", RTLD_NOLOAD | RTLD_NOW);
-
-		if (!libc_handle) {
-			fprintf(stderr, "can't open handle to libc.so.6: %s\n",
-				dlerror());
-			/* We dare not use abort() here because it would run atexit(3)
-			 * handlers and try to flush stdio. */
-			_exit(EXIT_FAILURE);
-		}
-		orig_select = dlsym(libc_handle, "select");
-		if (!orig_select) {
-			fprintf(stderr, "can't find orig_select():%s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-
-		if(dlclose(libc_handle)) {
-			fprintf(stderr, "can't close handle to libc.so.6: %s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-
-		
-	}
-
 	return orig_select(nfds, readfds, writefds, exceptfds, timeout);
 }
-
-/*
-int futex(int *uaddr, int futex_op, int val,
-          const struct timespec *timeout,
-          int *uaddr2, int val3) {
-	printf("In my futex: %d\n", syscall(SYS_gettid));
-	
-	return syscall(SYS_futex, uaddr, futex_op, val,
-                          timeout, uaddr, val3);
-}*/
 
 
 static int
@@ -572,8 +394,7 @@ hook(long syscall_number,
 			long arg0, long arg1,
 			long arg2, long arg3,
 			long arg4, long arg5,
-			long *result)
-{
+			long *result) {
 
 	int pid = 0;
         //char  output_buf[100];
@@ -590,17 +411,15 @@ hook(long syscall_number,
 		*result = -ENOTSUP;
 		return 0;
 	} if (syscall_number == SYS_futex) {
-		futex_pid = syscall_no_intercept(SYS_gettid);
-		*result = syscall_no_intercept(SYS_futex, arg0, arg1, arg2, arg3, arg4, arg5);
-                futex_pid_after = syscall_no_intercept(SYS_gettid);
-		futex_count ++;
+
+		// Before futex
+		*result = syscall_no_intercept(SYS_futex, arg0, arg1, arg2, arg3, arg4,
+									   arg5);
+
+		// After futex
 		return 0;
                 
-	} if (syscall_number == SYS_getpid) {
-		getpid_count ++;
-		return 1;
-	}
-	else {
+	}  else {
 		/*
 		 * Ignore any other syscalls
 		 * i.e.: pass them on to the kernel

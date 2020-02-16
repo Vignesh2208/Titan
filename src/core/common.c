@@ -372,7 +372,8 @@ int register_tracer_process(char * write_buffer) {
 	} else {
 		registration_type = 0;
 		for (i = 0; i < EXP_CPUS; i++) {
-			if (per_timeline_chain_length[i] < per_timeline_chain_length[best_cpu])
+			if (per_timeline_chain_length[i]
+				< per_timeline_chain_length[best_cpu])
 				best_cpu = i;
 		}
 		BUG_ON(num_args != 2);

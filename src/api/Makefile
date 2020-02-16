@@ -3,6 +3,7 @@ api_dir=${home_dir}/Titan/src/api
 
 build_api:
 
+	 @echo "Building VT-API shared library ..."
 	 @gcc -w -c -Wall -Werror -fpic ${api_dir}/VT_functions.c \
 	 ${api_dir}/utility_functions.c
 	 @gcc -w -shared -o libvtapi.so ${api_dir}/VT_functions.o \
@@ -13,11 +14,22 @@ build_api:
 	 @cp ${api_dir}/VT_functions.h /usr/local/include
 	 @cp ${api_dir}/utility_functions.h /usr/local/include
 
-	 @python setup.py install
+
+	 @echo "Building VT-Lib shared library ..."
+	 @gcc -w -c -Wall -Werror -fpic ${api_dir}/VT_functions.c \
+	 ${api_dir}/utility_functions.c ${api_dir}/vtlib.c
+	 @gcc -w -shared -lvtutils -o libvtlib.so ${api_dir}/VT_functions.o \
+	 ${api_dir}/utility_functions.o ${api_dir}/vtlib.o
+	 @mv libvtlib.so /usr/lib
+	 @chmod 0777 /usr/lib/libvtlib.so
+
+	 #@python setup.py install
 
 clean:
 
 	@rm -rf build/
 	@rm -f *.o
 	@rm -f /usr/lib/libvtapi.so > /dev/null
+	@rm -f /usr/lib/libvtlib.so > /dev/null
 	@rm -f /usr/local/include/VT_functions.h > /dev/null
+	@rm -f /usr/local/include/utility_functions.h > /dev/null
