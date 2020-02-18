@@ -16,7 +16,7 @@ specified by FILENAME
 */
 s64 send_to_vt_module(unsigned int cmd, ioctl_args *arg) {
   int fp = open(FILENAME, O_RDWR);
-  int ret = 0;
+  s64 ret = 0;
 
   if (fp < 0) {
     printf("ERROR communicating with VT module: Could not open proc file\n");
@@ -42,7 +42,8 @@ s64 send_to_vt_module(unsigned int cmd, ioctl_args *arg) {
   
   close(fp);
   if (cmd == VT_WRITE_RESULTS || cmd == VT_REGISTER_TRACER
-      || cmd == VT_SET_RUNNABLE)
+    || cmd == VT_SET_RUNNABLE || cmd == VT_GETTIME_MY_PID
+    || cmd == VT_GETTIME_PID)
     return arg->cmd_value;
   return ret;
 }
@@ -66,6 +67,16 @@ int num_characters(int n) {
   }
   return count;
 }
+
+
+int atoi(char *s) {
+	int i, n;
+	n = 0;
+	for (i = 0; * (s + i) >= '0' && *(s + i) <= '9'; i++)
+		n = 10 * n + *(s + i) - '0';
+	return n;
+}
+
 
 int append_to_ioctl_arg(ioctl_args *arg, int *append_values, int num_values) {
   if (!arg) return -1;

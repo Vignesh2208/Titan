@@ -427,7 +427,7 @@ int register_tracer_process(char * write_buffer) {
 	cpumask_set_cpu(new_tracer->timeline_assignment, &current->cpus_allowed);
 
 
-	add_to_tracer_schedule_queue(new_tracer, current->pid);
+	//add_to_tracer_schedule_queue(new_tracer, current->pid);
 
 
 	put_tracer_struct_write(new_tracer);

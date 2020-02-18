@@ -26,12 +26,16 @@ s64 register_tracer(int tracer_id, int experiment_type,
 int update_tracer_clock(int tracer_id, s64 increment);
 s64 write_tracer_results(int* results, int num_results);
 int add_processes_to_tracer_sq(int tracer_id, int* pids, int num_pids);
+int add_to_tracer_sq(int tracer_id);
 
 // These functions can be called by the orchestrater script which may be in c,
 // c++ or python
 s64 get_current_time_pid(int pid);
+s64 get_current_vt_time();
 int initialize_VT_Exp(int exp_type, int num_timelines,
                       int num_expected_tracers);
+
+
 int initializeExp(int num_expected_tracers);
 int synchronizeAndFreeze(void);
 int stopExp(void);

@@ -827,6 +827,70 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         "resuming from wait\n", tracer_id, current->pid);
 
       return 0;
+
+    case VT_GETTIME_MY_PID:
+      // Any process can invoke this call.
+
+      if (initialization_status != INITIALIZED) {
+        PDEBUG_I(
+            "VT_GETTIME_MY_PID: Operation cannot be performed when experiment"
+            "is not initialized !\n");
+        return -EFAULT;
+      }
+
+      if (experiment_status == NOTRUNNING) {
+        PDEBUG_I(
+            "VT_GETTIME_MY_PID: Operation cannot be performed when experiment"
+            "is not running !\n");
+        return -EFAULT;
+      }
+
+      api_info = (invoked_api *)arg;
+      if (!api_info) return -EFAULT;
+      if (copy_from_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+        return -EFAULT;
+      }
+      api_info_tmp.return_value = handle_gettimepid(current->pid);
+      if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+        PDEBUG_I("VT_GETTIME_MY_PID: Error copying to user buf \n");
+        return -EFAULT;
+      }
+      return 0;
+
+    case VT_ADD_TO_SQ:
+      // Any process can invoke this call.
+
+      if (initialization_status != INITIALIZED
+        && experiment_status == STOPPING) {
+        PDEBUG_I(
+            "VT_ADD_TO_SQ: Operation cannot be performed when experiment is "
+            "not initialized !\n");
+        return -EFAULT;
+      }
+
+      api_info = (invoked_api *)arg;
+      if (!api_info) return -EFAULT;
+      if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+        return -EFAULT;
+      }
+      num_integer_args = convert_string_to_array(
+          api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+      if (num_integer_args <= 0) {
+        PDEBUG_I("VT_ADD_TO_SQ: Not enough arguments !");
+        return -EFAULT;
+      }
+
+      tracer_id = api_integer_args[0];
+      curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+      if (!curr_tracer) {
+        PDEBUG_I("VT_ADD_TO_SQ: Tracer : %d, not registered\n", tracer_id);
+        return -EFAULT;
+      }
+      get_tracer_struct_write(curr_tracer);
+      add_to_tracer_schedule_queue(curr_tracer, current->pid);
+      put_tracer_struct_write(curr_tracer);
+      return 0;
     
     default:
       return -ENOTTY;

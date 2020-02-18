@@ -47,9 +47,13 @@ typedef struct ioctl_args_struct {
 #define VT_SLEEP_FOR _IOW(VT_IOC_MAGIC, 13, int)
 #define VT_RELEASE_WORKER _IOW(VT_IOC_MAGIC, 14, int)
 #define VT_SET_RUNNABLE _IOW(VT_IOC_MAGIC, 15, int)
+#define VT_GETTIME_MY_PID _IOW(VT_IOC_MAGIC, 16, int)
+#define VT_ADD_TO_SQ _IOW(VT_IOC_MAGIC, 17, int)
 
 s64 send_to_vt_module(unsigned int cmd, ioctl_args* arg);
 int gettid(void);
+int get_next_value (char *write_buffer);
+int atoi(char *s);
 int is_root(void);
 int isModuleLoaded(void);
 void init_ioctl_arg(ioctl_args* arg);

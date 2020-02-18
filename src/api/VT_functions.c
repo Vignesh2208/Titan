@@ -74,6 +74,13 @@ s64 get_current_time_pid(int pid) {
   return send_to_vt_module(VT_GETTIME_PID, &arg);
 }
 
+
+s64 get_current_vt_time() {
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  return send_to_vt_module(VT_GETTIME_MY_PID, &arg);
+}
+
 int add_processes_to_tracer_sq(int tracer_id, int* pids, int num_pids) {
   if (tracer_id < 0 || num_pids <= 0) {
     printf("add_processes_to_tracer_sq: incorrect parameters for tracer: %d\n",
@@ -86,6 +93,18 @@ int add_processes_to_tracer_sq(int tracer_id, int* pids, int num_pids) {
   if (append_to_ioctl_arg(&arg, pids, num_pids) < 0) return -1;
 
   return send_to_vt_module(VT_ADD_PROCESSES_TO_SQ, &arg);
+}
+
+int add_to_tracer_sq(int tracer_id) {
+  if (tracer_id < 0) {
+    printf("add_to_tracer_sq: incorrect parameters for tracer: %d\n",
+          tracer_id);
+    return -1;
+  }
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  sprintf(arg.cmd_buf, "%d,", tracer_id);
+  return send_to_vt_module(VT_ADD_TO_SQ, &arg);
 }
 
 int initializeExp(int num_expected_tracers) {
