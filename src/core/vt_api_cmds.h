@@ -20,6 +20,7 @@
 #define VT_SET_RUNNABLE _IOW(VT_IOC_MAGIC, 15, int)
 #define VT_GETTIME_MY_PID _IOW(VT_IOC_MAGIC, 16, int)
 #define VT_ADD_TO_SQ _IOW(VT_IOC_MAGIC, 17, int)
+#define VT_SYSCALL_WAIT _IOW(VT_IOC_MAGIC, 18, int)
 
 
 #define VT_ADD_TO_SQ 'a'

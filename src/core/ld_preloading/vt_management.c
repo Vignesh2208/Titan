@@ -19,6 +19,12 @@ void (*vtMarkCurrBBL)(int ThreadID) = NULL;
 void (*vtInitialize)() = NULL;
 void (*vtYieldVTBurst)(int ThreadID, int save) = NULL;
 void (*vtForceCompleteBurst)(int ThreadID, int save) = NULL;
+void (*vtTriggerSyscallWait)(int ThreadID, int save) = NULL;
+void (*vtTriggerSyscallFinish)(int ThreadID) = NULL;
+
+void (*vtSleepForNS)(int ThreadID, int64_t duration) = NULL;
+void (*vtGetCurrentTimespec)(struct timeval *ts) = NULL;
+void (*vtGetCurrentTimeval)(struct timeval * tv) = NULL;
 
 
 

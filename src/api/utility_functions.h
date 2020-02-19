@@ -21,6 +21,10 @@
 #define REGISTRATION_W_SPINNER 1
 #define REGISTRATION_W_CONTROL_THREAD 2
 
+#define NSEC_PER_SEC 10000000
+#define NSEC_PER_MS 1000000
+#define NSEC_PER_US 1000
+
 #define SMALLEST_PROCESS_QUANTA_INSNS 100000
 
 typedef long long s64;
@@ -49,6 +53,7 @@ typedef struct ioctl_args_struct {
 #define VT_SET_RUNNABLE _IOW(VT_IOC_MAGIC, 15, int)
 #define VT_GETTIME_MY_PID _IOW(VT_IOC_MAGIC, 16, int)
 #define VT_ADD_TO_SQ _IOW(VT_IOC_MAGIC, 17, int)
+#define VT_SYSCALL_WAIT _IOW(VT_IOC_MAGIC, 18, int)
 
 s64 send_to_vt_module(unsigned int cmd, ioctl_args* arg);
 int gettid(void);
@@ -61,5 +66,7 @@ void flush_buffer(char* buf, int size);
 void init_ioctl_arg(ioctl_args* arg);
 int num_characters(int n);
 int append_to_ioctl_arg(ioctl_args* arg, int* append_values, int num_values);
+void ns_to_timespec(const s64 nsec, struct timespec * ts);
+void ns_to_timeval(const s64 nsec, struct timeval * tv);
 
 #endif

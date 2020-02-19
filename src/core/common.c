@@ -21,6 +21,7 @@ extern hashmap get_tracer_by_pid;
 extern hashmap get_dilated_task_struct_by_pid;
 
 extern wait_queue_head_t * timeline_wqueue;
+extern wait_queue_head_t * syscall_wait_wqueue;
 
 
 extern int run_usermode_tracer_spin_process(char *path, char **argv,
@@ -260,6 +261,7 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	tracee_dilated_task_struct->burst_target = 0;
 	tracee_dilated_task_struct->buffer_window_len = 0;
 	tracee_dilated_task_struct->lookahead = 0;
+	tracee_dilated_task_struct->syscall_waiting = 0;
 	
 	
 	BUG_ON(!chaintask[tracer_entry->timeline_assignment]);
@@ -487,7 +489,57 @@ void update_all_tracers_virtual_time(int timelineID) {
 }
 
 
+void wake_up_syscall_waiting_processes(tracer * tracer_entry) {
+	if (!tracer_entry)
+		return;
 
+	lxc_schedule_elem * curr_elem;
+	llist_elem * head;
+	int timelineID = tracer_entry->timeline_assignment;
+	head = tracer_entry->schedule_queue.head;
+
+	while (head != NULL) {
+		if (head) {
+			curr_elem = (lxc_schedule_elem *)head->item;
+			if (curr_elem && curr_elem->curr_task->syscall_waiting) {
+				PDEBUG_V("Waking syscall waiting process: %d\n",
+						 curr_elem->curr_task->pid);
+				curr_elem->curr_task->syscall_waiting = 0;
+				BUG_ON(curr_elem->curr_task->ready != 0);
+				wake_up_interruptible(&syscall_wait_wqueue[timelineID]);
+				wait_event_interruptible(
+					syscall_wait_wqueue[timelineID],
+					(curr_elem->curr_task->syscall_waiting == 1
+					 && curr_elem->curr_task->ready == 0) ||
+					(curr_elem->curr_task->ready == 1
+					&& curr_elem->curr_task->syscall_waiting == 0));
+				PDEBUG_V("Resuming after waking syscall waiting process: %d\n",
+						 curr_elem->curr_task->pid);
+			}
+			head = head->next;
+		}
+	}
+}
+
+void wake_up_processes_waiting_on_syscalls(int timelineID) {
+	llist_elem * head;
+	llist * tracer_list;
+	tracer * curr_tracer;
+	s64 target_increment;
+
+	tracer_list =  &per_timeline_tracer_list[timelineID];
+	head = tracer_list->head;
+
+
+	while (head != NULL) {
+		curr_tracer = (tracer*)head->item;
+		get_tracer_struct_write(curr_tracer);
+		wake_up_syscall_waiting_processes(curr_tracer);
+		put_tracer_struct_write(curr_tracer);
+		head = head->next;
+	}
+
+}
 
 
 

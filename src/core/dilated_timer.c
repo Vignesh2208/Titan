@@ -439,6 +439,7 @@ int dilated_hrtimer_sleep(ktime_t duration) {
                                    HRTIMER_MODE_REL);
 
   dilated_task->ready = 0;
+  dilated_task->syscall_waiting = 0;
   dilated_task->burst_target = 0;
   associated_tracer->w_queue_wakeup_pid = 1;
 	wake_up_interruptible(associated_tracer->w_queue);

@@ -49,6 +49,12 @@ extern void (*vtInitialize)();
 extern void (*vtYieldVTBurst)(int ThreadID, int save) = NULL;
 extern void (*vtForceCompleteBurst)(int ThreadID, int save) = NULL;
 
+void (*vtTriggerSyscallWait)(int ThreadID, int save) = NULL;
+void (*vtTriggerSyscallFinish)(int ThreadID) = NULL;
+void (*vtSleepForNS)(int ThreadID, int64_t duration) = NULL;
+void (*vtGetCurrentTimespec)(struct timeval *ts) = NULL;
+void (*vtGetCurrentTimeval)(struct timeval * tv) = NULL;
+
 void load_orig_functions();
 
 
@@ -382,6 +388,10 @@ unsigned int sleep(unsigned int seconds) {
 	return orig_sleep(seconds);
 }
 
+int usleep(useconds_t usec) {
+	printf("In my usleep: %d\n", syscall(SYS_gettid));
+
+}
 
 int poll(struct pollfd *fds, nfds_t nfds, int timeout){
 	printf("In my poll: %d\n", syscall(SYS_gettid));

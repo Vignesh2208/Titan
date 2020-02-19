@@ -28,6 +28,7 @@ struct dilated_task_struct {
 	int ready;
 	int buffer_window_len;
 	int pid;
+	int syscall_waiting;
 	struct task_struct * vt_exec_task;
 	struct task_struct * base_task;
 	tracer * associated_tracer;

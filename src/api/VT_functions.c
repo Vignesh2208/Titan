@@ -203,14 +203,24 @@ s64 finish_burst() {
   return write_tracer_results(NULL, 0);
 }
 
-s64 mark_burst_complete() {
+s64 mark_burst_complete(int signal_syscall_finish) {
 
   ioctl_args arg;
   init_ioctl_arg(&arg); 
+
+  if (signal_syscall_finish != 0)
+    arg.cmd_value = 1;
   return send_to_vt_module(VT_SET_RUNNABLE, &arg);
 }
 
 s64 finish_burst_and_discard() {
   int my_pid = gettid();
   return write_tracer_results(&my_pid, 1);
+}
+
+
+s64 trigger_syscall_wait() {
+  ioctl_args arg;
+  init_ioctl_arg(&arg); 
+  return send_to_vt_module(VT_SYSCALL_WAIT, &arg);
 }

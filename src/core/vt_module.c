@@ -27,8 +27,9 @@ struct mutex file_lock;
 // pointers
 int *per_timeline_chain_length;
 llist *per_timeline_tracer_list;
-wait_queue_head_t *timeline_wqueue;
-wait_queue_head_t *timeline_worker_wqueue;
+wait_queue_head_t * timeline_wqueue;
+wait_queue_head_t * timeline_worker_wqueue;
+wait_queue_head_t * syscall_wait_wqueue;
 static struct proc_dir_entry *dilation_dir = NULL;
 static struct proc_dir_entry *dilation_file = NULL;
 timeline * timeline_info;
@@ -47,9 +48,8 @@ atomic_t experiment_stopping = ATOMIC_INIT(0);
 atomic_t n_waiting_tracers = ATOMIC_INIT(0);
 
 /** EXTERN DECLARATIONS **/
-
 extern wait_queue_head_t progress_sync_proc_wqueue;
-extern int round_sync_task(void *data);
+
 
 loff_t vt_llseek(struct file *filp, loff_t pos, int whence);
 int vt_release(struct inode *inode, struct file *filp);
@@ -132,6 +132,7 @@ ssize_t handle_write_results_cmd(struct dilation_task_struct * dilation_task,
   } 
 
   dilation_task->ready = 1; 
+  dilation_task->syscall_waiting = 0;
   handle_tracer_results(curr_tracer, &api_args[1],
                         num_args - 1);
 
@@ -237,8 +238,7 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count,
     kfree(dilated_task);
     return ret;
 
-	}
-	else {
+	} else {
 		PDEBUG_I("VT Module Write: Invalid Write Command: %s\n", write_buffer);
 		return -EFAULT;
 	}
@@ -742,6 +742,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       }
       dilated_task->burst_target = 0;
       dilated_task->ready = 0;
+      dilated_task->syscall_waiting = 0;
       curr_tracer = dilated_task->associated_tracer;
       curr_tracer->w_queue_wakeup_pid = 1;
       wake_up_interruptible(curr_tracer->w_queue);
@@ -770,10 +771,18 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
 
       dilated_task->burst_target = 0;
+      dilated_task->syscall_waiting = 0;
       dilated_task->ready = 1;
       curr_tracer = dilated_task->associated_tracer;
       tracer_id = curr_tracer->tracer_id;
 
+      if (api_info_tmp.return_value == SIGNAL_SYSCALL_FINISH) {
+        PDEBUG_V(
+        "VT_SET_RUNNABLE: Associated Tracer : %d, Process: %d, "
+        "signalling syscall finish\n", tracer_id, current->pid);
+        wake_up_interruptible(
+          &syscall_wait_wqueue[curr_tracer->timeline_assignment]);
+      }
       PDEBUG_V(
         "VT_SET_RUNNABLE: Associated Tracer : %d, Process: %d, "
         "entering wait\n", tracer_id, current->pid);
@@ -805,7 +814,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
         api_info_tmp.return_value = 0;
         if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
-          PDEBUG_I("VT_WRITE_RESULTS: Tracer : %d, Process: %d "
+          PDEBUG_I("VT_SET_RUNNABLE: Tracer : %d, Process: %d "
                   "Resuming from wait. Error copying to user buf\n",
                   tracer_id, current->pid);
           return -EFAULT;
@@ -816,7 +825,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       api_info_tmp.return_value = dilated_task->burst_target;
       if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
-        PDEBUG_I("VT_WRITE_RESULTS: Tracer : %d, Process: %d "
+        PDEBUG_I("VT_SET_RUNNABLE: Tracer : %d, Process: %d "
                  "Resuming from wait. Error copying to user buf\n",
                  tracer_id, current->pid);
         return -EFAULT;
@@ -890,6 +899,94 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       get_tracer_struct_write(curr_tracer);
       add_to_tracer_schedule_queue(curr_tracer, current->pid);
       put_tracer_struct_write(curr_tracer);
+      return 0;
+
+    case VT_SYSCALL_WAIT:
+
+      if (initialization_status != INITIALIZED
+          || experiment_status != RUNNING) {
+        PDEBUG_I(
+            "VT_SET_RUNNABLE: Operation cannot be performed when experiment "
+            "is not initialized and running !\n");
+        return -EFAULT;
+      }
+
+      if (!dilated_task || dilated_task->associated_tracer_id <= 0) {
+        PDEBUG_I("VT_SET_RUNNABLE: Process is not associated with "
+                 "any tracer !\n");
+        return -EFAULT;
+      }
+
+      api_info = (invoked_api *)arg;
+      if (!api_info) return -EFAULT;
+      if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+        return -EFAULT;
+      }
+
+      dilated_task->syscall_waiting = 1;
+      dilated_task->ready = 0;
+      curr_tracer = dilated_task->associated_tracer;
+      tracer_id = curr_tracer->tracer_id;
+  
+      if (dilated_task->burst_target == 0) {
+        wake_up_interruptible(
+          &syscall_wait_wqueue[curr_tracer->timeline_assignment]);
+        PDEBUG_V("VT_SYSCALL_WAIT: Associated Tracer : %d, Process: %d, "
+          "signalling syscall wait\n", tracer_id, current->pid);
+      }
+
+      dilated_task->burst_target = 0;
+      PDEBUG_V(
+        "VT_SYSCALL_WAIT: Associated Tracer : %d, Process: %d, "
+        "entering syscall wait\n", tracer_id, current->pid);
+     
+      wait_event_interruptible(
+        syscall_wait_wqueue[curr_tracer->timeline_assignment],
+        dilated_task->syscall_waiting == 0);
+      
+      dilated_task->ready = 0;
+      // Ensure that for INS_VT tracer, only the tracer process can invoke this
+      // call
+      if (dilated_task->associated_tracer_id)
+        BUG_ON(curr_tracer->main_task->pid != current->pid);
+
+      if (dilated_task->associated_tracer_id <= 0) {
+        dilated_task->burst_target = 0;
+        dilated_task->virt_start_time = 0;
+        dilated_task->curr_virt_time = 0;
+        dilated_task->associated_tracer_id = 0;
+        dilated_task->wakeup_time = 0;
+        dilated_task->vt_exec_task = NULL;
+        dilated_task->base_task = NULL;
+        dilated_task->syscall_waiting = 0;
+        PDEBUG_I("VT_SYSCALL_WAIT: Tracer: %d, Process: %d STOPPING\n",
+                 tracer_id, current->pid);
+        hmap_remove_abs(&get_dilated_task_struct_by_pid, current->pid);
+        kfree(dilated_task);
+
+        api_info_tmp.return_value = 0;
+        if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+          PDEBUG_I("VT_SYSCALL_WAIT: Tracer : %d, Process: %d "
+                  "Resuming from wait. Error copying to user buf\n",
+                  tracer_id, current->pid);
+          return -EFAULT;
+        }
+
+        return 0;
+      }
+
+      api_info_tmp.return_value = 1;
+      if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+        PDEBUG_I("VT_SYSCALL_WAIT: Tracer : %d, Process: %d "
+                 "Resuming from wait. Error copying to user buf\n",
+                 tracer_id, current->pid);
+        return -EFAULT;
+      }
+
+      PDEBUG_V(
+        "VT_SYSCALL_WAIT: Associated Tracer : %d, Process: %d, "
+        "resuming from wait\n", tracer_id, current->pid);
+
       return 0;
     
     default:

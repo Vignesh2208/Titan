@@ -2,6 +2,7 @@
 #include <linkedlist.h>
 #include <hashmap.h>
 #include <stdlib.h>
+#include <time.h>
 #include "VT_functions.h"
 #include "utility_functions.h"
 #include "vtlib.h"
@@ -18,6 +19,46 @@ llist thread_info_list;
 
 #define FLIP_ALWAYS_ON_THRESHOLD 100000000
 
+
+void SleepForNS(int ThreadID, int64_t duration) {
+
+    if (duration <= 0)
+        return;
+
+    ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+    assert(currThreadInfo != NULL);
+
+    currThreadInfo->stack.currBBID = currBBID;
+    currThreadInfo->stack.prevBBID = prevBBID;
+    currThreadInfo->stack.currBBSize = currBBSize;
+    currThreadInfo->stack.alwaysOn = alwaysOn;
+
+    currBurstLength = vt_sleep_for(duration);
+
+    if (currBurstLength <= 0)
+        HandleVTExpEnd();
+
+    currThreadInfo->stack.totalBurstLength += currBurstLength;
+
+    // restore globals
+    alwaysOn = currThreadInfo->stack.alwaysOn;
+    currBBID = currThreadInfo->stack.currBBID;
+    prevBBID = currThreadInfo->stack.prevBBID;
+    currBBSize = currThreadInfo->stack.currBBSize;
+
+}
+
+void GetCurrentTimespec(struct timeval *ts) {
+    ns_to_timespec(get_current_vt_time(), ts);
+}
+
+void GetCurrentTimeval(struct timeval * tv) {
+    ns_to_timeval(get_current_vt_time(), tv);
+}
+
+void HandleVTExpEnd() {
+
+}
 
 void CleanupThreadInfo(ThreadInfo * relevantThreadInfo) {
     if (!relevantThreadInfo)
@@ -104,7 +145,11 @@ void ForceCompleteBurst(int ThreadID, int save) {
         currThreadInfo->stack.alwaysOn = alwaysOn;
     }
 
-    currBurstLength = mark_burst_complete();
+    currBurstLength = mark_burst_complete(0);
+
+    if (currBurstLength <= 0)
+        HandleVTExpEnd();
+
     currThreadInfo->stack.totalBurstLength += currBurstLength;
 
     // restore globals
@@ -130,6 +175,10 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     }
 
     currBurstLength = finish_burst();
+
+    if (currBurstLength <= 0)
+        HandleVTExpEnd();
+
     currThreadInfo->stack.totalBurstLength += currBurstLength;
 
     // restore globals
@@ -201,6 +250,39 @@ void AppFini(int ThreadID) {
         llist_destroy(&thread_info_list);
         hmap_destroy(&thread_info_map);
     }
+}
+
+void TriggerSyscallWait(int ThreadID, int save) {
+    ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+    assert(currThreadInfo != NULL);
+
+    if  (save) {
+        currThreadInfo->stack.currBBID = currBBID;
+        currThreadInfo->stack.prevBBID = prevBBID;
+        currThreadInfo->stack.currBBSize = currBBSize;
+        currThreadInfo->stack.alwaysOn = alwaysOn;
+    }
+
+    if (trigger_syscall_wait() <= 0)
+        HandleVTExpEnd();
+}
+
+void TriggerSyscallFinish(int ThreadID) {
+
+    ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+    assert(currThreadInfo != NULL);
+
+    currBurstLength = mark_burst_complete(1);
+
+    if (currBurstLength <= 0)
+        HandleVTExpEnd();
+
+    currThreadInfo->stack.totalBurstLength += currBurstLength;
+    // restore globals
+    alwaysOn = currThreadInfo->stack.alwaysOn;
+    currBBID = currThreadInfo->stack.currBBID;
+    prevBBID = currThreadInfo->stack.prevBBID;
+    currBBSize = currThreadInfo->stack.currBBSize;
 }
 
 void UpdateLookAhead(ThreadInfo * currThreadInfo, int64_t prev_BBID,

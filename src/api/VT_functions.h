@@ -48,6 +48,7 @@ int vt_sleep_for(s64 duration);
 int release_worker();
 s64 finish_burst();
 s64 finish_burst_and_discard();
-s64 mark_burst_complete();
+s64 mark_burst_complete(int signal_syscall_finish);
+s64 trigger_syscall_wait();
 
 #endif

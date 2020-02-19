@@ -24,6 +24,7 @@ extern struct task_struct ** chaintask;
 extern timeline * timeline_info;
 extern wait_queue_head_t *timeline_wqueue;
 extern wait_queue_head_t *timeline_worker_wqueue;
+extern wait_queue_head_t * syscall_wait_wqueue;
 
 
 // locks
@@ -314,14 +315,23 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 	timeline_worker_wqueue = kmalloc(
 		total_num_timelines * sizeof(wait_queue_head_t), GFP_KERNEL);
 
+	syscall_wait_wqueue = kmalloc(
+		total_num_timelines * sizeof(wait_queue_head_t), GFP_KERNEL);
+
 	if (!timeline_wqueue || !timeline_worker_wqueue) {
 		PDEBUG_E("Error: Could not allot memory for timeline wait queue\n");
+		return -ENOMEM;
+	}
+
+	if (!syscall_wait_wqueue) {
+		PDEBUG_E("Error: Could not allot memory for syscall wait queue\n");
 		return -ENOMEM;
 	}
 
 	for (i = 0; i < total_num_timelines; i++) {
 		init_waitqueue_head(&timeline_wqueue[i]);
 		init_waitqueue_head(&timeline_worker_wqueue[i]);
+		init_waitqueue_head(&syscall_wait_wqueue[i]);
 	}
 
 
@@ -342,7 +352,7 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 	}
 
 	timeline_info = (timeline *) kmalloc(total_num_timelines *sizeof(timeline),
-										GFP_KERNEL);
+										 GFP_KERNEL);
 	if (!timeline_info) {
 		PDEBUG_E("Error Allocating memory for timeline info structures \n");
 		BUG();
@@ -425,6 +435,10 @@ int cleanup_experiment_components() {
 	kfree(per_timeline_chain_length);
 	kfree(values);
 	kfree(chaintask);
+	kfree(timeline_wqueue);
+	kfree(timeline_worker_wqueue);
+	kfree(syscall_wait_wqueue);
+	kfree(timeline_info);
 
 	initialization_status = NOT_INITIALIZED;
 	experiment_status = NOTRUNNING;
