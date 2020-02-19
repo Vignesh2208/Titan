@@ -68,8 +68,9 @@ BasicBlock * AllotBasicBlockEntry(ThreadInfo * currThreadInfo, int ID) {
         new_bbl = (BasicBlock *) malloc(sizeof(BasicBlock));
         assert(new_bbl != NULL);
         new_bbl->ID = ID;
-        new_bbl->lookahead_value = 0;
+        new_bbl->lookahead_value = -1;
         new_bbl->BBLSize = 0;
+        new_bbl->isMarked = 0;
         llist_init(&new_bbl->out_neighbours);
         llist_append(&currThreadInfo->bbl_list, new_bbl);
         hmap_put_abs(&currThreadInfo->lookahead_map, ID, new_bbl);
@@ -77,6 +78,41 @@ BasicBlock * AllotBasicBlockEntry(ThreadInfo * currThreadInfo, int ID) {
     return new_bbl;
 }
 
+void YieldVTBurst(int ThreadID, int save) {
+
+    ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+    assert(currThreadInfo != NULL);
+
+    if (save) {
+        currThreadInfo->stack.currBBID = currBBID;
+        currThreadInfo->stack.prevBBID = prevBBID;
+        currThreadInfo->stack.currBBSize = currBBSize;
+        currThreadInfo->stack.alwaysOn = alwaysOn;
+    }
+
+    assert(release_worker() >= 0);
+}
+
+void ForceCompleteBurst(int ThreadID, int save) {
+    ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+    assert(currThreadInfo != NULL);
+
+    if (save) {
+        currThreadInfo->stack.currBBID = currBBID;
+        currThreadInfo->stack.prevBBID = prevBBID;
+        currThreadInfo->stack.currBBSize = currBBSize;
+        currThreadInfo->stack.alwaysOn = alwaysOn;
+    }
+
+    currBurstLength = mark_burst_complete();
+    currThreadInfo->stack.totalBurstLength += currBurstLength;
+
+    // restore globals
+    alwaysOn = currThreadInfo->stack.alwaysOn;
+    currBBID = currThreadInfo->stack.currBBID;
+    prevBBID = currThreadInfo->stack.prevBBID;
+    currBBSize = currThreadInfo->stack.currBBSize;
+}
 
 void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
 
@@ -90,11 +126,11 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
         currThreadInfo->stack.prevBBID = prevBBID;
         currThreadInfo->stack.currBBSize = currBBSize;
         currThreadInfo->stack.alwaysOn = alwaysOn;
+        
     }
 
-    currThreadInfo->stack.totalBurstLength += currBurstLength;
-
     currBurstLength = finish_burst();
+    currThreadInfo->stack.totalBurstLength += currBurstLength;
 
     // restore globals
     alwaysOn = currThreadInfo->stack.alwaysOn;
@@ -149,20 +185,22 @@ void ThreadFini(int ThreadID) {
 
 void AppFini(int ThreadID) {
 
-    ThreadInfo * currThreadInfo;
-    while(llist_size(&thread_info_list)) {
-        currThreadInfo = llist_pop(&thread_info_list);
-        if (currThreadInfo) {
-            CleanupThreadInfo(currThreadInfo);
-            hmap_remove_abs(&thread_info_map, currThreadInfo->pid);
-            free(currThreadInfo);
-        }
-        
-    }
+    ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
 
-    finish_burst_and_discard();  
-    llist_destroy(&thread_info_list);
-    hmap_destroy(&thread_info_map);
+    if (currThreadInfo) {
+        while(llist_size(&thread_info_list)) {
+            currThreadInfo = llist_pop(&thread_info_list);
+            if (currThreadInfo) {
+                CleanupThreadInfo(currThreadInfo);
+                hmap_remove_abs(&thread_info_map, currThreadInfo->pid);
+                free(currThreadInfo);
+            }
+            
+        }
+        finish_burst_and_discard();  
+        llist_destroy(&thread_info_list);
+        hmap_destroy(&thread_info_map);
+    }
 }
 
 void UpdateLookAhead(ThreadInfo * currThreadInfo, int64_t prev_BBID,
@@ -189,9 +227,26 @@ void UpdateLookAhead(ThreadInfo * currThreadInfo, int64_t prev_BBID,
 
     if (!skip) {
         llist_append(&prevBBL->out_neighbours, currBBL);
+        currBBL->BBLSize = curr_BBSize;
     }
 
-    currBBL->BBLSize = curr_BBSize;
+    
+
+}
+
+void markCurrBBL(int ThreadID) {
+    ThreadInfo * currThreadInfo;
+    currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+    assert(currThreadInfo != NULL);
+
+    if (currBBID != 0) {
+        BasicBlock * relevantBBL = AllotBasicBlockEntry(currThreadInfo,
+                                                        currBBID);
+        assert(relevantBBL != NULL);
+        relevantBBL->isMarked = 1;
+        relevantBBL->BBLSize = currBBSize;
+        relevantBBL->lookahead_value = currBBSize;
+    }
 
 }
 

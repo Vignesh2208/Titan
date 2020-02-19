@@ -4,7 +4,7 @@
 #include "includes.h"
 #include "vt_management.h"
 
-extern int * globalCurrBurstLength = NULL;
+
 
 typedef int (*pthread_create_t)(pthread_t *, const pthread_attr_t *,
                                 void *(*)(void*), void *);
@@ -32,6 +32,23 @@ long (*orig_syscall)(long number, ...);
 
 void (*orig_exit)(int status);
 
+// externs
+extern int64_t * globalCurrBurstLength;
+extern int64_t * globalCurrBBID;
+extern int64_t * globalPrevBBID;
+extern int64_t * globalCurrBBSize;
+extern int * vtAlwaysOn;
+extern int * vtGlobalTracerID;
+extern int * vtGlobalTimelineID;
+extern void (*vtAfterForkInChild)(int ThreadID);
+extern void (*vtThreadStart)(int ThreadID);
+extern void (*vtThreadFini)(int ThreadID);
+extern void (*vtAppFini)(int ThreadID);
+extern void (*vtMarkCurrBBL)(int ThreadID);
+extern void (*vtInitialize)();
+extern void (*vtYieldVTBurst)(int ThreadID, int save) = NULL;
+extern void (*vtForceCompleteBurst)(int ThreadID, int save) = NULL;
+
 void load_orig_functions();
 
 
@@ -43,18 +60,21 @@ struct Thunk {
 static void * wrap_threadFn(void *thunk_vp) {
     
     struct Thunk *thunk_p = (struct Thunk *)thunk_vp;
-	printf ("Start of thread: PID = %lu\n", syscall(SYS_gettid));
+	int ThreadPID = syscall(SYS_gettid);
+	printf ("New Thread Starting: PID = %d\n", ThreadPID);
+
+	vtThreadStart(ThreadPID);
 
     void *result = (thunk_p->start_routine)(thunk_p->arg);
 
 	free(thunk_p);
-	printf ("Thread Exiting. PID = %lu\n", syscall(SYS_gettid));
+	printf ("Thread Exiting. PID = %d\n", ThreadPID);
+	vtThreadFini(ThreadPID);
     return result;
 }
 
-int
-pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
-               void *(*start_routine)(void*), void *arg) {
+int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
+               	   void *(*start_routine)(void*), void *arg) {
     static pthread_create_t real_pthread_create;
     
 
@@ -80,9 +100,9 @@ pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
  */
 
 void my_exit(void) {
-
-   printf("I am exiting main thread. PID = %d\n", syscall(SYS_gettid));
-   
+   int ThreadPID = syscall(SYS_gettid);
+   printf("I am exiting main thread. PID = %d\n", ThreadPID);
+   AppFini(ThreadPID);
 }
 
 /* The address of the real main is stored here for fake_main to access */
@@ -94,8 +114,10 @@ static int fake_main(int argc, char **argv, char **envp)
 	/* Register abort(3) as an atexit(3) handler to be called at normal
 	 * process termination */
 	atexit(my_exit);
-    printf ("Starting main program: Pid = %d\n", syscall(SYS_gettid));
-
+	int ThreadPID = syscall(SYS_gettid);
+    printf ("Starting main program: Pid = %d\n", ThreadPID);
+	vtInitialize();
+	vtAfterForkInChild(ThreadPID);
 	/* Finally call the real main function */
 	return real_main(argc, argv, envp);
 }
@@ -201,25 +223,6 @@ int __libc_start_main(int (*main) (int, char **, char **),
 	}
 
 
-    if (!globalCurrBurstLength) {
-		lib_vt_clock_handle = dlopen("libvtlib.so", RTLD_NOLOAD | RTLD_NOW);
-
-		if (lib_vt_clock_handle) {
-			globalCurrBurstLength = dlsym(lib_vt_clock_handle,
-										  "currBurstLength");
-			if (!globalCurrBurstLength) {
-			    printf("GLOBAL insn counter not found !\n");
-			    abort();
-			}
-		}
-
-		if(lib_vt_clock_handle && dlclose(lib_vt_clock_handle)) {
-			fprintf(stderr, "can't close handle to libvt_clock.so: %s\n",
-				dlerror());
-			_exit(EXIT_FAILURE);
-		}
-	}
-
     orig_syscall = dlsym(libc_handle, "syscall");
 	if (!orig_syscall) {
 		fprintf(stderr, "can't find syscall():%s\n",
@@ -269,7 +272,10 @@ void  __attribute__ ((noreturn))  pthread_exit(void *retval) {
     if (!original_pthread_exit) {
 		load_original_pthread_exit();
     }
-    printf ("Calling my pthread exit for PID = %d\n", syscall(SYS_gettid)); 
+
+	int ThreadPID = syscall(SYS_gettid);
+    printf ("Calling my pthread exit for PID = %d\n", ThreadPID);
+	vtThreadFini(ThreadPID);
     original_pthread_exit(retval);
 }
 
@@ -284,8 +290,7 @@ void load_orig_functions() {
 		_exit(EXIT_FAILURE);
 	}
 	
-	if (!orig_fork) {
-		
+	if (!orig_fork) {	
 		orig_fork = dlsym(libc_handle, "fork");
 		if (!orig_fork) {
 			fprintf(stderr, "can't find fork():%s\n", dlerror());
@@ -348,16 +353,17 @@ pid_t fork() {
 	
 	ret = orig_fork();
 	if (ret == 0) {
-		printf("After fork in child: PID = %d\n", syscall(SYS_gettid));
+		int ChildPID = syscall(SYS_gettid);
+		printf("After fork in child: PID = %d\n", ChildPID);
+		vtAfterForkInChild(ChildPID);
 	} else {
-		printf("After fork in parent: PID = %d\n", syscall(SYS_gettid));
+		int ParentPID = syscall(SYS_gettid);
+		printf("After fork in parent: PID = %d\n", ParentPID);
+		vtForceCompleteBurst(ParentPID, 1);
 	}
 
 	return ret;
 }
-
-
-
 
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
 	printf("In my gettimeofday: %d\n", syscall(SYS_gettid));
@@ -388,35 +394,37 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 	return orig_select(nfds, readfds, writefds, exceptfds, timeout);
 }
 
+static void execute_cpu_yielding_syscall(long syscall_number, long arg0,
+	long arg1, long arg2, long arg3, long arg4, long arg5, long *result) {
 
-static int
-hook(long syscall_number,
-			long arg0, long arg1,
-			long arg2, long arg3,
-			long arg4, long arg5,
-			long *result) {
+	int ThreadPID = 0;
+	ThreadPID = syscall_no_intercept(SYS_gettid);
+	vtYieldVTBurst(ThreadPID, 1);
+	*result = syscall_no_intercept(syscall_number, arg0, arg1, arg2, arg3, arg4,
+								   arg5);
+	vtForceCompleteBurst(ThreadPID, 0);
+}
 
-	int pid = 0;
-        //char  output_buf[100];
-        //memset(output_buf, 0, 100);
+static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
+	long arg4, long arg5, long *result) {
+
+	
 	if (syscall_number == SYS_getdents) {
-		/*
-		 * Prevent the application from
-		 * using the getdents syscall. From
-		 * the point of view of the calling
-		 * process, it is as if the kernel
-		 * would return the ENOTSUP error
-		 * code from the syscall.
-		 */
 		*result = -ENOTSUP;
 		return 0;
-	} if (syscall_number == SYS_futex) {
+	} if (syscall_number == SYS_futex
+		 || syscall_number == SYS_read
+		 || syscall_number == SYS_write
+		 || syscall_number == SYS_wait4
+		 || syscall_number == SYS_waitid
+		 || syscall_number == SYS_recvfrom
+		 || syscall_number == SYS_recvmmsg
+		 || syscall_number == SYS_recvmsg) {
 
-		// Before futex
-		*result = syscall_no_intercept(SYS_futex, arg0, arg1, arg2, arg3, arg4,
-									   arg5);
-
-		// After futex
+		// Before cpu yielding syscall
+		execute_cpu_yielding_syscall(syscall_number, arg0, arg1, arg2, arg3,
+									 arg4, arg5, result);
+		// After cpu yielding syscall
 		return 0;
                 
 	}  else {

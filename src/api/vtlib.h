@@ -9,6 +9,7 @@
 typedef struct BasicBlockStruct {
     int ID;
     int BBLSize;
+    int isMarked;
     llist out_neighbours;
     long long lookahead_value;
 } BasicBlock;
