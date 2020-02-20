@@ -9,7 +9,7 @@
 typedef int (*pthread_create_t)(pthread_t *, const pthread_attr_t *,
                                 void *(*)(void*), void *);
 
-void (*original_pthread_exit)(void * ret_val) = NULL;
+void __attribute__ ((noreturn)) (*original_pthread_exit)(void * ret_val) = NULL;
 
 int (*orig_gettimeofday)(struct timeval *tv, struct timezone *tz) = NULL;
 
@@ -30,13 +30,13 @@ int (*orig_futex)(int *uaddr, int futex_op, int val,
 
 long (*orig_syscall)(long number, ...);
 
-void (*orig_exit)(int status);
+void __attribute__ ((noreturn)) (*orig_exit)(int status);
 
 // externs
-extern int64_t * globalCurrBurstLength;
-extern int64_t * globalCurrBBID;
-extern int64_t * globalPrevBBID;
-extern int64_t * globalCurrBBSize;
+extern s64 * globalCurrBurstLength;
+extern s64 * globalCurrBBID;
+extern s64 * globalPrevBBID;
+extern s64 * globalCurrBBSize;
 extern int * vtAlwaysOn;
 extern int * vtGlobalTracerID;
 extern int * vtGlobalTimelineID;
@@ -46,14 +46,15 @@ extern void (*vtThreadFini)(int ThreadID);
 extern void (*vtAppFini)(int ThreadID);
 extern void (*vtMarkCurrBBL)(int ThreadID);
 extern void (*vtInitialize)();
-extern void (*vtYieldVTBurst)(int ThreadID, int save) = NULL;
-extern void (*vtForceCompleteBurst)(int ThreadID, int save) = NULL;
+extern void (*vtYieldVTBurst)(int ThreadID, int save);
+extern void (*vtForceCompleteBurst)(int ThreadID, int save);
 
-void (*vtTriggerSyscallWait)(int ThreadID, int save) = NULL;
-void (*vtTriggerSyscallFinish)(int ThreadID) = NULL;
-void (*vtSleepForNS)(int ThreadID, int64_t duration) = NULL;
-void (*vtGetCurrentTimespec)(struct timeval *ts) = NULL;
-void (*vtGetCurrentTimeval)(struct timeval * tv) = NULL;
+extern void (*vtTriggerSyscallWait)(int ThreadID, int save);
+extern void (*vtTriggerSyscallFinish)(int ThreadID);
+extern void (*vtSleepForNS)(int ThreadID, s64 duration);
+extern void (*vtGetCurrentTimespec)(struct timespec *ts);
+extern void (*vtGetCurrentTimeval)(struct timeval * tv);
+extern s64 (*vtGetCurrentTime)();
 
 void load_orig_functions();
 
@@ -108,7 +109,7 @@ int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
 void my_exit(void) {
    int ThreadPID = syscall(SYS_gettid);
    printf("I am exiting main thread. PID = %d\n", ThreadPID);
-   AppFini(ThreadPID);
+   vtAppFini(ThreadPID);
 }
 
 /* The address of the real main is stored here for fake_main to access */
@@ -122,7 +123,7 @@ static int fake_main(int argc, char **argv, char **envp)
 	atexit(my_exit);
 	int ThreadPID = syscall(SYS_gettid);
     printf ("Starting main program: Pid = %d\n", ThreadPID);
-	vtInitialize();
+	initialize_vtl();
 	vtAfterForkInChild(ThreadPID);
 	/* Finally call the real main function */
 	return real_main(argc, argv, envp);
@@ -270,7 +271,8 @@ void load_original_pthread_exit() {
 
 
 void __attribute__ ((noreturn)) _exit(int status) {
-	printf("I am alternate exiting main thread\n", syscall(SYS_gettid));
+	int ThreadPID = syscall(SYS_gettid);
+	printf("I am alternate exiting main thread %d\n", ThreadPID);
 	orig_exit(status);
 }
 
@@ -354,7 +356,8 @@ void load_orig_functions() {
 
 
 pid_t fork() {
-	printf("Before fork in parent: %d\n", syscall(SYS_gettid));
+	int ParentPID = syscall(SYS_gettid);
+	printf("Before fork in parent: %d\n", ParentPID);
 	pid_t ret;
 	
 	ret = orig_fork();
@@ -363,7 +366,6 @@ pid_t fork() {
 		printf("After fork in child: PID = %d\n", ChildPID);
 		vtAfterForkInChild(ChildPID);
 	} else {
-		int ParentPID = syscall(SYS_gettid);
 		printf("After fork in parent: PID = %d\n", ParentPID);
 		vtForceCompleteBurst(ParentPID, 1);
 	}
@@ -372,44 +374,144 @@ pid_t fork() {
 }
 
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
-	printf("In my gettimeofday: %d\n", syscall(SYS_gettid));
-	return orig_gettimeofday(tv, tz);
+	int ThreadPID =  syscall(SYS_gettid);
+	printf("In my gettimeofday: %d\n", ThreadPID);
+	vtGetCurrentTimeval(tv);
+	return 0;
 }
 
 
 int clock_gettime(clockid_t clk_id, struct timespec *tp) {
-	//printf("In my clock_gettime: %d\n", syscall(SYS_gettid));
-	return orig_clock_gettime(clk_id, tp);
+	int ThreadPID =  syscall(SYS_gettid);
+	printf("In my clock_gettime: %d\n", ThreadPID);
+	vtGetCurrentTimespec(tp);
+	return 0;
 }
 
 
 unsigned int sleep(unsigned int seconds) {
-	printf("In my sleep: %d\n", syscall(SYS_gettid));
-	return orig_sleep(seconds);
+	int ThreadPID = syscall(SYS_gettid);
+	printf("In my sleep: %d\n", ThreadPID);
+	vtSleepForNS(ThreadPID, seconds*NSEC_PER_SEC);
+	return 0;
 }
 
 int usleep(useconds_t usec) {
-	printf("In my usleep: %d\n", syscall(SYS_gettid));
-
+	int ThreadPID = syscall(SYS_gettid);
+	printf("In my usleep: %d\n", ThreadPID);
+	vtSleepForNS(ThreadPID, usec*NSEC_PER_US);
+	return 0;
 }
 
-int poll(struct pollfd *fds, nfds_t nfds, int timeout){
-	printf("In my poll: %d\n", syscall(SYS_gettid));
-	return orig_poll(fds, nfds, timeout);
+int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
+	
+	int ret, ThreadPID;
+	s64 start_time, elapsed_time, max_duration;
+	ThreadPID = syscall(SYS_gettid);
+	printf("In my poll: %d\n", ThreadPID);
+
+	if (timeout_ms == 0)
+		return orig_poll(fds, nfds, timeout_ms);
+
+	if (timeout_ms < 0) {
+		vtTriggerSyscallWait(ThreadPID, 1);
+		ret = orig_poll(fds, nfds, timeout_ms);
+		vtTriggerSyscallFinish(ThreadPID);
+	} else {
+		max_duration = timeout_ms * NSEC_PER_MS;
+		start_time = vtGetCurrentTime();
+		vtTriggerSyscallWait(ThreadPID, 1);
+		do {
+			ret = orig_poll(fds, nfds, 0);
+			if (ret != 0)
+				break;
+			elapsed_time = vtGetCurrentTime() - start_time;
+
+			if (elapsed_time < max_duration)
+				vtTriggerSyscallWait(ThreadPID, 0);
+		} while (elapsed_time < max_duration);
+		vtTriggerSyscallFinish(ThreadPID);
+	}
+	return ret;
 }
 
 int select(int nfds, fd_set *readfds, fd_set *writefds,
            fd_set *exceptfds, struct timeval *timeout) {
-	printf("In my select: %d\n", syscall(SYS_gettid));
-	return orig_select(nfds, readfds, writefds, exceptfds, timeout);
+
+	int ret, ThreadPID, rem;
+	int isReadInc, isWriteInc, isExceptInc;
+	s64 start_time, elapsed_time, max_duration;
+	fd_set readfds_copy, writefds_copy, exceptfds_copy;
+	ThreadPID = syscall(SYS_gettid);
+
+	printf("In my select: %d\n", ThreadPID);
+
+	isReadInc = 0, isWriteInc = 0, isExceptInc = 0;
+
+	if (!timeout) {
+		vtTriggerSyscallWait(ThreadPID, 1);
+		ret = orig_select(nfds, readfds, writefds, exceptfds, timeout);
+		vtTriggerSyscallFinish(ThreadPID);
+	} else {
+		if (timeout->tv_sec == 0 && timeout->tv_usec == 0)
+			return orig_select(nfds, readfds, writefds, exceptfds, timeout);
+
+		if (readfds) {
+			readfds_copy = *readfds;
+			isReadInc = 1;
+		}
+
+		if (writefds) {
+			writefds_copy = *writefds;
+			isWriteInc = 1;
+		}
+
+		if (exceptfds) {
+			exceptfds_copy = *exceptfds;
+			isExceptInc = 1;
+		}
+		max_duration 
+			= timeout->tv_sec * NSEC_PER_SEC + timeout->tv_usec * NSEC_PER_US;
+		start_time = vtGetCurrentTime();
+		vtTriggerSyscallWait(ThreadPID, 1);
+		timeout->tv_sec = 0, timeout->tv_usec = 0;
+		do {
+			ret = orig_select(nfds, readfds, writefds, exceptfds, timeout);
+			if (ret != 0)
+				break;
+			elapsed_time = vtGetCurrentTime() - start_time;
+			if (elapsed_time < max_duration)
+				vtTriggerSyscallWait(ThreadPID, 0);
+			
+			if (isReadInc)
+				*readfds = readfds_copy;
+			if (isWriteInc)
+				*writefds = writefds_copy;
+			if (isExceptInc)
+				*exceptfds = exceptfds_copy;
+
+		} while (elapsed_time < max_duration);
+		vtTriggerSyscallFinish(ThreadPID);
+		
+		if (elapsed_time < max_duration) {
+			timeout->tv_sec = (max_duration - elapsed_time) / NSEC_PER_SEC;
+			rem  = (max_duration - elapsed_time)
+					- timeout->tv_sec * NSEC_PER_SEC;
+			timeout->tv_usec = rem / NSEC_PER_US;
+		}
+	}
+
+	return ret;
 }
 
 static void execute_cpu_yielding_syscall(long syscall_number, long arg0,
-	long arg1, long arg2, long arg3, long arg4, long arg5, long *result) {
+	long arg1, long arg2, long arg3, long arg4, long arg5, long *result,
+	int ThreadPID) {
 
-	int ThreadPID = 0;
-	ThreadPID = syscall_no_intercept(SYS_gettid);
+	
 	vtYieldVTBurst(ThreadPID, 1);
+
+	
 	*result = syscall_no_intercept(syscall_number, arg0, arg1, arg2, arg3, arg4,
 								   arg5);
 	vtForceCompleteBurst(ThreadPID, 0);
@@ -418,22 +520,31 @@ static void execute_cpu_yielding_syscall(long syscall_number, long arg0,
 static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
 	long arg4, long arg5, long *result) {
 
+	int ThreadPID = 0;
 	
-	if (syscall_number == SYS_getdents) {
-		*result = -ENOTSUP;
-		return 0;
-	} if (syscall_number == SYS_futex
-		 || syscall_number == SYS_read
-		 || syscall_number == SYS_write
-		 || syscall_number == SYS_wait4
-		 || syscall_number == SYS_waitid
-		 || syscall_number == SYS_recvfrom
-		 || syscall_number == SYS_recvmmsg
-		 || syscall_number == SYS_recvmsg) {
+
+	if (syscall_number == SYS_write
+		|| syscall_number == SYS_sendto
+		|| syscall_number == SYS_sendmsg
+		|| syscall_number == SYS_sendmmsg) {
+		ThreadPID = syscall_no_intercept(SYS_gettid);
+		vtMarkCurrBBL(ThreadPID);
+	}
+
+	if (syscall_number == SYS_futex
+		|| syscall_number == SYS_read
+		|| syscall_number == SYS_write
+		|| syscall_number == SYS_wait4
+		|| syscall_number == SYS_waitid
+		|| syscall_number == SYS_recvfrom
+		|| syscall_number == SYS_recvmmsg
+		|| syscall_number == SYS_recvmsg) {
+
+		ThreadPID = syscall_no_intercept(SYS_gettid);
 
 		// Before cpu yielding syscall
 		execute_cpu_yielding_syscall(syscall_number, arg0, arg1, arg2, arg3,
-									 arg4, arg5, result);
+									 arg4, arg5, result, ThreadPID);
 		// After cpu yielding syscall
 		return 0;
                 
@@ -447,9 +558,7 @@ static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
 	}
 }
 
-static __attribute__((constructor)) void
-init(void)
-{
+static __attribute__((constructor)) void init(void) {
 	// Set up the callback function
 	intercept_hook_point = hook;
 }

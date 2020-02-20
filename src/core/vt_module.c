@@ -9,16 +9,16 @@ as well as what should happen when the kernel module is initialized and removed.
 */
 
 /** LOCAL DECLARATIONS **/
-int tracer_num = 0;
-int EXP_CPUS = 0;
-int TOTAL_CPUS = 0;
+int tracer_num;
+int EXP_CPUS;
+int TOTAL_CPUS;
 int experiment_status;
 int experiment_type;
 int initialization_status;
-s64 expected_time = 0;
-s64 virt_exp_start_time = 0;
-s64 current_progress_duration = 0;
-int current_progress_n_rounds = 0;
+s64 expected_time;
+s64 virt_exp_start_time;
+s64 current_progress_duration;
+int current_progress_n_rounds;
 int total_expected_tracers;
 // locks
 struct mutex exp_lock;
@@ -30,8 +30,8 @@ llist *per_timeline_tracer_list;
 wait_queue_head_t * timeline_wqueue;
 wait_queue_head_t * timeline_worker_wqueue;
 wait_queue_head_t * syscall_wait_wqueue;
-static struct proc_dir_entry *dilation_dir = NULL;
-static struct proc_dir_entry *dilation_file = NULL;
+static struct proc_dir_entry *dilation_dir;
+static struct proc_dir_entry *dilation_file;
 timeline * timeline_info;
 struct task_struct *loop_task;
 struct task_struct ** chaintask;
@@ -101,7 +101,8 @@ int vt_release(struct inode *inode, struct file *filp) { return 0; }
 void handle_add_processes_to_sq(int * api_args, int num_args) {
   int tracer_id;
 	tracer *curr_tracer;
-
+  int i;
+  
   tracer_id = api_args[0];
   curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
   if (!curr_tracer) {
@@ -118,11 +119,12 @@ void handle_add_processes_to_sq(int * api_args, int num_args) {
   put_tracer_struct_write(curr_tracer);
 }
 
-ssize_t handle_write_results_cmd(struct dilation_task_struct * dilation_task,
+ssize_t handle_write_results_cmd(struct dilated_task_struct * dilation_task,
                                  int *api_args, int num_args) {
 
   int tracer_id;
 	tracer *curr_tracer;
+  
 
   tracer_id = dilation_task->associated_tracer_id;
   curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
@@ -283,9 +285,9 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
    * "write" is reversed
    */
   if (_IOC_DIR(cmd) & _IOC_READ)
-    err = !access_ok(VERIFY_WRITE, (void __user *)arg, _IOC_SIZE(cmd));
+    err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
   else if (_IOC_DIR(cmd) & _IOC_WRITE)
-    err = !access_ok(VERIFY_WRITE, (void __user *)arg, _IOC_SIZE(cmd));
+    err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
 
   if (err) return -EFAULT;
 
@@ -722,7 +724,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
         return -EFAULT;
       }
-      duration.tv64 = api_info_tmp.return_value; 
+      duration = api_info_tmp.return_value; 
            
       dilated_hrtimer_sleep(duration);
       return 0;

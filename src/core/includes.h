@@ -38,6 +38,7 @@
 #include <linux/string.h>
 #include <linux/delay.h>
 #include <linux/ptrace.h>
+#include <linux/ktime.h>
 
 #include <linux/uaccess.h>
 #include <linux/debugfs.h>
@@ -126,7 +127,7 @@
         printk(KERN_DEBUG "Titan: <ERROR> [Process: %d] (%s:%d): %s: ",    \
                current->pid, __FILE__, __LINE__, __func__);          \
         printk(KERN_INFO fmt, ## args);	\
-		BUG_ON(true);
+		BUG_ON(true); \
     } while (0)
 
 

@@ -58,7 +58,6 @@ typedef struct ioctl_args_struct {
 s64 send_to_vt_module(unsigned int cmd, ioctl_args* arg);
 int gettid(void);
 int get_next_value (char *write_buffer);
-int atoi(char *s);
 int is_root(void);
 int isModuleLoaded(void);
 void init_ioctl_arg(ioctl_args* arg);
@@ -66,7 +65,5 @@ void flush_buffer(char* buf, int size);
 void init_ioctl_arg(ioctl_args* arg);
 int num_characters(int n);
 int append_to_ioctl_arg(ioctl_args* arg, int* append_values, int num_values);
-void ns_to_timespec(const s64 nsec, struct timespec * ts);
-void ns_to_timeval(const s64 nsec, struct timeval * tv);
 
 #endif

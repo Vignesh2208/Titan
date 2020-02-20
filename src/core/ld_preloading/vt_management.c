@@ -1,10 +1,10 @@
 #include "includes.h"
 #include "vt_management.h"
 
-int64_t * globalCurrBurstLength;
-int64_t * globalCurrBBID;
-int64_t * globalPrevBBID;
-int64_t * globalCurrBBSize;
+s64 * globalCurrBurstLength;
+s64 * globalCurrBBID;
+s64 * globalPrevBBID;
+s64 * globalCurrBBSize;
 int * vtAlwaysOn;
 int * vtGlobalTracerID;
 int * vtGlobalTimelineID;
@@ -21,19 +21,56 @@ void (*vtYieldVTBurst)(int ThreadID, int save) = NULL;
 void (*vtForceCompleteBurst)(int ThreadID, int save) = NULL;
 void (*vtTriggerSyscallWait)(int ThreadID, int save) = NULL;
 void (*vtTriggerSyscallFinish)(int ThreadID) = NULL;
-
-void (*vtSleepForNS)(int ThreadID, int64_t duration) = NULL;
-void (*vtGetCurrentTimespec)(struct timeval *ts) = NULL;
+void (*vtSleepForNS)(int ThreadID, s64 duration) = NULL;
+void (*vtGetCurrentTimespec)(struct timespec *tp) = NULL;
 void (*vtGetCurrentTimeval)(struct timeval * tv) = NULL;
+s64 (*vtGetCurrentTime)() = NULL;
 
 
 
 void load_all_vtl_functions(void * lib_vt_lib_handle) {
     if (!lib_vt_lib_handle)
         return;
+
+    vtTriggerSyscallWait = dlsym(lib_vt_lib_handle,
+                               "TriggerSyscallWait");
+    if (!vtTriggerSyscallWait) {
+        printf("vtTriggerSyscallWait not found !\n");
+        abort();
+    }
+
+    vtTriggerSyscallFinish = dlsym(lib_vt_lib_handle,
+                               "TriggerSyscallFinish");
+    if (!vtTriggerSyscallFinish) {
+        printf("vtTriggerSyscallFinish not found !\n");
+        abort();
+    }
     
-    vtAfterForkInChild = dlsym(lib_vt_lib_handle,
-                               "AfterForkInChild");
+    vtSleepForNS = dlsym(lib_vt_lib_handle, "SleepForNS");
+    if (!vtSleepForNS) {
+        printf("vtSleepForNS not found !\n");
+        abort();
+    }
+
+    vtGetCurrentTimespec = dlsym(lib_vt_lib_handle, "GetCurrentTimespec");
+    if (!vtGetCurrentTimespec) {
+        printf("vtGetCurrentTimespec not found !\n");
+        abort();
+    }
+
+    vtGetCurrentTimeval = dlsym(lib_vt_lib_handle, "GetCurrentTimeval");
+    if (!vtGetCurrentTimeval) {
+        printf("vtGetCurrentTimeval not found !\n");
+        abort();
+    }
+
+    vtGetCurrentTime = dlsym(lib_vt_lib_handle, "GetCurrentTime");
+    if (!vtGetCurrentTime) {
+        printf("vtGetCurrentTime not found !\n");
+        abort();
+    }
+
+    vtAfterForkInChild = dlsym(lib_vt_lib_handle, "AfterForkInChild");
     if (!vtAfterForkInChild) {
         printf("vtAfterForkInChild not found !\n");
         abort();
@@ -85,11 +122,10 @@ void load_all_vtl_functions(void * lib_vt_lib_handle) {
 void initialize_vtl() {
     void * lib_vt_lib_handle;
 
-    lib_vt_lib_handle = dlopen("libvtlib.so", RTLD_NOLOAD | RTLD_NOW);
+    lib_vt_lib_handle = dlopen("libvtllogic.so", RTLD_NOLOAD | RTLD_NOW);
 
     if (lib_vt_lib_handle) {
-        globalCurrBurstLength = dlsym(lib_vt_lib_handle,
-                                      "currBurstLength");
+        globalCurrBurstLength = dlsym(lib_vt_lib_handle, "currBurstLength");
         if (!globalCurrBurstLength) {
             printf("GLOBAL insn counter not found !\n");
             abort();

@@ -11,34 +11,25 @@ all: clean build
 
 clean: clean_core clean_utils clean_api clean_tracer clean_scripts
 
-build: build_core build_api build_tracer build_scripts
+build: build_api build_core build_tracer build_scripts
 
-setup_kernel: download_4_4_kernel compile_4_4_kernel
+build_intercept:
+	@cd src/core/ld_preloading; $(MAKE) build
 
-patch_kernel: update_kernel compile_4_4_kernel
-
-update_kernel:
-	@cd src/kernel_changes/linux-4.4.5 && ./patch_kernel.sh
-
-download_4_4_kernel:
-	@cd src/kernel_changes/linux-4.4.5 && ./setup.sh
-
-compile_4_4_kernel:
-	@cd /src/linux-4.4.5 && sudo cp -v /boot/config-`uname -r` .config && $(MAKE) menuconfig && $(MAKE) -j$(nCpus) && $(MAKE) modules_install && $(MAKE) install;
-
-build_core: 
+build_core: build_intercept
 	$(MAKE) -C $(KERNEL_SRC) M=$(SUBDIR)/build modules
 
+build_api_utils:
+	@cd src/api/utils; $(MAKE) build;
 
-build_api:
+build_api: build_api_utils
 	@cd src/api; $(MAKE) build_api;
 
-build_tracer:
+build_tracer: build_api
 	@cd src/tracer; $(MAKE) build;
 
 build_scripts:
 	@cd scripts; $(MAKE) build;
-
 
 load:
 	sudo insmod build/vt_module.ko
@@ -51,13 +42,10 @@ clean_scripts:
 	@echo "Cleaning scripts ..."
 	@cd scripts && $(MAKE) clean
 	
-clean_tests:
-	@echo "Cleaning test files ..."
-	@cd tests && $(MAKE) clean
-
 clean_core:
 	@echo "Cleaning old build files ..."
-	@$(RM) -f build/*.ko build/*.o build/*.mod.c build/Module.symvers build/modules.order ;
+	@cd src/core/ld_preloading && $(MAKE) clean;
+	@$(RM) -f build/*.ko build/*.o build/*.mod.c build/Module.symvers build/modules.order;
 
 clean_utils:
 	@echo "Cleaning old utils files ..."
@@ -65,6 +53,7 @@ clean_utils:
 
 clean_api:
 	@echo "Cleaning old api files ..."
+	@cd src/api/utils && $(MAKE) clean;
 	@$(RM) -f src/api/*.o 	
 	@cd src/api && $(MAKE) clean
 

@@ -15,21 +15,21 @@ build_api:
 	 @cp ${api_dir}/utility_functions.h /usr/local/include
 
 
-	 @echo "Building VT-Lib shared library ..."
+	 @echo "Building VTL-Logic shared library ..."
 	 @gcc -w -c -Wall -Werror -fpic ${api_dir}/VT_functions.c \
-	 ${api_dir}/utility_functions.c ${api_dir}/vtlib.c
-	 @gcc -w -shared -lvtutils -o libvtlib.so ${api_dir}/VT_functions.o \
-	 ${api_dir}/utility_functions.o ${api_dir}/vtlib.o
-	 @mv libvtlib.so /usr/lib
-	 @chmod 0777 /usr/lib/libvtlib.so
+	 ${api_dir}/utility_functions.c ${api_dir}/vtl_logic.c
+	 @gcc -w -shared -lvtutils -o libvtllogic.so ${api_dir}/VT_functions.o \
+	 ${api_dir}/utility_functions.o ${api_dir}/vtl_logic.o
+	 @mv libvtllogic.so /usr/lib
+	 @chmod 0777 /usr/lib/libvtllogic.so
 
-	 #@python setup.py install
+	 @python setup.py install
 
 clean:
 
 	@rm -rf build/
 	@rm -f *.o
 	@rm -f /usr/lib/libvtapi.so > /dev/null
-	@rm -f /usr/lib/libvtlib.so > /dev/null
+	@rm -f /usr/lib/libvtllogic.so > /dev/null
 	@rm -f /usr/local/include/VT_functions.h > /dev/null
 	@rm -f /usr/local/include/utility_functions.h > /dev/null

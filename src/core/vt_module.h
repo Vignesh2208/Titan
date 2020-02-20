@@ -31,8 +31,8 @@ struct dilated_task_struct {
 	int syscall_waiting;
 	struct task_struct * vt_exec_task;
 	struct task_struct * base_task;
-	tracer * associated_tracer;
-}
+	struct tracer_struct * associated_tracer;
+};
 
 
 typedef struct overshoot_info_struct {

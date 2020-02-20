@@ -7,7 +7,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <unistd.h>  // for close
 
 #define NSEC_PER_SEC 1000000000
 
@@ -72,15 +71,6 @@ int num_characters(int n) {
 }
 
 
-int atoi(char *s) {
-	int i, n;
-	n = 0;
-	for (i = 0; * (s + i) >= '0' && *(s + i) <= '9'; i++)
-		n = 10 * n + *(s + i) - '0';
-	return n;
-}
-
-
 int append_to_ioctl_arg(ioctl_args *arg, int *append_values, int num_values) {
   if (!arg) return -1;
 
@@ -127,28 +117,27 @@ void flush_buffer(char *buf, int size) {
 }
 
 
-void ns_to_timespec(const s64 nsec, struct timespec * ts) {
+void ns_2_timespec(s64 nsec, struct timespec * ts) {
 
 	int32_t rem;
 
-	if (!nsec)
-		return (struct timespec) {0, 0};
+	if (!nsec) {
+		ts->tv_sec = 0, ts->tv_nsec = 0;
+    return;
+  }
 
-	ts->tv_sec = div_s64_rem(nsec, NSEC_PER_SEC, &rem);
-	if (unlikely(rem < 0)) {
-		ts->tv_sec--;
-		rem += NSEC_PER_SEC;
-	}
+	ts->tv_sec = nsec / NSEC_PER_SEC;
+  rem = nsec - ts->tv_sec * NSEC_PER_SEC;
 	ts->tv_nsec = rem;
 }
 
 
-void ns_to_timeval(const s64 nsec, struct timeval * tv) {
+void ns_2_timeval(s64 nsec, struct timeval * tv) {
 	struct timespec ts;
 	
-  ns_to_timespec(nsec, &ts);
+  ns_2_timespec(nsec, &ts);
 	tv->tv_sec = ts.tv_sec;
-	tv->tv_usec = (suseconds_t) ts.tv_nsec / 1000;
+	tv->tv_usec = ts.tv_nsec / 1000;
 
 	return;
 }

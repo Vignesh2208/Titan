@@ -24,6 +24,6 @@
 #include <linux/futex.h>
 
 
-typedef long long int64_t;
+typedef long long s64;
 
 #endif
