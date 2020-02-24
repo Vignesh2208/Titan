@@ -51,8 +51,8 @@ struct task_struct* get_task_ns(pid_t pid, struct task_struct * parent) {
 	
 
 	list_for_each(list, &parent->children) {
-		struct task_struct * taskRecurse = list_entry(list
-			 struct task_struct, sibling);
+		struct task_struct * taskRecurse = list_entry(list,
+			struct task_struct, sibling);
 		if (task_pid_nr_ns(taskRecurse, task_active_pid_ns(taskRecurse)) == pid)
 			return taskRecurse;
 		t =  get_task_ns(pid, taskRecurse);
@@ -202,7 +202,6 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	s64 base_time_quanta;
 	s64 base_quanta_n_insns = 0;
 	s32 rem = 0;
-	struct sched_param sp;
 	struct task_struct * tracee = find_task_by_pid(tracee_pid);
 	struct dilated_task_struct * tracee_dilated_task_struct;
 
@@ -276,9 +275,6 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	cpumask_set_cpu(tracer_entry->cpu_assignment, &tracee->cpus_allowed);
 	hmap_put_abs(&get_dilated_task_struct_by_pid, current->pid,
 				tracee_dilated_task_struct);
-	sp.sched_priority = 99;
-
-	sched_setscheduler(tracee, SCHED_RR, &sp);
 	PDEBUG_I("add_to_tracer_schedule_queue:  Tracee %d added successfully to "
 			"tracer-id: %d. schedule list size: %d\n", tracee->pid,
 			tracer_entry->tracer_id, schedule_list_size(tracer_entry));
@@ -446,7 +442,7 @@ Assumes tracer write lock is acquired prior to call. Must return with write lock
 still acquired.
 */
 void update_all_children_virtual_time(tracer * tracer_entry, s64 time_increment) {
-	if (tracer_entry && tracer_entry->tracer_task) {
+	if (tracer_entry && tracer_entry->main_task) {
 
 		tracer_entry->round_start_virt_time += time_increment;
 		tracer_entry->curr_virtual_time = tracer_entry->round_start_virt_time;
@@ -634,23 +630,21 @@ int handle_initialize_exp_cmd(int exp_type, int num_timelines,
 
 
 s64 get_dilated_time(struct task_struct * task) {
-	struct timeval tv;
 	tracer * associated_tracer;
 	lxc_schedule_elem * curr_elem;
 	llist_elem * head;
 	struct dilated_task_struct * dilated_task 
 		= hmap_get_abs(&get_dilated_task_struct_by_pid, task->pid);
 
-	do_gettimeofday(&tv);
-	s64 now = timeval_to_ns(&tv);
+	s64 now = ktime_get_real();
 
 	if (!dilated_task)
 		return now;
 
 	associated_tracer = dilated_task->associated_tracer;
 
-	if (associated_tracer && associated_tracer->curr_virt_time) {
-		return associated_tracer->curr_virt_time;
+	if (associated_tracer && associated_tracer->curr_virtual_time) {
+		return associated_tracer->curr_virtual_time;
 	}
 	return now;
 

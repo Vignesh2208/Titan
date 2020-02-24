@@ -1,4 +1,5 @@
 #include "vt_module.h"
+#include "dilated_timer.h"
 #include "common.h"
 #include "sync_experiment.h"
 
@@ -10,6 +11,7 @@ as well as what should happen when the kernel module is initialized and removed.
 
 /** LOCAL DECLARATIONS **/
 int tracer_num;
+int total_num_timelines;
 int EXP_CPUS;
 int TOTAL_CPUS;
 int experiment_status;
@@ -20,6 +22,8 @@ s64 virt_exp_start_time;
 s64 current_progress_duration;
 int current_progress_n_rounds;
 int total_expected_tracers;
+int total_completed_rounds;
+
 // locks
 struct mutex exp_lock;
 struct mutex file_lock;
@@ -35,6 +39,7 @@ static struct proc_dir_entry *dilation_file;
 timeline * timeline_info;
 struct task_struct *loop_task;
 struct task_struct ** chaintask;
+struct dilated_timer_timeline_base ** global_dilated_timer_timeline_bases;
 
 // hashmaps
 hashmap get_tracer_by_id;

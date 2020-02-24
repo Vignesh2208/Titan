@@ -45,11 +45,13 @@ clean_scripts:
 clean_core:
 	@echo "Cleaning old build files ..."
 	@cd src/core/ld_preloading && $(MAKE) clean;
-	@$(RM) -f build/*.ko build/*.o build/*.mod.c build/Module.symvers build/modules.order;
+	@$(RM) -f build/*.ko build/*.o build/*.mod.c build/Module.symvers build/modules.order build/.*.cmd build/.cache.mk;
+	@$(RM) -rf build/.tmp_versions;
+	@$(RM) -f src/core/.*.cmd src/core/*.o;
 
 clean_utils:
 	@echo "Cleaning old utils files ..."
-	@$(RM) -f src/utils/*.o 	
+	@$(RM) -f src/utils/*.o  src/utils/.*.cmd;	
 
 clean_api:
 	@echo "Cleaning old api files ..."

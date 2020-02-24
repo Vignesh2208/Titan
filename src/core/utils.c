@@ -91,7 +91,7 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id) {
 		BUG_ON(true);
 	}
 
-	memset(main_task, 0, sizeof(struct dilated_task_struct))
+	memset(main_task, 0, sizeof(struct dilated_task_struct));
 	main_task->associated_tracer_id = tracer_id;
 	main_task->virt_start_time = START_VIRTUAL_TIME;
 	main_task->curr_virt_time = START_VIRTUAL_TIME;
@@ -243,7 +243,7 @@ void print_schedule_list(tracer* tracer_entry) {
 				PDEBUG_V("Schedule List Item No: %d, TRACER PID: %d, "
 				         "TRACEE PID: %d, N_insns_curr_round: %d, "
 				         "Size OF SCHEDULE QUEUE: %d\n", i,
-				         tracer_entry->tracer_task->pid, curr->pid,
+				         tracer_entry->main_task->pid, curr->pid,
 				         curr->quanta_curr_round,
 				         schedule_list_size(tracer_entry));
 			}
@@ -281,7 +281,7 @@ tracer * get_tracer_for_task(struct task_struct * aTask) {
 	
 	if (dilated_task)
 		return (tracer *)dilated_task->associated_tracer;
-	return NULL
+	return NULL;
 }
 
 
@@ -311,7 +311,7 @@ void put_tracer_struct_write(tracer* tracer_entry) {
 
 struct dilated_task_struct * get_dilated_task_struct(
 	struct task_struct * task) {
-	if (!tsk)
+	if (!task)
 		return NULL;
 	return hmap_get_abs(&get_dilated_task_struct_by_pid, task->pid);
 }

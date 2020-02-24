@@ -8,7 +8,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#define NSEC_PER_SEC 1000000000
 
 const char *FILENAME = "/proc/status";
 /*

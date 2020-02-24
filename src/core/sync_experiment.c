@@ -1,4 +1,5 @@
 #include "vt_module.h"
+#include "dilated_timer.h"
 #include "utils.h"
 #include "sync_experiment.h"
 
@@ -50,6 +51,7 @@ wait_queue_head_t progress_sync_proc_wqueue;
 
 
 void initiate_experiment_stop_operation() {
+	int i;
 	BUG_ON(experiment_status != STOPPING);
 	current_progress_n_rounds = 0;
 	PDEBUG_I("round_sync_task: Cleaning experiment via catchup task. "
@@ -58,7 +60,7 @@ void initiate_experiment_stop_operation() {
 	atomic_set(&n_workers_running, total_num_timelines);
 	for (i = 0; i < total_num_timelines; i++) {
 		/* chaintask refers to per_cpu_worker */
-		timeline_info[i]->nxt_round_burst_length = 0;
+		timeline_info[i].nxt_round_burst_length = 0;
 		if (wake_up_process(chaintask[i]) == 1) {
 			PDEBUG_V("round_sync_task: Sync thread %d wake up\n", i);
 		} else {
@@ -159,8 +161,8 @@ int progress_by(s64 progress_duration, int num_rounds) {
 		return FAIL;
 
 	for (i = 0; i < total_num_timelines; i++) {
-		timeline_info[i]->nxt_round_burst_length = progress_duration;
-		timeline_info[i]->status = 0;
+		timeline_info[i].nxt_round_burst_length = progress_duration;
+		timeline_info[i].status = 0;
 	}
 	current_progress_n_rounds = num_rounds;
 
@@ -176,8 +178,8 @@ int progress_by(s64 progress_duration, int num_rounds) {
 	round_synchronization();
 	PDEBUG_V("Previously initiated progress_by finished !\n");
 	for (i = 0; i < total_num_timelines; i++) {
-		timeline_info[i]->nxt_round_burst_length = 0;
-		timeline_info[i]->status = 0;
+		timeline_info[i].nxt_round_burst_length = 0;
+		timeline_info[i].status = 0;
 	}
 	current_progress_n_rounds = 0;
 	return SUCCESS;
@@ -334,6 +336,7 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 		init_waitqueue_head(&syscall_wait_wqueue[i]);
 	}
 
+	init_global_dilated_timer_timeline_bases(total_num_timelines);
 
 	per_timeline_chain_length =
 		(int *) kmalloc(total_num_timelines * sizeof(int), GFP_KERNEL);
@@ -360,10 +363,10 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 
 	for (i = 0; i < total_num_timelines; i++) {
 		llist_init(&per_timeline_tracer_list[i]);
-		timeline_info[i]->timeline_id = i;
-		timeline_info[i]->w_queue = &timeline_worker_wqueue[i];
-		timeline_info[i]->status = 0;
-		timeline_info[i]->nxt_round_burst_length = 0;
+		timeline_info[i].timeline_id = i;
+		timeline_info[i].w_queue = &timeline_worker_wqueue[i];
+		timeline_info[i].status = 0;
+		timeline_info[i].nxt_round_burst_length = 0;
 		per_timeline_chain_length[i] = 0;
         values[i] = i;
 	}
@@ -422,7 +425,6 @@ int cleanup_experiment_components() {
 
     virt_exp_start_time = 0;
 
-	atomic_set(&progress_n_enabled, 0);
 	atomic_set(&n_workers_running, 0);
 	atomic_set(&n_waiting_tracers, 0);
 
@@ -440,6 +442,9 @@ int cleanup_experiment_components() {
 	kfree(syscall_wait_wqueue);
 	kfree(timeline_info);
 
+	free_global_dilated_timer_timeline_bases(total_num_timelines);
+
+	total_num_timelines = 0;
 	initialization_status = NOT_INITIALIZED;
 	experiment_status = NOTRUNNING;
 	experiment_type = NOT_SET;
@@ -455,8 +460,7 @@ int sync_and_freeze() {
 	int j;
 	u32 flags;
 	s64 now;
-	struct timeval now_timeval;
-	struct sched_param sp;
+	//struct sched_param sp;
 	tracer * curr_tracer;
 	int ret;
 
@@ -497,8 +501,7 @@ int sync_and_freeze() {
 		return FAIL;
 	}
 
-	do_gettimeofday(&now_timeval);
-	now = timeval_to_ns(&now_timeval);
+	now = ktime_get_real();
    	virt_exp_start_time = now;
 
 	for (i = 1; i <= tracer_num; i++) {
@@ -705,30 +708,7 @@ void prune_tracer_queue(tracer * curr_tracer, int is_schedule_queue){
 
 		if (!curr_elem)
 			return;
-
-		if (curr_elem->pid == curr_tracer->proc_to_control_pid) {
-			if (find_task_by_pid(curr_elem->pid) != NULL) {
-				n_checked_processes ++;
-				continue;
-			} else {
-				PDEBUG_V("Clean up irrelevant processes: "
-				         "Curr elem: %d. Task is dead\n", curr_elem->pid);
-				put_tracer_struct_read(curr_tracer);
-				get_tracer_struct_write(curr_tracer);
-
-				if (!is_schedule_queue)
-					pop_run_queue(curr_tracer);
-				else
-					pop_schedule_list(curr_tracer);
-				put_tracer_struct_write(curr_tracer);
-				get_tracer_struct_read(curr_tracer);
-				n_checked_processes ++;
-				curr_tracer->proc_to_control_pid = -1;
-				curr_tracer->proc_to_control_task = NULL;
-				continue;
-			}
-		}
-		task = search_tracer(curr_tracer->tracer_task, curr_elem->pid);
+		task = search_tracer(curr_tracer->main_task, curr_elem->pid);
 		if (!task){
 			PDEBUG_I("Clean up irrelevant processes: "
 				     "Curr elem: %d. Task is dead\n", curr_elem->pid);

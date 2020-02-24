@@ -39,7 +39,7 @@
 #include <linux/delay.h>
 #include <linux/ptrace.h>
 #include <linux/ktime.h>
-
+#include <linux/timekeeping.h>
 #include <linux/uaccess.h>
 #include <linux/debugfs.h>
 #include <linux/mm.h>

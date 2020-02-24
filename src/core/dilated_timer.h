@@ -43,17 +43,18 @@ struct hrtimer_dilated_clock_base {
 
 
 struct dilated_timer_timeline_base {
-	raw_spinlock_t	lock;
+	spinlock_t	lock;
     int timeline_id;
     int total_num_timelines;
     s64 curr_virtual_time;
 	struct hrtimer_dilated_clock_base dilated_clock_base;
 	ktime_t nxt_dilated_expiry;
 	struct hrtimer_dilated *running_dilated_timer;
-} 
+} ;
 
 
 void init_global_dilated_timer_timeline_bases(int total_num_timelines);
+void free_global_dilated_timer_timeline_bases(int total_num_timelines);
 int dilated_hrtimer_cancel(struct hrtimer_dilated *timer);
 int dilated_hrtimer_try_to_cancel(struct hrtimer_dilated *timer);
 void dilated_hrtimer_start(struct hrtimer_dilated *timer, ktime_t expiry_time,

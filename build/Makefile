@@ -10,7 +10,10 @@ RM:=rm
 all: clean modules
 
 obj-m:= vt_module.o
-vt_module-objs := ../src/core/vt_module.o ../src/core/common.o ../src/core/sync_experiment.o ../src/core/utils.o ../src/utils/hashmap.o ../src/utils/linkedlist.o
+vt_module-objs := ../src/core/vt_module.o ../src/core/common.o \
+				  ../src/core/sync_experiment.o ../src/core/utils.o \
+				  ../src/utils/hashmap.o ../src/utils/linkedlist.o \
+				  ../src/core/dilated_timer.o
 
 modules:
 	$(MAKE) -C $(KERNEL_SRC) M=$(SUBDIR)/build modules 

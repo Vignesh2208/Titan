@@ -28,6 +28,18 @@ static PyObject *py_initializeExp(PyObject *self, PyObject *args) {
   return Py_BuildValue("i", ret);
 }
 
+static PyObject *py_initializeVTExp(PyObject *self, PyObject *args) {
+  int ret;
+  int n_tracers;
+  int exp_type;
+  int n_timelines;
+  if (!PyArg_ParseTuple(args, "iii", &exp_type, &n_timelines, &n_tracers)) 
+    return NULL;
+
+  ret = initialize_VT_Exp(exp_type, n_timelines, n_tracers);
+  return Py_BuildValue("i", ret);
+}
+
 static PyObject *py_progress_by(PyObject *self, PyObject *args) {
   s64 duration;
   int num_rounds;
@@ -49,6 +61,7 @@ static PyMethodDef vt_functions_methods[] = {
     {"getTimePID", py_gettime_pid, METH_VARARGS, NULL},
     {"stopExp", py_stopExp, METH_VARARGS, NULL},
     {"initializeExp", py_initializeExp, METH_VARARGS, NULL},
+    {"initializeVTExp", py_initializeExp, METH_VARARGS, NULL},
     {"progressBy", py_progress_by, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
 
