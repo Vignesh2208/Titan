@@ -145,7 +145,7 @@ void print_usage(int argc, char* argv[]) {
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Usage: %s [ -h | --help ]\n", argv[0]);
 	fprintf(stderr,	"%s -i TRACER_ID -t TIMELINE_ID -e EXP_TYPE"
-	        "-c \"CMD with args\" \n", argv[0]);
+	        " -c \"CMD with args\" \n", argv[0]);
 	fprintf(stderr, "\n");
 	fprintf(stderr,
           "This program executes the specified CMD with arguments "

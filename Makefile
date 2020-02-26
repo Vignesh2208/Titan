@@ -11,7 +11,7 @@ all: clean build
 
 clean: clean_core clean_utils clean_api clean_tracer clean_scripts
 
-build: build_api build_core build_tracer build_scripts
+build: build_api build_intercept build_core build_tracer build_scripts
 
 build_intercept:
 	@cd src/core/ld_preloading; $(MAKE) build

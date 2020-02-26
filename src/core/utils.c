@@ -10,6 +10,11 @@ extern hashmap get_dilated_task_struct_by_pid;
 extern struct mutex exp_lock;
 
 
+void bind_to_cpu(struct task_struct * task, int target_cpu) {
+	if (target_cpu != -1)
+		set_cpus_allowed_ptr(task, cpumask_of(target_cpu));
+}
+
 
 char * alloc_mmap_pages(int npages)
 {
@@ -167,13 +172,8 @@ void set_children_cpu(struct task_struct *aTask, int cpu) {
 	/* set policy for all threads as well */
 	do {
 		if (t->pid != aTask->pid) {
-			if (cpu == -1) {
-
-				/* allow all cpus */
-				cpumask_setall(&t->cpus_allowed);
-			} else {
-				bitmap_zero((&t->cpus_allowed)->bits, 8);
-				cpumask_set_cpu(cpu, &t->cpus_allowed);
+			if (cpu != -1) {
+				bind_to_cpu(t, cpu);
 			}
 		}
 	} while_each_thread(me, t);
@@ -183,14 +183,8 @@ void set_children_cpu(struct task_struct *aTask, int cpu) {
 		if (taskRecurse->pid == 0) {
 			return;
 		}
-
-
 		if (cpu == -1) {
-			/* allow all cpus */
-			cpumask_setall(&taskRecurse->cpus_allowed);
-		} else {
-			bitmap_zero((&taskRecurse->cpus_allowed)->bits, 8);
-			cpumask_set_cpu(cpu, &taskRecurse->cpus_allowed);
+			bind_to_cpu(taskRecurse, cpu);
 		}
 		set_children_cpu(taskRecurse, cpu);
 	}

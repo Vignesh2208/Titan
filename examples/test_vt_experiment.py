@@ -39,7 +39,7 @@ def main():
 
     parser.add_argument('--num_progress_rounds', dest='num_progress_rounds',
                         help='Number of rounds to run', type=int,
-                        default=200)
+                        default=1)
 
     parser.add_argument('--exp_type', dest='exp_type',
         help='Number of rounds to run', type=int, default=EXP_CBE)
@@ -106,8 +106,7 @@ def main():
                 kf.progressBy(args.num_insns_per_round, step_size)
 
             num_finished_rounds += step_size
-            print "Ran %d rounds ..." %(num_finished_rounds),
-                  " elapsed time ...", float(time.time()) - start_time
+            print "Ran %d rounds ..." %(num_finished_rounds), " elapsed time ...", float(time.time()) - start_time
             time.sleep(0.1)
             raw_input("Press Enter to continue...")
 
@@ -120,8 +119,7 @@ def main():
     for fd in log_fds:
         os.close(fd)
 
-    print "Finished ! Logs of each ith tracer can be found "
-          "in /tmp/tracer_log_i.txt"
+    print "Finished ! Logs of each ith tracer can be found in /tmp/tracer_log_i.txt"
     
             
 

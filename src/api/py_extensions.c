@@ -61,7 +61,7 @@ static PyMethodDef vt_functions_methods[] = {
     {"getTimePID", py_gettime_pid, METH_VARARGS, NULL},
     {"stopExp", py_stopExp, METH_VARARGS, NULL},
     {"initializeExp", py_initializeExp, METH_VARARGS, NULL},
-    {"initializeVTExp", py_initializeExp, METH_VARARGS, NULL},
+    {"initializeVTExp", py_initializeVTExp, METH_VARARGS, NULL},
     {"progressBy", py_progress_by, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
 

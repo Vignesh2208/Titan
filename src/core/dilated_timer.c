@@ -73,7 +73,7 @@ void init_global_dilated_timer_timeline_bases(int total_num_timelines) {
       global_dilated_timer_timeline_bases[i] = 
         __alloc_global_dilated_timer_timeline_base(i, total_num_timelines);
     }
-    PDEBUG_E("Successfully Initialized All Timer Timeline Bases\n");
+    PDEBUG_I("Successfully Initialized All Timer Timeline Bases\n");
 }
 
 void free_global_dilated_timer_timeline_bases(int total_num_timelines) {

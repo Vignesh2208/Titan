@@ -29,5 +29,6 @@ struct dilated_task_struct * get_dilated_task_struct(
 struct dilated_task_struct * find_dilated_task_by_pid(int pid);
 
 int convert_string_to_array(char * str, int * arr, int arr_size);
+void bind_to_cpu(struct task_struct * task, int target_cpu);
 
 #endif

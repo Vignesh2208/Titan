@@ -5,6 +5,7 @@ RM:=rm
 
 	
 build:
+	@echo 'Building VT Intercept Library ...'
 	@gcc ${ldpreloading_dir}/intercept_lib.c \
 		${ldpreloading_dir}/vt_management.c -lsyscall_intercept \
 		-fpic -shared -o libvtintercept.so

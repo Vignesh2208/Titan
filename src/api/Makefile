@@ -17,9 +17,13 @@ build_api:
 
 	 @echo "Building VTL-Logic shared library ..."
 	 @gcc -w -c -Wall -Werror -fpic ${api_dir}/VT_functions.c \
-	 ${api_dir}/utility_functions.c ${api_dir}/vtl_logic.c
-	 @gcc -w -shared -lvtutils -o libvtllogic.so ${api_dir}/VT_functions.o \
-	 ${api_dir}/utility_functions.o ${api_dir}/vtl_logic.o
+	 ${api_dir}/utility_functions.c ${api_dir}/vtl_logic.c \
+	 ${api_dir}/utils/linkedlist.c ${api_dir}/utils/hashmap.c
+
+	 @gcc -w -shared -o libvtllogic.so ${api_dir}/VT_functions.o \
+	 ${api_dir}/utility_functions.o ${api_dir}/vtl_logic.o \
+	 ${api_dir}/utils/linkedlist.o ${api_dir}/utils/hashmap.o
+
 	 @mv libvtllogic.so /usr/lib
 	 @chmod 0777 /usr/lib/libvtllogic.so
 

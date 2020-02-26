@@ -1,8 +1,8 @@
 #ifndef __VT_LIB_H
 #define __VT_LIB_H
 
-#include <linkedlist.h>
-#include <hashmap.h>
+#include "utils/linkedlist.h"
+#include "utils/hashmap.h"
 
 #define EXIT_FAILURE -1
 

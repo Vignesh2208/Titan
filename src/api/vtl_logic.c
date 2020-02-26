@@ -1,8 +1,7 @@
 #include <stdio.h>
-#include <linkedlist.h>
-#include <hashmap.h>
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
 #include "VT_functions.h"
 #include "utility_functions.h"
 #include "vtl_logic.h"
@@ -40,7 +39,7 @@ void SleepForNS(int ThreadID, int64_t duration) {
     currBurstLength = vt_sleep_for(duration);
 
     if (currBurstLength <= 0)
-        HandleVTExpEnd();
+        HandleVTExpEnd(ThreadID);
 
     currThreadInfo->stack.totalBurstLength += currBurstLength;
 
@@ -64,8 +63,9 @@ s64 GetCurrentTime() {
     return get_current_vt_time();
 }
 
-void HandleVTExpEnd() {
-
+void HandleVTExpEnd(int ThreadID) {
+    printf("Process: %d exiting VT experiment !\n", ThreadID);
+    exit(0);
 }
 
 void CleanupThreadInfo(ThreadInfo * relevantThreadInfo) {
@@ -156,7 +156,7 @@ void ForceCompleteBurst(int ThreadID, int save) {
     currBurstLength = mark_burst_complete(0);
 
     if (currBurstLength <= 0)
-        HandleVTExpEnd();
+        HandleVTExpEnd(ThreadID);
 
     currThreadInfo->stack.totalBurstLength += currBurstLength;
 
@@ -184,7 +184,7 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     currBurstLength = finish_burst();
 
     if (currBurstLength <= 0)
-        HandleVTExpEnd();
+        HandleVTExpEnd(currThreadInfo->pid);
 
     currThreadInfo->stack.totalBurstLength += currBurstLength;
 
@@ -212,7 +212,7 @@ void AfterForkInChild(int ThreadID) {
         }
     }
 
-    currThreadInfo = AllocThreadInfo(ThreadID);
+    currThreadInfo = AllotThreadInfo(ThreadID);
 
     assert(globalTracerID != -1);
     add_to_tracer_sq(globalTracerID);
@@ -221,7 +221,7 @@ void AfterForkInChild(int ThreadID) {
 
 void ThreadStart(int ThreadID) {
 
-    AllocThreadInfo(ThreadID);
+    AllotThreadInfo(ThreadID);
     assert(globalTracerID != -1);
     add_to_tracer_sq(globalTracerID);
     SignalBurstCompletion(ThreadID, 0);
@@ -270,7 +270,7 @@ void TriggerSyscallWait(int ThreadID, int save) {
     }
 
     if (trigger_syscall_wait() <= 0)
-        HandleVTExpEnd();
+        HandleVTExpEnd(ThreadID);
 }
 
 void TriggerSyscallFinish(int ThreadID) {
@@ -281,7 +281,7 @@ void TriggerSyscallFinish(int ThreadID) {
     currBurstLength = mark_burst_complete(1);
 
     if (currBurstLength <= 0)
-        HandleVTExpEnd();
+        HandleVTExpEnd(ThreadID);
 
     currThreadInfo->stack.totalBurstLength += currBurstLength;
     // restore globals

@@ -34,6 +34,8 @@ extern int cleanup_experiment_components(void);
 
 
 
+
+
 struct task_struct* get_task_ns(pid_t pid, struct task_struct * parent) {
 	if (!parent)
 		return NULL;
@@ -271,8 +273,11 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	tracee_dilated_task_struct->associated_tracer = tracer_entry;
 	
 	llist_append(&tracer_entry->schedule_queue, new_elem);
-	bitmap_zero((&tracee->cpus_allowed)->bits, 8);
-	cpumask_set_cpu(tracer_entry->cpu_assignment, &tracee->cpus_allowed);
+	//bitmap_zero((&tracee->cpus_allowed)->bits, 8);
+	//cpumask_set_cpu(tracer_entry->cpu_assignment, &tracee->cpus_allowed);
+
+	bind_to_cpu(tracee, tracer_entry->cpu_assignment);
+
 	hmap_put_abs(&get_dilated_task_struct_by_pid, current->pid,
 				tracee_dilated_task_struct);
 	PDEBUG_I("add_to_tracer_schedule_queue:  Tracee %d added successfully to "
@@ -420,10 +425,10 @@ int register_tracer_process(char * write_buffer) {
 	PDEBUG_I("Register Tracer: ID: %d assigned timeline: %d\n",
 			 new_tracer->tracer_id, new_tracer->timeline_assignment);
 
-	bitmap_zero((&current->cpus_allowed)->bits, 8);
+	//bitmap_zero((&current->cpus_allowed)->bits, 8);
 	get_tracer_struct_write(new_tracer);
-	cpumask_set_cpu(new_tracer->timeline_assignment, &current->cpus_allowed);
-
+	//cpumask_set_cpu(new_tracer->timeline_assignment, &current->cpus_allowed);
+	bind_to_cpu(current, new_tracer->timeline_assignment);
 
 	//add_to_tracer_schedule_queue(new_tracer, current->pid);
 

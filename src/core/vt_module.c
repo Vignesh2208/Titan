@@ -270,7 +270,9 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
   tracer *curr_tracer;
   int tracer_id;
   ktime_t duration;
-  struct dilated_task_struct * dilated_task = get_dilated_task_struct(current);
+  struct dilated_task_struct * dilated_task;
+  
+  
 	
   memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
   memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
@@ -295,6 +297,12 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
     err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
 
   if (err) return -EFAULT;
+
+  if (cmd != VT_INITIALIZE_EXP) {
+    dilated_task = get_dilated_task_struct(current);
+  } else {
+    dilated_task = NULL;
+  }
 
   switch (cmd) {
     case VT_UPDATE_TRACER_CLOCK:
