@@ -1,1 +1,1 @@
-/usr/bin/x86_vt_spinner
+/bin/x86_vt_spinner > /tmp/spinner_log.txt

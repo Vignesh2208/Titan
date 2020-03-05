@@ -9,7 +9,7 @@ build_api:
 	 @gcc -w -shared -o libvtapi.so ${api_dir}/VT_functions.o \
 	 ${api_dir}/utility_functions.o
 	 @mv libvtapi.so /usr/lib
-	 @chmod 0777 /usr/lib/libvtapi.so
+	 @chmod 777 /usr/lib/libvtapi.so
 
 	 @cp ${api_dir}/VT_functions.h /usr/local/include
 	 @cp ${api_dir}/utility_functions.h /usr/local/include
@@ -25,7 +25,7 @@ build_api:
 	 ${api_dir}/utils/linkedlist.o ${api_dir}/utils/hashmap.o
 
 	 @mv libvtllogic.so /usr/lib
-	 @chmod 0777 /usr/lib/libvtllogic.so
+	 @chmod 777 /usr/lib/libvtllogic.so
 
 	 @python setup.py install
 

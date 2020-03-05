@@ -102,7 +102,7 @@ int dilated_hrtimer_forward(struct hrtimer_dilated *timer, ktime_t interval) {
 struct dilated_timer_timeline_base *get_timeline_base(int timeline_id) {
   if (timeline_id < 0)
     return NULL;
-  if (timeline_id >= 
+  if (timeline_id > 
     global_dilated_timer_timeline_bases[0]->total_num_timelines) {
     PDEBUG_E("Specified Timeline does not exist !\n");
     return NULL;
@@ -427,7 +427,7 @@ int dilated_hrtimer_sleep(ktime_t duration) {
 	}
 
   struct dilated_task_struct * dilated_task = hmap_get_abs(
-    &get_dilated_task_struct_by_pid, current->pid);
+    &get_dilated_task_struct_by_pid, (int)current->pid);
   
   if (!dilated_task)
     return 0;

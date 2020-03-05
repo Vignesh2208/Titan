@@ -85,6 +85,7 @@ def main():
         print "Starting tracer: %d" %(i + 1)
         start_new_dilated_process(i + 1, i, cmds_to_run[i], log_fds[i],
                                   args.exp_type)
+    raw_input('Press any key to continue !')
     
     print "Synchronizing anf freezing tracers ..."
     while kf.synchronizeAndFreeze() <= 0:

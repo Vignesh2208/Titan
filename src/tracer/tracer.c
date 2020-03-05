@@ -44,17 +44,21 @@ int run_command_under_vt_management(char *orig_command_str, pid_t *child_pid,
   int token_found = 0;
   int ret;
   int fd;
+  int matched_quotes = 1;
   pid_t child;
 
   memset(tracer_id_env_variable, 0,  sizeof(char) * MAX_STRING_SIZE);
   memset(timeline_id_env_variable, 0, sizeof(char) * MAX_STRING_SIZE);
   memset(exp_type_env_variable, 0, sizeof(char) * MAX_STRING_SIZE);
+  memset(full_command_str, 0, sizeof(char) * MAX_COMMAND_LENGTH);
 
-  sprintf(tracer_id_env_variable, "VT_TRACER_ID=%d", tracer_id);
-  sprintf(timeline_id_env_variable, "VT_TIMELINE_ID=%d", timeline_id);
-  sprintf(exp_type_env_variable, "VT_EXP_TYPE=%d", exp_type);
+  sprintf(tracer_id_env_variable, "%d", tracer_id);
+  sprintf(timeline_id_env_variable, "%d", timeline_id);
+  sprintf(exp_type_env_variable, "%d", exp_type);
   
-  while (full_command_str[i] != '\0') {
+  memcpy(full_command_str, orig_command_str, MAX_STRING_SIZE);
+
+  while (full_command_str[i] != '\0' && full_command_str[i] != '\n') {
     if (i != 0 && full_command_str[i - 1] != ' ' &&
         full_command_str[i] == ' ') {
       n_tokens++;
@@ -73,12 +77,19 @@ int run_command_under_vt_management(char *orig_command_str, pid_t *child_pid,
   i = 0;
 
   while (full_command_str[i] != '\n' && full_command_str[i] != '\0') {
+
+    if (full_command_str[i] == '"') {
+	if (!matched_quotes)
+		matched_quotes = 1;
+	else
+		matched_quotes = 0;
+    }
     if (i == 0) {
       args[0] = full_command_str;
       token_no++;
       token_found = 1;
     } else {
-      if (full_command_str[i] == ' ') {
+      if (full_command_str[i] == ' ' && matched_quotes) {
         full_command_str[i] = '\0';
         token_found = 0;
       } else if (token_found == 0) {
@@ -103,7 +114,7 @@ int run_command_under_vt_management(char *orig_command_str, pid_t *child_pid,
       if (strcmp(args[i], ">>") == 0 || strcmp(args[i], ">") == 0) {
         args[i] = '\0';
         if (args[i + 1]) {
-          if ((fd = open(args[i + 1], O_RDWR | O_CREAT)) == -1) {
+          if ((fd = open(args[i + 1], O_RDWR | O_CREAT, 0666)) == -1) {
             perror("open");
             exit(FAIL);
           }
@@ -123,14 +134,21 @@ int run_command_under_vt_management(char *orig_command_str, pid_t *child_pid,
           close(fd);
         }
       }
+      printf("args[%d] = %s\n", i, args[i]);
       i++;
+   
     }
-    fflush(stdout);
-    fflush(stderr);
-    setenv("VT_TRACER_ID", tracer_id_env_variable, 1);
+    
+    if (setenv("VT_TRACER_ID", tracer_id_env_variable, 1) < 0 ) {
+	    perror("Failed to set env variable : ");
+    }
     setenv("VT_TIMELINE_ID", timeline_id_env_variable, 1);
     setenv("VT_EXP_TYPE", exp_type_env_variable, 1);
     setenv("LD_PRELOAD", "/usr/lib/libvtintercept.so", 1);
+
+    printf("Starting Command: %s\n", args[0]);
+    fflush(stdout);
+    fflush(stderr);
 
     execve(args[0], &args[0], environ);
     free(args);
@@ -158,10 +176,10 @@ int main(int argc, char * argv[]) {
 
 	size_t len = 0;
 	int tracer_id = 0, timeline_id, exp_type;
-	char command[MAX_BUF_SIZ];
+	char command[MAX_STRING_SIZE];
 	int option = 0;
 	int i, status;
-  pid_t controlled_pid;
+  	pid_t controlled_pid;
 
 
 	if (argc < 4 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
@@ -174,12 +192,12 @@ int main(int argc, char * argv[]) {
 		switch (option) {
 		case 'i' : tracer_id = atoi(optarg);
 			break;
-    case 't' : timeline_id = atoi(optarg);
-      break;
-    case 'e' : exp_type = atoi(optarg);
-      break;
+		case 't' : timeline_id = atoi(optarg);
+			break;
+		case 'e' : exp_type = atoi(optarg);
+			break;
 		case 'c' : memset(command, 0, sizeof(char)*MAX_BUF_SIZ);
-			sprintf(command, "%s\n", optarg);
+			sprintf(command, "%s", optarg);
 			break;
 		case 'h' :
 		default: print_usage(argc, argv);
@@ -205,24 +223,25 @@ int main(int argc, char * argv[]) {
     exit(FAIL);
   }
 
-	run_command_under_vt_management(
+  run_command_under_vt_management(
     command, &controlled_pid, tracer_id, timeline_id, exp_type);
-	printf("TracerID: %d, Started Command: %s", tracer_id, command);
+  printf("TracerID: %d, Started Command: %s, PID = %d\n", tracer_id, command,
+    controlled_pid);
 
-	// Block here with a call to VT-Module
-	printf("Waiting for exit !\n");
-	fflush(stdout);
-	if (wait_for_exit(tracer_id) < 0) {
-		printf("ERROR: IN Wait for exit. Thats not good !\n");
-	}
-	// Resume from Block. Send KILL Signal to each child.
+  // Block here with a call to VT-Module
+  printf("Waiting for exit !\n");
+  fflush(stdout);
+  if (wait_for_exit(tracer_id) < 0) {
+	  printf("ERROR: IN Wait for exit. Thats not good !\n");
+  }
+  // Resume from Block. Send KILL Signal to each child.
   // TODO: Think of a more gracefull way to do this.
-	printf("Resumed from Wait for Exit! Waiting for processes to finish !\n");
-	fflush(stdout);
-	
-	kill(controlled_pid, SIGKILL);
-	waitpid(controlled_pid, &status, 0);
-	 
+  printf("Resumed from Wait for Exit! Waiting for processes to finish !\n");
+  fflush(stdout);
+
+  kill(controlled_pid, SIGKILL);
+  waitpid(controlled_pid, &status, 0);
+ 
   printf("Exiting Tracer: %d\n", tracer_id);
-	return 0;
+  return 0;
 }

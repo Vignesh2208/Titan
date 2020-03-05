@@ -5,7 +5,7 @@ build:
 	@chmod 777 bin/x64_synchronizer
 	@cp bin/x64_synchronizer /bin/
 	@cp bin/x86_vt_spinner /bin/
-	
+	@chmod 777 /bin/x86_vt_spinner
 
 clean:
 	@rm -f /bin/x64_synchronizer

@@ -11,8 +11,8 @@ extern struct mutex exp_lock;
 
 
 void bind_to_cpu(struct task_struct * task, int target_cpu) {
-	if (target_cpu != -1)
-		set_cpus_allowed_ptr(task, cpumask_of(target_cpu));
+	/*if (target_cpu != -1)
+		set_cpus_allowed_ptr(task, cpumask_of(target_cpu));*/
 }
 
 
@@ -87,7 +87,7 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id) {
 	if (!new_tracer)
 		return;
 
-	struct dilated_task_struct * main_task;
+	/*struct dilated_task_struct * main_task;
 
 	main_task = (struct dilated_task_struct *)kmalloc(
 		sizeof(struct dilated_task_struct), GFP_KERNEL);
@@ -114,8 +114,9 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id) {
 	new_tracer->round_overshoot = 0;
 	new_tracer->w_queue_wakeup_pid = 0;
 	new_tracer->running_task_lookahead = 0;
-	new_tracer->last_run = NULL;
-	new_tracer->main_task = main_task;
+	new_tracer->last_run = NULL;*/
+	new_tracer->main_task = NULL;
+	//new_tracer->main_task = main_task;
 
 	llist_destroy(&new_tracer->schedule_queue);
 	llist_destroy(&new_tracer->run_queue);
@@ -258,7 +259,7 @@ int kill_p(struct task_struct *killTask, int sig) {
 	info.si_code = SI_USER;
 	if (killTask) {
 		if ((returnVal = send_sig_info(sig, &info, killTask)) != 0) {
-			PDEBUG_E("Kill: Error sending kill msg for pid %d\n",
+			PDEBUG_I("Kill: Error sending kill msg for pid %d\n",
 			         killTask->pid);
 		}
 	}
@@ -266,7 +267,7 @@ int kill_p(struct task_struct *killTask, int sig) {
 }
 
 
-tracer * get_tracer_for_task(struct task_struct * aTask) {
+/*tracer * get_tracer_for_task(struct task_struct * aTask) {
 
 	if (!aTask || experiment_status != RUNNING)
 		return NULL;
@@ -276,7 +277,7 @@ tracer * get_tracer_for_task(struct task_struct * aTask) {
 	if (dilated_task)
 		return (tracer *)dilated_task->associated_tracer;
 	return NULL;
-}
+}*/
 
 
 void get_tracer_struct_read(tracer* tracer_entry) {
@@ -303,17 +304,18 @@ void put_tracer_struct_write(tracer* tracer_entry) {
 	}
 }
 
-struct dilated_task_struct * get_dilated_task_struct(
+/*struct dilated_task_struct * get_dilated_task_struct(
 	struct task_struct * task) {
 	if (!task)
 		return NULL;
-	return hmap_get_abs(&get_dilated_task_struct_by_pid, task->pid);
+	return (struct dilated_task_struct * )hmap_get_abs(&get_dilated_task_struct_by_pid, task->pid);
 }
 
 
 struct dilated_task_struct * find_dilated_task_by_pid(int pid) {
-	return get_dilated_task_struct(find_task_by_pid(pid));
+	return (struct dilated_task_struct *) hmap_get_abs(&get_dilated_task_struct_by_pid, pid);
 }
+*/
 
 int convert_string_to_array(char * str, int * arr, int arr_size) 
 { 

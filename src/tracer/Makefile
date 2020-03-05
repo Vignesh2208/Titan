@@ -11,7 +11,7 @@ RM:=rm
 build_tracer:
 	@gcc ${tracer_dir}/tracer.c -o tracer -lpthread -lvtapi
 	@mv tracer /usr/bin
-	
+	@chmod 777 /usr/bin/tracer
 clean: 
 	@rm -f *.o > /dev/null
 	@rm -f /usr/bin/tracer > /dev/null

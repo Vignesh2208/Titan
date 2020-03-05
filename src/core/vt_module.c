@@ -186,7 +186,7 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count,
 	int ret = 0;
 	int num_integer_args;
   int api_integer_args[MAX_API_ARGUMENT_SIZE];
-  struct dilated_task_struct * dilated_task = get_dilated_task_struct(current);
+  struct dilated_task_struct * dilated_task = hmap_get_abs(&get_dilated_task_struct_by_pid, (int)current->pid);
 	
 
  	if(count > MAX_API_ARGUMENT_SIZE) {
@@ -270,20 +270,24 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
   tracer *curr_tracer;
   int tracer_id;
   ktime_t duration;
-  struct dilated_task_struct * dilated_task;
+  struct dilated_task_struct * dilated_task = NULL;
   
   
 	
   memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
   memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
 
-  PDEBUG_V("VT-IO: Got ioctl from : %d\n", current->pid);
+  PDEBUG_V("VT-IO: Got ioctl from : %d, Cmd = %u\n",
+          current->pid, cmd);
 
   /*
    * extract the type and number bitfields, and don't decode
    * wrong cmds: return ENOTTY (inappropriate ioctl) before access_ok()
    */
-  if (_IOC_TYPE(cmd) != VT_IOC_MAGIC) return -ENOTTY;
+  if (_IOC_TYPE(cmd) != VT_IOC_MAGIC) {
+	PDEBUG_V("VT-IO: Error ENOTTY\n");
+	return -ENOTTY;
+  }
 
   /*
    * the direction is a bitmask, and VERIFY_WRITE catches R/W
@@ -296,18 +300,25 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
   else if (_IOC_DIR(cmd) & _IOC_WRITE)
     err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
 
-  if (err) return -EFAULT;
+  if (err) {
+	PDEBUG_V("VT-IO: Error Access\n");
+	return -EFAULT;
+  }
 
   if (cmd != VT_INITIALIZE_EXP) {
-    dilated_task = get_dilated_task_struct(current);
+    dilated_task = hmap_get_abs(&get_dilated_task_struct_by_pid, (int)current->pid);
+    if (cmd == VT_WRITE_RESULTS && dilated_task) {
+	PDEBUG_V("Attempting to access dilated_task !\n");
+	PDEBUG_V("Dilated task tracer -id = %d\n", dilated_task->associated_tracer_id);
+    }
   } else {
     dilated_task = NULL;
   }
 
   switch (cmd) {
+	/*
     case VT_UPDATE_TRACER_CLOCK:
       // Only registered tracer process can invoke this ioctl
-
       if (initialization_status != INITIALIZED ||
           experiment_status == NOTRUNNING) {
         PDEBUG_I(
@@ -344,11 +355,14 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       curr_tracer->curr_virtual_time += api_info_tmp.return_value;
       set_children_time(curr_tracer, curr_tracer->curr_virtual_time, 0);
       return 0;
-
+	*/
     case VT_WRITE_RESULTS:
       // A registered tracer process or one of the processes in a tracer's
       // schedule queue can invoke this ioctl For INSVT tracer type, only the
       // tracer process can invoke this ioctl
+
+      PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d Entering !\n",
+          tracer_id, current->pid);
 
       if (initialization_status != INITIALIZED) {
         PDEBUG_I("VT_WRITE_RESULTS: Operation cannot be performed when "
@@ -356,17 +370,24 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
 
+      PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d Before Checks !\n",
+              tracer_id, current->pid);
       if (!dilated_task || dilated_task->associated_tracer_id <= 0) {
-        PDEBUG_E("VT_WRITE_RESULTS: Process is not associated with "
+        PDEBUG_I("VT_WRITE_RESULTS: Process is not associated with "
                  "any tracer !\n");
         return -EFAULT;
       }
 
+      PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d After Check-1 !\n",
+              tracer_id, current->pid);
       api_info = (invoked_api *)arg;
       if (!api_info) return -EFAULT;
       if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
         return -EFAULT;
       }
+
+      PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d After Checks !\n",
+              tracer_id, current->pid);
 
       num_integer_args = convert_string_to_array(
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
@@ -378,6 +399,8 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
 
+      PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d Handling results !\n",
+              tracer_id, current->pid);
       handle_write_results_cmd(dilated_task, api_integer_args,
                                num_integer_args);
 
@@ -448,11 +471,13 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       atomic_inc(&n_waiting_tracers);
       wake_up_interruptible(&progress_sync_proc_wqueue);
       return 0;
-
+	/*
     case VT_ADD_PROCESSES_TO_SQ:
       // Any process can invoke this call.
 
-      if (initialization_status != INITIALIZED &&
+      PDEBUG_V("VT_ADD_PROCESSES_TO_SQ: Entering !\n");
+
+      if (initialization_status != INITIALIZED ||
           experiment_status == STOPPING) {
         PDEBUG_I(
             "VT_ADD_PROCESSES_TO_SQ: Operation cannot be performed when "
@@ -486,8 +511,10 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         add_to_tracer_schedule_queue(curr_tracer, api_integer_args[i]);
       }
       put_tracer_struct_write(curr_tracer);
-      return 0;
 
+      PDEBUG_V("VT_ADD_PROCESSES_TO_SQ: Finished Successfully !\n");
+      return 0;
+	*/
     case VT_SYNC_AND_FREEZE:
       // Any process can invoke this call.
       if (initialization_status != INITIALIZED) {
@@ -538,7 +565,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       return handle_initialize_exp_cmd(api_integer_args[0],
         api_integer_args[1], api_integer_args[2]);
-
+	/*
     case VT_GETTIME_PID:
       // Any process can invoke this call.
 
@@ -567,7 +594,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
       return 0;
-
+	*/
     case VT_STOP_EXP:
       // Any process can invoke this call.
       if (initialization_status != INITIALIZED) {
@@ -665,7 +692,6 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       timeline_id = api_integer_args[0];
       return progress_timeline_by(timeline_id, api_info_tmp.return_value);
-
     case VT_WAIT_FOR_EXIT:
 
       if (initialization_status != INITIALIZED) {
@@ -675,9 +701,9 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
 
-      if (!dilated_task || dilated_task->associated_tracer_id <= 0) {
-        PDEBUG_I("VT_WAIT_FOR_EXIT: Process is not associated with "
-                 "any tracer !\n");
+      if (dilated_task && dilated_task->associated_tracer_id > 0) {
+        PDEBUG_I("VT_WAIT_FOR_EXIT: Process is already associated with "
+                 "a tracer. It cannot invoke this command !\n");
         return -EFAULT;
       }
 
@@ -696,18 +722,14 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       }
 
       tracer_id = api_integer_args[0];
-      curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
-      if (!curr_tracer) {
-        PDEBUG_I("VT_WAIT_FOR_EXIT: Tracer : %d, not registered\n", tracer_id);
-        return -EFAULT;
-      }
+      PDEBUG_V("VT_WAIT_FOR_EXIT: Tracer : %d "
+               "starting wait for exit\n", tracer_id);
 
-      wait_event_interruptible(*curr_tracer->w_queue,
-                               dilated_task->associated_tracer_id <= 0);
-      PDEBUG_V("VT_WAIT_FOR_EXIT: Tracer : %d, Process: %d, "
-               "resuming from wait for exit\n", tracer_id, current->pid);
-      hmap_remove_abs(&get_dilated_task_struct_by_pid, current->pid);
-      kfree(dilated_task);
+      wait_event_interruptible(*timeline_info[0].w_queue,
+                               timeline_info[0].stopping == 1);
+      PDEBUG_V("VT_WAIT_FOR_EXIT: Tracer : %d "
+               "resuming from wait for exit\n", tracer_id);
+      
       return 0;
 
     case VT_SLEEP_FOR:
@@ -851,6 +873,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         "resuming from wait\n", tracer_id, current->pid);
 
       return 0;
+	/*
 
     case VT_GETTIME_MY_PID:
       // Any process can invoke this call.
@@ -871,7 +894,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       api_info = (invoked_api *)arg;
       if (!api_info) return -EFAULT;
-      if (copy_from_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+      if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
         return -EFAULT;
       }
       api_info_tmp.return_value = handle_gettimepid(current->pid);
@@ -880,12 +903,14 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
       return 0;
-
+	*/
     case VT_ADD_TO_SQ:
       // Any process can invoke this call.
 
+      PDEBUG_V("VT_ADD_TO_SQ: Entering !\n");
+
       if (initialization_status != INITIALIZED
-        && experiment_status == STOPPING) {
+        || experiment_status == STOPPING) {
         PDEBUG_I(
             "VT_ADD_TO_SQ: Operation cannot be performed when experiment is "
             "not initialized !\n");
@@ -914,6 +939,13 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       get_tracer_struct_write(curr_tracer);
       add_to_tracer_schedule_queue(curr_tracer, current->pid);
       put_tracer_struct_write(curr_tracer);
+
+      dilated_task = hmap_get_abs(&get_dilated_task_struct_by_pid, (int)current->pid);
+      PDEBUG_V("Dilated task address = %x\n", dilated_task);
+      BUG_ON(!dilated_task);
+      BUG_ON(dilated_task->associated_tracer_id != tracer_id);
+
+      PDEBUG_V("VT_ADD_TO_SQ: Finished Successfully !\n");
       return 0;
 
     case VT_SYSCALL_WAIT:
@@ -1001,10 +1033,9 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       PDEBUG_V(
         "VT_SYSCALL_WAIT: Associated Tracer : %d, Process: %d, "
         "resuming from wait\n", tracer_id, current->pid);
-
       return 0;
-    
     default:
+      PDEBUG_V("Unkown Command !\n");
       return -ENOTTY;
   }
 
@@ -1024,6 +1055,7 @@ int __init my_module_init(void) {
   experiment_type = NOT_SET;
   initialization_status = NOT_INITIALIZED;
   experiment_status = NOTRUNNING;
+  tracer_num = 0;
 
   /* Set up Kronos status file in /proc */
   dilation_dir = proc_mkdir_mode(DILATION_DIR, 0555, NULL);

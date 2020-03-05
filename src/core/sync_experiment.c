@@ -239,6 +239,7 @@ void free_all_tracers() {
     int i;
 	llist_elem * head;
 	lxc_schedule_elem * curr_elem;
+    PDEBUG_V("Freeing previous tracer's and its children !\n");
     for (i = 1; i <= tracer_num; i++) {
         tracer * curr_tracer = hmap_get_abs(&get_tracer_by_id, i);
 		head = curr_tracer->schedule_queue.head;
@@ -272,7 +273,7 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 
 	int i;
 	int j;
-    int num_required_pages;
+        int num_required_pages;
 	int num_prev_alotted_pages;
 
 	PDEBUG_V("Entering Experiment Initialization\n");
@@ -298,10 +299,10 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 
     if (tracer_num > 0) {
         // Free all tracer structs from previous experiment
-        free_all_tracers();
-        tracer_num = 0;
+        free_all_tracers();        
     }
 
+	tracer_num = 0;
 	experiment_type = exp_type;
 
 	if (experiment_type == EXP_CBE)
@@ -336,7 +337,7 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 		init_waitqueue_head(&syscall_wait_wqueue[i]);
 	}
 
-	init_global_dilated_timer_timeline_bases(total_num_timelines);
+	//init_global_dilated_timer_timeline_bases(total_num_timelines);
 
 	per_timeline_chain_length =
 		(int *) kmalloc(total_num_timelines * sizeof(int), GFP_KERNEL);
@@ -367,12 +368,13 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 		timeline_info[i].w_queue = &timeline_worker_wqueue[i];
 		timeline_info[i].status = 0;
 		timeline_info[i].nxt_round_burst_length = 0;
+		timeline_info[i].stopping = 0;
 		per_timeline_chain_length[i] = 0;
-        values[i] = i;
+        	values[i] = i;
 	}
 
 
-    virt_exp_start_time = 0;
+        virt_exp_start_time = 0;
 
 	mutex_init(&exp_lock);
 	hmap_init(&get_tracer_by_id, "int", 0);
@@ -388,7 +390,7 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 
 	PDEBUG_V("Init experiment components: Initialized Variables\n");
 
-
+	
 	for (i = 0; i < total_num_timelines; i++) {
 		PDEBUG_A("Init experiment components: Adding Timeline Worker %d\n", i);
 		chaintask[i] = kthread_create(&per_timeline_worker, &values[i],
@@ -404,7 +406,8 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 
 	experiment_status = NOTRUNNING;
 	initialization_status = INITIALIZED;
-    total_expected_tracers = num_expected_tracers;
+        total_expected_tracers = num_expected_tracers;
+        
 
 	PDEBUG_V("Init experiment components: Finished\n");
 	return SUCCESS;
@@ -708,7 +711,7 @@ void prune_tracer_queue(tracer * curr_tracer, int is_schedule_queue){
 
 		if (!curr_elem)
 			return;
-		task = search_tracer(curr_tracer->main_task, curr_elem->pid);
+		task = search_tracer(curr_tracer->main_task->base_task, curr_elem->pid);
 		if (!task){
 			PDEBUG_I("Clean up irrelevant processes: "
 				     "Curr elem: %d. Task is dead\n", curr_elem->pid);
@@ -1081,10 +1084,14 @@ void clean_exp() {
 			clean_up_run_queue(curr_tracer);
 			clean_up_schedule_list(curr_tracer);
 			put_tracer_struct_write(curr_tracer);
+			curr_tracer->tracer_pid = -1;
 			wake_up_interruptible(curr_tracer->w_queue);
 		}
 	}
 	mutex_unlock(&exp_lock);
+
+	timeline_info[0].stopping = 1;
+	wake_up_interruptible(timeline_info[0].w_queue);
 	experiment_status = NOTRUNNING;
 	PDEBUG_I("Clean exp: Cleaning up finished ...");
 

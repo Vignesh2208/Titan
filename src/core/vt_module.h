@@ -60,6 +60,7 @@ typedef struct timeline_struct {
 	int timeline_id;
 	s64 nxt_round_burst_length;
 	int status;
+	int stopping;
 	wait_queue_head_t * w_queue;
 } timeline;
 

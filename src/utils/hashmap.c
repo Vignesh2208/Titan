@@ -190,6 +190,7 @@ void* hmap_get_abs(hashmap * h, int key) {
 			if (temp->value == NULL)
 				printk(KERN_INFO "HMAP: Value exists but is NULL\n");
 			spin_unlock(&h->hmap_lock);
+			printk(KERN_INFO "Found HMAP Value. Returning: %x\n", temp->value);
 			return temp->value;
 		}
 		head = head->next;

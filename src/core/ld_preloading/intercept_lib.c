@@ -37,6 +37,7 @@ extern s64 * globalCurrBurstLength;
 extern s64 * globalCurrBBID;
 extern s64 * globalPrevBBID;
 extern s64 * globalCurrBBSize;
+extern int * vtInitialized;
 extern int * vtAlwaysOn;
 extern int * vtGlobalTracerID;
 extern int * vtGlobalTimelineID;
@@ -122,8 +123,9 @@ static int fake_main(int argc, char **argv, char **envp)
 	 * process termination */
 	atexit(my_exit);
 	int ThreadPID = syscall(SYS_gettid);
-    printf ("Starting main program: Pid = %d\n", ThreadPID);
+    	printf ("Starting main program: Pid = %d\n", ThreadPID);
 	initialize_vtl();
+	*vtInitialized = 1;
 	vtAfterForkInChild(ThreadPID);
 	/* Finally call the real main function */
 	return real_main(argc, argv, envp);
@@ -252,6 +254,7 @@ int __libc_start_main(int (*main) (int, char **, char **),
 		_exit(EXIT_FAILURE);
 	}
 
+	printf("Loading orig functions !\n");
 	load_orig_functions();
 
 	/* Note that we swap fake_main in for main - fake_main should call
@@ -508,13 +511,15 @@ static void execute_cpu_yielding_syscall(long syscall_number, long arg0,
 	long arg1, long arg2, long arg3, long arg4, long arg5, long *result,
 	int ThreadPID) {
 
-	
-	vtYieldVTBurst(ThreadPID, 1);
+	if (vtInitialized && *vtInitialized == 1)
+		vtYieldVTBurst(ThreadPID, 1);
 
 	
 	*result = syscall_no_intercept(syscall_number, arg0, arg1, arg2, arg3, arg4,
 								   arg5);
-	vtForceCompleteBurst(ThreadPID, 0);
+
+	if (vtInitialized && *vtInitialized == 1)
+		vtForceCompleteBurst(ThreadPID, 0);
 }
 
 static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
@@ -523,17 +528,19 @@ static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
 	int ThreadPID = 0;
 	
 
-	if (syscall_number == SYS_write
-		|| syscall_number == SYS_sendto
+	if (syscall_number == SYS_sendto
+		//|| syscall_number == SYS_write
 		|| syscall_number == SYS_sendmsg
 		|| syscall_number == SYS_sendmmsg) {
 		ThreadPID = syscall_no_intercept(SYS_gettid);
-		vtMarkCurrBBL(ThreadPID);
+
+		if (vtInitialized && *vtInitialized == 1)
+			vtMarkCurrBBL(ThreadPID);
 	}
 
 	if (syscall_number == SYS_futex
 		|| syscall_number == SYS_read
-		|| syscall_number == SYS_write
+		//|| syscall_number == SYS_write
 		|| syscall_number == SYS_wait4
 		|| syscall_number == SYS_waitid
 		|| syscall_number == SYS_recvfrom
@@ -560,5 +567,7 @@ static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
 
 static __attribute__((constructor)) void init(void) {
 	// Set up the callback function
+
+	vtInitialized = NULL;
 	intercept_hook_point = hook;
 }

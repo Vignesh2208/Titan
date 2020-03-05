@@ -10,6 +10,7 @@ build:
 		${ldpreloading_dir}/vt_management.c -lsyscall_intercept \
 		-fpic -shared -o libvtintercept.so
 	@mv libvtintercept.so /usr/lib
+	@chmod 777 /usr/lib/libvtintercept.so
 	
 clean: 
 	@rm -f *.o > /dev/null

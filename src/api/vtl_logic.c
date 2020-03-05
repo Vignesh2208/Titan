@@ -10,6 +10,7 @@ long long currBurstLength = 0;
 long long currBBID = 0;
 long long prevBBID = 0;
 long long currBBSize = 0;
+int vtInitializationComplete = 0;
 int alwaysOn = 1;
 int globalTracerID = -1;
 int globalTimelineID = -1;
@@ -381,8 +382,10 @@ void initialize_vt_management() {
     char * exp_type_str = getenv("VT_EXP_TYPE");
     int tracer_id;
     int timeline_id;
-    int exp_type;
+    int exp_type, ret;
     int my_pid = syscall(SYS_gettid);
+
+    printf("Starting VT-initialization !\n");
 
     if (!tracer_id_str) {
         printf("Missing Tracer ID !\n");
@@ -394,7 +397,9 @@ void initialize_vt_management() {
         exit(EXIT_FAILURE);
     }
 
+    printf ("Tracer-ID String: %s\n", tracer_id_str);
     tracer_id = atoi(tracer_id_str);
+    fflush(stdout);
     if (tracer_id <= 0) {
         printf("Tracer ID must be positive: Received Value: %d\n", tracer_id);
         exit(EXIT_FAILURE);
@@ -411,8 +416,9 @@ void initialize_vt_management() {
         exit(EXIT_FAILURE);
     }
 
-    if (!timeline_id_str) {
-        register_tracer(tracer_id, EXP_CBE, 0);
+    if (exp_type == EXP_CBE) {
+        ret = register_tracer(tracer_id, EXP_CBE, 0);
+	printf("Tracer registration EXP_CBE complete. Return = %d\n", ret);
     } else {
         timeline_id = atoi(timeline_id_str);
         if (timeline_id < 0) {
@@ -420,9 +426,12 @@ void initialize_vt_management() {
                     timeline_id);
             exit(EXIT_FAILURE);
         }
-        register_tracer(tracer_id, EXP_CS, timeline_id);
+        ret = register_tracer(tracer_id, EXP_CS, timeline_id);
         globalTimelineID = timeline_id;
+	printf("Tracer registration EXP_CS complete. Return = %d\n", ret);
     }
+    printf("Tracer Adding to SQ. Tracer ID = %d\n", tracer_id);
+    fflush(stdout);
 
     if (add_to_tracer_sq(tracer_id) < 0) {
         printf("Failed To add tracee to tracer schedule queue for pid: %d\n",
@@ -430,6 +439,8 @@ void initialize_vt_management() {
     }
 
     globalTracerID = tracer_id;
+    printf("VT initialization successfull !\n");
+    fflush(stdout);
 
     // Initializing helper data structures
     hmap_init(&thread_info_map, 1000);

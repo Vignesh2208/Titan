@@ -8,6 +8,7 @@ s64 * globalCurrBBSize;
 int * vtAlwaysOn;
 int * vtGlobalTracerID;
 int * vtGlobalTimelineID;
+int * vtInitialized;
 
 
 
@@ -94,7 +95,7 @@ void load_all_vtl_functions(void * lib_vt_lib_handle) {
         abort();
     }
 
-    vtMarkCurrBBL = dlsym(lib_vt_lib_handle, "MarkCurrBBL");
+    vtMarkCurrBBL = dlsym(lib_vt_lib_handle, "markCurrBBL");
     if (!vtMarkCurrBBL) {
         printf("vtMarkCurrBBL not found !\n");
         abort();
@@ -167,13 +168,19 @@ void initialize_vtl() {
             printf("globalTimelineID not found !\n");
             abort();
         }
+
+        vtInitialized = dlsym(lib_vt_lib_handle, "vtInitializationComplete");
+        if (!vtInitialized) {
+            printf("vtInitializationComplete not found !");
+            abort();
+        }
     }
 
     load_all_vtl_functions(lib_vt_lib_handle);
 
     if(lib_vt_lib_handle && dlclose(lib_vt_lib_handle)) {
         fprintf(stderr, "can't close handle to libvt_clock.so: %s\n",
-            dlerror());
+                dlerror());
         _exit(EXIT_FAILURE);
     }
 

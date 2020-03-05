@@ -208,18 +208,18 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	struct dilated_task_struct * tracee_dilated_task_struct;
 
 	if (!tracee) {
-		PDEBUG_E("add_to_tracer_schedule_queue: tracee: %d not found!\n",
+		PDEBUG_I("add_to_tracer_schedule_queue: tracee: %d not found!\n",
 				 tracee_pid);
 		return;
 	}
 
-	if (find_dilated_task_by_pid(tracee_pid)) {
+	if (hmap_get_abs(&get_dilated_task_struct_by_pid, tracee_pid)) {
 		PDEBUG_I("Tracee : %d already exists !\n", tracee_pid);
 		return;
 	}
 	
 	if (experiment_status == STOPPING) {
-		PDEBUG_E("add_to_tracer_schedule_queue: cannot add when experiment is "
+		PDEBUG_I("add_to_tracer_schedule_queue: cannot add when experiment is "
 				 "stopping !\n");
 		return;
 	}
@@ -235,10 +235,9 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 		PDEBUG_E("Tracer %d, tracee: %d. Failed to alot Memory to add tracee\n",
 		         tracer_entry->tracer_id, tracee->pid);
 	}
-	memset(new_elem, 0, sizeof(lxc_schedule_elem));
+	//memset(new_elem, 0, sizeof(lxc_schedule_elem));
 
-	tracee_dilated_task_struct = (struct dilated_task_struct *)kmalloc(
-		sizeof(struct dilated_task_struct), GFP_KERNEL);
+	tracee_dilated_task_struct = (struct dilated_task_struct *)kmalloc(sizeof(struct dilated_task_struct), GFP_KERNEL);
 	if (!tracee_dilated_task_struct) {
 		PDEBUG_E("Tracer %d, tracee: %d. Failed to alot Memory to add tracee\n",
 		         tracer_entry->tracer_id, tracee->pid);
@@ -256,8 +255,7 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	tracee_dilated_task_struct->base_task = tracee;
 	tracee_dilated_task_struct->pid = tracee->pid;
 	tracee_dilated_task_struct->virt_start_time = virt_exp_start_time;
-	tracee_dilated_task_struct->curr_virt_time 
-		= tracer_entry->curr_virtual_time;
+	tracee_dilated_task_struct->curr_virt_time = tracer_entry->curr_virtual_time;
 	tracee_dilated_task_struct->wakeup_time = 0;
 	tracee_dilated_task_struct->burst_target = 0;
 	tracee_dilated_task_struct->buffer_window_len = 0;
@@ -278,11 +276,14 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 
 	bind_to_cpu(tracee, tracer_entry->cpu_assignment);
 
-	hmap_put_abs(&get_dilated_task_struct_by_pid, current->pid,
-				tracee_dilated_task_struct);
+	hmap_put_abs(&get_dilated_task_struct_by_pid, tracee->pid,
+		     tracee_dilated_task_struct);
 	PDEBUG_I("add_to_tracer_schedule_queue:  Tracee %d added successfully to "
 			"tracer-id: %d. schedule list size: %d\n", tracee->pid,
 			tracer_entry->tracer_id, schedule_list_size(tracer_entry));
+
+	if (!tracer_entry->main_task)
+		tracer_entry->main_task = tracee_dilated_task_struct;
 }
 
 
@@ -379,7 +380,6 @@ int register_tracer_process(char * write_buffer) {
 				< per_timeline_chain_length[best_cpu])
 				best_cpu = i;
 		}
-		BUG_ON(num_args != 2);
 		assigned_timeline_id = best_cpu;
 		assigned_cpu = best_cpu;
 	}
@@ -425,14 +425,9 @@ int register_tracer_process(char * write_buffer) {
 	PDEBUG_I("Register Tracer: ID: %d assigned timeline: %d\n",
 			 new_tracer->tracer_id, new_tracer->timeline_assignment);
 
-	//bitmap_zero((&current->cpus_allowed)->bits, 8);
 	get_tracer_struct_write(new_tracer);
-	//cpumask_set_cpu(new_tracer->timeline_assignment, &current->cpus_allowed);
 	bind_to_cpu(current, new_tracer->timeline_assignment);
-
-	//add_to_tracer_schedule_queue(new_tracer, current->pid);
-
-
+	add_to_tracer_schedule_queue(new_tracer, current->pid);
 	put_tracer_struct_write(new_tracer);
 	PDEBUG_I("Register Tracer: Finished for tracer: %d\n", tracer_id);
 
@@ -587,7 +582,7 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 }
 
 void wait_for_task_completion(tracer * curr_tracer,
-							  struct task_struct * relevant_task) {
+							  struct dilated_task_struct * relevant_task) {
 	if (!curr_tracer || !relevant_task) {
 		return;
 	}
