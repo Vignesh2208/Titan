@@ -337,7 +337,7 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 		init_waitqueue_head(&syscall_wait_wqueue[i]);
 	}
 
-	//init_global_dilated_timer_timeline_bases(total_num_timelines);
+	init_global_dilated_timer_timeline_bases(total_num_timelines);
 
 	per_timeline_chain_length =
 		(int *) kmalloc(total_num_timelines * sizeof(int), GFP_KERNEL);
@@ -1074,7 +1074,7 @@ void clean_exp() {
 	tracer * curr_tracer;
 
 	PDEBUG_I("Clean exp: Cleaning up initiated ...");
-	BUG_ON(experiment_type != STOPPING);
+	BUG_ON(experiment_status != STOPPING);
 	mutex_lock(&exp_lock);
 	for (i = 1; i <= tracer_num; i++) {
 

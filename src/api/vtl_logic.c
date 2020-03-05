@@ -218,6 +218,8 @@ void AfterForkInChild(int ThreadID) {
     assert(globalTracerID != -1);
     add_to_tracer_sq(globalTracerID);
     SignalBurstCompletion(currThreadInfo, 1);
+    printf("Resuming Burst of length: %llu\n", currBurstLength);
+	fflush(stdout);
 }
 
 void ThreadStart(int ThreadID) {
@@ -348,6 +350,8 @@ void BasicBlockCallback(ThreadInfo * currThreadInfo, int bblID) {
     }
 
     // call finish_burst
+    printf("Signalling finish burst completion !\n");
+    fflush(stdout);
     SignalBurstCompletion(currThreadInfo, 1);
 }
 
@@ -356,13 +360,19 @@ void vtCallbackFn() {
     int ThreadID = syscall(SYS_gettid);
     ThreadInfo * currThreadInfo;
     
+	
     if (alwaysOn) {
-        currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-        UpdateLookAhead(ThreadID, prevBBID, currBBID, currBBSize);
+        //currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+        //UpdateLookAhead(ThreadID, prevBBID, currBBID, currBBSize);
     }
 
+    printf("Left Burst Lenght = %llu, Curr BBID = %llu, Curr BBSize = %d !\n", currBurstLength,
+		currBBID, currBBSize);
+    fflush(stdout);
     if (currBurstLength <= 0) {
 
+	printf("Finished Burst !\n");
+	fflush(stdout);
         currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
         assert(currThreadInfo != NULL);
 
