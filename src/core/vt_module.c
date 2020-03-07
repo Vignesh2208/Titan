@@ -150,13 +150,13 @@ ssize_t handle_write_results_cmd(struct dilated_task_struct * dilation_task,
          dilation_task->burst_target > 0));
   PDEBUG_V(
     "VT_WRITE_RES: Associated Tracer : %d, Process: %d, resuming from wait\n",
-    tracer_id, current->pid);
+    dilation_task->associated_tracer_id, current->pid);
 
   dilation_task->ready = 0;
 
   // Ensure that for INS_VT tracer, only the tracer process can invoke this
   // call
-  if (dilation_task->associated_tracer_id)
+  if (dilation_task->associated_tracer_id > 0)
     BUG_ON(curr_tracer->main_task->pid != current->pid);
 
   if (dilation_task->associated_tracer_id <= 0) {

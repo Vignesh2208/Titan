@@ -144,7 +144,7 @@ tracer * alloc_tracer_entry(uint32_t tracer_id) {
 void free_tracer_entry(tracer * tracer_entry) {
 
 	llist_destroy(&tracer_entry->schedule_queue);
-    llist_destroy(&tracer_entry->run_queue);
+    	llist_destroy(&tracer_entry->run_queue);
 	kfree(tracer_entry);
 
 }

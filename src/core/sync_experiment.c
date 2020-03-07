@@ -239,27 +239,33 @@ void free_all_tracers() {
     int i;
 	llist_elem * head;
 	lxc_schedule_elem * curr_elem;
-    PDEBUG_V("Freeing previous tracer's and its children !\n");
+    PDEBUG_V("Freeing %d previous tracers and their children !\n", tracer_num);
     for (i = 1; i <= tracer_num; i++) {
         tracer * curr_tracer = hmap_get_abs(&get_tracer_by_id, i);
+	if (!curr_tracer)
+		continue;
+
 		head = curr_tracer->schedule_queue.head;
 		while (head != NULL) {
 
 			if (head) {
 				curr_elem = (lxc_schedule_elem *)head->item;
 				if (curr_elem) {
+					PDEBUG_V("Freeing dilated task %d\n", curr_elem->pid);
 					hmap_remove_abs(&get_dilated_task_struct_by_pid, curr_elem->pid);
 					kfree(curr_elem->curr_task);
 				}
 			}
 			head = head->next;
 		}
+	PDEBUG_V("Freeing Tracer: %d\n", i);
         if (curr_tracer) {
             hmap_remove_abs(&get_tracer_by_pid, curr_tracer->tracer_pid);
             hmap_remove_abs(&get_tracer_by_id, i);
 			free_tracer_entry(curr_tracer);
         }
     }
+
     hmap_destroy(&get_tracer_by_id);
 	hmap_destroy(&get_tracer_by_pid);
 	hmap_destroy(&get_dilated_task_struct_by_pid);

@@ -87,7 +87,7 @@ void free_global_dilated_timer_timeline_bases(int total_num_timelines) {
     kfree(global_dilated_timer_timeline_bases[i]);
   }
   kfree(global_dilated_timer_timeline_bases);
-  PDEBUG_E("Successfully Cleaned up all Timer Timeline Bases\n");
+  PDEBUG_I("Successfully Cleaned up all Timer Timeline Bases\n");
 }
 
 int dilated_hrtimer_forward(struct hrtimer_dilated *timer, ktime_t interval) {

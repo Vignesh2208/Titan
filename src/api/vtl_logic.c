@@ -366,8 +366,8 @@ void vtCallbackFn() {
         //UpdateLookAhead(ThreadID, prevBBID, currBBID, currBBSize);
     }
 
-    printf("Left Burst Lenght = %llu, Curr BBID = %llu, Curr BBSize = %d !\n", currBurstLength,
-		currBBID, currBBSize);
+    //printf("Left Burst Lenght = %llu, Curr BBID = %llu, Curr BBSize = %d !\n", currBurstLength,
+    //		currBBID, currBBSize);
     fflush(stdout);
     if (currBurstLength <= 0) {
 
