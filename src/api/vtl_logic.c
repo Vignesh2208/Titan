@@ -10,6 +10,7 @@ long long currBurstLength = 0;
 long long currBBID = 0;
 long long prevBBID = 0;
 long long currBBSize = 0;
+int expStopping = 0;
 int vtInitializationComplete = 0;
 int alwaysOn = 1;
 int globalTracerID = -1;
@@ -66,6 +67,7 @@ s64 GetCurrentTime() {
 
 void HandleVTExpEnd(int ThreadID) {
     printf("Process: %d exiting VT experiment !\n", ThreadID);
+    expStopping = 1;
     exit(0);
 }
 
@@ -238,7 +240,8 @@ void ThreadFini(int ThreadID) {
     CleanupThreadInfo(currThreadInfo);
     hmap_remove_abs(&thread_info_map, ThreadID);
     free(currThreadInfo);
-    finish_burst_and_discard();    
+    if (!expStopping)
+    	finish_burst_and_discard();    
 }
 
 void AppFini(int ThreadID) {
@@ -255,7 +258,9 @@ void AppFini(int ThreadID) {
             }
             
         }
-        finish_burst_and_discard();  
+
+	if (!expStopping)
+        	finish_burst_and_discard();  
         llist_destroy(&thread_info_list);
         hmap_destroy(&thread_info_map);
     }

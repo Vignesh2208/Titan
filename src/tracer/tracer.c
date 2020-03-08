@@ -239,7 +239,7 @@ int main(int argc, char * argv[]) {
   printf("Resumed from Wait for Exit! Waiting for processes to finish !\n");
   fflush(stdout);
 
-  kill(controlled_pid, SIGKILL);
+  //kill(controlled_pid, SIGKILL);
   waitpid(controlled_pid, &status, 0);
  
   printf("Exiting Tracer: %d\n", tracer_id);

@@ -269,6 +269,14 @@ void free_all_tracers() {
     hmap_destroy(&get_tracer_by_id);
 	hmap_destroy(&get_tracer_by_pid);
 	hmap_destroy(&get_dilated_task_struct_by_pid);
+
+	PDEBUG_V("Freeing previously allotted experiment components !\n");
+	kfree(timeline_wqueue);
+	kfree(timeline_worker_wqueue);
+	kfree(syscall_wait_wqueue);
+	kfree(timeline_info);
+
+	free_global_dilated_timer_timeline_bases(total_num_timelines);
 }
 
 
@@ -423,7 +431,7 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 int cleanup_experiment_components() {
 
 	int i = 0;
-    int num_alotted_pages;
+    	int num_alotted_pages;
 
 	if (initialization_status == NOT_INITIALIZED) {
 		PDEBUG_I("Experiment Already Cleaned up ...\n");
@@ -432,7 +440,7 @@ int cleanup_experiment_components() {
 
 	PDEBUG_I("Cleaning up experiment components ...\n");
 
-    virt_exp_start_time = 0;
+    	virt_exp_start_time = 0;
 
 	atomic_set(&n_workers_running, 0);
 	atomic_set(&n_waiting_tracers, 0);
@@ -446,13 +454,6 @@ int cleanup_experiment_components() {
 	kfree(per_timeline_chain_length);
 	kfree(values);
 	kfree(chaintask);
-	kfree(timeline_wqueue);
-	kfree(timeline_worker_wqueue);
-	kfree(syscall_wait_wqueue);
-	kfree(timeline_info);
-
-	free_global_dilated_timer_timeline_bases(total_num_timelines);
-
 	total_num_timelines = 0;
 	initialization_status = NOT_INITIALIZED;
 	experiment_status = NOTRUNNING;

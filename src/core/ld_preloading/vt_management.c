@@ -174,6 +174,7 @@ void initialize_vtl() {
             printf("vtInitializationComplete not found !");
             abort();
         }
+
     }
 
     load_all_vtl_functions(lib_vt_lib_handle);
