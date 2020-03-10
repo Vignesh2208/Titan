@@ -29,6 +29,7 @@
 
 extern struct dilated_timer_timeline_base ** global_dilated_timer_timeline_bases;
 extern hashmap get_dilated_task_struct_by_pid;
+extern int experiment_status;
 
 struct dilated_timer_timeline_base * __alloc_global_dilated_timer_timeline_base(
     int timeline_id, int total_num_timelines) {
@@ -44,6 +45,8 @@ struct dilated_timer_timeline_base * __alloc_global_dilated_timer_timeline_base(
   timeline_base->total_num_timelines = total_num_timelines;
   timeline_base->curr_virtual_time = START_VIRTUAL_TIME;
   timeline_base->dilated_clock_base.clock_active = 1;
+  timeline_base->dilated_clock_base.timeline_base = timeline_base;
+  timerqueue_init_head(&timeline_base->dilated_clock_base.active);
   timeline_base->nxt_dilated_expiry = 0;
   timeline_base->running_dilated_timer = NULL;
   spin_lock_init(&timeline_base->lock);
@@ -309,7 +312,8 @@ int dilated_hrtimer_cancel(struct hrtimer_dilated *timer) {
 
 void a_run_dilated_hrtimer(struct dilated_timer_timeline_base *timeline_base,
                            struct hrtimer_dilated_clock_base *base,
-                           struct hrtimer_dilated *timer) {
+                           struct hrtimer_dilated *timer,
+			   int ignore) {
   enum hrtimer_restart (*fn)(struct hrtimer_dilated *);
   int restart = HRTIMER_NORESTART;
 
@@ -323,7 +327,7 @@ void a_run_dilated_hrtimer(struct dilated_timer_timeline_base *timeline_base,
   if (fn) restart = fn(timer);
   raw_spin_lock(&timeline_base->lock);
 
-  if (restart != HRTIMER_NORESTART && !(timer->state & HRTIMER_STATE_ENQUEUED))
+  if (!ignore && restart != HRTIMER_NORESTART && !(timer->state & HRTIMER_STATE_ENQUEUED))
     enqueue_dilated_hrtimer(timer, base);
 
   timeline_base->running_dilated_timer = NULL;
@@ -345,7 +349,7 @@ void a_dilated_hrtimer_run_queues(
 
     if (now < timer->_softexpires) break;
 
-    a_run_dilated_hrtimer(timeline_base, base, timer);
+    a_run_dilated_hrtimer(timeline_base, base, timer, 0);
   }
 }
 
@@ -368,11 +372,30 @@ void dilated_hrtimer_run_queues_flush(int timeline_id) {
 
     if (!timer) break;
 
-    timer->state = HRTIMER_STATE_ENQUEUED;
-    __remove_dilated_hrtimer(timer, base, HRTIMER_STATE_INACTIVE);
+    //timer->state = HRTIMER_STATE_ENQUEUED;
+    //__remove_dilated_hrtimer(timer, base, HRTIMER_STATE_INACTIVE);
+
+    a_run_dilated_hrtimer(timeline_base, base, timer, 1);
   }
 }
 
+
+void set_timerbase_clock(int timeline_id, ktime_t time_to_set) {
+	struct dilated_timer_timeline_base * base = get_timeline_base(
+		timeline_id);
+
+	if (!base || time_to_set <= 0)
+		return;
+	base->curr_virtual_time  = time_to_set;
+} 
+
+void inc_timerbase_clock(int timeline_id, ktime_t inc) {
+	struct dilated_timer_timeline_base * base = get_timeline_base(
+		timeline_id);
+	if (!base || inc <= 0)
+		return;
+	base->curr_virtual_time  += inc;
+}
 
 /*
  * Called from Kronos with interrupts disabled
@@ -452,7 +475,8 @@ int dilated_hrtimer_sleep(ktime_t duration) {
 
   // Wake-up tracer timeline worker
 
-
+	PDEBUG_A("Starting dilated sleep. Sleep Duration: %llu.\n",
+           duration);
 	dilated_hrtimer_start_range_ns(&sleeper->timer_dilated, duration,
                                    HRTIMER_MODE_REL);
 
@@ -464,8 +488,10 @@ int dilated_hrtimer_sleep(ktime_t duration) {
 	
   schedule();
 	kfree(sleeper);
-	PDEBUG_V("Resuming from dilated sleep. Sleep Duration: %llu.\n",
+	PDEBUG_A("Resuming from dilated sleep. Sleep Duration: %llu.\n",
            duration);
+	if (experiment_status != RUNNING)
+		return -EFAULT;
 	return 0;
 } 
 

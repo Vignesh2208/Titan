@@ -71,11 +71,11 @@ void initiate_experiment_stop_operation() {
 	}
 	wait_event_interruptible(progress_call_proc_wqueue,
 							 atomic_read(&n_workers_running) == 0);
-	PDEBUG_I("round_sync_task: all timeline workers exited !\n");
+	PDEBUG_A("round_sync_task: all timeline workers exited !\n");
 	preempt_disable();
 	local_irq_disable();
 	for (i = 0; i < total_num_timelines; i++) {
-		dilated_hrtimer_run_queues_flush(i + 1);
+		dilated_hrtimer_run_queues_flush(i);
 	}
 	local_irq_enable();
 	preempt_enable();
@@ -126,7 +126,8 @@ void round_synchronization() {
 		preempt_disable();
 		local_irq_disable();
 		for (i = 0; i < total_num_timelines; i++) {
-			dilated_hrtimer_run_queues(i + 1);
+			inc_timerbase_clock(i, timeline_info[i].nxt_round_burst_length); 
+			dilated_hrtimer_run_queues(i);
 		}
 		local_irq_enable();
 		preempt_enable();
@@ -224,7 +225,8 @@ int progress_timeline_by(int timeline_id, s64 progress_duration) {
 
 	preempt_disable();
 	local_irq_disable();
-	dilated_hrtimer_run_queues(timeline_id + 1);
+	inc_timerbase_clock(timeline_id, progress_duration);
+	dilated_hrtimer_run_queues(timeline_id);
 	local_irq_enable();
 	preempt_enable();
 
@@ -242,8 +244,8 @@ void free_all_tracers() {
     PDEBUG_V("Freeing %d previous tracers and their children !\n", tracer_num);
     for (i = 1; i <= tracer_num; i++) {
         tracer * curr_tracer = hmap_get_abs(&get_tracer_by_id, i);
-	if (!curr_tracer)
-		continue;
+		if (!curr_tracer)
+			continue;
 
 		head = curr_tracer->schedule_queue.head;
 		while (head != NULL) {
@@ -258,10 +260,16 @@ void free_all_tracers() {
 			}
 			head = head->next;
 		}
-	PDEBUG_V("Freeing Tracer: %d\n", i);
+		
         if (curr_tracer) {
+			PDEBUG_V("Removing Tracer-Pid = %d\n", curr_tracer->tracer_pid);
+
             hmap_remove_abs(&get_tracer_by_pid, curr_tracer->tracer_pid);
+
+			PDEBUG_V("Freeing Tracer: %d\n", i);
             hmap_remove_abs(&get_tracer_by_id, i);
+
+			PDEBUG_V("Freeing Tracer: %d. Pid = %d\n", i, curr_tracer->tracer_pid);
 			free_tracer_entry(curr_tracer);
         }
     }
@@ -440,7 +448,7 @@ int cleanup_experiment_components() {
 
 	PDEBUG_I("Cleaning up experiment components ...\n");
 
-    	virt_exp_start_time = 0;
+    virt_exp_start_time = 0;
 
 	atomic_set(&n_workers_running, 0);
 	atomic_set(&n_waiting_tracers, 0);
@@ -531,6 +539,9 @@ int sync_and_freeze() {
 		put_tracer_struct_write(curr_tracer);
 	}
 
+	for (i = 0; i < total_num_timelines; i++) {
+		set_timerbase_clock(i, virt_exp_start_time);
+	}
 	experiment_status = FROZEN;
 	PDEBUG_A("Finished Sync and Freeze\n");
 
@@ -1091,7 +1102,6 @@ void clean_exp() {
 			clean_up_run_queue(curr_tracer);
 			clean_up_schedule_list(curr_tracer);
 			put_tracer_struct_write(curr_tracer);
-			curr_tracer->tracer_pid = -1;
 			wake_up_interruptible(curr_tracer->w_queue);
 		}
 	}

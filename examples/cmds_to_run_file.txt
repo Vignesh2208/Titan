@@ -1,6 +1,20 @@
-/bin/x86_vt_spinner > /tmp/spinner_log_1.txt
-/bin/x86_vt_spinner > /tmp/spinner_log_2.txt
-/bin/x86_vt_spinner > /tmp/spinner_log_3.txt
-/bin/x86_vt_spinner > /tmp/spinner_log_4.txt
-/bin/x86_vt_spinner > /tmp/spinner_log_5.txt
-/bin/x86_vt_spinner > /tmp/spinner_log_6.txt
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner
+/bin/x86_vt_spinner

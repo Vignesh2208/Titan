@@ -378,7 +378,8 @@ pid_t fork() {
 
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
 	int ThreadPID =  syscall(SYS_gettid);
-	printf("In my gettimeofday: %d\n", ThreadPID);
+	//printf("In my gettimeofday: %d\n", ThreadPID);
+	//fflush(stdout);
 	vtGetCurrentTimeval(tv);
 	return 0;
 }
@@ -401,8 +402,11 @@ unsigned int sleep(unsigned int seconds) {
 
 int usleep(useconds_t usec) {
 	int ThreadPID = syscall(SYS_gettid);
-	printf("In my usleep: %d\n", ThreadPID);
+	//printf("In my usleep: %d\n", ThreadPID);
+        //fflush(stdout);
 	vtSleepForNS(ThreadPID, usec*NSEC_PER_US);
+	//printf("Returning from my usleep: %d\n", ThreadPID);
+        //fflush(stdout);
 	return 0;
 }
 

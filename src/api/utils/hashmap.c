@@ -172,11 +172,6 @@ void* hmap_get_abs(hashmap * h, int key) {
 
 	while (head != NULL) {
 		temp = (hashmap_elem *) head->item;
-		if (temp == NULL) {
-			head = head->next;
-			//printk(KERN_INFO "HMAP: Item is NULL. Key = %d\n", key);
-			continue;
-		}
 		if (temp->key_val == key) {
 			//if(temp->value == NULL)
 			//	printk(KERN_INFO "HMAP: Value exists but is NULL\n");

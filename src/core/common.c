@@ -2,6 +2,7 @@
 #include "vt_module.h"
 #include "sync_experiment.h"
 #include "utils.h"
+#include <uapi/linux/sched/types.h>
 
 extern int tracer_num;
 extern int EXP_CPUS;
@@ -206,6 +207,9 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	s32 rem = 0;
 	struct task_struct * tracee = find_task_by_pid(tracee_pid);
 	struct dilated_task_struct * tracee_dilated_task_struct;
+	struct sched_param sp;
+
+	
 
 	if (!tracee) {
 		PDEBUG_I("add_to_tracer_schedule_queue: tracee: %d not found!\n",
@@ -281,6 +285,9 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	PDEBUG_I("add_to_tracer_schedule_queue:  Tracee %d added successfully to "
 			"tracer-id: %d. schedule list size: %d\n", tracee->pid,
 			tracer_entry->tracer_id, schedule_list_size(tracer_entry));
+
+        sp.sched_priority = 99;
+	sched_setscheduler(tracee, SCHED_RR, &sp);
 
 	if (!tracer_entry->main_task)
 		tracer_entry->main_task = tracee_dilated_task_struct;

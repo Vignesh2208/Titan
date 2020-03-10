@@ -316,7 +316,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
   }
 
   switch (cmd) {
-	/*
+	
     case VT_UPDATE_TRACER_CLOCK:
       // Only registered tracer process can invoke this ioctl
       if (initialization_status != INITIALIZED ||
@@ -355,7 +355,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       curr_tracer->curr_virtual_time += api_info_tmp.return_value;
       set_children_time(curr_tracer, curr_tracer->curr_virtual_time, 0);
       return 0;
-	*/
+	
     case VT_WRITE_RESULTS:
       // A registered tracer process or one of the processes in a tracer's
       // schedule queue can invoke this ioctl For INSVT tracer type, only the
@@ -471,7 +471,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       atomic_inc(&n_waiting_tracers);
       wake_up_interruptible(&progress_sync_proc_wqueue);
       return 0;
-	/*
+
     case VT_ADD_PROCESSES_TO_SQ:
       // Any process can invoke this call.
 
@@ -514,7 +514,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       PDEBUG_V("VT_ADD_PROCESSES_TO_SQ: Finished Successfully !\n");
       return 0;
-	*/
+	
     case VT_SYNC_AND_FREEZE:
       // Any process can invoke this call.
       if (initialization_status != INITIALIZED) {
@@ -565,7 +565,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       return handle_initialize_exp_cmd(api_integer_args[0],
         api_integer_args[1], api_integer_args[2]);
-	/*
+
     case VT_GETTIME_PID:
       // Any process can invoke this call.
 
@@ -594,7 +594,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
       return 0;
-	*/
+	
     case VT_STOP_EXP:
       // Any process can invoke this call.
       if (initialization_status != INITIALIZED) {
@@ -761,8 +761,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       }
       duration = api_info_tmp.return_value; 
            
-      dilated_hrtimer_sleep(duration);
-      return 0;
+      return dilated_hrtimer_sleep(duration);
 
     case VT_RELEASE_WORKER:
       if (initialization_status != INITIALIZED) {
@@ -873,7 +872,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         "resuming from wait\n", tracer_id, current->pid);
 
       return 0;
-	/*
+	
 
     case VT_GETTIME_MY_PID:
       // Any process can invoke this call.
@@ -897,13 +896,13 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
         return -EFAULT;
       }
-      api_info_tmp.return_value = handle_gettimepid(current->pid);
+      api_info_tmp.return_value = get_dilated_time(current);
       if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
         PDEBUG_I("VT_GETTIME_MY_PID: Error copying to user buf \n");
         return -EFAULT;
       }
       return 0;
-	*/
+	
     case VT_ADD_TO_SQ:
       // Any process can invoke this call.
 
