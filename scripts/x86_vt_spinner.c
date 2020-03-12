@@ -30,6 +30,24 @@ int main(int argc, char *argv[]) {
 	//print_time();
 	//usleep(10000);
 	//print_time();
+        int i = 0;
+        int j = 0;
+	long nevents;
+        for (i = 0; i < 128; i++) {
+		for (j = 0; j < 1024; j ++) {
+			
+		      printf("Invoking ck_pr_fas_64 for the %d time. CurrBurstLength:\n", i);
+		      fflush(stdout);
+		      long t = 1;
+		      //t = ck_pr_fas_64(&h->interm_slots[s][i], 0);
+		      printf("Finished Invoking ck_pr_fas_64 for the %d time. Value = %llu\n", i, t);
+		      fflush(stdout);
+		      //array[i] += t;
+		      nevents += t;
+		      printf("Finished Assigning: %llu for the %d time. CurrBurstLength\n", t, i);
+		      fflush(stdout);
+		}
+        }
 	while(1);
 	return 0;
 }

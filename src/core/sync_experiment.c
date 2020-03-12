@@ -100,7 +100,7 @@ void round_synchronization() {
 		then wait til they are all done */
 		if (total_num_timelines > 0 && tracer_num  > 0) {
 
-			PDEBUG_I("$$$$$$$$$$$$$$$$$$$$$$$ round_sync_task: "
+			PDEBUG_V("$$$$$$$$$$$$$$$$$$$$$$$ round_sync_task: "
 					"Round %d Starting. Waking up worker threads "
 					"$$$$$$$$$$$$$$$$$$$$$$$$$$\n", total_completed_rounds);
 			atomic_set(&n_workers_running, total_num_timelines);
@@ -120,7 +120,7 @@ void round_synchronization() {
 				"round_sync_task: Waiting for per_timeline_workers to finish.\n");
 			wait_event_interruptible(progress_call_proc_wqueue,
 									 atomic_read(&n_workers_running) == 0);
-			PDEBUG_I("round_sync_task: All per_timeline_workers finished\n");
+			PDEBUG_V("round_sync_task: All per_timeline_workers finished\n");
 		}
 
 		preempt_disable();
@@ -134,6 +134,7 @@ void round_synchronization() {
 
 		if (current_progress_n_rounds <= 1) {
 			current_progress_n_rounds = 0;
+			total_completed_rounds++;
 			PDEBUG_V("round_sync_task: Finished !\n");
 			break;
 		} else {
@@ -834,7 +835,7 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 				WARN_ON(curr_elem->curr_task->burst_target != 0);
 				curr_elem->curr_task->burst_target = 0;
 				curr_elem->blocked = 0;
-				
+				PDEBUG_V("Elem: %d previously marked as blocked !\n", curr_elem->pid);
 			} 
 			tmp_head = run_queue->head;
 			found = 0;
@@ -854,7 +855,9 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 		head = head->next;
 	}
 
-	
+	if (alteast_one_task_runnable) {
+		PDEBUG_V("Atleast on task is runnable !\n");
+	}	
 	head = run_queue->head;
 
 	if (curr_tracer->last_run != NULL
@@ -1053,9 +1056,9 @@ int unfreeze_proc_exp_single_core_mode(tracer * curr_tracer) {
 	print_schedule_list(curr_tracer);
 	
 	total_quanta = curr_tracer->nxt_round_burst_length;
-	if (curr_tracer->last_run)
-		PDEBUG_V("Tracer: %d, LAST RUN = %d\n", curr_tracer->tracer_id,
-				 curr_tracer->last_run->pid);
+	//if (curr_tracer->last_run)
+	//	PDEBUG_V("Tracer: %d, LAST RUN = %d\n", curr_tracer->tracer_id,
+	//			 curr_tracer->last_run->pid);
 
 	while (used_quanta < total_quanta) {
 		curr_elem = get_next_runnable_task(curr_tracer);

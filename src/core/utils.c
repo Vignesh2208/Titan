@@ -101,7 +101,7 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id) {
 	main_task->virt_start_time = START_VIRTUAL_TIME;
 	main_task->curr_virt_time = START_VIRTUAL_TIME;
 	main_task->pid = current->pid;
-	main_task->base_task = current;
+	main_task->base_task = current;*/
 
 
 	new_tracer->timeline_assignment = 0;
@@ -114,7 +114,7 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id) {
 	new_tracer->round_overshoot = 0;
 	new_tracer->w_queue_wakeup_pid = 0;
 	new_tracer->running_task_lookahead = 0;
-	new_tracer->last_run = NULL;*/
+	new_tracer->last_run = NULL;
 	new_tracer->main_task = NULL;
 	//new_tracer->main_task = main_task;
 

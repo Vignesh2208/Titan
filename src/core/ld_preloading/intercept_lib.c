@@ -47,8 +47,8 @@ extern void (*vtThreadFini)(int ThreadID);
 extern void (*vtAppFini)(int ThreadID);
 extern void (*vtMarkCurrBBL)(int ThreadID);
 extern void (*vtInitialize)();
-extern void (*vtYieldVTBurst)(int ThreadID, int save);
-extern void (*vtForceCompleteBurst)(int ThreadID, int save);
+extern void (*vtYieldVTBurst)(int ThreadID, int save, long syscall_number);
+extern void (*vtForceCompleteBurst)(int ThreadID, int save, long syscall_number);
 
 extern void (*vtTriggerSyscallWait)(int ThreadID, int save);
 extern void (*vtTriggerSyscallFinish)(int ThreadID);
@@ -65,11 +65,13 @@ struct Thunk {
     void *arg;
 };
 
+
 static void * wrap_threadFn(void *thunk_vp) {
     
     struct Thunk *thunk_p = (struct Thunk *)thunk_vp;
 	int ThreadPID = syscall(SYS_gettid);
 	printf ("New Thread Starting: PID = %d\n", ThreadPID);
+        fflush(stdout);
 
 	vtThreadStart(ThreadPID);
 
@@ -77,9 +79,12 @@ static void * wrap_threadFn(void *thunk_vp) {
 
 	free(thunk_p);
 	printf ("Thread Exiting. PID = %d\n", ThreadPID);
+         fflush(stdout);
+
 	vtThreadFini(ThreadPID);
     return result;
 }
+
 
 int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
                	   void *(*start_routine)(void*), void *arg) {
@@ -98,6 +103,8 @@ int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
     struct Thunk *thunk_p = malloc(sizeof(struct Thunk));
     thunk_p->start_routine = start_routine;
     thunk_p->arg = arg;
+    printf("Calling pthread create\n");
+    fflush(stdout);
     return real_pthread_create(thread, attr, wrap_threadFn, thunk_p);
 }
 
@@ -110,6 +117,8 @@ int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
 void my_exit(void) {
    int ThreadPID = syscall(SYS_gettid);
    printf("I am exiting main thread. PID = %d\n", ThreadPID);
+   fflush(stdout);
+
    vtAppFini(ThreadPID);
 }
 
@@ -279,6 +288,7 @@ void __attribute__ ((noreturn)) _exit(int status) {
 	orig_exit(status);
 }
 
+
 void  __attribute__ ((noreturn))  pthread_exit(void *retval) {
     if (!original_pthread_exit) {
 		load_original_pthread_exit();
@@ -286,7 +296,7 @@ void  __attribute__ ((noreturn))  pthread_exit(void *retval) {
 
 	int ThreadPID = syscall(SYS_gettid);
     printf ("Calling my pthread exit for PID = %d\n", ThreadPID);
-	vtThreadFini(ThreadPID);
+    vtThreadFini(ThreadPID);
     original_pthread_exit(retval);
 }
 
@@ -361,6 +371,7 @@ void load_orig_functions() {
 pid_t fork() {
 	int ParentPID = syscall(SYS_gettid);
 	printf("Before fork in parent: %d\n", ParentPID);
+        fflush(stdout);
 	pid_t ret;
 	
 	ret = orig_fork();
@@ -370,16 +381,17 @@ pid_t fork() {
 		vtAfterForkInChild(ChildPID);
 	} else {
 		printf("After fork in parent: PID = %d\n", ParentPID);
-		vtForceCompleteBurst(ParentPID, 1);
+		vtForceCompleteBurst(ParentPID, 1, SYS_fork);
 	}
 
 	return ret;
 }
 
+
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
 	int ThreadPID =  syscall(SYS_gettid);
-	//printf("In my gettimeofday: %d\n", ThreadPID);
-	//fflush(stdout);
+	printf("In my gettimeofday: %d\n", ThreadPID);
+	fflush(stdout);
 	vtGetCurrentTimeval(tv);
 	return 0;
 }
@@ -387,7 +399,8 @@ int gettimeofday(struct timeval *tv, struct timezone *tz) {
 
 int clock_gettime(clockid_t clk_id, struct timespec *tp) {
 	int ThreadPID =  syscall(SYS_gettid);
-	printf("In my clock_gettime: %d\n", ThreadPID);
+	//printf("In my clock_gettime: %d\n", ThreadPID);
+        //fflush(stdout);
 	vtGetCurrentTimespec(tp);
 	return 0;
 }
@@ -396,20 +409,22 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp) {
 unsigned int sleep(unsigned int seconds) {
 	int ThreadPID = syscall(SYS_gettid);
 	printf("In my sleep: %d\n", ThreadPID);
+        fflush(stdout);
 	vtSleepForNS(ThreadPID, seconds*NSEC_PER_SEC);
 	return 0;
 }
 
 int usleep(useconds_t usec) {
 	int ThreadPID = syscall(SYS_gettid);
-	//printf("In my usleep: %d\n", ThreadPID);
-        //fflush(stdout);
+	printf("In my usleep: %d\n", ThreadPID);
+        fflush(stdout);
 	vtSleepForNS(ThreadPID, usec*NSEC_PER_US);
-	//printf("Returning from my usleep: %d\n", ThreadPID);
-        //fflush(stdout);
+	printf("Returning from my usleep: %d\n", ThreadPID);
+        fflush(stdout);
 	return 0;
 }
 
+/*
 int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
 	
 	int ret, ThreadPID;
@@ -417,6 +432,8 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
 	ThreadPID = syscall(SYS_gettid);
 	printf("In my poll: %d\n", ThreadPID);
 
+	//return orig_poll(fds, nfds, timeout_ms);
+	
 	if (timeout_ms == 0)
 		return orig_poll(fds, nfds, timeout_ms);
 
@@ -452,9 +469,12 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 	ThreadPID = syscall(SYS_gettid);
 
 	printf("In my select: %d\n", ThreadPID);
-
+	fflush(stdout);
 	isReadInc = 0, isWriteInc = 0, isExceptInc = 0;
 
+	//return orig_select(nfds, readfds, writefds, exceptfds, timeout);
+
+	
 	if (!timeout) {
 		vtTriggerSyscallWait(ThreadPID, 1);
 		ret = orig_select(nfds, readfds, writefds, exceptfds, timeout);
@@ -509,21 +529,21 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 	}
 
 	return ret;
-}
+}*/
 
 static void execute_cpu_yielding_syscall(long syscall_number, long arg0,
 	long arg1, long arg2, long arg3, long arg4, long arg5, long *result,
 	int ThreadPID) {
 
 	if (vtInitialized && *vtInitialized == 1)
-		vtYieldVTBurst(ThreadPID, 1);
+		vtYieldVTBurst(ThreadPID, 1, syscall_number);
 
 	
 	*result = syscall_no_intercept(syscall_number, arg0, arg1, arg2, arg3, arg4,
 								   arg5);
 
 	if (vtInitialized && *vtInitialized == 1)
-		vtForceCompleteBurst(ThreadPID, 0);
+		vtForceCompleteBurst(ThreadPID, 0, syscall_number);
 }
 
 static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
@@ -538,8 +558,8 @@ static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
 		|| syscall_number == SYS_sendmmsg) {
 		ThreadPID = syscall_no_intercept(SYS_gettid);
 
-		if (vtInitialized && *vtInitialized == 1)
-			vtMarkCurrBBL(ThreadPID);
+		//if (vtInitialized && *vtInitialized == 1)
+		//	vtMarkCurrBBL(ThreadPID);
 	}
 
 	if (syscall_number == SYS_futex

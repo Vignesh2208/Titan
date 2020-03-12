@@ -87,7 +87,7 @@
 #define EXP_CS 2
 #define NOT_SET 0
 
-//#define KRONOS_DEBUG_INFO
+#define KRONOS_DEBUG_INFO
 //#define KRONOS_DEBUG_VERBOSE
 
 

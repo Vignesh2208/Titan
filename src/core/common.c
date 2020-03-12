@@ -338,8 +338,11 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid) {
 	}
 
 	if (removed_elem) {
-		hmap_remove_abs(&get_dilated_task_struct_by_pid, removed_elem->pid);
-		kfree(removed_elem->curr_task);
+		//hmap_remove_abs(&get_dilated_task_struct_by_pid, removed_elem->pid);
+		//kfree(removed_elem->curr_task);
+		if (removed_elem == tracer_entry->last_run)
+			tracer_entry->last_run = NULL;
+		removed_elem->curr_task->associated_tracer_id = -1;
 		kfree(removed_elem);
 	}
 }
@@ -583,7 +586,7 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 
 	put_tracer_struct_write(curr_tracer);
 
-	if (!dilated_task && dilated_task->burst_target > 0);
+	if (dilated_task && dilated_task->burst_target > 0)
 		signal_cpu_worker_resume(curr_tracer);
 	return SUCCESS;
 }
@@ -651,7 +654,7 @@ s64 get_dilated_time(struct task_struct * task) {
 	associated_tracer = dilated_task->associated_tracer;
 
 	if (associated_tracer && associated_tracer->curr_virtual_time) {
-		return associated_tracer->curr_virtual_time;
+		return associated_tracer->curr_virtual_time++;
 	}
 	return now;
 

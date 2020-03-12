@@ -35,11 +35,11 @@ def main():
 
     parser.add_argument('--progress_ns_per_round', dest='progress_ns_per_round',
                         help='Number of insns per round', type=int,
-                        default=1000)
+                        default=10000)
 
     parser.add_argument('--num_progress_rounds', dest='num_progress_rounds',
                         help='Number of rounds to run', type=int,
-                        default=100000)
+                        default=150000)
 
     parser.add_argument('--exp_type', dest='exp_type',
         help='Number of rounds to run', type=int, default=EXP_CBE)
@@ -100,15 +100,15 @@ def main():
     if args.num_progress_rounds > 0 :
         print "Running for %d rounds ... " %(args.num_progress_rounds)
         num_finished_rounds = 0
-        #step_size = min(1, args.num_progress_rounds)
-        step_size = args.num_progress_rounds
+        step_size = min(1, args.num_progress_rounds)
+        #step_size = args.num_progress_rounds
         while num_finished_rounds < args.num_progress_rounds:
 
             if args.exp_type == EXP_CBE:
                 kf.progressBy(args.progress_ns_per_round, step_size)
 
             num_finished_rounds += step_size
-            #print "Ran %d rounds ..." %(num_finished_rounds), " elapsed time ...", float(time.time()) - start_time
+            print "Ran %d rounds ..." %(num_finished_rounds), " elapsed time ...", float(time.time()) - start_time
             #raw_input("Press Enter to continue...")
 
     elapsed_time = float(time.time()) - start_time

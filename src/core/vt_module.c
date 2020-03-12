@@ -140,8 +140,8 @@ ssize_t handle_write_results_cmd(struct dilated_task_struct * dilation_task,
 
   dilation_task->ready = 1; 
   dilation_task->syscall_waiting = 0;
-  handle_tracer_results(curr_tracer, &api_args[1],
-                        num_args - 1);
+  handle_tracer_results(curr_tracer, &api_args[0],
+                        num_args);
 
   wait_event_interruptible(
     *curr_tracer->w_queue,
@@ -153,11 +153,7 @@ ssize_t handle_write_results_cmd(struct dilated_task_struct * dilation_task,
     dilation_task->associated_tracer_id, current->pid);
 
   dilation_task->ready = 0;
-
-  // Ensure that for INS_VT tracer, only the tracer process can invoke this
-  // call
-  if (dilation_task->associated_tracer_id > 0)
-    BUG_ON(curr_tracer->main_task->pid != current->pid);
+  
 
   if (dilation_task->associated_tracer_id <= 0) {
     dilation_task->burst_target = 0;
@@ -370,24 +366,19 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
 
-      PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d Before Checks !\n",
-              tracer_id, current->pid);
+
       if (!dilated_task || dilated_task->associated_tracer_id <= 0) {
         PDEBUG_I("VT_WRITE_RESULTS: Process is not associated with "
                  "any tracer !\n");
         return -EFAULT;
       }
 
-      PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d After Check-1 !\n",
-              tracer_id, current->pid);
       api_info = (invoked_api *)arg;
       if (!api_info) return -EFAULT;
       if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
         return -EFAULT;
       }
 
-      PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d After Checks !\n",
-              tracer_id, current->pid);
 
       num_integer_args = convert_string_to_array(
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
@@ -399,8 +390,8 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
 
-      PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d Handling results !\n",
-              tracer_id, current->pid);
+      PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d Handling results. Num args: %d!\n",
+              tracer_id, current->pid, num_integer_args);
       handle_write_results_cmd(dilated_task, api_integer_args,
                                num_integer_args);
 
@@ -760,6 +751,9 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
       duration = api_info_tmp.return_value; 
+
+      PDEBUG_V(
+        "VT_SLEEP_FOR: Process: %d, duration: %llu\n", current->pid, duration);
            
       return dilated_hrtimer_sleep(duration);
 
@@ -776,11 +770,16 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
           "VT_RELEASE_WORKER: Process is not associated with any tracer !\n");
         return -EFAULT;
       }
+      PDEBUG_V(
+        "VT_RELEASE_WORKER: Associated Tracer : %d, Process: %d, "
+        "entering wait\n", dilated_task->associated_tracer_id, current->pid);
       dilated_task->burst_target = 0;
       dilated_task->ready = 0;
       dilated_task->syscall_waiting = 0;
       curr_tracer = dilated_task->associated_tracer;
       curr_tracer->w_queue_wakeup_pid = 1;
+      PDEBUG_V("VT_RELEASE_WORKER: signalling worker resume. Tracer ID: %d\n",
+			curr_tracer->tracer_id);
       wake_up_interruptible(curr_tracer->w_queue);
       return 0;
 
@@ -829,11 +828,6 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
             dilated_task->burst_target > 0));
       
       dilated_task->ready = 0;
-
-      // Ensure that for INS_VT tracer, only the tracer process can invoke this
-      // call
-      if (dilated_task->associated_tracer_id)
-        BUG_ON(curr_tracer->main_task->pid != current->pid);
 
       if (dilated_task->associated_tracer_id <= 0) {
         dilated_task->burst_target = 0;
@@ -896,6 +890,9 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
         return -EFAULT;
       }
+
+      PDEBUG_V(
+        "VT_GETTIME_MY_PID: Process: %d\n", current->pid);
       api_info_tmp.return_value = get_dilated_time(current);
       if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
         PDEBUG_I("VT_GETTIME_MY_PID: Error copying to user buf \n");
@@ -952,13 +949,13 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       if (initialization_status != INITIALIZED
           || experiment_status != RUNNING) {
         PDEBUG_I(
-            "VT_SET_RUNNABLE: Operation cannot be performed when experiment "
+            "VT_SYSCALL_WAIT: Operation cannot be performed when experiment "
             "is not initialized and running !\n");
         return -EFAULT;
       }
 
       if (!dilated_task || dilated_task->associated_tracer_id <= 0) {
-        PDEBUG_I("VT_SET_RUNNABLE: Process is not associated with "
+        PDEBUG_I("VT_SYSCALL_WAIT: Process is not associated with "
                  "any tracer !\n");
         return -EFAULT;
       }
@@ -1094,7 +1091,7 @@ int __init my_module_init(void) {
   PDEBUG_A("Total Number of CPUS: %d\n", num_online_cpus());
 
   if (TOTAL_CPUS > 2)
-    EXP_CPUS = TOTAL_CPUS - 2;
+    EXP_CPUS = 1;
   else
     EXP_CPUS = 1;
 
