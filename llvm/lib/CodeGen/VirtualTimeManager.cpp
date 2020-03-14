@@ -210,7 +210,7 @@ void VirtualTimeManager::createExternDefinitions(Module &M, bool ContainsMain) {
    Function::Create(Type, GlobalValue::ExternalLinkage, vtControlFunctionName, &M);  
 
    if (ContainsMain) {
-        outs() << "Contains Main: Creating __X86_Stub function body" << "\n";
+        outs() << "Contains Main: Creating __VT_Stub function body" << "\n";
 	createStubFunction(M);
    } else {
 	// declare stub as extern
@@ -239,7 +239,7 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 
     if (!DisableVtInsertion) {
 	if (!Printed) {
-		outs() << "Inserting Virtual time specific code ..." << "\n";
+		outs() << "#### Inserting Virtual time specific code #####" << "\n";
                 //auto *gVar = M.getNamedGlobal(targetGvar);
 		//printGlobalVar(gVar);
 		Printed = true;
@@ -282,11 +282,23 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 		// popf 
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POPF64));
 
-		// pop %rax
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RAX);
+		// pop %rdx
+		//llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RDX);
 
 		// popf %rcx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RCX);
+		//llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RCX);
+
+		// addq $0x18, %rsp
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::ADD64ri8)).addReg(X86::RSP).addReg(X86::RSP).addImm(0x18);
+
+
+		// mov 0x10(%rsp), %rcx
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
+			.addReg(X86::RCX).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x10).addReg(0);
+
+		// mov 0x8(%rsp), %rdx
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
+			.addReg(X86::RDX).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x8).addReg(0);
 
 		// callq stubFunctionName
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::CALL64pcrel32)).addGlobalAddress(M.getNamedValue(stubFunctionName));
@@ -311,28 +323,39 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
 				.addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0).addGlobalAddress(M.getNamedValue(vtCurrBBSizeVar), 0, MO_GOTPCREL).addReg(0);
 
-		// movq %rcx %(rax)
+		// movq %rcx %(rdx)
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64mr))
-				.addReg(X86::RAX).addImm(1).addReg(0).addImm(0).addReg(0).addReg(X86::RCX);
+				.addReg(X86::RDX).addImm(1).addReg(0).addImm(0).addReg(0).addReg(X86::RCX);
 
 		// subq	InstrCount, %rcx
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::SUB64ri8)).addDef(X86::RCX).addReg(X86::RCX).addImm(InstrCount);
 
 
-		// movq (%rax) %rcx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm)).addDef(X86::RCX).addReg(X86::RAX).addImm(1).addReg(0).addImm(0).addReg(0);
+		// movq (%rdx) %rcx
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm)).addDef(X86::RCX).addReg(X86::RDX).addImm(1).addReg(0).addImm(0).addReg(0);
 
-		// movq vtInsnCounterGlobalVar@GOTPCREL(%rip) %rax
+		// movq vtInsnCounterGlobalVar@GOTPCREL(%rip) %rdx
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
-				.addReg(X86::RAX).addReg(X86::RIP).addImm(1).addReg(0).addGlobalAddress(M.getNamedValue(vtInsnCounterGlobalVar), 0, MO_GOTPCREL).addReg(0);
+				.addReg(X86::RDX).addReg(X86::RIP).addImm(1).addReg(0).addGlobalAddress(M.getNamedValue(vtInsnCounterGlobalVar), 0, MO_GOTPCREL).addReg(0);
 
 
 		// push %rcx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RCX);
+		//llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RCX);
 
 
-		// push %rax
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RAX);
+		// push %rdx
+		//llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RDX);
+
+		// mov %rcx 0x10(%rsp)
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64mr))
+			.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x10).addReg(0).addReg(X86::RCX);
+
+		// mov %rdx 0x8(%rsp)
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64mr))
+			.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x8).addReg(0).addReg(X86::RDX);
+		
+		// subq $0x18, %rsp
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::SUB64ri8)).addReg(X86::RSP).addReg(X86::RSP).addImm(0x18);
 
 		// pushf
 		MachineInstr *Push = BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSHF64));
@@ -370,17 +393,24 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 	llvm::BuildMI(*InitMBB, InitMBB->end(), DebugLoc(), TII.get(X86::JCC_1)).addMBB(FunctionCallMBB).addImm(5);
 	
 	// InitFalseMBB:
-	// cmpq $0 (%rax) - for checking if insnCount finished
+	// cmpq $0 (%rdx) - for checking if insnCount finished
 	llvm::BuildMI(*InitFalseMBB, InitFalseMBB->end(), DebugLoc(), TII.get(X86::CMP64mi8))
-			.addReg(X86::RAX).addImm(1).addReg(0).addImm(0).addReg(0).addImm(0);
+			.addReg(X86::RDX).addImm(1).addReg(0).addImm(0).addReg(0).addImm(0);
 
 	// jg origMBB
 	llvm::BuildMI(*InitFalseMBB, InitFalseMBB->end(), DebugLoc(), TII.get(X86::JCC_1)).addMBB(origMBB).addImm(15);
 
 	// FunctionCallMBB: (add push pop of other registers here)
 
-	// push %rdx
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RDX);
+	/*
+	// push %rbp
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RBP);
+
+	// push %rbx
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RBX);
+
+	// push %rax
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RAX);
 
 	// push %rsi
 	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RSI);
@@ -400,9 +430,210 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 	// push %r11
 	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::R11);
 
+	// push %r12
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::R12);
+
+	// push %r13
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::R13);
+
+	// push %r14
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::R14);
+
+	// push %r15
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::R15);
+	*/
+
+	// subq $0xf8, %rsp
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::SUB64ri32)).addReg(X86::RSP).addReg(X86::RSP).addImm(0x100);
+
+	// mov %rbp 0x8(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x8).addReg(0).addReg(X86::RBP);
+
+	// mov %rbx 0x10(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x10).addReg(0).addReg(X86::RBX);
+
+	// mov %rax 0x18(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x18).addReg(0).addReg(X86::RAX);
+
+	// mov %rsi 0x20(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x20).addReg(0).addReg(X86::RSI);
+
+	// mov %rdi 0x28(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x28).addReg(0).addReg(X86::RDI);
+
+	// mov %r8 0x30(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x30).addReg(0).addReg(X86::R8);
+
+	// mov %r9 0x38(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x38).addReg(0).addReg(X86::R9);
+
+	// mov %r10 0x40(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x40).addReg(0).addReg(X86::R10);
+
+	// mov %r11 0x48(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x48).addReg(0).addReg(X86::R11);
+
+	// mov %r12 0x50(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x50).addReg(0).addReg(X86::R12);
+
+	// mov %r13 0x58(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x58).addReg(0).addReg(X86::R13);
+
+	// mov %r14 0x60(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x60).addReg(0).addReg(X86::R14);
+
+	// mov %r15 0x68(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64mr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x68).addReg(0).addReg(X86::R15);
+
+	// mov %xmm0 0x80(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSmr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x80).addReg(0).addReg(X86::XMM0);
+
+	// mov %xmm1 0x90(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSmr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0x90).addReg(0).addReg(X86::XMM1);
+
+	// mov %xmm2 0xa0(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSmr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0xa0).addReg(0).addReg(X86::XMM2);
+
+	// mov %xmm3 0xb0(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSmr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0xb0).addReg(0).addReg(X86::XMM3);
+
+	// mov %xmm4 0xc0(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSmr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0xc0).addReg(0).addReg(X86::XMM4);
+
+	// mov %xmm5 0xd0(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSmr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0xd0).addReg(0).addReg(X86::XMM5);
+
+	// mov %xmm6 0xe0(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSmr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0xe0).addReg(0).addReg(X86::XMM6);
+
+	// mov %xmm7 0xf0(%rsp)
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSmr))
+		.addReg(X86::RSP).addImm(1).addReg(0).addImm(0xf0).addReg(0).addReg(X86::XMM7);
+
 	// callq vtControlFunctionName
 	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::CALL64pcrel32)).addGlobalAddress(M.getNamedValue(vtControlFunctionName));
 
+	// movq 0x8(%rsp), %rbp
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::RBP).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x8).addReg(0);
+
+	// movq 0x10(%rsp), %rbx
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::RBX).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x10).addReg(0);
+
+	// movq 0x18(%rsp), %rax
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::RAX).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x18).addReg(0);
+
+	// movq 0x20(%rsp), %rsi
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::RSI).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x20).addReg(0);
+
+	// movq 0x28(%rsp), %rdi
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::RDI).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x28).addReg(0);
+
+	// movq 0x30(%rsp), %r8
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::R8).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x30).addReg(0);
+
+	// movq 0x38(%rsp), %r9
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::R9).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x38).addReg(0);
+
+	// movq 0x40(%rsp), %r10
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::R10).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x40).addReg(0);
+
+	// movq 0x48(%rsp), %r11
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::R11).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x48).addReg(0);
+
+	// movq 0x50(%rsp), %r12
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::R12).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x50).addReg(0);
+
+	// movq 0x58(%rsp), %r13
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::R13).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x58).addReg(0);
+
+	// movq 0x60(%rsp), %r14
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::R14).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x60).addReg(0);
+
+	// movq 0x68(%rsp), %r15
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::R15).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x68).addReg(0);
+
+	// mov 0x80(%rsp), %xmm0
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSrm))
+		.addReg(X86::XMM0).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x80).addReg(0);
+
+	// mov 0x90(%rsp), %xmm1
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSrm))
+		.addReg(X86::XMM1).addReg(X86::RSP).addImm(1).addReg(0).addImm(0x90).addReg(0);
+
+	// mov 0xa0(%rsp), %xmm2
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSrm))
+		.addReg(X86::XMM2).addReg(X86::RSP).addImm(1).addReg(0).addImm(0xa0).addReg(0);
+
+	// mov 0xb0(%rsp), %xmm3
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSrm))
+		.addReg(X86::XMM3).addReg(X86::RSP).addImm(1).addReg(0).addImm(0xb0).addReg(0);
+
+	// mov 0xc0(%rsp), %xmm4
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSrm))
+		.addReg(X86::XMM4).addReg(X86::RSP).addImm(1).addReg(0).addImm(0xc0).addReg(0);
+
+	// mov 0xd0(%rsp), %xmm5
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSrm))
+		.addReg(X86::XMM5).addReg(X86::RSP).addImm(1).addReg(0).addImm(0xd0).addReg(0);
+
+	// mov 0xe0(%rsp), %xmm6
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSrm))
+		.addReg(X86::XMM6).addReg(X86::RSP).addImm(1).addReg(0).addImm(0xe0).addReg(0);
+
+	// mov 0xf0(%rsp), %xmm7
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::MOVUPSrm))
+		.addReg(X86::XMM7).addReg(X86::RSP).addImm(1).addReg(0).addImm(0xf0).addReg(0);
+
+
+
+	// addq $0xf8, %rsp
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::ADD64ri32)).addReg(X86::RSP).addReg(X86::RSP).addImm(0x100);
+
+	/*
+	// pop %r15
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::R15);
+
+	// pop %r14
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::R14);
+
+	// pop %r13
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::R13);
+
+	// pop %r12
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::R12);
 
 	// pop %r11
 	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::R11);
@@ -422,8 +653,15 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 	// pop %rsi
 	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RSI);
 
-	// pop %rdx
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RDX);
+	// pop %rax
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RAX);
+
+	// pop %rbx
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RBX);
+
+	// pop %rbp
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RBP);
+	*/
 
 
 	// origMBB:

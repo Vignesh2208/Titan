@@ -26,6 +26,7 @@ typedef struct ThreadInfoStruct {
     int pid;
     int yielded;
     int force_completed;
+    int in_callback;
     ThreadStack stack;
     llist bbl_list;
     hashmap lookahead_map;

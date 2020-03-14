@@ -6,6 +6,9 @@
 #include "utility_functions.h"
 #include "vtl_logic.h"
 
+#define FALSE 0
+#define TRUE 1
+
 long long currBurstLength = 0;
 long long currBBID = 0;
 long long prevBBID = 0;
@@ -38,7 +41,9 @@ void SleepForNS(int ThreadID, int64_t duration) {
     if (!currThreadInfo)
 	return;
 
-    //assert(currThreadInfo != NULL);
+    if (currThreadInfo->in_callback)
+	return;
+
 
     currThreadInfo->stack.currBBID = currBBID;
     currThreadInfo->stack.prevBBID = prevBBID;
@@ -108,7 +113,7 @@ ThreadInfo * AllotThreadInfo(int ThreadID) {
     ThreadInfo * currThreadInfo = NULL;
     if (!hmap_get_abs(&thread_info_map, ThreadID)) {
         currThreadInfo = (ThreadInfo *) malloc(sizeof(ThreadInfo));
-        //assert(currThreadInfo != NULL);
+        assert(currThreadInfo != NULL);
         currThreadInfo->pid = ThreadID;
         currThreadInfo->yielded = 0;
         currThreadInfo->force_completed = 0;
@@ -130,10 +135,13 @@ ThreadInfo * AllotThreadInfo(int ThreadID) {
 
 BasicBlock * AllotBasicBlockEntry(ThreadInfo * currThreadInfo, int ID) {
 
+    if (ID < 0)
+	ID = -1*ID;
+
     BasicBlock * new_bbl = hmap_get_abs(&currThreadInfo->lookahead_map, ID);
     if (!new_bbl) {
         new_bbl = (BasicBlock *) malloc(sizeof(BasicBlock));
-        //assert(new_bbl != NULL);
+        assert(new_bbl != NULL);
         new_bbl->ID = ID;
         new_bbl->lookahead_value = -1;
         new_bbl->BBLSize = 0;
@@ -151,9 +159,10 @@ void YieldVTBurst(int ThreadID, int save, long syscall_number) {
     if (!currThreadInfo)
 	return;
 
-    //assert(currThreadInfo != NULL);
+    if (currThreadInfo->in_callback == TRUE)
+	return;
 
-    if (currThreadInfo->force_completed == 1)
+    if (currThreadInfo->force_completed == TRUE)
 	return;
     
 
@@ -161,7 +170,7 @@ void YieldVTBurst(int ThreadID, int save, long syscall_number) {
 	    printf("Yielding VT Burst. ThreadID: %d. Syscall number: %d!\n", ThreadID, syscall_number);
     	    fflush(stdout);
 
-	    currThreadInfo->yielded = 1;
+	    currThreadInfo->yielded = TRUE;
 	    if (save) {
 		currThreadInfo->stack.currBBID = currBBID;
 		currThreadInfo->stack.prevBBID = prevBBID;
@@ -172,7 +181,6 @@ void YieldVTBurst(int ThreadID, int save, long syscall_number) {
 	    release_worker();
             
     }
-    //assert(release_worker() >= 0);
 	
 }
 
@@ -181,12 +189,14 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     if (!currThreadInfo)
 	return;
 
-    if (currThreadInfo->force_completed == 1)
+    if (currThreadInfo->in_callback == TRUE)
 	return;
 
-    currThreadInfo->force_completed = 1;
+    if (currThreadInfo->force_completed == TRUE)
+	return;
 
-    //assert(currThreadInfo != NULL);
+    currThreadInfo->force_completed = TRUE;
+
     printf("Force Complete Burst. Paused ThreadID: %d. Syscall number: %d!\n", ThreadID, syscall_number);
     fflush(stdout);
 
@@ -220,20 +230,17 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     printf("Force Complete Burst. Resumed ThreadID: %d. Syscall number: %d!\n", ThreadID, syscall_number);
     fflush(stdout);
     
-    if (currThreadInfo && currThreadInfo->yielded == 1)
-	currThreadInfo->yielded = 0;
+    if (currThreadInfo && currThreadInfo->yielded == TRUE)
+	currThreadInfo->yielded = FALSE;
 
-    if (currThreadInfo->force_completed == 1)
-	currThreadInfo->force_completed = 0;
+    if (currThreadInfo->force_completed == TRUE)
+	currThreadInfo->force_completed = FALSE;
 }
 
 void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
 
     
-    //printf("Signal Complete Burst !\n");
-    //fflush(stdout);
     // save globals
-
     if (save) {  
         currThreadInfo->stack.currBBID = currBBID;
         currThreadInfo->stack.prevBBID = prevBBID;
@@ -242,7 +249,6 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     }
 
     currBurstLength = finish_burst();
-    //currBurstLength = 1000;
     if (currBurstLength <= 0)
         HandleVTExpEnd(currThreadInfo->pid);
 
@@ -253,8 +259,6 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     currBBID = currThreadInfo->stack.currBBID;
     prevBBID = currThreadInfo->stack.prevBBID;
     currBBSize = currThreadInfo->stack.currBBSize;
-	//printf("Leaving Complete Burst !\n");
-    //fflush(stdout);
 }
 
 void AfterForkInChild(int ThreadID) {
@@ -278,8 +282,6 @@ void AfterForkInChild(int ThreadID) {
     }
 
     currThreadInfo = AllotThreadInfo(ThreadID);
-
-    //assert(globalTracerID != -1);
     add_to_tracer_sq(globalTracerID);
     globalThreadID = syscall(SYS_gettid);
     SignalBurstCompletion(currThreadInfo, 1);
@@ -291,7 +293,9 @@ void ThreadStart(int ThreadID) {
 
     ThreadInfo * currThreadInfo;
     currThreadInfo = AllotThreadInfo(ThreadID);
-    //assert(globalTracerID != -1);
+    if (!currThreadInfo)
+	return;
+
     printf("Adding new Thread: %d\n", ThreadID);
     fflush(stdout);
     add_to_tracer_sq(globalTracerID);
@@ -303,7 +307,9 @@ void ThreadStart(int ThreadID) {
 void ThreadFini(int ThreadID) {
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    //assert(currThreadInfo != NULL);
+    if (!currThreadInfo)
+	return;
+
     printf("Finishing new Thread: %d\n", ThreadID);
     fflush(stdout);
 	
@@ -319,33 +325,32 @@ void ThreadFini(int ThreadID) {
 void AppFini(int ThreadID) {
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+    if (!currThreadInfo)
+	return;
 
     printf("Finishing Application: %d\n", ThreadID);
     fflush(stdout);
 
-	
-    if (currThreadInfo) {
-        while(llist_size(&thread_info_list)) {
-            currThreadInfo = llist_pop(&thread_info_list);
-            if (currThreadInfo) {
-                CleanupThreadInfo(currThreadInfo);
-                hmap_remove_abs(&thread_info_map, currThreadInfo->pid);
-                free(currThreadInfo);
-            }
-            
-        }
-
-	if (!expStopping)
-        	finish_burst_and_discard();  
-        llist_destroy(&thread_info_list);
-        hmap_destroy(&thread_info_map);
+    while(llist_size(&thread_info_list)) {
+       currThreadInfo = llist_pop(&thread_info_list);
+       if (currThreadInfo) {
+           CleanupThreadInfo(currThreadInfo);
+           hmap_remove_abs(&thread_info_map, currThreadInfo->pid);
+           free(currThreadInfo);
+       }
+    
     }
-	
+
+    if (!expStopping)
+	finish_burst_and_discard();  
+    llist_destroy(&thread_info_list);
+    hmap_destroy(&thread_info_map);
 }
 
 void TriggerSyscallWait(int ThreadID, int save) {
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    //assert(currThreadInfo != NULL);
+    if (!currThreadInfo)
+	return;
 
     printf("Trigger Syscall Wait: %d\n", ThreadID);
     fflush(stdout);
@@ -364,7 +369,8 @@ void TriggerSyscallWait(int ThreadID, int save) {
 void TriggerSyscallFinish(int ThreadID) {
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    //assert(currThreadInfo != NULL);
+    if(!currThreadInfo)
+	return;
 
     printf("Trigger Syscall Finish: %d\n", ThreadID);
     fflush(stdout);
@@ -415,7 +421,10 @@ void UpdateLookAhead(ThreadInfo * currThreadInfo, int64_t prev_BBID,
 void markCurrBBL(int ThreadID) {
     ThreadInfo * currThreadInfo;
     currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    //assert(currThreadInfo != NULL);
+    assert(currThreadInfo != NULL);
+
+    if (currThreadInfo->in_callback == TRUE)
+	return;
 
     printf("mark Curr BBL: %d\n", ThreadID);
     fflush(stdout);
@@ -424,7 +433,6 @@ void markCurrBBL(int ThreadID) {
     if (currBBID != 0) {
         BasicBlock * relevantBBL = AllotBasicBlockEntry(currThreadInfo,
                                                         currBBID);
-        //assert(relevantBBL != NULL);
         relevantBBL->isMarked = 1;
         relevantBBL->BBLSize = currBBSize;
         relevantBBL->lookahead_value = currBBSize;
@@ -436,19 +444,13 @@ void BasicBlockCallback(ThreadInfo * currThreadInfo, int bblID) {
 
     BasicBlock * bbl;
 
-    //bbl = AllotBasicBlockEntry(currThreadInfo, bblID);
-    //bbl->BBLSize = currBBSize;
+    bbl = AllotBasicBlockEntry(currThreadInfo, bblID);
+    bbl->BBLSize = currBBSize;
 
     if (!alwaysOn) { 
         // set lookahead here for this Thread ...
-    }
-
-    // call finish_burst
-    //printf("Signalling finish burst completion !\n");
-    //fflush(stdout);
+    }    
     SignalBurstCompletion(currThreadInfo, 1);
-    //printf("Started next burst !\n");
-    //fflush(stdout);
 }
 
 void vtCallbackFn() {
@@ -458,52 +460,40 @@ void vtCallbackFn() {
     
     
 	
-    /* 
+     
     if (alwaysOn) {
 	//ThreadID = syscall(SYS_gettid);
         //currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
         //UpdateLookAhead(ThreadID, prevBBID, currBBID, currBBSize);
 	//if (currThreadInfo->stack.totalBurstLength >= FLIP_ALWAYS_ON_THRESHOLD)
         //    alwaysOn = 0;
-    }*/
+    }
 
-    
-
-    
-    /*if (interesting == 1) {
-      ThreadID = syscall(SYS_gettid);
-      	if (ThreadID == globalThreadID) {
-    		printf("Entering. Always On = %d, Left Burst Length = %llu, Curr BBID = %llu, Curr BBSize = %d !\n", alwaysOn, currBurstLength, currBBID, currBBSize);
-    	fflush(stdout);
-    	}
-    }*/
-
+   
     
     if (currBurstLength <= 0) {
 
 	ThreadID = syscall(SYS_gettid);
-	
-	/*if (ThreadID == globalThreadID) {
-		printf("Finished Burst for Thread: %d. CurrBurstLength = %llu!\n", ThreadID, currBurstLength);
-		fflush(stdout);
-	}*/
 	currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-        //assert(currThreadInfo != NULL);
+        assert(currThreadInfo != NULL);
 
-	if (currThreadInfo != NULL)
+	if (currThreadInfo != NULL) {
+		currThreadInfo->in_callback = TRUE;
+		
         	BasicBlockCallback(currThreadInfo, currBBID);
+		
+		/*if (ThreadID == globalThreadID) {
+			printf("Finished Burst for Thread: %d\n", ThreadID);
+			//printf("Finished Burst for Thread: %d. CurrBurstLength = %lld!\n", ThreadID, currBurstLength);
+			//fflush(stdout);
+		}*/
+		currThreadInfo->in_callback = FALSE;
+	}
 	
     }
 	
 
     prevBBID = currBBID;  
-    /*if (interesting == 1) {
-      ThreadID = syscall(SYS_gettid);
-      	if (ThreadID == globalThreadID) {
-    		printf("Leaving. Always On = %d, Left Burst Length = %llu, Curr BBID = %llu, Curr BBSize = %d !\n", alwaysOn, currBurstLength, currBBID, currBBSize);
-    	fflush(stdout);
-    	}
-    }*/
 }
 
 

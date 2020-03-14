@@ -238,6 +238,8 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count,
     ret =  handle_write_results_cmd(dilated_task, api_integer_args,
                                     num_integer_args);
     hmap_remove_abs(&get_dilated_task_struct_by_pid, current->pid);
+    if (dilated_task->associated_tracer->main_task == dilated_task)
+		dilated_task->associated_tracer->main_task = NULL;
     kfree(dilated_task);
     return ret;
 
@@ -407,6 +409,8 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
                  tracer_id, current->pid);
 
         hmap_remove_abs(&get_dilated_task_struct_by_pid, current->pid);
+	if (curr_tracer->main_task == dilated_task)
+		curr_tracer->main_task = NULL;
         kfree(dilated_task);
         return 0;
       }
@@ -840,6 +844,9 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         PDEBUG_I("VT_SET_RUNNABLE: Tracer: %d, Process: %d STOPPING\n",
                  tracer_id, current->pid);
         hmap_remove_abs(&get_dilated_task_struct_by_pid, current->pid);
+	if (curr_tracer->main_task == dilated_task)
+		curr_tracer->main_task = NULL;
+
         kfree(dilated_task);
 
         api_info_tmp.return_value = 0;
@@ -1005,6 +1012,8 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         PDEBUG_I("VT_SYSCALL_WAIT: Tracer: %d, Process: %d STOPPING\n",
                  tracer_id, current->pid);
         hmap_remove_abs(&get_dilated_task_struct_by_pid, current->pid);
+	if (curr_tracer->main_task == dilated_task)
+		curr_tracer->main_task = NULL;
         kfree(dilated_task);
 
         api_info_tmp.return_value = 0;

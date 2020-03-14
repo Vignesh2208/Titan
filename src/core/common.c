@@ -126,7 +126,7 @@ void clean_up_schedule_list(tracer * tracer_entry) {
 	struct pid *pid_struct;
 	struct task_struct * task;
 
-	BUG_ON(!tracer_entry || !tracer_entry->main_task);
+	BUG_ON(!tracer_entry);
 	
 	lxc_schedule_elem* curr_elem;
 	llist* schedule_queue = &tracer_entry->schedule_queue;
@@ -151,13 +151,15 @@ void clean_up_schedule_list(tracer * tracer_entry) {
 	while ( pid != 0) {
 		pid = pop_schedule_list(tracer_entry);
 	}
+
+	/*
 	if (tracer_entry->main_task) {
 		tracer_entry->main_task->associated_tracer_id = -1;
 		tracer_entry->main_task->virt_start_time = 0;
 		tracer_entry->main_task->curr_virt_time = 0;
 		tracer_entry->main_task->wakeup_time = 0;
 		tracer_entry->main_task->burst_target = 0;
-	}
+	}*/
 	tracer_entry->main_task = NULL;
 }
 
@@ -564,6 +566,8 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 
 	if (!curr_tracer)
 		return FAIL;
+
+	BUG_ON(!curr_tracer->main_task);
 
 	get_tracer_struct_write(curr_tracer);
 	for (i = 0; i < num_args; i++) {

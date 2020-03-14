@@ -449,7 +449,7 @@ int cleanup_experiment_components() {
 
 	PDEBUG_I("Cleaning up experiment components ...\n");
 
-    virt_exp_start_time = 0;
+    	virt_exp_start_time = 0;
 
 	atomic_set(&n_workers_running, 0);
 	atomic_set(&n_waiting_tracers, 0);
