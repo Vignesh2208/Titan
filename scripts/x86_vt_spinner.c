@@ -5,6 +5,8 @@
 #include <time.h>
 #include <unistd.h>
 
+extern int interesting;
+
 void print_time () {
  struct timeval tv;
  struct tm* ptm;
@@ -33,6 +35,11 @@ int main(int argc, char *argv[]) {
         int i = 0;
         int j = 0;
 	long nevents;
+	/*
+        if (interesting != 0)
+		printf("Interesting !\n");
+	*/
+	/*
         for (i = 0; i < 128; i++) {
 		for (j = 0; j < 1024; j ++) {
 			
@@ -47,7 +54,9 @@ int main(int argc, char *argv[]) {
 		      printf("Finished Assigning: %llu for the %d time. CurrBurstLength\n", t, i);
 		      fflush(stdout);
 		}
-        }
-	while(1);
+        }*/
+	while(i < 100000000) {
+		i++;
+	}
 	return 0;
 }

@@ -1100,7 +1100,7 @@ int __init my_module_init(void) {
   PDEBUG_A("Total Number of CPUS: %d\n", num_online_cpus());
 
   if (TOTAL_CPUS > 2)
-    EXP_CPUS = 1;
+    EXP_CPUS = TOTAL_CPUS - 2;
   else
     EXP_CPUS = 1;
 
