@@ -144,7 +144,7 @@ ssize_t handle_write_results_cmd(struct dilated_task_struct * dilation_task,
                         num_args);
 
   wait_event_interruptible(
-    *curr_tracer->w_queue,
+    dilation_task->d_task_wqueue,
     dilation_task->associated_tracer_id <= 0 ||
         (curr_tracer->w_queue_wakeup_pid == current->pid &&
          dilation_task->burst_target > 0));
@@ -152,6 +152,7 @@ ssize_t handle_write_results_cmd(struct dilated_task_struct * dilation_task,
     "VT_WRITE_RES: Associated Tracer : %d, Process: %d, resuming from wait\n",
     dilation_task->associated_tracer_id, current->pid);
 
+  //PDEBUG_I("VT_WRITE_RES: Trigger Delay: %lld\n", ktime_get_real() - dilation_task->trigger_time);
   dilation_task->ready = 0;
   
 
@@ -782,6 +783,11 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       dilated_task->syscall_waiting = 0;
       curr_tracer = dilated_task->associated_tracer;
       curr_tracer->w_queue_wakeup_pid = 1;
+
+      if (curr_tracer->last_run != NULL && dilated_task->pid == curr_tracer->last_run->pid) {
+      		curr_tracer->last_run->quanta_left_from_prev_round = 0;
+		curr_tracer->last_run = NULL;
+      }
       PDEBUG_V("VT_RELEASE_WORKER: signalling worker resume. Tracer ID: %d\n",
 			curr_tracer->tracer_id);
       wake_up_interruptible(curr_tracer->w_queue);
@@ -827,7 +833,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         "entering wait\n", tracer_id, current->pid);
      
       wait_event_interruptible(
-        *curr_tracer->w_queue, dilated_task->associated_tracer_id <= 0 ||
+        dilated_task->d_task_wqueue, dilated_task->associated_tracer_id <= 0 ||
             (curr_tracer->w_queue_wakeup_pid == current->pid &&
             dilated_task->burst_target > 0));
       
@@ -844,8 +850,8 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         PDEBUG_I("VT_SET_RUNNABLE: Tracer: %d, Process: %d STOPPING\n",
                  tracer_id, current->pid);
         hmap_remove_abs(&get_dilated_task_struct_by_pid, current->pid);
-	if (curr_tracer->main_task == dilated_task)
-		curr_tracer->main_task = NULL;
+	      if (curr_tracer->main_task == dilated_task)
+		      curr_tracer->main_task = NULL;
 
         kfree(dilated_task);
 
@@ -983,9 +989,15 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
           &syscall_wait_wqueue[curr_tracer->timeline_assignment]);
         PDEBUG_V("VT_SYSCALL_WAIT: Associated Tracer : %d, Process: %d, "
           "signalling syscall wait\n", tracer_id, current->pid);
+      } else {
+        dilated_task->burst_target = 0;
+        curr_tracer->w_queue_wakeup_pid = 1;
+        PDEBUG_V("VT_SYSCALL_WAIT: signalling worker resume. Tracer ID: %d\n",
+          curr_tracer->tracer_id);
+        wake_up_interruptible(curr_tracer->w_queue);
       }
 
-      dilated_task->burst_target = 0;
+      
       PDEBUG_V(
         "VT_SYSCALL_WAIT: Associated Tracer : %d, Process: %d, "
         "entering syscall wait\n", tracer_id, current->pid);
@@ -995,10 +1007,6 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         dilated_task->syscall_waiting == 0);
       
       dilated_task->ready = 0;
-      // Ensure that for INS_VT tracer, only the tracer process can invoke this
-      // call
-      if (dilated_task->associated_tracer_id)
-        BUG_ON(curr_tracer->main_task->pid != current->pid);
 
       if (dilated_task->associated_tracer_id <= 0) {
         dilated_task->burst_target = 0;
@@ -1038,7 +1046,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       PDEBUG_V(
         "VT_SYSCALL_WAIT: Associated Tracer : %d, Process: %d, "
         "resuming from wait\n", tracer_id, current->pid);
-      return 0;
+      return 1;
     default:
       PDEBUG_V("Unkown Command !\n");
       return -ENOTTY;

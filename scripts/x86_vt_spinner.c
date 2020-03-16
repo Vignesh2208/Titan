@@ -26,12 +26,21 @@ void print_time () {
 
 }
 
+void sleep_with_select(int timeout_secs) {
+	struct timeval tv;   
+	tv.tv_sec = timeout_secs;
+	tv.tv_usec = 0;
+	if (select(0, NULL, NULL, NULL, &tv) < 0) perror("select");
+
+};
+
 
 
 int main(int argc, char *argv[]) {
-	//print_time();
+	print_time();
 	//usleep(10000);
-	//print_time();
+	sleep_with_select(1);
+	print_time();
         int i = 0;
         int j = 0;
 	long nevents;
@@ -55,8 +64,6 @@ int main(int argc, char *argv[]) {
 		      fflush(stdout);
 		}
         }*/
-	while(i < 100000000) {
-		i++;
-	}
+	while(1);
 	return 0;
 }

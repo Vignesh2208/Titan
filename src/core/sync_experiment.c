@@ -175,7 +175,7 @@ int progress_by(s64 progress_duration, int num_rounds) {
 
 	PDEBUG_V("progress_by for fixed windows initiated."
 	        "Window size = %lu, Num rounds = %d\n",
-			progress_duration, current_progress_n_rounds);
+		progress_duration, current_progress_n_rounds);
 
 	round_synchronization();
 	PDEBUG_V("Previously initiated progress_by finished !\n");
@@ -296,7 +296,7 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 
 	int i;
 	int j;
-        int num_required_pages;
+    int num_required_pages;
 	int num_prev_alotted_pages;
 
 	PDEBUG_V("Entering Experiment Initialization\n");
@@ -440,7 +440,6 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 int cleanup_experiment_components() {
 
 	int i = 0;
-    	int num_alotted_pages;
 
 	if (initialization_status == NOT_INITIALIZED) {
 		PDEBUG_I("Experiment Already Cleaned up ...\n");
@@ -479,7 +478,6 @@ int sync_and_freeze() {
 	int j;
 	u32 flags;
 	s64 now;
-	//struct sched_param sp;
 	tracer * curr_tracer;
 	int ret;
 
@@ -616,6 +614,7 @@ int per_timeline_worker(void *data) {
 		}
 
 		update_all_tracers_virtual_time(timeline_id);
+		//wake_up_processes_waiting_on_syscalls(timeline_id);
 		PDEBUG_V("per_timeline_worker: Finished round for timeline %d\n",
 				timeline_id);
 		/* when the first task has started running, signal you are done working,
@@ -1015,10 +1014,10 @@ lxc_schedule_elem * get_next_runnable_task(tracer * curr_tracer) {
 	llist_elem* head = run_queue->head;
 
 
-	if (curr_tracer->last_run != NULL 
+	/*if (curr_tracer->last_run != NULL 
 		&& curr_tracer->last_run->quanta_left_from_prev_round > 0) {
 		return curr_tracer->last_run;
-	}
+	}*/
 	while (head != NULL) {
 		curr_elem = (lxc_schedule_elem *)head->item;
 		if (!curr_elem)
@@ -1051,16 +1050,19 @@ int unfreeze_proc_exp_single_core_mode(tracer * curr_tracer) {
 	if (curr_tracer->nxt_round_burst_length == 0)
 		return SUCCESS;
 	
+	now_ns = ktime_get_real();
 	clean_up_all_irrelevant_processes(curr_tracer);
-	atleast_on_task_runnable = update_all_runnable_task_timeslices(curr_tracer);
-	print_schedule_list(curr_tracer);
-	
-	total_quanta = curr_tracer->nxt_round_burst_length;
-	//if (curr_tracer->last_run)
-	//	PDEBUG_V("Tracer: %d, LAST RUN = %d\n", curr_tracer->tracer_id,
-	//			 curr_tracer->last_run->pid);
 
+	total_quanta = curr_tracer->nxt_round_burst_length;
+
+ 
+	atleast_on_task_runnable = update_all_runnable_task_timeslices(curr_tracer);
+	//PDEBUG_I("Unfreeze proc exp pre-processing time elapsed: %llu\n", ktime_get_real() - now_ns);
+	//print_schedule_list(curr_tracer);
+	
+	
 	while (used_quanta < total_quanta) {
+		now_ns = ktime_get_real();
 		curr_elem = get_next_runnable_task(curr_tracer);
 		if (!curr_elem)
 			break;
@@ -1069,11 +1071,16 @@ int unfreeze_proc_exp_single_core_mode(tracer * curr_tracer) {
 		get_tracer_struct_write(curr_tracer);
 		used_quanta += curr_elem->quanta_curr_round;
 		curr_elem->curr_task->burst_target = curr_elem->quanta_curr_round;
+		curr_elem->total_run_quanta += curr_elem->quanta_curr_round;
+		//PDEBUG_V("Running Task: %d in round for duration: %llu. Total run quanta: %llu\n", curr_elem->pid, curr_elem->quanta_curr_round, curr_elem->total_run_quanta);
 		curr_elem->quanta_curr_round = 0; // reset to zero
 		put_tracer_struct_write(curr_tracer);
+		curr_elem->curr_task->trigger_time = ktime_get_real();
+		//PDEBUG_V("Unfreeze proc exp post-processing time elapsed: %llu\n", ktime_get_real() - now_ns);
 		wait_for_task_completion(curr_tracer, curr_elem->curr_task);
 		get_tracer_struct_read(curr_tracer);
 		curr_elem->curr_task->burst_target = 0;
+		
 	}
 	return SUCCESS;
 }

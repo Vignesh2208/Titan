@@ -390,8 +390,8 @@ pid_t fork() {
 
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
 	int ThreadPID =  syscall(SYS_gettid);
-	printf("In my gettimeofday: %d\n", ThreadPID);
-	fflush(stdout);
+	//printf("In my gettimeofday: %d\n", ThreadPID);
+	//fflush(stdout);
 	vtGetCurrentTimeval(tv);
 	return 0;
 }
@@ -408,23 +408,23 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp) {
 
 unsigned int sleep(unsigned int seconds) {
 	int ThreadPID = syscall(SYS_gettid);
-	printf("In my sleep: %d\n", ThreadPID);
-        fflush(stdout);
+	//printf("In my sleep: %d\n", ThreadPID);
+        //fflush(stdout);
 	vtSleepForNS(ThreadPID, seconds*NSEC_PER_SEC);
 	return 0;
 }
 
 int usleep(useconds_t usec) {
 	int ThreadPID = syscall(SYS_gettid);
-	printf("In my usleep: %d\n", ThreadPID);
-        fflush(stdout);
+	//printf("In my usleep: %d\n", ThreadPID);
+        //fflush(stdout);
 	vtSleepForNS(ThreadPID, usec*NSEC_PER_US);
-	printf("Returning from my usleep: %d\n", ThreadPID);
-        fflush(stdout);
+	//printf("Returning from my usleep: %d\n", ThreadPID);
+        //fflush(stdout);
 	return 0;
 }
 
-/*
+
 int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
 	
 	int ret, ThreadPID;
@@ -516,7 +516,6 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 				*writefds = writefds_copy;
 			if (isExceptInc)
 				*exceptfds = exceptfds_copy;
-
 		} while (elapsed_time < max_duration);
 		vtTriggerSyscallFinish(ThreadPID);
 		
@@ -529,7 +528,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 	}
 
 	return ret;
-}*/
+}
 
 static void execute_cpu_yielding_syscall(long syscall_number, long arg0,
 	long arg1, long arg2, long arg3, long arg4, long arg5, long *result,
@@ -553,18 +552,16 @@ static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
 	
 
 	if (syscall_number == SYS_sendto
-		//|| syscall_number == SYS_write
 		|| syscall_number == SYS_sendmsg
 		|| syscall_number == SYS_sendmmsg) {
 		ThreadPID = syscall_no_intercept(SYS_gettid);
 
-		//if (vtInitialized && *vtInitialized == 1)
-		//	vtMarkCurrBBL(ThreadPID);
+		if (vtInitialized && *vtInitialized == 1)
+			vtMarkCurrBBL(ThreadPID);
 	}
 
 	if (syscall_number == SYS_futex
 		|| syscall_number == SYS_read
-		//|| syscall_number == SYS_write
 		|| syscall_number == SYS_wait4
 		|| syscall_number == SYS_waitid
 		|| syscall_number == SYS_recvfrom

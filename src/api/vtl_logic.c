@@ -34,7 +34,6 @@ void SleepForNS(int ThreadID, int64_t duration) {
 
     if (duration <= 0)
         return;
-
 	
     int ret;
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
@@ -399,8 +398,8 @@ void TriggerSyscallWait(int ThreadID, int save) {
     
     currThreadInfo->in_callback = TRUE;
 
-    printf("Trigger Syscall Wait: %d\n", ThreadID);
-    fflush(stdout);
+    //printf("Trigger Syscall Wait: %d\n", ThreadID);
+    //fflush(stdout);
 	
     if  (save) {
         currThreadInfo->stack.currBBID = currBBID;

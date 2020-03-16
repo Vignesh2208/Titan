@@ -24,11 +24,13 @@ struct dilated_task_struct {
 	s64 virt_start_time;
 	s64 burst_target;
 	s64 lookahead;
+	s64 trigger_time;
 	int associated_tracer_id;
 	int ready;
 	int buffer_window_len;
 	int pid;
 	int syscall_waiting;
+	wait_queue_head_t d_task_wqueue;
 	struct task_struct * vt_exec_task;
 	struct task_struct * base_task;
 	struct tracer_struct * associated_tracer;
@@ -51,6 +53,7 @@ typedef struct sched_queue_element {
 	s64 base_quanta;
 	s64 quanta_left_from_prev_round;
 	s64 quanta_curr_round;
+	s64 total_run_quanta;
 	int pid;
 	int blocked;
 	struct dilated_task_struct * curr_task;

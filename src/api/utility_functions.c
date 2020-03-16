@@ -18,9 +18,7 @@ specified by FILENAME
 s64 send_to_vt_module(unsigned int cmd, ioctl_args *arg) {
   int fp = open(FILENAME, O_RDWR);
   s64 ret = 10000;
-  arg->cmd_value = 10000;
-
-  
+ 
   if (fp < 0) {
     printf("ERROR communicating with VT module: Could not open proc file\n");
     return -1;

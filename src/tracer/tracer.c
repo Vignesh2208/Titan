@@ -17,7 +17,6 @@
 #include <signal.h>
 
 #define MAX_COMMAND_LENGTH 1000
-#define MAX_BUF_SIZ 100
 #define MAX_STRING_SIZE 100
 #define FAIL -1
 
@@ -56,7 +55,7 @@ int run_command_under_vt_management(char *orig_command_str, pid_t *child_pid,
   sprintf(timeline_id_env_variable, "%d", timeline_id);
   sprintf(exp_type_env_variable, "%d", exp_type);
   
-  memcpy(full_command_str, orig_command_str, MAX_STRING_SIZE);
+  memcpy(full_command_str, orig_command_str, MAX_COMMAND_LENGTH);
 
   while (full_command_str[i] != '\0' && full_command_str[i] != '\n') {
     if (i != 0 && full_command_str[i - 1] != ' ' &&
@@ -176,7 +175,7 @@ int main(int argc, char * argv[]) {
 
 	size_t len = 0;
 	int tracer_id = 0, timeline_id, exp_type;
-	char command[MAX_STRING_SIZE];
+	char command[MAX_COMMAND_LENGTH];
 	int option = 0;
 	int i, status;
   	pid_t controlled_pid;
@@ -196,7 +195,7 @@ int main(int argc, char * argv[]) {
 			break;
 		case 'e' : exp_type = atoi(optarg);
 			break;
-		case 'c' : memset(command, 0, sizeof(char)*MAX_BUF_SIZ);
+		case 'c' : memset(command, 0, sizeof(char)*MAX_COMMAND_LENGTH);
 			sprintf(command, "%s", optarg);
 			break;
 		case 'h' :

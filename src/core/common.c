@@ -125,6 +125,7 @@ void clean_up_schedule_list(tracer * tracer_entry) {
 	int pid = 1;
 	struct pid *pid_struct;
 	struct task_struct * task;
+	struct dilated_task_struct * d_task;
 
 	BUG_ON(!tracer_entry);
 	
@@ -150,16 +151,13 @@ void clean_up_schedule_list(tracer * tracer_entry) {
 
 	while ( pid != 0) {
 		pid = pop_schedule_list(tracer_entry);
+		if (pid != 0) {
+			d_task = hmap_get_abs(&get_dilated_task_struct_by_pid, pid);
+			if (d_task != NULL) {
+				wake_up_interruptible(&d_task->d_task_wqueue);
+			}
+		}
 	}
-
-	/*
-	if (tracer_entry->main_task) {
-		tracer_entry->main_task->associated_tracer_id = -1;
-		tracer_entry->main_task->virt_start_time = 0;
-		tracer_entry->main_task->curr_virt_time = 0;
-		tracer_entry->main_task->wakeup_time = 0;
-		tracer_entry->main_task->burst_target = 0;
-	}*/
 	tracer_entry->main_task = NULL;
 }
 
@@ -172,6 +170,8 @@ void clean_up_run_queue(tracer * tracer_entry) {
 		pop_run_queue(tracer_entry);
 	}
 }
+
+
 
 /*
 Assumes tracer read lock is acquired before function call
@@ -256,6 +256,7 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	new_elem->quanta_left_from_prev_round = 0;
 	new_elem->quanta_curr_round = 0;
 	new_elem->blocked = 0;
+	new_elem->total_run_quanta = 0;
 
 	tracee_dilated_task_struct->associated_tracer_id = tracer_entry->tracer_id;
 	tracee_dilated_task_struct->base_task = tracee;
@@ -267,7 +268,7 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	tracee_dilated_task_struct->buffer_window_len = 0;
 	tracee_dilated_task_struct->lookahead = 0;
 	tracee_dilated_task_struct->syscall_waiting = 0;
-	
+	init_waitqueue_head(&tracee_dilated_task_struct->d_task_wqueue);
 	
 	BUG_ON(!chaintask[tracer_entry->timeline_assignment]);
 	BUG_ON(tracer_entry->vt_exec_task 
@@ -513,6 +514,10 @@ void wake_up_syscall_waiting_processes(tracer * tracer_entry) {
 				PDEBUG_V("Waking syscall waiting process: %d\n",
 						 curr_elem->curr_task->pid);
 				curr_elem->curr_task->syscall_waiting = 0;
+				if (curr_elem == tracer_entry->last_run) {
+					tracer_entry->last_run->quanta_left_from_prev_round = 0;
+					tracer_entry->last_run = NULL;
+				}
 				BUG_ON(curr_elem->curr_task->ready != 0);
 				wake_up_interruptible(&syscall_wait_wqueue[timelineID]);
 				wait_event_interruptible(
@@ -605,7 +610,9 @@ void wait_for_task_completion(tracer * curr_tracer,
 	PDEBUG_V("Waiting for Tracer completion for Tracer ID: %d\n",
 			 curr_tracer->tracer_id);
 	curr_tracer->w_queue_wakeup_pid = relevant_task->pid;
-	wake_up_interruptible(curr_tracer->w_queue);
+	BUG_ON(relevant_task->burst_target == 0);
+	wake_up_interruptible(&relevant_task->d_task_wqueue);
+	
 	wait_event_interruptible(*curr_tracer->w_queue,
 							 curr_tracer->w_queue_wakeup_pid == 1);
 	PDEBUG_V("Resuming from Tracer completion for Tracer ID: %d\n",
