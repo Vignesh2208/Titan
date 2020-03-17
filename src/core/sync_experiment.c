@@ -614,7 +614,7 @@ int per_timeline_worker(void *data) {
 		}
 
 		update_all_tracers_virtual_time(timeline_id);
-		//wake_up_processes_waiting_on_syscalls(timeline_id);
+		wake_up_processes_waiting_on_syscalls(timeline_id);
 		PDEBUG_V("per_timeline_worker: Finished round for timeline %d\n",
 				timeline_id);
 		/* when the first task has started running, signal you are done working,

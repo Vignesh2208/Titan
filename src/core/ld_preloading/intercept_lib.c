@@ -70,16 +70,16 @@ static void * wrap_threadFn(void *thunk_vp) {
     
     struct Thunk *thunk_p = (struct Thunk *)thunk_vp;
 	int ThreadPID = syscall(SYS_gettid);
-	printf ("New Thread Starting: PID = %d\n", ThreadPID);
-        fflush(stdout);
+	//printf ("New Thread Starting: PID = %d\n", ThreadPID);
+        //fflush(stdout);
 
 	vtThreadStart(ThreadPID);
 
-    void *result = (thunk_p->start_routine)(thunk_p->arg);
+    	void *result = (thunk_p->start_routine)(thunk_p->arg);
 
 	free(thunk_p);
-	printf ("Thread Exiting. PID = %d\n", ThreadPID);
-         fflush(stdout);
+	//printf ("Thread Exiting. PID = %d\n", ThreadPID);
+        //fflush(stdout);
 
 	vtThreadFini(ThreadPID);
     return result;
@@ -103,8 +103,6 @@ int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
     struct Thunk *thunk_p = malloc(sizeof(struct Thunk));
     thunk_p->start_routine = start_routine;
     thunk_p->arg = arg;
-    printf("Calling pthread create\n");
-    fflush(stdout);
     return real_pthread_create(thread, attr, wrap_threadFn, thunk_p);
 }
 
@@ -116,7 +114,7 @@ int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
 
 void my_exit(void) {
    int ThreadPID = syscall(SYS_gettid);
-   printf("I am exiting main thread. PID = %d\n", ThreadPID);
+   printf("Main thread exiting. PID = %d\n", ThreadPID);
    fflush(stdout);
 
    vtAppFini(ThreadPID);
@@ -164,7 +162,7 @@ int __libc_start_main(int (*main) (int, char **, char **),
 		      void (*stack_end))
 {
 	void *libc_handle, *sym;
-    void * lib_vt_clock_handle;
+    	void * lib_vt_clock_handle;
 	/* This type punning is unfortunately necessary in C99 as casting
 	 * directly from void* to function pointers is left undefined in C99.
 	 * Strictly speaking, the conversion via union is still undefined
@@ -516,6 +514,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 				*writefds = writefds_copy;
 			if (isExceptInc)
 				*exceptfds = exceptfds_copy;
+			//printf("Elapsed time: %lld\n", vtGetCurrentTime() - start_time);
 		} while (elapsed_time < max_duration);
 		vtTriggerSyscallFinish(ThreadPID);
 		

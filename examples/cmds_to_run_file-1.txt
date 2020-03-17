@@ -1,1 +1,1 @@
-/usr/local/bin/sysbench --time=100 --threads=1 cpu --cpu-max-prime=10000 run > /tmp/sysbench_log_1.txt
+/bin/x86_vt_spinner > /tmp/spinner_1.txt
