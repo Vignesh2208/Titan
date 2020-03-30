@@ -54,7 +54,7 @@ void initiate_experiment_stop_operation() {
 	int i;
 	BUG_ON(experiment_status != STOPPING);
 	current_progress_n_rounds = 0;
-	PDEBUG_I("round_sync_task: Cleaning experiment via catchup task. "
+	PDEBUG_I("initiate_experiment_stop_operation: Cleaning experiment via catchup task. "
 				"Waiting for all timeline workers to exit...\n");
 	BUG_ON(atomic_read(&n_workers_running) != 0);
 	atomic_set(&n_workers_running, total_num_timelines);
@@ -62,16 +62,16 @@ void initiate_experiment_stop_operation() {
 		/* chaintask refers to per_cpu_worker */
 		timeline_info[i].nxt_round_burst_length = 0;
 		if (wake_up_process(chaintask[i]) == 1) {
-			PDEBUG_V("round_sync_task: Sync thread %d wake up\n", i);
+			PDEBUG_V("initiate_experiment_stop_operation: Sync thread %d wake up\n", i);
 		} else {
 			while (wake_up_process(chaintask[i]) != 1);
 			PDEBUG_V(
-				"round_sync_task: Sync thread %d already running\n", i);
+				"initiate_experiment_stop_operation: Sync thread %d already running\n", i);
 		}
 	}
 	wait_event_interruptible(progress_call_proc_wqueue,
 							 atomic_read(&n_workers_running) == 0);
-	PDEBUG_A("round_sync_task: all timeline workers exited !\n");
+	PDEBUG_A("initiate_experiment_stop_operation: all timeline workers exited !\n");
 	preempt_disable();
 	local_irq_disable();
 	for (i = 0; i < total_num_timelines; i++) {
@@ -210,19 +210,21 @@ int progress_timeline_by(int timeline_id, s64 progress_duration) {
 		experiment_status = RUNNING;
 	}
 
-	PDEBUG_V("progress_timeline_by for fixed duration initiated."
-	        "duration= %lu, timeline_id = %d\n", progress_duration,
-			timeline_id);
+	struct dilated_timer_timeline_base * base = get_timeline_base(timeline_id);
+
+	PDEBUG_V("$$$$$$$$$$$$$$$$$$$$$$ progress_timeline_by for fixed duration initiated. "
+	        "Duration= %lu, timeline_id = %d. Curr time: %llu $$$$$$$$$$$$$$$$$$$$$$\n",
+		progress_duration, timeline_id, base->curr_virtual_time);
 
 	if (wake_up_process(chaintask[timeline_id]) == 1) {
-		PDEBUG_V("progress_timeline: Sync thread %d wake up\n", timeline_id);
+		PDEBUG_V("progress_timeline_by: Sync thread %d wake up\n", timeline_id);
 	} else {
 		while (wake_up_process(chaintask[timeline_id]) != 1) { msleep(50); }
 		PDEBUG_V(
-			"progress_timeline: Sync thread %d already running\n", timeline_id);
+			"progress_timeline_by: Sync thread %d already running\n", timeline_id);
 	}
-	wait_event_interruptible(curr_timeline->w_queue,
-							 curr_timeline->status == 1);
+	wait_event_interruptible(*curr_timeline->w_queue,
+				 curr_timeline->status == 1);
 
 	preempt_disable();
 	local_irq_disable();
@@ -234,6 +236,8 @@ int progress_timeline_by(int timeline_id, s64 progress_duration) {
 	curr_timeline->status = 0;
 	curr_timeline->nxt_round_burst_length = 0;
 
+	PDEBUG_V("$$$$$$$$$$$$$$$$$$$$$$ progress_timeline_by finished for"
+	        " timeline_id = %d $$$$$$$$$$$$$$$$$$$$$$\n", timeline_id);
 	return SUCCESS;
 }
 

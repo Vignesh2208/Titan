@@ -50,6 +50,16 @@ static PyObject *py_progress_by(PyObject *self, PyObject *args) {
   return Py_BuildValue("i", ret);
 }
 
+static PyObject *py_progress_timeline_by(PyObject *self, PyObject *args) {
+  s64 duration;
+  int timeline_id;
+  int ret;
+
+  if (!PyArg_ParseTuple(args, "iL", &timeline_id, &duration)) return NULL;
+  ret = progress_timeline_by(timeline_id, duration);
+  return Py_BuildValue("i", ret);
+}
+
 static PyObject *py_synchronizeAndFreeze(PyObject *self, PyObject *args) {
   int ret;
   ret = synchronizeAndFreeze();
@@ -63,6 +73,7 @@ static PyMethodDef vt_functions_methods[] = {
     {"initializeExp", py_initializeExp, METH_VARARGS, NULL},
     {"initializeVTExp", py_initializeVTExp, METH_VARARGS, NULL},
     {"progressBy", py_progress_by, METH_VARARGS, NULL},
+    {"progressTimelineBy", py_progress_timeline_by, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
 
 #if PY_MAJOR_VERSION <= 2

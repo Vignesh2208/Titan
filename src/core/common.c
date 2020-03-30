@@ -368,7 +368,7 @@ int register_tracer_process(char * write_buffer) {
 
 
 	num_args = convert_string_to_array(write_buffer, api_args,
-									   MAX_API_ARGUMENT_SIZE);
+					  MAX_API_ARGUMENT_SIZE);
 
 	BUG_ON(num_args < 2);
 
@@ -378,7 +378,7 @@ int register_tracer_process(char * write_buffer) {
 
 	if (registration_type == EXP_CS) {
 		BUG_ON(num_args != 3);
-		assigned_timeline_id  = api_args[3];
+		assigned_timeline_id  = api_args[2];
 		if (assigned_timeline_id < 0) {
 			PDEBUG_E("assigned_timeline_id pid must be >=0 zero. "
 			         "Received value: %d\n", assigned_timeline_id);
@@ -398,7 +398,8 @@ int register_tracer_process(char * write_buffer) {
 	}
 
 
-	PDEBUG_I("Register Tracer: Starting for tracer: %d\n", tracer_id);
+	PDEBUG_I("Register Tracer: Starting for tracer: %d. Registration type: %d, assigned-timeline: %d\n",
+		tracer_id, registration_type, assigned_timeline_id);
 
 	new_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
 
@@ -626,7 +627,7 @@ void signal_cpu_worker_resume(tracer * curr_tracer) {
 		return;
 
 	
-	PDEBUG_V("Tracer signalling resume. Tracer ID: %d\n",
+	PDEBUG_V("Signalling resume of cpu worker. Tracer ID: %d\n",
 			curr_tracer->tracer_id);
 	curr_tracer->w_queue_wakeup_pid = 1;
 	wake_up_interruptible(curr_tracer->w_queue);

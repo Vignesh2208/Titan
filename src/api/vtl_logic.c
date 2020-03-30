@@ -581,7 +581,7 @@ void initialize_vt_management() {
         exit(EXIT_FAILURE);
     }
 
-    printf ("Tracer-ID String: %s\n", tracer_id_str);
+    printf ("Tracer-ID String: %s, Timeline-ID String %s\n", tracer_id_str, timeline_id_str);
     tracer_id = atoi(tracer_id_str);
     fflush(stdout);
     if (tracer_id <= 0) {
@@ -613,7 +613,7 @@ void initialize_vt_management() {
         }
         ret = register_tracer(tracer_id, EXP_CS, timeline_id);
         globalTimelineID = timeline_id;
-	printf("Tracer registration EXP_CS complete. Return = %d\n", ret);
+	printf("Tracer registration EXP_CS complete. TimelineID = %d, Return = %d\n", timeline_id, ret);
     }
     printf("Tracer Adding to SQ. Tracer ID = %d\n", tracer_id);
     fflush(stdout);

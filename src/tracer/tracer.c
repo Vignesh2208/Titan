@@ -139,10 +139,15 @@ int run_command_under_vt_management(char *orig_command_str, pid_t *child_pid,
     }
     
     if (setenv("VT_TRACER_ID", tracer_id_env_variable, 1) < 0 ) {
-	    perror("Failed to set env variable : ");
+	    perror("Failed to set env VT_TRACER_ID\n");
     }
-    setenv("VT_TIMELINE_ID", timeline_id_env_variable, 1);
-    setenv("VT_EXP_TYPE", exp_type_env_variable, 1);
+    if (setenv("VT_TIMELINE_ID", timeline_id_env_variable, 1) < 0) {
+	    perror("Failed to set env VT_TIMELINE_ID\n");
+    }
+    
+    if (setenv("VT_EXP_TYPE", exp_type_env_variable, 1) < 0) {
+	    perror("Failed to set env VT_EXP_TYPE\n");
+    }
     setenv("LD_PRELOAD", "/usr/lib/libvtintercept.so", 1);
 
     printf("Starting Command: %s\n", args[0]);
@@ -180,6 +185,8 @@ int main(int argc, char * argv[]) {
 	int i, status;
   	pid_t controlled_pid;
 
+
+	timeline_id = 0;
 
 	if (argc < 4 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
 		print_usage(argc, argv);
@@ -224,8 +231,8 @@ int main(int argc, char * argv[]) {
 
   run_command_under_vt_management(
     command, &controlled_pid, tracer_id, timeline_id, exp_type);
-  printf("TracerID: %d, Started Command: %s, PID = %d\n", tracer_id, command,
-    controlled_pid);
+  printf("TracerID: %d, Started Command: %s, PID = %d. Timeline-id = %d\n", tracer_id, command,
+    controlled_pid, timeline_id);
 
   // Block here with a call to VT-Module
   printf("Waiting for exit !\n");

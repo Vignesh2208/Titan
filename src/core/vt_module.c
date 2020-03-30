@@ -201,7 +201,7 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count,
 
 	/* Use +2 to skip over the first two characters (i.e. the switch and the ,) */
 	if (write_buffer[0] == VT_ADD_TO_SQ) {
-      if (initialization_status != INITIALIZED && 
+        if (initialization_status != INITIALIZED && 
           experiment_status == STOPPING) {
 			PDEBUG_I("VT_ADD_PROCESSES_TO_SQ: Operation cannot be performed when "
 			    "experiment is not initialized !");
@@ -216,7 +216,7 @@ ssize_t vt_write(struct file *file, const char __user *buffer, size_t count,
 			return -EFAULT;
 		}
 
-    handle_add_processes_to_sq(api_integer_args, num_integer_args);
+    		handle_add_processes_to_sq(api_integer_args, num_integer_args);
 		return 0;
 
 	} else if (write_buffer[0] == VT_WRITE_RES) {
@@ -424,8 +424,8 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
 
-      PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d Returning !\n",
-               tracer_id, current->pid);
+      //PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d Returning !\n",
+      //         tracer_id, current->pid);
       return 0;
 
     case VT_REGISTER_TRACER:

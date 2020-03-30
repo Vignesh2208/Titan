@@ -177,7 +177,7 @@ int progress_timeline_by(int timeline_id, s64 duration) {
   init_ioctl_arg(&arg);
   sprintf(arg.cmd_buf, "%d,", timeline_id);
   arg.cmd_value = duration;
-  return send_to_vt_module(VT_PROGRESS_BY, &arg);
+  return send_to_vt_module(VT_PROGRESS_TIMELINE_BY, &arg);
 
 }
 
