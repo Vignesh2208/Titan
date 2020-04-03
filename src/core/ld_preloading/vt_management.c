@@ -26,6 +26,7 @@ void (*vtSleepForNS)(int ThreadID, s64 duration) = NULL;
 void (*vtGetCurrentTimespec)(struct timespec *tp) = NULL;
 void (*vtGetCurrentTimeval)(struct timeval * tv) = NULL;
 s64 (*vtGetCurrentTime)() = NULL;
+void (*vtSetPktSendTime)(int pktHash, s64 send_tstamp) = NULL;
 
 
 
@@ -116,6 +117,12 @@ void load_all_vtl_functions(void * lib_vt_lib_handle) {
     vtForceCompleteBurst = dlsym(lib_vt_lib_handle, "ForceCompleteBurst");
     if (!vtForceCompleteBurst) {
         printf("vtForceCompleteBurst not found !\n");
+        abort();
+    }
+
+    vtSetPktSendTime = dlsym(lib_vt_lib_handle, "SetPktSendTime");
+    if (!vtSetPktSendTime) {
+        printf("SetPktSendTime not found !\n");
         abort();
     }
 }

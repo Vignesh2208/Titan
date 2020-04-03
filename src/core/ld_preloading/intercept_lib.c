@@ -2,6 +2,7 @@
 
 
 #include "includes.h"
+#include "socket_utils.h"
 #include "vt_management.h"
 
 
@@ -30,6 +31,12 @@ int (*orig_futex)(int *uaddr, int futex_op, int val,
 
 long (*orig_syscall)(long number, ...);
 
+ssize_t (*orig_send)(int sockfd, const void *buf, size_t len, int flags);
+
+ssize_t (*orig_sendto)(int sockfd, const void *buf, size_t len, int flags,
+               const struct sockaddr *dest_addr, socklen_t addrlen);
+
+
 void __attribute__ ((noreturn)) (*orig_exit)(int status);
 
 // externs
@@ -55,6 +62,7 @@ extern void (*vtTriggerSyscallFinish)(int ThreadID);
 extern void (*vtSleepForNS)(int ThreadID, s64 duration);
 extern void (*vtGetCurrentTimespec)(struct timespec *ts);
 extern void (*vtGetCurrentTimeval)(struct timeval * tv);
+extern void (*vtSetPktSendTime)(int pktHash, s64 send_tstamp);
 extern s64 (*vtGetCurrentTime)();
 
 void load_orig_functions();
@@ -231,7 +239,7 @@ int __libc_start_main(int (*main) (int, char **, char **),
 	}
 
 
-    orig_exit = dlsym(libc_handle, "_exit");
+    	orig_exit = dlsym(libc_handle, "_exit");
 	if (!orig_exit) {
 		fprintf(stderr, "can't find _exit():%s\n",
 			dlerror());
@@ -239,12 +247,26 @@ int __libc_start_main(int (*main) (int, char **, char **),
 	}
 
 
-    orig_syscall = dlsym(libc_handle, "syscall");
+    	orig_syscall = dlsym(libc_handle, "syscall");
 	if (!orig_syscall) {
 		fprintf(stderr, "can't find syscall():%s\n",
 			dlerror());
 		_exit(EXIT_FAILURE);
 	}
+
+	orig_send = dlsym(libc_handle, "send");
+	if (!orig_send) {
+		fprintf(stderr, "can't find send():%s\n", dlerror());
+		_exit(EXIT_FAILURE);
+	}
+
+
+	orig_sendto = dlsym(libc_handle, "sendto");
+	if (!orig_sendto) {
+		fprintf(stderr, "can't find sendto():%s\n", dlerror());
+		_exit(EXIT_FAILURE);
+	}
+
 	real_libc_start_main.sym = sym;
 	real_main = main;
 	
@@ -385,6 +407,31 @@ pid_t fork() {
 	return ret;
 }
 
+
+/***** Socket Functions ****/
+ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
+	int pkt_hash;
+	if (len > 0) {
+		pkt_hash = get_packet_hash((char *)buf, len);
+		vtSetPktSendTime(pkt_hash, vtGetCurrentTime());
+	}
+	return orig_send(sockfd, buf, len, flags);
+}
+
+
+ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
+               const struct sockaddr *dest_addr, socklen_t addrlen) {
+
+	int pkt_hash;
+	if (len > 0) {
+		pkt_hash = get_packet_hash((char *)buf, len);
+		vtSetPktSendTime(pkt_hash, vtGetCurrentTime());
+	}
+	return orig_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
+
+}
+
+/***** Time related functions ****/
 
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
 	int ThreadPID =  syscall(SYS_gettid);

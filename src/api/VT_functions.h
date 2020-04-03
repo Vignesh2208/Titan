@@ -31,6 +31,7 @@ int add_to_tracer_sq(int tracer_id);
 // These functions can be called by the orchestrater script which may be in c,
 // c++ or python
 s64 get_current_time_pid(int pid);
+s64 get_current_time_tracer(int tracer_id);
 s64 get_current_vt_time();
 int initialize_VT_Exp(int exp_type, int num_timelines,
                       int num_expected_tracers);
@@ -50,5 +51,8 @@ s64 finish_burst();
 s64 finish_burst_and_discard();
 s64 mark_burst_complete(int signal_syscall_finish);
 s64 trigger_syscall_wait();
+
+int set_pkt_send_time(int pkt_hash, s64 send_tstamp);
+s64 get_pkt_send_time(int tracer_id, int pkt_hash);
 
 #endif

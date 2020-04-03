@@ -14,7 +14,11 @@ void clean_up_run_queue(tracer * tracer_entry);
 int schedule_list_size(tracer * tracer_entry);
 int run_queue_size(tracer * tracer_entry);
 void add_to_tracer_schedule_queue(tracer * tracer_entry,
-                                  int tracee_pid) ;
+                                  int tracee_pid);
+void add_to_pkt_info_queue(tracer * tracer_entry, int pkt_hash, s64 pkt_send_tstamp);
+void cleanup_pkt_info_queue(tracer * tracer_entry);
+s64 get_pkt_send_tstamp(tracer * tracer_entry, int pkt_id_hash);
+
 void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid);
 int register_tracer_process(char * write_buffer);
 void update_all_children_virtual_time(tracer * tracer_entry,

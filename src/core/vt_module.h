@@ -37,6 +37,11 @@ struct dilated_task_struct {
 };
 
 
+typedef struct pkt_info_struct {
+	int pkt_id_hash;
+	s64 pkt_send_tstamp;
+} pkt_info;
+
 typedef struct overshoot_info_struct {
 	s64 round_error;
 	s64 n_rounds;
@@ -85,6 +90,7 @@ typedef struct tracer_struct {
 
 	llist schedule_queue;
    	llist run_queue;
+	llist pkt_info_queue;
 	wait_queue_head_t * w_queue;
 	int w_queue_wakeup_pid;
 	lxc_schedule_elem * last_run;

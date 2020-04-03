@@ -87,21 +87,6 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id) {
 	if (!new_tracer)
 		return;
 
-	/*struct dilated_task_struct * main_task;
-
-	main_task = (struct dilated_task_struct *)kmalloc(
-		sizeof(struct dilated_task_struct), GFP_KERNEL);
-	if (!main_task) {
-		PDEBUG_E("Failed to Allot Memory For Tracer Task !\n");
-		BUG_ON(true);
-	}
-
-	memset(main_task, 0, sizeof(struct dilated_task_struct));
-	main_task->associated_tracer_id = tracer_id;
-	main_task->virt_start_time = START_VIRTUAL_TIME;
-	main_task->curr_virt_time = START_VIRTUAL_TIME;
-	main_task->pid = current->pid;
-	main_task->base_task = current;*/
 
 
 	new_tracer->timeline_assignment = 0;
@@ -120,10 +105,12 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id) {
 
 	llist_destroy(&new_tracer->schedule_queue);
 	llist_destroy(&new_tracer->run_queue);
+	llist_destroy(&new_tracer->pkt_info_queue);
 
 	llist_init(&new_tracer->schedule_queue);
-	llist_init(&new_tracer->run_queue);	
-
+	llist_init(&new_tracer->run_queue);
+	llist_init(&new_tracer->pkt_info_queue);
+	
 	rwlock_init(&new_tracer->tracer_lock);
 }
 

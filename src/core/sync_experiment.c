@@ -296,11 +296,11 @@ void free_all_tracers() {
 
 
 int initialize_experiment_components(int exp_type, int num_timelines,
-									 int num_expected_tracers) {
+				     int num_expected_tracers) {
 
 	int i;
 	int j;
-    int num_required_pages;
+	int num_required_pages;
 	int num_prev_alotted_pages;
 
 	PDEBUG_V("Entering Experiment Initialization\n");
@@ -314,20 +314,20 @@ int initialize_experiment_components(int exp_type, int num_timelines,
 		return FAIL;
 	}
 
-    if (num_expected_tracers <= 0) {
-        PDEBUG_I("Num expected tracers must be positive !\n");
+	if (num_expected_tracers <= 0) {
+		PDEBUG_I("Num expected tracers must be positive !\n");
 		return FAIL;
-    }
+	}
 
 	if (exp_type == EXP_CS && num_timelines <= 0) {
 		PDEBUG_I("Number of Timelines must be positive !\n");
 		return FAIL;
 	}
 
-    if (tracer_num > 0) {
-        // Free all tracer structs from previous experiment
-        free_all_tracers();        
-    }
+	if (tracer_num > 0) {
+		// Free all tracer structs from previous experiment
+        	free_all_tracers();        
+	}
 
 	tracer_num = 0;
 	experiment_type = exp_type;
@@ -602,6 +602,9 @@ int per_timeline_worker(void *data) {
 			curr_tracer->nxt_round_burst_length 
 				= curr_timeline->nxt_round_burst_length;
 
+			// remove any unclaimed pkt information from previous progress
+			cleanup_pkt_info_queue(curr_tracer);
+
 			if (schedule_list_size(curr_tracer) > 0
 				&& curr_tracer->nxt_round_burst_length) {
 				PDEBUG_V("per_timeline_worker: Called "
@@ -798,7 +801,7 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 	llist* schedule_queue = &curr_tracer->schedule_queue;
 	llist * run_queue = &curr_tracer->run_queue;
 	llist_elem* head = schedule_queue->head;
-    llist_elem * tmp_head;
+    	llist_elem * tmp_head;
 	lxc_schedule_elem* curr_elem;
 	lxc_schedule_elem* last_run;
 	lxc_schedule_elem* tmp_elem;
@@ -807,7 +810,7 @@ int update_all_runnable_task_timeslices(tracer * curr_tracer) {
 	s64 total_quanta = curr_tracer->nxt_round_burst_length;
 	s64 alotted_quanta = 0;
 	int alteast_one_task_runnable = 0;
-    int found = 0;
+    	int found = 0;
 
 	put_tracer_struct_read(curr_tracer);
 	get_tracer_struct_write(curr_tracer);
@@ -1045,6 +1048,7 @@ int unfreeze_proc_exp_single_core_mode(tracer * curr_tracer) {
 	unsigned long flags;
 	s64 used_quanta = 0;
 	s64 total_quanta = 0;
+	s64 prev_thread_quanta;
 	lxc_schedule_elem * curr_elem;
 	int atleast_on_task_runnable;
 
@@ -1074,6 +1078,7 @@ int unfreeze_proc_exp_single_core_mode(tracer * curr_tracer) {
 		put_tracer_struct_read(curr_tracer);
 		get_tracer_struct_write(curr_tracer);
 		used_quanta += curr_elem->quanta_curr_round;
+		prev_thread_quanta = curr_elem->quanta_curr_round;
 		curr_elem->curr_task->burst_target = curr_elem->quanta_curr_round;
 		curr_elem->total_run_quanta += curr_elem->quanta_curr_round;
 		//PDEBUG_V("Running Task: %d in round for duration: %llu. Total run quanta: %llu\n", curr_elem->pid, curr_elem->quanta_curr_round, curr_elem->total_run_quanta);
@@ -1084,6 +1089,7 @@ int unfreeze_proc_exp_single_core_mode(tracer * curr_tracer) {
 		wait_for_task_completion(curr_tracer, curr_elem->curr_task);
 		get_tracer_struct_read(curr_tracer);
 		curr_elem->curr_task->burst_target = 0;
+		curr_tracer->curr_virtual_time += prev_thread_quanta;
 		
 	}
 	return SUCCESS;

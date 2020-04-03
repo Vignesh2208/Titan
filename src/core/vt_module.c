@@ -267,7 +267,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
   int ret, num_integer_args;
   int api_integer_args[MAX_API_ARGUMENT_SIZE];
   tracer *curr_tracer;
-  int tracer_id;
+  int tracer_id, pkt_hash;
   ktime_t duration;
   struct dilated_task_struct * dilated_task = NULL;
   
@@ -587,6 +587,52 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       api_info_tmp.return_value = handle_gettimepid(api_info_tmp.api_argument);
       if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
         PDEBUG_I("VT_GETTIME_PID: Error copying to user buf\n");
+        return -EFAULT;
+      }
+      return 0;
+
+
+    case VT_GETTIME_TRACER:
+      // Any process can invoke this call.
+
+      if (initialization_status != INITIALIZED) {
+        PDEBUG_I(
+            "VT_GETTIME_TRACER: Operation cannot be performed when experiment is "
+            "not initialized !");
+        return -EFAULT;
+      }
+
+      if (experiment_status == NOTRUNNING) {
+        PDEBUG_I(
+            "VT_GETTIME_TRACER: Operation cannot be performed when experiment is "
+            "not running!");
+        return -EFAULT;
+      }
+
+      api_info = (invoked_api *)arg;
+      if (!api_info) return -EFAULT;
+      if (copy_from_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+        return -EFAULT;
+      }
+
+      num_integer_args = convert_string_to_array(
+          api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+      if (num_integer_args < 1) {
+        PDEBUG_I("VT_GETTIME_TRACER: Not enough arguments !");
+        return -EFAULT;
+      }
+
+      tracer_id = api_integer_args[0];
+      curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+      if (!curr_tracer) {
+        PDEBUG_I("VT_GETTIME_TRACER: Tracer : %d, not registered\n", tracer_id);
+        return -EFAULT;
+      }
+
+      api_info_tmp.return_value = curr_tracer->curr_virtual_time;
+      if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
+        PDEBUG_I("VT_GETTIME_TRACER: Error copying to user buf\n");
         return -EFAULT;
       }
       return 0;
@@ -1047,6 +1093,81 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         "VT_SYSCALL_WAIT: Associated Tracer : %d, Process: %d, "
         "resuming from wait\n", tracer_id, current->pid);
       return 1;
+
+    case VT_SET_PACKET_SEND_TIME:
+	if (initialization_status != INITIALIZED
+	    || experiment_status == STOPPING) {
+		PDEBUG_I(
+		    "VT_SET_PACKET_SEND_TIME: Operation cannot be performed when experiment is "
+		    "not initialized !\n");
+		return -EFAULT;
+      	}
+
+	if (experiment_type != EXP_CS) {
+		return 0;
+	}
+
+	api_info = (invoked_api *)arg;
+	if (!api_info) return -EFAULT;
+	if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+		return -EFAULT;
+	}
+	num_integer_args = convert_string_to_array(
+	  api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+	if (num_integer_args <= 0) {
+		PDEBUG_I("VT_SET_PACKET_SEND_TIME: Not enough arguments !");
+		return -EFAULT;
+	}
+	dilated_task = hmap_get_abs(&get_dilated_task_struct_by_pid, (int)current->pid);
+	if (!dilated_task) {
+		PDEBUG_I("VT_SET_PACKET_SEND_TIME: No associated dilated task !\n");
+		return -EFAULT;
+	}
+	pkt_hash = api_integer_args[0];
+	add_to_pkt_info_queue(dilated_task->associated_tracer, pkt_hash, api_info_tmp.return_value);
+	
+	return 0;
+
+    case VT_GET_PACKET_SEND_TIME:
+	if (initialization_status != INITIALIZED
+	    || experiment_status == STOPPING) {
+		PDEBUG_I(
+		    "VT_GET_PACKET_SEND_TIME: Operation cannot be performed when experiment is "
+		    "not initialized !\n");
+		return -EFAULT;
+      	}
+
+	if (experiment_type != EXP_CS) {
+		PDEBUG_I("VT_GET_PACKET_SEND_TIME: Operation cannot be performed for EXP_CBE!\n");
+		return -EFAULT;
+	}
+
+	api_info = (invoked_api *)arg;
+	if (!api_info) return -EFAULT;
+	if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+		return -EFAULT;
+	}
+	num_integer_args = convert_string_to_array(
+	  api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+	if (num_integer_args <= 1) {
+		PDEBUG_I("VT_GET_PACKET_SEND_TIME: Not enough arguments !");
+		return -EFAULT;
+	}
+	
+	tracer_id = api_integer_args[0];
+	pkt_hash = api_integer_args[1];
+
+	curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+        if (!curr_tracer) {
+        	PDEBUG_I("VT_GET_PACKET_SEND_TIME: Tracer : %d, not registered\n", tracer_id);
+        	return -EFAULT;
+      	}
+	api_info_tmp.return_value = get_pkt_send_tstamp(curr_tracer, pkt_hash);
+	BUG_ON(copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api)));
+	return 0;
+
     default:
       PDEBUG_V("Unkown Command !\n");
       return -ENOTTY;

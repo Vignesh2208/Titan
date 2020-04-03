@@ -10,6 +10,7 @@
 #define TRUE 1
 
 long long currBurstLength = 0;
+long long specifiedBurstLength = 0;
 long long currBBID = 0;
 long long prevBBID = 0;
 long long currBBSize = 0;
@@ -29,6 +30,10 @@ llist thread_info_list;
 extern void ns_2_timespec(s64 nsec, struct timespec * ts);
 extern void ns_2_timeval(s64 nsec, struct timeval * tv);
 
+
+void SetPktSendTime(int pktHash, s64 pktSendTimeStamp) {
+	set_pkt_send_time(pktHash, pktSendTimeStamp);
+}
 
 void SleepForNS(int ThreadID, int64_t duration) {
 
@@ -56,6 +61,7 @@ void SleepForNS(int ThreadID, int64_t duration) {
 	HandleVTExpEnd(ThreadID);
 
     currBurstLength = mark_burst_complete(0);
+    specifiedBurstLength = currBurstLength;
     if (currBurstLength <= 0)
         HandleVTExpEnd(ThreadID);
 
@@ -80,7 +86,10 @@ void GetCurrentTimeval(struct timeval * tv) {
 }
 
 s64 GetCurrentTime() {
-    return get_current_vt_time();
+    if (currBurstLength > 0 && specifiedBurstLength > 0)
+    	return get_current_vt_time() + specifiedBurstLength - currBurstLength;
+    else
+	return get_current_vt_time();
 }
 
 void HandleVTExpEnd(int ThreadID) {
@@ -219,6 +228,7 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     
 
     currBurstLength = mark_burst_complete(0);
+    specifiedBurstLength = currBurstLength;
 
     if (currBurstLength <= 0)
         HandleVTExpEnd(ThreadID);
@@ -256,6 +266,7 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     }
 
     currBurstLength = finish_burst();
+    specifiedBurstLength = currBurstLength;
     if (currBurstLength <= 0)
         HandleVTExpEnd(currThreadInfo->pid);
 
@@ -293,6 +304,7 @@ void AfterForkInChild(int ThreadID) {
     prevBBID = 0;
     currBBSize = 0;
     alwaysOn = 1;
+    specifiedBurstLength = currBurstLength;
 
     currThreadInfo->in_callback = TRUE; 
 
@@ -426,6 +438,7 @@ void TriggerSyscallFinish(int ThreadID) {
 
 	
     currBurstLength = mark_burst_complete(1);
+    specifiedBurstLength = currBurstLength;
 
     if (currBurstLength <= 0)
         HandleVTExpEnd(ThreadID);
@@ -524,6 +537,7 @@ void vtCallbackFn() {
 	alwaysOn = 0;
 	if (currBurstLength <= 0) {	
 		currBurstLength = 1000;
+		specifiedBurstLength = currBurstLength;
 	}
         return;
     }	

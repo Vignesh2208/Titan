@@ -297,6 +297,61 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 }
 
 
+void add_to_pkt_info_queue(tracer * tracer_entry,
+                           int pkt_hash,
+			   s64 pkt_send_tstamp) {
+
+	pkt_info * new_pkt_info;
+	
+	new_pkt_info = (pkt_info *)kmalloc(sizeof(pkt_info), GFP_KERNEL);
+	
+	if (!new_pkt_info) {
+		PDEBUG_E("Tracer %d, tracee: %d. Failed to alot Memory to add pkt_info\n",
+		         tracer_entry->tracer_id, tracee->pid);
+	}
+
+
+	new_pkt_info->pkt_id_hash = pkt_hash;
+	new_pkt_info->pkt_send_tstamp = pkt_send_tstamp;
+	llist_append(&tracer_entry->pkt_info_queue, new_pkt_info);
+
+}
+
+
+void cleanup_pkt_info_queue(tracer * tracer_entry) {
+
+	BUG_ON(!tracer_entry);
+
+	while(llist_size(&tracer_entry->pkt_info_queue)) {
+		pkt_info * head;
+		head = llist_pop(&tracer_entry->pkt_info_queue);
+		if (head) kfree(head);
+	}
+}
+
+s64 get_pkt_send_tstamp(tracer * tracer_entry, int pkt_id_hash) {
+	BUG_ON(!tracer_entry);
+
+	llist_elem * head = tracer->pkt_info_queue.head;
+	llist_elem * removed_elem;
+	pkt_info * curr_pkt_info;
+	int pos = 0;
+	s64 pkt_send_tstamp;
+	while (head != NULL) {
+		curr_pkt_info = (pkt_info *) head->item;
+		if (curr_pkt_info && curr_pkt_info->pkt_id_hash == pkt_id_hash) {
+			pkt_send_tstamp = curr_pkt_info->pkt_send_tstamp;
+			removed_elem = llist_remove_at(&tracer_entry->pkt_info_queue, pos);
+			if (removed_elem) kfree(removed_elem);
+			return pkt_send_tstamp;
+		}
+		pos ++;
+	}
+	
+	return tracer_entry->curr_virtual_time;
+}
+
+
 
 /*
 Assumes tracer write lock is acquired prior to call. Must return with lock still
@@ -640,11 +695,11 @@ int handle_stop_exp_cmd() {
 }
 
 int handle_initialize_exp_cmd(int exp_type, int num_timelines,
-							  int num_expected_tracers) {
+			      int num_expected_tracers) {
 
 	if (num_expected_tracers) {
 		return initialize_experiment_components(exp_type, num_timelines,
-												num_expected_tracers);
+							num_expected_tracers);
 	}
 	return FAIL;
 }
@@ -666,7 +721,7 @@ s64 get_dilated_time(struct task_struct * task) {
 	associated_tracer = dilated_task->associated_tracer;
 
 	if (associated_tracer && associated_tracer->curr_virtual_time) {
-		return associated_tracer->curr_virtual_time++;
+		return associated_tracer->curr_virtual_time;
 	}
 	return now;
 
@@ -682,9 +737,6 @@ s64 handle_gettimepid(char * write_buffer) {
 	int pid;
 
 	pid = atoi(write_buffer);
-
-	PDEBUG_V("Handling gettimepid: Received Pid = %d\n", pid);
-
 	task = find_task_by_pid(pid);
 	if (!task)
 		return 0;
