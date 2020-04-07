@@ -11,8 +11,8 @@ extern struct mutex exp_lock;
 
 
 void bind_to_cpu(struct task_struct * task, int target_cpu) {
-	/*if (target_cpu != -1)
-		set_cpus_allowed_ptr(task, cpumask_of(target_cpu));*/
+	if (target_cpu != -1)
+		set_cpus_allowed_ptr(task, cpumask_of(target_cpu));
 }
 
 

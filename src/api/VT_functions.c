@@ -60,9 +60,6 @@ s64 write_tracer_results(int* results, int num_results) {
   return send_to_vt_module(VT_WRITE_RESULTS, &arg);
 }
 
-s64 get_current_virtual_time() {
-  return send_to_vt_module(VT_GET_CURRENT_VIRTUAL_TIME, NULL);
-}
 
 s64 get_current_time_pid(int pid) {
   ioctl_args arg;
@@ -70,7 +67,7 @@ s64 get_current_time_pid(int pid) {
   if (pid < 0) {
     printf("get_current_time_pid: incorrect pid: %d\n", pid);
   }
-  sprintf(arg.cmd_buf, "%d", pid);
+  sprintf(arg.cmd_buf, "%d,", pid);
   return send_to_vt_module(VT_GETTIME_PID, &arg);
 }
 
@@ -80,7 +77,7 @@ s64 get_current_time_tracer(int tracer_id) {
   if (tracer_id <= 0) {
     printf("get_current_time_tracer: incorrect tracer_id: %d\n", tracer_id);
   }
-  sprintf(arg.cmd_buf, "%d", pid);
+  sprintf(arg.cmd_buf, "%d,", tracer_id);
   return send_to_vt_module(VT_GETTIME_TRACER, &arg);
 }
 

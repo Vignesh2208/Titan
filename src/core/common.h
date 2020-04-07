@@ -14,7 +14,7 @@ void clean_up_run_queue(tracer * tracer_entry);
 int schedule_list_size(tracer * tracer_entry);
 int run_queue_size(tracer * tracer_entry);
 void add_to_tracer_schedule_queue(tracer * tracer_entry,
-                                  int tracee_pid);
+                                  struct task_struct * tracee);
 void add_to_pkt_info_queue(tracer * tracer_entry, int pkt_hash, s64 pkt_send_tstamp);
 void cleanup_pkt_info_queue(tracer * tracer_entry);
 s64 get_pkt_send_tstamp(tracer * tracer_entry, int pkt_id_hash);
@@ -28,7 +28,7 @@ void update_all_tracers_virtual_time(int cpuID);
 int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args);
 int handle_stop_exp_cmd();
 int handle_initialize_exp_cmd(int exp_type, int num_timelines,
-							  int num_expected_tracers);
+			      int num_expected_tracers);
 s64 get_dilated_time(struct task_struct * task) ;
 s64 handle_gettimepid(char * write_buffer);
 void wait_for_task_completion(tracer * curr_tracer,

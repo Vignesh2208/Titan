@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include "utility_functions.h"
 
-typedef unsigned long u32;
+typedef unsigned long u64_t;
 
 // These functions can only be called from inside a tracer process or its
 // children

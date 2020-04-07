@@ -182,8 +182,8 @@ void YieldVTBurst(int ThreadID, int save, long syscall_number) {
     currThreadInfo->in_callback = TRUE;
 
     if (currThreadInfo->yielded == 0) {
-	    //printf("Yielding VT Burst. ThreadID: %d. Syscall number: %d!. In_Callback = %d\n", ThreadID, syscall_number, currThreadInfo->in_callback);
-    	    //fflush(stdout);
+	    printf("Yielding VT Burst. ThreadID: %d. Syscall number: %d!. In_Callback = %d\n", ThreadID, syscall_number, currThreadInfo->in_callback);
+    	    fflush(stdout);
 
 	    currThreadInfo->yielded = TRUE;
 	    if (save) {
@@ -244,8 +244,8 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     	currBBSize = currThreadInfo->stack.currBBSize;
     }
 
-    //printf("Force Complete Burst. Resumed ThreadID: %d. Syscall number: %d!\n", ThreadID, syscall_number);
-    //fflush(stdout);
+    printf("Force Complete Burst. Resumed ThreadID: %d. Syscall number: %d!\n", ThreadID, syscall_number);
+    fflush(stdout);
     
     if (currThreadInfo->yielded == TRUE)
     	currThreadInfo->yielded = FALSE;
@@ -314,8 +314,8 @@ void AfterForkInChild(int ThreadID) {
     add_to_tracer_sq(globalTracerID);
     globalThreadID = syscall(SYS_gettid);
     SignalBurstCompletion(currThreadInfo, 1);
-    //printf("Resuming new process with Burst of length: %llu\n", currBurstLength);
-    //fflush(stdout);
+    printf("Resuming new process with Burst of length: %llu\n", currBurstLength);
+    fflush(stdout);
     currThreadInfo->in_callback = FALSE;
 }
 
@@ -334,8 +334,8 @@ void ThreadStart(int ThreadID) {
     fflush(stdout);
     add_to_tracer_sq(globalTracerID);
     SignalBurstCompletion(currThreadInfo, 0);
-    //printf("Resuming new Thread with Burst of length: %llu\n", currBurstLength);
-    //fflush(stdout);
+    printf("Resuming new Thread with Burst of length: %llu\n", currBurstLength);
+    fflush(stdout);
     currThreadInfo->in_callback = FALSE;
 }
 

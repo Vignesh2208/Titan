@@ -117,7 +117,7 @@ void handle_add_processes_to_sq(int * api_args, int num_args) {
 
   get_tracer_struct_write(curr_tracer);
   for (i = 1; i < num_args; i++) {
-    add_to_tracer_schedule_queue(curr_tracer, api_args[i]);
+    //add_to_tracer_schedule_queue(curr_tracer, api_args[i]);
     PDEBUG_I("VT_ADD_PROCESS_TO_SQ: Tracer : %d, process: %d\n",
              tracer_id, api_args[i]);
   }
@@ -504,7 +504,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       get_tracer_struct_write(curr_tracer);
       for (i = 1; i < num_integer_args; i++) {
-        add_to_tracer_schedule_queue(curr_tracer, api_integer_args[i]);
+        //add_to_tracer_schedule_queue(curr_tracer, get_task_ns(api_integer_args[i], curr_tracer));
       }
       put_tracer_struct_write(curr_tracer);
 
@@ -581,8 +581,8 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       api_info = (invoked_api *)arg;
       if (!api_info) return -EFAULT;
-      if (copy_from_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
-        return -EFAULT;
+      if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+		return -EFAULT;
       }
       api_info_tmp.return_value = handle_gettimepid(api_info_tmp.api_argument);
       if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
@@ -611,8 +611,8 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
       api_info = (invoked_api *)arg;
       if (!api_info) return -EFAULT;
-      if (copy_from_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
-        return -EFAULT;
+      if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+		return -EFAULT;
       }
 
       num_integer_args = convert_string_to_array(
@@ -962,7 +962,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
     case VT_ADD_TO_SQ:
       // Any process can invoke this call.
 
-      PDEBUG_V("VT_ADD_TO_SQ: Entering !\n");
+     // PDEBUG_V("VT_ADD_TO_SQ: Entering !\n");
 
       if (initialization_status != INITIALIZED
         || experiment_status == STOPPING) {
@@ -992,11 +992,11 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         return -EFAULT;
       }
       get_tracer_struct_write(curr_tracer);
-      add_to_tracer_schedule_queue(curr_tracer, current->pid);
+      add_to_tracer_schedule_queue(curr_tracer, current);
       put_tracer_struct_write(curr_tracer);
 
       dilated_task = hmap_get_abs(&get_dilated_task_struct_by_pid, (int)current->pid);
-      PDEBUG_V("Dilated task address = %x\n", dilated_task);
+      //PDEBUG_V("Dilated task address = %x\n", dilated_task);
       BUG_ON(!dilated_task);
       BUG_ON(dilated_task->associated_tracer_id != tracer_id);
 
@@ -1126,6 +1126,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 	}
 	pkt_hash = api_integer_args[0];
 	add_to_pkt_info_queue(dilated_task->associated_tracer, pkt_hash, api_info_tmp.return_value);
+	PDEBUG_I("VT_SET_PACKET_SEND_TIME: Successfull for Tracer : %d\n", dilated_task->associated_tracer->tracer_id);
 	
 	return 0;
 
@@ -1165,6 +1166,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
         	return -EFAULT;
       	}
 	api_info_tmp.return_value = get_pkt_send_tstamp(curr_tracer, pkt_hash);
+	PDEBUG_I("VT_GET_PACKET_SEND_TIME: Successfull for Tracer : %d\n", tracer_id);
 	BUG_ON(copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api)));
 	return 0;
 

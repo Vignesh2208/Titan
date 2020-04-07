@@ -199,7 +199,7 @@ Assumes tracer write lock is acquired prior to call. Must return with lock still
 acquired. It is assumed that tracee_pid is according to the outermost namespace
 */
 void add_to_tracer_schedule_queue(tracer * tracer_entry,
-                                  int tracee_pid) {
+                                  struct task_struct * tracee) {
 
 	lxc_schedule_elem * new_elem;
 	//represents base time allotted to each process by the Kronos scheduler
@@ -207,17 +207,20 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	s64 base_time_quanta;
 	s64 base_quanta_n_insns = 0;
 	s32 rem = 0;
-	struct task_struct * tracee = find_task_by_pid(tracee_pid);
+	int tracee_pid;
 	struct dilated_task_struct * tracee_dilated_task_struct;
 	struct sched_param sp;
 
 	
+	BUG_ON(!tracee);
+	tracee_pid = tracee->pid;
 
+	/*
 	if (!tracee) {
 		PDEBUG_I("add_to_tracer_schedule_queue: tracee: %d not found!\n",
 				 tracee_pid);
 		return;
-	}
+	}*/
 
 	if (hmap_get_abs(&get_dilated_task_struct_by_pid, tracee_pid)) {
 		PDEBUG_I("Tracee : %d already exists !\n", tracee_pid);
@@ -306,8 +309,8 @@ void add_to_pkt_info_queue(tracer * tracer_entry,
 	new_pkt_info = (pkt_info *)kmalloc(sizeof(pkt_info), GFP_KERNEL);
 	
 	if (!new_pkt_info) {
-		PDEBUG_E("Tracer %d, tracee: %d. Failed to alot Memory to add pkt_info\n",
-		         tracer_entry->tracer_id, tracee->pid);
+		PDEBUG_E("Tracer %d. Failed to alot Memory to add pkt_info\n",
+		         tracer_entry->tracer_id);
 	}
 
 
@@ -332,7 +335,7 @@ void cleanup_pkt_info_queue(tracer * tracer_entry) {
 s64 get_pkt_send_tstamp(tracer * tracer_entry, int pkt_id_hash) {
 	BUG_ON(!tracer_entry);
 
-	llist_elem * head = tracer->pkt_info_queue.head;
+	llist_elem * head = tracer_entry->pkt_info_queue.head;
 	llist_elem * removed_elem;
 	pkt_info * curr_pkt_info;
 	int pos = 0;
@@ -346,6 +349,7 @@ s64 get_pkt_send_tstamp(tracer * tracer_entry, int pkt_id_hash) {
 			return pkt_send_tstamp;
 		}
 		pos ++;
+		head = head->next;
 	}
 	
 	return tracer_entry->curr_virtual_time;
@@ -496,7 +500,7 @@ int register_tracer_process(char * write_buffer) {
 
 	get_tracer_struct_write(new_tracer);
 	bind_to_cpu(current, new_tracer->timeline_assignment);
-	add_to_tracer_schedule_queue(new_tracer, current->pid);
+	add_to_tracer_schedule_queue(new_tracer, current);
 	put_tracer_struct_write(new_tracer);
 	PDEBUG_I("Register Tracer: Finished for tracer: %d\n", tracer_id);
 
