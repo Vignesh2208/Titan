@@ -15,9 +15,10 @@ int schedule_list_size(tracer * tracer_entry);
 int run_queue_size(tracer * tracer_entry);
 void add_to_tracer_schedule_queue(tracer * tracer_entry,
                                   struct task_struct * tracee);
-void add_to_pkt_info_queue(tracer * tracer_entry, int pkt_hash, s64 pkt_send_tstamp);
+void add_to_pkt_info_queue(tracer * tracer_entry, int payload_hash, int payload_len, s64 pkt_send_tstamp);
 void cleanup_pkt_info_queue(tracer * tracer_entry);
-s64 get_pkt_send_tstamp(tracer * tracer_entry, int pkt_id_hash);
+int get_num_enqueued_bytes(tracer * tracer_entry);
+s64 get_pkt_send_tstamp(tracer * tracer_entry, int payload_hash);
 
 void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid);
 int register_tracer_process(char * write_buffer);

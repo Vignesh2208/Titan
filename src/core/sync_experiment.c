@@ -602,11 +602,14 @@ int per_timeline_worker(void *data) {
 			curr_tracer->nxt_round_burst_length 
 				= curr_timeline->nxt_round_burst_length;
 
-			// remove any unclaimed pkt information from previous progress
-			cleanup_pkt_info_queue(curr_tracer);
+			
 
 			if (schedule_list_size(curr_tracer) > 0
 				&& curr_tracer->nxt_round_burst_length) {
+
+				// remove any unclaimed pkt information from previous progress
+				cleanup_pkt_info_queue(curr_tracer);
+
 				PDEBUG_V("per_timeline_worker: Called "
 				         "UnFreeze Proc Recurse for tracer: %d on "
 						 "timeline: %d\n", curr_tracer->tracer_id, timeline_id);
@@ -615,6 +618,8 @@ int per_timeline_worker(void *data) {
 						 "for tracer: %d on timeline: %d\n",
 						 curr_tracer->tracer_id, timeline_id);
 
+			} else if (schedule_list_size(curr_tracer) == 0) {
+				curr_tracer->curr_virtual_time += curr_tracer->nxt_round_burst_length;
 			}
 			put_tracer_struct_read(curr_tracer);
 			head = head->next;
@@ -1069,7 +1074,7 @@ int unfreeze_proc_exp_single_core_mode(tracer * curr_tracer) {
 	//print_schedule_list(curr_tracer);
 	
 	
-	while (used_quanta < total_quanta) {
+	while (used_quanta < total_quanta && schedule_list_size(curr_tracer) > 0) {
 		now_ns = ktime_get_real();
 		curr_elem = get_next_runnable_task(curr_tracer);
 		if (!curr_elem)
@@ -1088,7 +1093,6 @@ int unfreeze_proc_exp_single_core_mode(tracer * curr_tracer) {
 		//PDEBUG_V("Unfreeze proc exp post-processing time elapsed: %llu\n", ktime_get_real() - now_ns);
 		wait_for_task_completion(curr_tracer, curr_elem->curr_task);
 		get_tracer_struct_read(curr_tracer);
-		curr_elem->curr_task->burst_target = 0;
 		curr_tracer->curr_virtual_time += prev_thread_quanta;
 		
 	}

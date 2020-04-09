@@ -31,8 +31,8 @@ extern void ns_2_timespec(s64 nsec, struct timespec * ts);
 extern void ns_2_timeval(s64 nsec, struct timeval * tv);
 
 
-void SetPktSendTime(int pktHash, s64 pktSendTimeStamp) {
-	set_pkt_send_time(pktHash, pktSendTimeStamp);
+void SetPktSendTime(int payloadHash, int payloadLen, s64 pktSendTimeStamp) {
+	set_pkt_send_time(payloadHash, payloadLen, pktSendTimeStamp);
 }
 
 void SleepForNS(int ThreadID, int64_t duration) {
@@ -182,8 +182,8 @@ void YieldVTBurst(int ThreadID, int save, long syscall_number) {
     currThreadInfo->in_callback = TRUE;
 
     if (currThreadInfo->yielded == 0) {
-	    printf("Yielding VT Burst. ThreadID: %d. Syscall number: %d!. In_Callback = %d\n", ThreadID, syscall_number, currThreadInfo->in_callback);
-    	    fflush(stdout);
+	    //printf("Yielding VT Burst. ThreadID: %d. Syscall number: %d!. In_Callback = %d\n", ThreadID, syscall_number, currThreadInfo->in_callback);
+    	    //fflush(stdout);
 
 	    currThreadInfo->yielded = TRUE;
 	    if (save) {
@@ -244,8 +244,8 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     	currBBSize = currThreadInfo->stack.currBBSize;
     }
 
-    printf("Force Complete Burst. Resumed ThreadID: %d. Syscall number: %d!\n", ThreadID, syscall_number);
-    fflush(stdout);
+    //printf("Force Complete Burst. Resumed ThreadID: %d. Syscall number: %d!\n", ThreadID, syscall_number);
+    //fflush(stdout);
     
     if (currThreadInfo->yielded == TRUE)
     	currThreadInfo->yielded = FALSE;

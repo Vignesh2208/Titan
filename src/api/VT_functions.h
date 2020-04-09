@@ -52,7 +52,8 @@ s64 finish_burst_and_discard();
 s64 mark_burst_complete(int signal_syscall_finish);
 s64 trigger_syscall_wait();
 
-int set_pkt_send_time(int pkt_hash, s64 send_tstamp);
+int set_pkt_send_time(int payload_hash, int payload_len, s64 send_tstamp);
 s64 get_pkt_send_time(int tracer_id, int pkt_hash);
+int get_num_enqueued_bytes(int tracer_id);
 
 #endif

@@ -267,7 +267,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
   int ret, num_integer_args;
   int api_integer_args[MAX_API_ARGUMENT_SIZE];
   tracer *curr_tracer;
-  int tracer_id, pkt_hash;
+  int tracer_id, payload_hash, payload_len;
   ktime_t duration;
   struct dilated_task_struct * dilated_task = NULL;
   
@@ -764,12 +764,12 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       }
 
       tracer_id = api_integer_args[0];
-      PDEBUG_V("VT_WAIT_FOR_EXIT: Tracer : %d "
+      PDEBUG_I("VT_WAIT_FOR_EXIT: Tracer : %d "
                "starting wait for exit\n", tracer_id);
 
       wait_event_interruptible(*timeline_info[0].w_queue,
                                timeline_info[0].stopping == 1);
-      PDEBUG_V("VT_WAIT_FOR_EXIT: Tracer : %d "
+      PDEBUG_I("VT_WAIT_FOR_EXIT: Tracer : %d "
                "resuming from wait for exit\n", tracer_id);
       
       return 0;
@@ -1095,6 +1095,8 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       return 1;
 
     case VT_SET_PACKET_SEND_TIME:
+
+	
 	if (initialization_status != INITIALIZED
 	    || experiment_status == STOPPING) {
 		PDEBUG_I(
@@ -1104,6 +1106,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       	}
 
 	if (experiment_type != EXP_CS) {
+		PDEBUG_I("VT_SET_PACKET_SEND_TIME: Operation cannot be performed for EXP_CBE!\n");
 		return 0;
 	}
 
@@ -1115,7 +1118,7 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 	num_integer_args = convert_string_to_array(
 	  api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
-	if (num_integer_args <= 0) {
+	if (num_integer_args <= 1) {
 		PDEBUG_I("VT_SET_PACKET_SEND_TIME: Not enough arguments !");
 		return -EFAULT;
 	}
@@ -1124,9 +1127,12 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 		PDEBUG_I("VT_SET_PACKET_SEND_TIME: No associated dilated task !\n");
 		return -EFAULT;
 	}
-	pkt_hash = api_integer_args[0];
-	add_to_pkt_info_queue(dilated_task->associated_tracer, pkt_hash, api_info_tmp.return_value);
-	PDEBUG_I("VT_SET_PACKET_SEND_TIME: Successfull for Tracer : %d\n", dilated_task->associated_tracer->tracer_id);
+	
+	payload_hash = api_integer_args[0];
+	payload_len = api_integer_args[1];
+	PDEBUG_I("VT_SET_PACKET_SEND_TIME: Entered for payload_hash: %d, payload_len = %d, at time: %llu\n", payload_hash, payload_len, dilated_task->associated_tracer->curr_virtual_time);
+	add_to_pkt_info_queue(dilated_task->associated_tracer, payload_hash, payload_len, api_info_tmp.return_value);
+	//PDEBUG_I("VT_SET_PACKET_SEND_TIME: Successfull for Tracer : %d\n", dilated_task->associated_tracer->tracer_id);
 	
 	return 0;
 
@@ -1158,17 +1164,60 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 	}
 	
 	tracer_id = api_integer_args[0];
-	pkt_hash = api_integer_args[1];
+	payload_hash = api_integer_args[1];
 
 	curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
         if (!curr_tracer) {
         	PDEBUG_I("VT_GET_PACKET_SEND_TIME: Tracer : %d, not registered\n", tracer_id);
         	return -EFAULT;
       	}
-	api_info_tmp.return_value = get_pkt_send_tstamp(curr_tracer, pkt_hash);
-	PDEBUG_I("VT_GET_PACKET_SEND_TIME: Successfull for Tracer : %d\n", tracer_id);
+	PDEBUG_I("VT_GET_PACKET_SEND_TIME: Attempting for packets sent by Tracer : %d, payload_hash: %d, at time: %llu\n", tracer_id, payload_hash, curr_tracer->curr_virtual_time);
+	api_info_tmp.return_value = get_pkt_send_tstamp(curr_tracer, payload_hash);
+	//PDEBUG_I("VT_GET_PACKET_SEND_TIME: Successfull for Tracer : %d, payload_hash: %d\n", tracer_id, payload_hash);
 	BUG_ON(copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api)));
 	return 0;
+
+    case VT_GET_NUM_ENQUEUED_BYTES:
+	if (initialization_status != INITIALIZED
+	    || experiment_status == STOPPING) {
+		PDEBUG_I(
+		    "VT_GET_NUM_ENQUEUED_BYTES: Operation cannot be performed when experiment is "
+		    "not initialized !\n");
+		return -EFAULT;
+      	}
+
+	if (experiment_type != EXP_CS) {
+		PDEBUG_I("VT_GET_NUM_ENQUEUED_BYTES: Operation cannot be performed for EXP_CBE!\n");
+		return -EFAULT;
+	}
+
+	api_info = (invoked_api *)arg;
+	if (!api_info) return -EFAULT;
+	if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+		return -EFAULT;
+	}
+	num_integer_args = convert_string_to_array(
+	  api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+	if (num_integer_args <= 0) {
+		PDEBUG_I("VT_GET_NUM_ENQUEUED_BYTES: Not enough arguments !");
+		return -EFAULT;
+	}
+	
+	tracer_id = api_integer_args[0];
+	curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+        if (!curr_tracer) {
+        	PDEBUG_I("VT_GET_NUM_ENQUEUED_BYTES: Tracer : %d, not registered\n", tracer_id);
+        	return -EFAULT;
+      	}
+
+	api_info_tmp.return_value = get_num_enqueued_bytes(curr_tracer);
+	if (api_info_tmp.return_value > 0) {
+		PDEBUG_I("VT_GET_NUM_ENQUEUED_BYTES: %llu, for Tracer: %d\n", api_info_tmp.return_value, tracer_id);
+	}
+	BUG_ON(copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api)));
+	return 0;
+	
 
     default:
       PDEBUG_V("Unkown Command !\n");

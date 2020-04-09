@@ -38,7 +38,8 @@ struct dilated_task_struct {
 
 
 typedef struct pkt_info_struct {
-	int pkt_id_hash;
+	int payload_hash;
+	int payload_len;
 	s64 pkt_send_tstamp;
 } pkt_info;
 

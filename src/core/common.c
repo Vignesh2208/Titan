@@ -301,7 +301,8 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 
 
 void add_to_pkt_info_queue(tracer * tracer_entry,
-                           int pkt_hash,
+                           int payload_hash,
+			   int payload_len,
 			   s64 pkt_send_tstamp) {
 
 	pkt_info * new_pkt_info;
@@ -314,7 +315,8 @@ void add_to_pkt_info_queue(tracer * tracer_entry,
 	}
 
 
-	new_pkt_info->pkt_id_hash = pkt_hash;
+	new_pkt_info->payload_hash = payload_hash;
+	new_pkt_info->payload_len = payload_len;
 	new_pkt_info->pkt_send_tstamp = pkt_send_tstamp;
 	llist_append(&tracer_entry->pkt_info_queue, new_pkt_info);
 
@@ -324,6 +326,8 @@ void add_to_pkt_info_queue(tracer * tracer_entry,
 void cleanup_pkt_info_queue(tracer * tracer_entry) {
 
 	BUG_ON(!tracer_entry);
+	if (llist_size(&tracer_entry->pkt_info_queue))
+		PDEBUG_I("Cleaning up pkt info queue for tracer: %d, at time: %llu\n", tracer_entry->tracer_id, tracer_entry->curr_virtual_time);
 
 	while(llist_size(&tracer_entry->pkt_info_queue)) {
 		pkt_info * head;
@@ -332,7 +336,23 @@ void cleanup_pkt_info_queue(tracer * tracer_entry) {
 	}
 }
 
-s64 get_pkt_send_tstamp(tracer * tracer_entry, int pkt_id_hash) {
+int get_num_enqueued_bytes(tracer * tracer_entry) {
+	if (!tracer_entry)
+		return 0;
+	llist_elem * head = tracer_entry->pkt_info_queue.head;
+	int total_enqueued_bytes = 0;
+	while (head != NULL) {
+		pkt_info * curr_pkt_info = (pkt_info *) head->item;
+		if (curr_pkt_info) {
+			total_enqueued_bytes += curr_pkt_info->payload_len;
+		}
+		head = head->next;
+	}
+	
+	return total_enqueued_bytes;
+}
+
+s64 get_pkt_send_tstamp(tracer * tracer_entry, int payload_hash) {
 	BUG_ON(!tracer_entry);
 
 	llist_elem * head = tracer_entry->pkt_info_queue.head;
@@ -342,8 +362,10 @@ s64 get_pkt_send_tstamp(tracer * tracer_entry, int pkt_id_hash) {
 	s64 pkt_send_tstamp;
 	while (head != NULL) {
 		curr_pkt_info = (pkt_info *) head->item;
-		if (curr_pkt_info && curr_pkt_info->pkt_id_hash == pkt_id_hash) {
+		if (curr_pkt_info && curr_pkt_info->payload_hash == payload_hash) {
 			pkt_send_tstamp = curr_pkt_info->pkt_send_tstamp;
+			PDEBUG_I("Found a matching packet for hash: %d, send-timestamp = %llu\n",
+				 payload_hash, pkt_send_tstamp);
 			removed_elem = llist_remove_at(&tracer_entry->pkt_info_queue, pos);
 			if (removed_elem) kfree(removed_elem);
 			return pkt_send_tstamp;
@@ -407,6 +429,9 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid) {
 		removed_elem->curr_task->associated_tracer_id = -1;
 		kfree(removed_elem);
 	}
+	PDEBUG_I("Tracer %d schedule queue size is %d after removing tracee: %d\n",
+		tracer_entry->tracer_id, llist_size(&tracer_entry->schedule_queue),
+		tracee_pid);
 }
 
 
@@ -655,13 +680,16 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 
 	put_tracer_struct_write(curr_tracer);
 
-	if (dilated_task && dilated_task->burst_target > 0)
+	if (dilated_task && dilated_task->burst_target > 0) {
+		dilated_task->burst_target = 0;
 		signal_cpu_worker_resume(curr_tracer);
+
+	}
 	return SUCCESS;
 }
 
 void wait_for_task_completion(tracer * curr_tracer,
-							  struct dilated_task_struct * relevant_task) {
+			      struct dilated_task_struct * relevant_task) {
 	if (!curr_tracer || !relevant_task) {
 		return;
 	}
@@ -674,7 +702,7 @@ void wait_for_task_completion(tracer * curr_tracer,
 	wake_up_interruptible(&relevant_task->d_task_wqueue);
 	
 	wait_event_interruptible(*curr_tracer->w_queue,
-							 curr_tracer->w_queue_wakeup_pid == 1);
+				 curr_tracer->w_queue_wakeup_pid == 1);
 	PDEBUG_V("Resuming from Tracer completion for Tracer ID: %d\n",
 			 curr_tracer->tracer_id);
 	

@@ -117,6 +117,7 @@ int run_command_under_vt_management(char *orig_command_str, pid_t *child_pid,
             perror("open");
             exit(FAIL);
           }
+	  ftruncate(fd, 0);
           dup2(fd, STDOUT_FILENO);
           close(fd);
         }
@@ -245,7 +246,9 @@ int main(int argc, char * argv[]) {
   printf("Resumed from Wait for Exit! Waiting for processes to finish !\n");
   fflush(stdout);
 
-  //kill(controlled_pid, SIGKILL);
+  kill(controlled_pid, SIGKILL);
+  printf("Waiting to read child status !\n");
+  fflush(stdout);
   waitpid(controlled_pid, &status, 0);
  
   printf("Exiting Tracer: %d\n", tracer_id);

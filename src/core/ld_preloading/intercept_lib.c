@@ -62,7 +62,7 @@ extern void (*vtTriggerSyscallFinish)(int ThreadID);
 extern void (*vtSleepForNS)(int ThreadID, s64 duration);
 extern void (*vtGetCurrentTimespec)(struct timespec *ts);
 extern void (*vtGetCurrentTimeval)(struct timeval * tv);
-extern void (*vtSetPktSendTime)(int pktHash, s64 send_tstamp);
+extern void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp);
 extern s64 (*vtGetCurrentTime)();
 
 void load_orig_functions();
@@ -410,24 +410,34 @@ pid_t fork() {
 
 /***** Socket Functions ****/
 ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
-	int pkt_hash;
-	if (len > 0) {
-		pkt_hash = get_packet_hash((char *)buf, len);
-		vtSetPktSendTime(pkt_hash, vtGetCurrentTime());
+	int payload_hash;
+	ssize_t ret = orig_send(sockfd, buf, len, flags);
+	if (len > 0 && ret > 0) {
+		payload_hash = get_payload_hash(buf, ret);
+		if (payload_hash) {
+			//printf("Send: Sending packet with payload_hash: %d\n",
+			//	payload_hash);
+			vtSetPktSendTime(payload_hash, ret, vtGetCurrentTime());
+		}
 	}
-	return orig_send(sockfd, buf, len, flags);
+	return ret;
 }
 
 
 ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
                const struct sockaddr *dest_addr, socklen_t addrlen) {
 
-	int pkt_hash;
-	if (len > 0) {
-		pkt_hash = get_packet_hash((char *)buf, len);
-		vtSetPktSendTime(pkt_hash, vtGetCurrentTime());
+	int payload_hash;
+	ssize_t ret = orig_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
+	if (len > 0 && ret > 0) {
+		payload_hash = get_payload_hash(buf, ret);
+		if (payload_hash) {
+			//printf("Sendto: Sending packet with payload_hash: %d\n",
+			//	payload_hash);
+			vtSetPktSendTime(payload_hash, ret, vtGetCurrentTime());
+		}
 	}
-	return orig_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
+	return ret;
 
 }
 

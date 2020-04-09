@@ -57,6 +57,7 @@ typedef struct ioctl_args_struct {
 #define VT_GETTIME_TRACER _IOW(VT_IOC_MAGIC, 19, int)
 #define VT_SET_PACKET_SEND_TIME _IOW(VT_IOC_MAGIC, 20, int)
 #define VT_GET_PACKET_SEND_TIME _IOW(VT_IOC_MAGIC, 21, int)
+#define VT_GET_NUM_ENQUEUED_BYTES _IOW(VT_IOC_MAGIC, 22, int)
 
 s64 send_to_vt_module(unsigned int cmd, ioctl_args* arg);
 int gettid(void);

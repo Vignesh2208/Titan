@@ -82,6 +82,17 @@ s64 get_current_time_tracer(int tracer_id) {
 }
 
 
+int get_num_enqueued_bytes(int tracer_id) {
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  if (tracer_id <= 0) {
+    printf("get_num_enqueued_packets: incorrect tracer_id: %d\n", tracer_id);
+  }
+  sprintf(arg.cmd_buf, "%d,", tracer_id);
+  return send_to_vt_module(VT_GET_NUM_ENQUEUED_BYTES, &arg);
+}
+
+
 s64 get_current_vt_time() {
   ioctl_args arg;
   init_ioctl_arg(&arg);
@@ -114,15 +125,16 @@ int add_to_tracer_sq(int tracer_id) {
   return send_to_vt_module(VT_ADD_TO_SQ, &arg);
 }
 
-int set_pkt_send_time(int pkt_hash, s64 send_tstamp) {
-  if (pkt_hash < 0 || send_tstamp <= 0) {
+int set_pkt_send_time(int payload_hash, int payload_len, s64 send_tstamp) {
+  if (payload_hash < 0 || send_tstamp <= 0) {
 	printf("set_pkt_send_time: incorrect parameters\n");
 	return -1;
   }
   ioctl_args arg;
   init_ioctl_arg(&arg);
-  sprintf(arg.cmd_buf, "%d,", pkt_hash);
+  sprintf(arg.cmd_buf, "%d,%d,", payload_hash, payload_len);
   arg.cmd_value = send_tstamp;
+  //printf("Invoking VT_SET_PACKET_SEND_TIME for hash: %d, tstamp: %llu\n", payload_hash, send_tstamp); 
   return send_to_vt_module(VT_SET_PACKET_SEND_TIME, &arg);
 }
 

@@ -26,7 +26,7 @@ void (*vtSleepForNS)(int ThreadID, s64 duration) = NULL;
 void (*vtGetCurrentTimespec)(struct timespec *tp) = NULL;
 void (*vtGetCurrentTimeval)(struct timeval * tv) = NULL;
 s64 (*vtGetCurrentTime)() = NULL;
-void (*vtSetPktSendTime)(int pktHash, s64 send_tstamp) = NULL;
+void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp) = NULL;
 
 
 
