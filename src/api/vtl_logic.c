@@ -531,13 +531,14 @@ void vtCallbackFn() {
 
     int ThreadID;
     ThreadInfo * currThreadInfo;
-
+    //return;
     if (!vtInitializationComplete) {
 	// operating without vt management
 	alwaysOn = 0;
 	if (currBurstLength <= 0) {	
 		currBurstLength = 1000;
 		specifiedBurstLength = currBurstLength;
+		//printf("Here Now blah blah ...\n");
 	}
         return;
     }	

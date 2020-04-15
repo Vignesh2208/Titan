@@ -273,14 +273,29 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 		}
 
 		globalBBCounter ++;
+		blockNumber ++;
 
 		long currBBID = std::abs((long)hasher(sourceFileName + std::to_string(globalBBCounter)));
 
 		MachineBasicBlock* origMBB = &MBB;
+
+		if (blockNumber <= 1)
+			continue;
 			
 		// origMBB:
+
+		// pop %rax
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RAX);
+
 		// popf 
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POPF64));
+
+		// push %rax
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RAX);
+
+		// pop %rax
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RAX);
+
 
 		// pop %rdx
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RDX);
@@ -292,12 +307,14 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RBX);
 
 
+
 		// callq stubFunctionName
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::CALL64pcrel32)).addGlobalAddress(M.getNamedValue(stubFunctionName));
 
+				
 		// movq (%rcx) %rbx
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm)).addDef(X86::RBX).addReg(X86::RCX).addImm(1).addReg(0).addImm(0).addReg(0);
-
+		
 		// movq enabled@GOTPCREL(%rip) %rcx
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
 			      .addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0).addGlobalAddress(M.getNamedValue(enabled), 0, MO_GOTPCREL).addReg(0);
@@ -333,7 +350,10 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
 				.addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0).addGlobalAddress(M.getNamedValue(vtInsnCounterGlobalVar), 0, MO_GOTPCREL).addReg(0);
 
+		
 
+
+		
 		// push %rbx
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RBX);
 
@@ -343,9 +363,18 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 		// push %rdx
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RDX);
 
+		// push %rax
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RAX);
+
+		// pop %rax
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RAX);
+
 		// pushf
 		MachineInstr *Push = BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSHF64));
 		Push->getOperand(2).setIsUndef();
+
+		// push %rax
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RAX);
 	}
 
     } else if  (stubFunctionName.equals(MF.getName()) and ContainsMain) {
