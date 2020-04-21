@@ -46,7 +46,8 @@ s64 send_to_vt_module(unsigned int cmd, ioctl_args *arg) {
     || cmd == VT_SET_RUNNABLE || cmd == VT_GETTIME_MY_PID
     || cmd == VT_GETTIME_PID || cmd == VT_GETTIME_TRACER 
     || cmd == VT_GET_PACKET_SEND_TIME || cmd == VT_SYSCALL_WAIT
-    || cmd == VT_GET_NUM_ENQUEUED_BYTES)
+    || cmd == VT_GET_NUM_ENQUEUED_BYTES || cmd == VT_GET_EAT
+    || cmd == VT_GET_TRACER_LOOKAHEAD)
     return arg->cmd_value;
   return ret;
 }

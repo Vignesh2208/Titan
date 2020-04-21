@@ -269,3 +269,46 @@ s64 trigger_syscall_wait() {
   init_ioctl_arg(&arg); 
   return send_to_vt_module(VT_SYSCALL_WAIT, &arg);
 }
+
+int set_earliest_arrival_time(int tracer_id, s64 eat_tstamp) {
+
+  if (tracer_id <= 0) {
+    printf("set_earliest_arrival_time: incorrect tracer-id\n");
+    return -1;
+  }
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  arg.cmd_value = eat_tstamp;
+  sprintf(arg.cmd_buf, "%d", tracer_id);
+
+  return send_to_vt_module(VT_SET_EAT, &arg);
+
+}
+s64 get_earliest_arrival_time() {
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  return send_to_vt_module(VT_GET_EAT, &arg);
+}
+
+int set_process_lookahead(s64 bulk_lookahead_expiry_time, long sp_lookahead_duration) {
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  sprintf(arg.cmd_buf, "%ld", sp_lookahead_duration);
+  if (bulk_lookahead_expiry_time < 0)
+     bulk_lookahead_expiry_time = 0;
+  arg.cmd_value = bulk_lookahead_expiry_time;
+  return send_to_vt_module(VT_SET_PROCESS_LOOKAHEAD, &arg);
+}
+
+s64 get_tracer_lookahead(int tracer_id) {
+
+  if (tracer_id <= 0) {
+    printf("get_tracer_lookahead: incorrect tracer-id\n");
+    return -1;
+  }
+  ioctl_args arg;
+  init_ioctl_arg(&arg);
+  sprintf(arg.cmd_buf, "%d", tracer_id);
+
+  return send_to_vt_module(VT_GET_TRACER_LOOKAHEAD, &arg);
+}

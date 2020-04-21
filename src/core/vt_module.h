@@ -25,6 +25,10 @@ struct dilated_task_struct {
 	s64 burst_target;
 	s64 lookahead;
 	s64 trigger_time;
+
+	s64 bulk_lookahead_expiry_time;
+	long sp_lookahead_duration;
+
 	int associated_tracer_id;
 	int ready;
 	int buffer_window_len;
@@ -87,8 +91,9 @@ typedef struct tracer_struct {
 	s64 round_start_virt_time;
    	s64 nxt_round_burst_length;
 	s64 running_task_lookahead;
-	rwlock_t tracer_lock;
+	s64 earliest_arrival_time;
 
+	rwlock_t tracer_lock;
 	llist schedule_queue;
    	llist run_queue;
 	llist pkt_info_queue;
@@ -97,7 +102,5 @@ typedef struct tracer_struct {
 	lxc_schedule_elem * last_run;
 
 } tracer;
-
-
 
 #endif

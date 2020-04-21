@@ -56,4 +56,9 @@ int set_pkt_send_time(int payload_hash, int payload_len, s64 send_tstamp);
 s64 get_pkt_send_time(int tracer_id, int pkt_hash);
 int get_num_enqueued_bytes(int tracer_id);
 
+int set_earliest_arrival_time(int tracer_id, s64 eat_tstamp);
+s64 get_earliest_arrival_time();
+int set_process_lookahead(s64 bulk_lookahead_expiry_time, long sp_lookahead_duration);
+s64 get_tracer_lookahead(int tracer_id);
+
 #endif

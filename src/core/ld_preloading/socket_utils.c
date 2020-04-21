@@ -16,31 +16,6 @@
 #define ETHER_TYPE_8021Q (0x8100)
 #define ETHER_TYPE_IPV6  (0x86DD)
 
-/*
-int get_payload_hash(const char * pkt, int size) {
-
-    int hash = 0;
-    const char * ptr = pkt;
-    int i = 0;
-    
-    for(i = 0; i < size; i++) {
-    	hash += *ptr;
-    	hash += (hash << 10);
-    	hash ^= (hash >> 6);
-
-        ++ptr;
-    }
-
-    hash += (hash << 3);
-    hash ^= (hash >> 11);
-    hash += (hash << 15);
-
-
-    if (hash < 0)
-	return -1 * hash;
-
-    return hash;
-}*/
 
 int get_payload_hash(const void * buf, int total_len) {
 
@@ -74,7 +49,7 @@ int get_payload_hash(const void * buf, int total_len) {
 		return 0;
 	    }
     } else {
-	payload = buf;
+	payload = (char *)buf;
     }
     
     for(i = 0; i < size; i++) {
