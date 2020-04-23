@@ -22,6 +22,8 @@
 #include <poll.h>
 #include <sys/select.h>
 #include <linux/futex.h>
+#include <sys/types.h>          
+#include <sys/socket.h>
 
 
 typedef long long s64;

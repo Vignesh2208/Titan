@@ -28,6 +28,11 @@ void (*vtGetCurrentTimeval)(struct timeval * tv) = NULL;
 s64 (*vtGetCurrentTime)() = NULL;
 void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp) = NULL;
 
+void  (*vtOpenSocket)(int ThreadID, int sockFD, int isNonBlocking) = NULL;
+int (*vtIsSocketFD)(int ThreadID, int sockFD) = NULL;
+int (*vtIsSocketFDNonBlocking)(int ThreadID, int sockFD) = NULL;
+void (*vtCloseSocket)(int ThreadID, int sockFD) = NULL;
+
 
 
 void load_all_vtl_functions(void * lib_vt_lib_handle) {
@@ -123,6 +128,31 @@ void load_all_vtl_functions(void * lib_vt_lib_handle) {
     vtSetPktSendTime = dlsym(lib_vt_lib_handle, "SetPktSendTime");
     if (!vtSetPktSendTime) {
         printf("SetPktSendTime not found !\n");
+        abort();
+    }
+
+    vtOpenSocket = dlsym(lib_vt_lib_handle, "openSocket");
+    if (!vtOpenSocket) {
+        printf("openSocket not found !\n");
+        abort();
+    }
+
+
+    vtIsSocketFD = dlsym(lib_vt_lib_handle, "isSocketFD");
+    if (!vtIsSocketFD) {
+        printf("isSocketFD not found !\n");
+        abort();
+    }
+
+    vtIsSocketFDNonBlocking = dlsym(lib_vt_lib_handle, "isSocketFDNonBlocking");
+    if (!vtIsSocketFDNonBlocking) {
+        printf("isSocketFDNonBlocking not found !\n");
+        abort();
+    }
+
+    vtCloseSocket = dlsym(lib_vt_lib_handle, "closeSocket");
+    if (!vtCloseSocket) {
+        printf("closeSocket not found !\n");
         abort();
     }
 }

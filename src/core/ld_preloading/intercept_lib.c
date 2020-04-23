@@ -36,6 +36,9 @@ ssize_t (*orig_send)(int sockfd, const void *buf, size_t len, int flags);
 ssize_t (*orig_sendto)(int sockfd, const void *buf, size_t len, int flags,
                const struct sockaddr *dest_addr, socklen_t addrlen);
 
+int (*orig_socket)(int domain, int type, int protocol);
+
+int (*orig_close)(int fd);
 
 void __attribute__ ((noreturn)) (*orig_exit)(int status);
 
@@ -64,6 +67,11 @@ extern void (*vtGetCurrentTimespec)(struct timespec *ts);
 extern void (*vtGetCurrentTimeval)(struct timeval * tv);
 extern void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp);
 extern s64 (*vtGetCurrentTime)();
+
+extern void  (*vtOpenSocket)(int ThreadID, int sockFD, int isNonBlocking);
+extern int (*vtIsSocketFD)(int ThreadID, int sockFD);
+extern int (*vtIsSocketFDNonBlocking)(int ThreadID, int sockFD);
+extern void (*vtCloseSocket)(int ThreadID, int sockFD);
 
 void load_orig_functions();
 
@@ -239,7 +247,7 @@ int __libc_start_main(int (*main) (int, char **, char **),
 	}
 
 
-    	orig_exit = dlsym(libc_handle, "_exit");
+    orig_exit = dlsym(libc_handle, "_exit");
 	if (!orig_exit) {
 		fprintf(stderr, "can't find _exit():%s\n",
 			dlerror());
@@ -247,7 +255,7 @@ int __libc_start_main(int (*main) (int, char **, char **),
 	}
 
 
-    	orig_syscall = dlsym(libc_handle, "syscall");
+    orig_syscall = dlsym(libc_handle, "syscall");
 	if (!orig_syscall) {
 		fprintf(stderr, "can't find syscall():%s\n",
 			dlerror());
@@ -264,6 +272,19 @@ int __libc_start_main(int (*main) (int, char **, char **),
 	orig_sendto = dlsym(libc_handle, "sendto");
 	if (!orig_sendto) {
 		fprintf(stderr, "can't find sendto():%s\n", dlerror());
+		_exit(EXIT_FAILURE);
+	}
+
+
+	orig_socket = dlsym(libc_handle, "socket");
+	if (!orig_socket) {
+		fprintf(stderr, "can't find socket():%s\n", dlerror());
+		_exit(EXIT_FAILURE);
+	}
+
+	orig_close = dlsym(libc_handle, "close");
+	if (!orig_close) {
+		fprintf(stderr, "can't find close(int fd):%s\n", dlerror());
 		_exit(EXIT_FAILURE);
 	}
 
@@ -441,6 +462,27 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 
 }
 
+int socket(int domain, int type, int protocol) {
+	int retFD = orig_socket(domain, type, protocol);
+	if(retFD) {
+		int ThreadPID = syscall(SYS_gettid);
+		int isNonBlocking = (type & SOCK_NONBLOCK) != 0 ? 1: 0;
+		vtOpenSocket(ThreadPID, retFD, isNonBlocking);
+	}
+
+	return retFD;
+}
+
+int close(int fd) {
+
+	int ret = orig_close(fd);
+	int ThreadPID = syscall(SYS_gettid);
+	if (vtIsSocketFD(ThreadPID, fd)) {
+		vtCloseSocket(ThreadPID, fd);
+	}
+
+}
+
 /***** Time related functions ****/
 
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
@@ -539,17 +581,18 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 			return orig_select(nfds, readfds, writefds, exceptfds, timeout);
 
 		if (readfds) {
-			readfds_copy = *readfds;
+			memcpy(&readfds_copy, readfds, sizeof(fd_set));
 			isReadInc = 1;
 		}
 
 		if (writefds) {
-			writefds_copy = *writefds;
+			memcpy(&writefds, writefds, sizeof(fd_set));
 			isWriteInc = 1;
 		}
 
 		if (exceptfds) {
 			exceptfds_copy = *exceptfds;
+			memcpy(&exceptfds_copy, exceptfds, sizeof(fd_set));
 			isExceptInc = 1;
 		}
 		max_duration 
@@ -566,11 +609,11 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 				vtTriggerSyscallWait(ThreadPID, 0);
 			
 			if (isReadInc)
-				*readfds = readfds_copy;
+				memcpy(readfds, &readfds_copy, sizeof(fd_set));
 			if (isWriteInc)
-				*writefds = writefds_copy;
+				memcpy(writefds, &writefds_copy, sizeof(fd_set));
 			if (isExceptInc)
-				*exceptfds = exceptfds_copy;
+				memcpy(exceptfds, &exceptfds_copy, sizeof(fd_set));
 			//printf("Elapsed time: %lld\n", vtGetCurrentTime() - start_time);
 		} while (elapsed_time < max_duration);
 		vtTriggerSyscallFinish(ThreadPID);

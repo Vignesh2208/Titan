@@ -6,8 +6,7 @@
 #include "utility_functions.h"
 #include "vtl_logic.h"
 
-#define FALSE 0
-#define TRUE 1
+
 
 long long currBurstLength = 0;
 long long specifiedBurstLength = 0;
@@ -34,6 +33,8 @@ extern void ns_2_timeval(s64 nsec, struct timeval * tv);
 void SetPktSendTime(int payloadHash, int payloadLen, s64 pktSendTimeStamp) {
 	set_pkt_send_time(payloadHash, payloadLen, pktSendTimeStamp);
 }
+
+
 
 void SleepForNS(int ThreadID, int64_t duration) {
 
@@ -110,11 +111,23 @@ void CleanupThreadInfo(ThreadInfo * relevantThreadInfo) {
             while(llist_size(&currBBL->out_neighbours)) {
                 llist_pop(&currBBL->out_neighbours);
             }
+
+            
             llist_destroy(&currBBL->out_neighbours);
             free(currBBL);
         }
         
     }
+
+    while(llist_size(&relevantThreadInfo->special_fds)){
+        SocketInfo * currSockInfo = llist_pop(
+            &relevantThreadInfo->special_fds);
+        if (currSockInfo)
+            free(currSockInfo);
+    }
+
+    llist_destroy(&relevantThreadInfo->special_fds);
+
     hmap_destroy(&relevantThreadInfo->lookahead_map);
 	
 }
@@ -134,6 +147,7 @@ ThreadInfo * AllotThreadInfo(int ThreadID) {
         currThreadInfo->stack.currBBSize = 0;
         currThreadInfo->stack.alwaysOn = 1;
         llist_init(&currThreadInfo->bbl_list);
+        llist_init(&currThreadInfo->special_fds);
         hmap_init(&currThreadInfo->lookahead_map, 1000);
         hmap_put_abs(&thread_info_map, ThreadID, currThreadInfo);
         llist_append(&thread_info_list, currThreadInfo);
@@ -544,12 +558,12 @@ void vtCallbackFn() {
     }	
      
     if (alwaysOn) {
-	//ThreadID = syscall(SYS_gettid);
+        //ThreadID = syscall(SYS_gettid);
         //currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
         //UpdateLookAhead(ThreadID, prevBBID, currBBID, currBBSize);
-	//if (currThreadInfo->stack.totalBurstLength >= FLIP_ALWAYS_ON_THRESHOLD)
+        //if (currThreadInfo->stack.totalBurstLength >= FLIP_ALWAYS_ON_THRESHOLD)
         //	alwaysOn = 0;
-	alwaysOn = 0;
+	    alwaysOn = 0;
     }
 
   
