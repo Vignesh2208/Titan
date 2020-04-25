@@ -12,6 +12,7 @@
 long long currBurstLength = 0;
 long long specifiedBurstLength = 0;
 long long currBBID = 0;
+long long prevBBID = 0;
 long long currBBSize = 0;
 int expStopping = 0;
 int interesting = 0;
@@ -35,31 +36,6 @@ void SetPktSendTime(int payloadHash, int payloadLen, s64 pktSendTimeStamp) {
 }
 
 
-void CopyAllSpecialFds(int FromProcessID, int ToProcessID) {
-    ThreadInfo * fromProcess = hmap_get_abs(&thread_info_map, FromProcessID);
-    ThreadInfo * toProcess = hmap_get_abs(&thread_info_map, ToProcessID);
-    assert(toProcess);
-
-    if (!fromProcess)
-        return;
-
-    llist_elem * head;
-    fdInfo * currFdInfo;
-    fdInfo * currFdCopy;
-	head = fromProcess->special_fds.head;
-	while (head != NULL) {
-        currFdInfo = (fdInfo *)head->item;
-
-        if (currFdInfo) {
-            currFdCopy = (fdInfo *)malloc(sizeof(fdInfo));
-            memcpy(currFdCopy, currFdInfo, sizeof(fdInfo));
-            llist_append(&fromProcess->special_fds, currFdCopy);
-        }
-		head = head->next;
-	}
-
-}
-
 
 void SleepForNS(int ThreadID, int64_t duration) {
 
@@ -77,13 +53,14 @@ void SleepForNS(int ThreadID, int64_t duration) {
 
     currThreadInfo->in_callback = TRUE;
     currThreadInfo->stack.currBBID = currBBID;
+    currThreadInfo->stack.prevBBID = prevBBID;
     currThreadInfo->stack.currBBSize = currBBSize;
     currThreadInfo->stack.alwaysOn = alwaysOn;
 
     ret = vt_sleep_for(duration);
 
     if (ret < 0)
-	    HandleVTExpEnd(ThreadID);
+	HandleVTExpEnd(ThreadID);
 
     currBurstLength = mark_burst_complete(0);
     specifiedBurstLength = currBurstLength;
@@ -95,6 +72,7 @@ void SleepForNS(int ThreadID, int64_t duration) {
     // restore globals
     alwaysOn = currThreadInfo->stack.alwaysOn;
     currBBID = currThreadInfo->stack.currBBID;
+    prevBBID = currThreadInfo->stack.prevBBID;
     currBBSize = currThreadInfo->stack.currBBSize;
     currThreadInfo->in_callback = FALSE;
 
@@ -107,21 +85,6 @@ void GetCurrentTimespec(struct timespec *ts) {
 
 void GetCurrentTimeval(struct timeval * tv) {
     ns_2_timeval(get_current_vt_time(), tv);
-}
-
-
-s64 getPacketEAT() {
-    // returns earliest arrival time of any packet intended for this tracer
-    return 0;
-}
-
-long getBBLLookahead() {
-    // returns shortest path lookahead from BBL
-    return 0;
-}
-
-int setLookahead(s64 bulkLookaheadValue, long spLookaheadValue) {
-    return 0;
 }
 
 s64 GetCurrentTime() {
@@ -141,6 +104,21 @@ void CleanupThreadInfo(ThreadInfo * relevantThreadInfo) {
     if (!relevantThreadInfo)
         return;
 
+	
+    while(llist_size(&relevantThreadInfo->bbl_list)) {
+        BasicBlock * currBBL = llist_pop(&relevantThreadInfo->bbl_list);
+        if (currBBL) {
+            hmap_remove_abs(&relevantThreadInfo->lookahead_map, currBBL->ID);
+            while(llist_size(&currBBL->out_neighbours)) {
+                llist_pop(&currBBL->out_neighbours);
+            }
+
+            
+            llist_destroy(&currBBL->out_neighbours);
+            free(currBBL);
+        }
+        
+    }
 
     while(llist_size(&relevantThreadInfo->special_fds)){
         fdInfo * currfdInfo = llist_pop(
@@ -150,6 +128,8 @@ void CleanupThreadInfo(ThreadInfo * relevantThreadInfo) {
     }
 
     llist_destroy(&relevantThreadInfo->special_fds);
+
+    hmap_destroy(&relevantThreadInfo->lookahead_map);
 	
 }
 
@@ -164,10 +144,13 @@ ThreadInfo * AllotThreadInfo(int ThreadID, int processPID) {
         currThreadInfo->in_force_completed = 0;
         currThreadInfo->in_callback = 0;
         currThreadInfo->stack.totalBurstLength = 0;
+        currThreadInfo->stack.prevBBID = 0;
         currThreadInfo->stack.currBBID = 0;
         currThreadInfo->stack.currBBSize = 0;
         currThreadInfo->stack.alwaysOn = 1;
+        llist_init(&currThreadInfo->bbl_list);
         llist_init(&currThreadInfo->special_fds);
+        hmap_init(&currThreadInfo->lookahead_map, 1000);
         hmap_put_abs(&thread_info_map, ThreadID, currThreadInfo);
         llist_append(&thread_info_list, currThreadInfo);
     } else {
@@ -177,20 +160,40 @@ ThreadInfo * AllotThreadInfo(int ThreadID, int processPID) {
     return currThreadInfo;
 }
 
+BasicBlock * AllotBasicBlockEntry(ThreadInfo * currThreadInfo, int ID) {
+
+    if (ID < 0)
+	ID = -1*ID;
+
+    BasicBlock * new_bbl = hmap_get_abs(&currThreadInfo->lookahead_map, ID);
+    if (!new_bbl) {
+        new_bbl = (BasicBlock *) malloc(sizeof(BasicBlock));
+        assert(new_bbl != NULL);
+        new_bbl->ID = ID;
+        new_bbl->lookahead_value = -1;
+        new_bbl->BBLSize = 0;
+        new_bbl->isMarked = 0;
+        llist_init(&new_bbl->out_neighbours);
+        llist_append(&currThreadInfo->bbl_list, new_bbl);
+        hmap_put_abs(&currThreadInfo->lookahead_map, ID, new_bbl);
+    }
+    return new_bbl;
+}
 
 void YieldVTBurst(int ThreadID, int save, long syscall_number) {
 
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    if (!currThreadInfo) 
-	    return;
+    if (!currThreadInfo) {
+	return;
+    }
 
     if (currThreadInfo->in_callback)
-	    return;
+	return;
 
 
     if (currThreadInfo->in_force_completed)
-	    return;
+	return;
     
     currThreadInfo->in_callback = TRUE;
 
@@ -200,9 +203,10 @@ void YieldVTBurst(int ThreadID, int save, long syscall_number) {
 
 	    currThreadInfo->yielded = TRUE;
 	    if (save) {
-            currThreadInfo->stack.currBBID = currBBID;
-            currThreadInfo->stack.currBBSize = currBBSize;
-            currThreadInfo->stack.alwaysOn = alwaysOn;
+		currThreadInfo->stack.currBBID = currBBID;
+		currThreadInfo->stack.prevBBID = prevBBID;
+		currThreadInfo->stack.currBBSize = currBBSize;
+		currThreadInfo->stack.alwaysOn = alwaysOn;
 	    }
 
 	    release_worker();
@@ -225,14 +229,14 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
 
     currThreadInfo->in_force_completed = TRUE;
 
-    //printf("Force Complete Burst. Paused ThreadID: %d. "
-    //       "Syscall number: %d!\n", ThreadID, syscall_number);
+    //printf("Force Complete Burst. Paused ThreadID: %d. Syscall number: %d!\n", ThreadID, syscall_number);
     //fflush(stdout);
 
     
 
     if (save && currThreadInfo) {
         currThreadInfo->stack.currBBID = currBBID;
+        currThreadInfo->stack.prevBBID = prevBBID;
         currThreadInfo->stack.currBBSize = currBBSize;
         currThreadInfo->stack.alwaysOn = alwaysOn;
     }
@@ -252,11 +256,11 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     	// restore globals
     	alwaysOn = currThreadInfo->stack.alwaysOn;
     	currBBID = currThreadInfo->stack.currBBID;
+    	prevBBID = currThreadInfo->stack.prevBBID;
     	currBBSize = currThreadInfo->stack.currBBSize;
     }
 
-    //printf("Force Complete Burst. Resumed ThreadID: %d. "
-    //       "Syscall number: %d!\n", ThreadID, syscall_number);
+    //printf("Force Complete Burst. Resumed ThreadID: %d. Syscall number: %d!\n", ThreadID, syscall_number);
     //fflush(stdout);
     
     if (currThreadInfo->yielded == TRUE)
@@ -272,6 +276,7 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     // save globals
     if (save) {  
         currThreadInfo->stack.currBBID = currBBID;
+        currThreadInfo->stack.prevBBID = prevBBID;
         currThreadInfo->stack.currBBSize = currBBSize;
         currThreadInfo->stack.alwaysOn = alwaysOn;  
     }
@@ -286,23 +291,33 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     // restore globals
     alwaysOn = currThreadInfo->stack.alwaysOn;
     currBBID = currThreadInfo->stack.currBBID;
+    prevBBID = currThreadInfo->stack.prevBBID;
     currBBSize = currThreadInfo->stack.currBBSize;
 }
 
-void AfterForkInChild(int ThreadID, int ParentProcessID) {
+void AfterForkInChild(int ThreadID) {
 
     // destroy existing hmap
     ThreadInfo * currThreadInfo;
     ThreadInfo * tmp;
     
-
+    while(llist_size(&thread_info_list)) {
+        tmp = llist_pop(&thread_info_list);
+        if (tmp) {
+            CleanupThreadInfo(tmp);
+            hmap_remove_abs(&thread_info_map, tmp->pid);
+            free(tmp);
+        }
+    }
 
     currThreadInfo = AllotThreadInfo(ThreadID, ThreadID);
      
-    assert(currThreadInfo != NULL);
+    if (!currThreadInfo)
+	return;
 
     currBurstLength = 0;
     currBBID = 0;
+    prevBBID = 0;
     currBBSize = 0;
     alwaysOn = 1;
     specifiedBurstLength = currBurstLength;
@@ -315,21 +330,6 @@ void AfterForkInChild(int ThreadID, int ParentProcessID) {
     add_to_tracer_sq(globalTracerID);
     globalThreadID = syscall(SYS_gettid);
     SignalBurstCompletion(currThreadInfo, 1);
-
-    if (ParentProcessID != ThreadID) {
-        CopyAllSpecialFds(ParentProcessID, ThreadID);
-    }
-
-    while(llist_size(&thread_info_list) - 1) {
-        tmp = llist_pop(&thread_info_list);
-        if (tmp && tmp->pid != ThreadID) {
-            CleanupThreadInfo(tmp);
-            hmap_remove_abs(&thread_info_map, tmp->pid);
-            free(tmp);
-        } else if(tmp && tmp->pid == ThreadID){
-            llist_append(&thread_info_list, tmp);
-        }
-    }
     printf("Resuming new process with Burst of length: %llu\n", currBurstLength);
     fflush(stdout);
     currThreadInfo->in_callback = FALSE;
@@ -428,6 +428,7 @@ void TriggerSyscallWait(int ThreadID, int save) {
 	
     if  (save) {
         currThreadInfo->stack.currBBID = currBBID;
+        currThreadInfo->stack.prevBBID = prevBBID;
         currThreadInfo->stack.currBBSize = currBBSize;
         currThreadInfo->stack.alwaysOn = alwaysOn;
     }
@@ -463,39 +464,129 @@ void TriggerSyscallFinish(int ThreadID) {
     // restore globals
     alwaysOn = currThreadInfo->stack.alwaysOn;
     currBBID = currThreadInfo->stack.currBBID;
+    prevBBID = currThreadInfo->stack.prevBBID;
     currBBSize = currThreadInfo->stack.currBBSize;
+
     currThreadInfo->in_callback = FALSE;
 }
 
+void UpdateLookAhead(ThreadInfo * currThreadInfo, int64_t prev_BBID,
+                    int64_t curr_BBID, int curr_BBSize) {
+
+	
+    BasicBlock * prevBBL;
+    BasicBlock * currBBL;
+
+    if (curr_BBID < 0)
+	curr_BBID = -1 * curr_BBID;
+
+    if (prev_BBID < 0)
+	prev_BBID = -1 * prev_BBID;
+
+    prevBBL = AllotBasicBlockEntry(currThreadInfo, prev_BBID);
+    currBBL = AllotBasicBlockEntry(currThreadInfo, curr_BBID);
+
+    llist_elem * head = prevBBL->out_neighbours.head;
+    int skip = 0;
+
+    while (head != NULL) {
+        BasicBlock * tmp = (BasicBlock *)head->item;
+
+        if (tmp && tmp->ID == currBBL->ID) {
+            skip = 1;
+            break;
+        }
+        head = head->next;
+    }
+
+    if (!skip) {
+        llist_append(&prevBBL->out_neighbours, currBBL);
+        currBBL->BBLSize = curr_BBSize;
+    }
+}
+
+void markCurrBBL(int ThreadID) {
+    ThreadInfo * currThreadInfo;
+    currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+    if (!currThreadInfo)
+	return;
+
+    if (currThreadInfo->in_callback)
+	return;
+
+    currThreadInfo->in_callback = TRUE;
+    //printf("mark Curr BBL: %d\n", ThreadID);
+    //fflush(stdout);
+
+	
+    if (currBBID != 0) {
+        BasicBlock * relevantBBL = AllotBasicBlockEntry(currThreadInfo,
+                                                        currBBID);
+        relevantBBL->isMarked = 1;
+        relevantBBL->BBLSize = currBBSize;
+        relevantBBL->lookahead_value = currBBSize;
+    }
+
+    currThreadInfo->in_callback = FALSE;
+
+}
+
+void BasicBlockCallback(ThreadInfo * currThreadInfo, int bblID) {
+
+    BasicBlock * bbl;
+
+    bbl = AllotBasicBlockEntry(currThreadInfo, bblID);
+    bbl->BBLSize = currBBSize;
+
+    if (!alwaysOn) { 
+        // set lookahead here for this Thread ...
+    }    
+    SignalBurstCompletion(currThreadInfo, 1);
+}
 
 void vtCallbackFn() {
 
     int ThreadID;
     ThreadInfo * currThreadInfo;
-
+    //return;
     if (!vtInitializationComplete) {
-	    alwaysOn = 0;
-        if (currBurstLength <= 0) {	
-            currBurstLength = 1000000;
-            specifiedBurstLength = currBurstLength;
-        }
+	// operating without vt management
+	alwaysOn = 0;
+	if (currBurstLength <= 0) {	
+		currBurstLength = 1000;
+		specifiedBurstLength = currBurstLength;
+		//printf("Here Now blah blah ...\n");
+	}
         return;
     }	
      
-    alwaysOn = 0;
+    if (alwaysOn) {
+        //ThreadID = syscall(SYS_gettid);
+        //currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+        //UpdateLookAhead(ThreadID, prevBBID, currBBID, currBBSize);
+        //if (currThreadInfo->stack.totalBurstLength >= FLIP_ALWAYS_ON_THRESHOLD)
+        //	alwaysOn = 0;
+	    alwaysOn = 0;
+    }
+
+  
     
     if (currBurstLength <= 0) {
 
-        ThreadID = syscall(SYS_gettid);
-        currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+	ThreadID = syscall(SYS_gettid);
+	currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
 
-        if (currThreadInfo != NULL) {
-            currThreadInfo->in_callback = TRUE;
-            SignalBurstCompletion(currThreadInfo, 1);
-            currThreadInfo->in_callback = FALSE;
-        }
+	if (currThreadInfo != NULL) {
+		currThreadInfo->in_callback = TRUE;
+		
+        	BasicBlockCallback(currThreadInfo, currBBID);
+		currThreadInfo->in_callback = FALSE;
+	}
 	
-    } 
+    }
+	
+
+    prevBBID = currBBID;  
 }
 
 
@@ -544,7 +635,7 @@ void initialize_vt_management() {
 
     if (exp_type == EXP_CBE) {
         ret = register_tracer(tracer_id, EXP_CBE, 0);
-	    printf("Tracer registration EXP_CBE complete. Return = %d\n", ret);
+	printf("Tracer registration EXP_CBE complete. Return = %d\n", ret);
     } else {
         timeline_id = atoi(timeline_id_str);
         if (timeline_id < 0) {

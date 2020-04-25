@@ -16,6 +16,13 @@
 #define FD_TYPE_TIMERFD 0x2
 #define MAX_ASSIGNABLE_FD 1024
 
+typedef struct BasicBlockStruct {
+    int ID;
+    int BBLSize;
+    int isMarked;
+    llist out_neighbours;
+    long long lookahead_value;
+} BasicBlock;
 
 typedef struct fdInfoStruct {
     int fd;
@@ -31,6 +38,7 @@ typedef struct fdInfoStruct {
 
 typedef struct ThreadStackStruct {
     long long currBBID;
+    long long prevBBID;
     int currBBSize;
     long long totalBurstLength;
     int alwaysOn;
@@ -43,10 +51,11 @@ typedef struct ThreadInfoStruct {
     int in_callback;
     int processPID; // pid of the holder process. May differ from pid if this is a Thread
     ThreadStack stack;
+    llist bbl_list;
     llist special_fds;
+    hashmap lookahead_map;
 } ThreadInfo;
 
 s64 GetCurrentTime();
-void HandleVTExpEnd(int ThreadID);
 
 #endif

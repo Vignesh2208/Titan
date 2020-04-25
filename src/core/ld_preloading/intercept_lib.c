@@ -45,17 +45,15 @@ void __attribute__ ((noreturn)) (*orig_exit)(int status);
 // externs
 extern s64 * globalCurrBurstLength;
 extern s64 * globalCurrBBID;
-extern s64 * globalPrevBBID;
 extern s64 * globalCurrBBSize;
 extern int * vtInitialized;
 extern int * vtAlwaysOn;
 extern int * vtGlobalTracerID;
 extern int * vtGlobalTimelineID;
-extern void (*vtAfterForkInChild)(int ThreadID);
+extern void (*vtAfterForkInChild)(int ThreadID, int ParendProcessPID);
 extern void (*vtThreadStart)(int ThreadID);
 extern void (*vtThreadFini)(int ThreadID);
 extern void (*vtAppFini)(int ThreadID);
-extern void (*vtMarkCurrBBL)(int ThreadID);
 extern void (*vtInitialize)();
 extern void (*vtYieldVTBurst)(int ThreadID, int save, long syscall_number);
 extern void (*vtForceCompleteBurst)(int ThreadID, int save, long syscall_number);
@@ -68,10 +66,37 @@ extern void (*vtGetCurrentTimeval)(struct timeval * tv);
 extern void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp);
 extern s64 (*vtGetCurrentTime)();
 
-extern void  (*vtOpenSocket)(int ThreadID, int sockFD, int isNonBlocking);
-extern int (*vtIsSocketFD)(int ThreadID, int sockFD);
-extern int (*vtIsSocketFDNonBlocking)(int ThreadID, int sockFD);
-extern void (*vtCloseSocket)(int ThreadID, int sockFD);
+/*** For Socket Handling ***/
+extern void  (*vtAddSocket)(int ThreadID, int sockFD, int isNonBlocking);
+extern int (*vtIsSocketFd)(int ThreadID, int sockFD);
+extern int (*vtIsSocketFdNonBlocking)(int ThreadID, int sockFD);
+
+/*** For TimerFD Handlng ***/
+extern void  (*vtAddTimerFd)(int ThreadID, int fd, int isNonBlocking);
+extern int (*vtIsTimerFd)(int ThreadID, int fd);
+extern int (*vtIsTimerFdNonBlocking)(int ThreadID, int fd);
+extern int (*vtIsTimerArmed)(int ThreadID, int fd);
+
+extern void (*vtSetTimerFdParams)(int ThreadID, int fd, s64 absExpiryTime,
+                         s64 intervalNS);
+
+extern int (*vtGetNumNewTimerFdExpiries)(int ThreadID, int fd,
+                                s64 * nxtExpiryDurationNS);
+
+extern int (*vtComputeClosestTimerExpiryForSelect)(int ThreadID,
+    fd_set * readfs, int nfds, s64 * closestTimerExpiryDurationNS);
+
+extern int (*vtComputeClosestTimerExpiryForPoll)(int ThreadID,
+	struct pollfd * fds, int nfds, s64 * closestTimerExpiryDurationNS);
+
+
+/*** For Sockets and TimerFD ***/
+extern void (*vtCloseFd)(int ThreadID, int fd);
+
+/*** For lookahead handling ***/
+extern s64 (*vtGetPacketEAT)();
+extern long (*vtGetBBLLookahead)();
+extern int (*vtSetLookahead)(s64 bulkLookaheadValue, long spLookaheadValue); 
 
 void load_orig_functions();
 
@@ -79,6 +104,7 @@ void load_orig_functions();
 struct Thunk {
     void *(*start_routine)(void *);
     void *arg;
+	int ParentThreadID;
 };
 
 
@@ -91,7 +117,7 @@ static void * wrap_threadFn(void *thunk_vp) {
 
 	vtThreadStart(ThreadPID);
 
-    	void *result = (thunk_p->start_routine)(thunk_p->arg);
+    void *result = (thunk_p->start_routine)(thunk_p->arg);
 
 	free(thunk_p);
 	//printf ("Thread Exiting. PID = %d\n", ThreadPID);
@@ -115,10 +141,11 @@ int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
             abort(); // "impossible"
     }
 
-
+	int ParentThreadID = syscall(SYS_gettid);
     struct Thunk *thunk_p = malloc(sizeof(struct Thunk));
     thunk_p->start_routine = start_routine;
     thunk_p->arg = arg;
+	thunk_p->ParentThreadID = ParentThreadID;
     return real_pthread_create(thread, attr, wrap_threadFn, thunk_p);
 }
 
@@ -525,25 +552,81 @@ int usleep(useconds_t usec) {
 int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
 	
 	int ret, ThreadPID;
-	s64 start_time, elapsed_time, max_duration;
+	struct pollfd * modified_fds = NULL;
+	nfds_t actual_nfds = 0;
+	int i =0 , j = 0;
+	int relevantTimer;
+	s64 start_time, elapsed_time, max_duration, minNxtTimerExpiry;
 	ThreadPID = syscall(SYS_gettid);
 	printf("In my poll: %d\n", ThreadPID);
 
-	//return orig_poll(fds, nfds, timeout_ms);
-	
-	if (timeout_ms == 0)
-		return orig_poll(fds, nfds, timeout_ms);
+	for(i = 0; i < nfds; i++) {
+		if(!vtIsTimerFd(ThreadPID, fds[i].fd))
+			actual_nfds ++;
+	}
 
-	if (timeout_ms < 0) {
+	if (actual_nfds) {
+		modified_fds = (struct pollfd *) malloc(
+											sizeof(struct pollfd)*actual_nfds);
+		for(i = 0; i < nfds; i++) {
+			if(!vtIsTimerFd(ThreadPID, fds[i].fd))
+				memcpy(&modified_fds[j++], &fds[i], sizeof(struct pollfd));
+		}
+	}
+	//return orig_poll(fds, nfds, timeout_ms);
+
+	if (!actual_nfds) {
+		relevantTimer = vtComputeClosestTimerExpiryForPoll(ThreadPID, fds, nfds,
+														   &minNxtTimerExpiry);
+		assert(relevantTimer > 0);
+		
+		// there is some timer due to expire in minNxtTimerExpiry nanosec
+		if (minNxtTimerExpiry)
+			vtSleepForNS(ThreadPID, minNxtTimerExpiry);
+
+		for(i = 0; i < nfds; i++) {
+			if(fds[i].fd == relevantTimer)
+				fds[i].revents |= POLLIN;
+		}
+
+		return 1;
+	} else if (actual_nfds < nfds) {
+		relevantTimer = vtComputeClosestTimerExpiryForPoll(ThreadPID, fds, nfds,
+														   &minNxtTimerExpiry);
+		assert(relevantTimer > 0);	
+
+	} else {
+		relevantTimer = 0;
+
+		if  (timeout_ms < 0)
+			minNxtTimerExpiry = timeout_ms;
+		else
+			minNxtTimerExpiry = timeout_ms * NSEC_PER_MS;
+	}
+
+	if (timeout_ms == 0) {
+		max_duration = 0;
+	} else if(timeout_ms < 0) {
+		max_duration = minNxtTimerExpiry;
+	} else if (minNxtTimerExpiry > (s64)(timeout_ms*NSEC_PER_MS)) {
+		max_duration =  timeout_ms * NSEC_PER_MS;
+	} else {
+		max_duration = minNxtTimerExpiry;
+	}
+
+	
+	if (max_duration == 0) {
+		ret = orig_poll(modified_fds, actual_nfds, 0);
+	} else if (max_duration < 0) {
 		vtTriggerSyscallWait(ThreadPID, 1);
-		ret = orig_poll(fds, nfds, timeout_ms);
+		ret = orig_poll(modified_fds, actual_nfds, -1);
 		vtTriggerSyscallFinish(ThreadPID);
 	} else {
-		max_duration = timeout_ms * NSEC_PER_MS;
+		
 		start_time = vtGetCurrentTime();
 		vtTriggerSyscallWait(ThreadPID, 1);
 		do {
-			ret = orig_poll(fds, nfds, 0);
+			ret = orig_poll(modified_fds, actual_nfds, 0);
 			if (ret != 0)
 				break;
 			elapsed_time = vtGetCurrentTime() - start_time;
@@ -552,6 +635,30 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
 				vtTriggerSyscallWait(ThreadPID, 0);
 		} while (elapsed_time < max_duration);
 		vtTriggerSyscallFinish(ThreadPID);
+	}
+
+	
+	for(j = 0; j < actual_nfds; j++) {
+		for(i = 0; i < nfds; i++) {
+			if (fds[i].fd == modified_fds[j].fd) {
+				memcpy(&fds[i], &modified_fds[j], sizeof(struct pollfd));
+			}
+		}
+	}
+	
+	if (modified_fds)
+		free(modified_fds);
+
+	if (ret == 0 && relevantTimer) {
+		// Timer has expired first. set its revent.
+		for(i = 0; i < nfds; i++) {
+			if (fds[i].fd == relevantTimer) {
+				fds[i].revents |= POLLIN;
+				ret = 1;
+				break;
+			}
+		}
+
 	}
 	return ret;
 }
@@ -561,27 +668,131 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 
 	int ret, ThreadPID, rem;
 	int isReadInc, isWriteInc, isExceptInc;
-	s64 start_time, elapsed_time, max_duration;
+	s64 start_time, elapsed_time, max_duration, orig_max_duration,
+		minNxtTimerExpiry;
 	fd_set readfds_copy, writefds_copy, exceptfds_copy;
+	fd_set * readfds_mod;
+
+	struct timeval timeout_cpy;
+	int actual_nfds = 0;
+	int i = 0, j = 0, relevantTimer = 0, num_timers = 0, isTimer;
 	ThreadPID = syscall(SYS_gettid);
 
 	printf("In my select: %d\n", ThreadPID);
 	fflush(stdout);
+
+	if (readfds) {
+		readfds_mod = (fd_set *)malloc(sizeof(fd_set));
+		FD_ZERO(readfds_mod);
+		for(i = 0; i < nfds; i++) {
+			isTimer = vtIsTimerFd(ThreadPID, i);
+			if(FD_ISSET(i, readfds) && !isTimer)
+				if (actual_nfds <= i)
+					actual_nfds = i;
+			if (!isTimer) {
+				FD_SET(i, readfds_mod);
+			} else {
+				FD_CLR(i, readfds);
+				num_timers ++;
+			}
+		}
+	} else {
+		readfds_mod = NULL;
+	}
+
+	if (writefds) {
+		for(i = 0; i < nfds; i++) {
+			if(FD_ISSET(i, writefds))
+				if (actual_nfds <= i)
+					actual_nfds = i;
+		}
+	}
+
+	if (exceptfds) {
+		for(i = 0; i < nfds; i++) {
+			if(FD_ISSET(i, exceptfds))
+				if (actual_nfds <= i)
+					actual_nfds = i;
+		}
+	}
+	
+	if(actual_nfds)
+		actual_nfds ++;
+
+	//return orig_poll(fds, nfds, timeout_ms);
+
+	if (!actual_nfds && num_timers > 0) {
+		// all fds are timerfds
+
+		assert(readfds);
+		relevantTimer = vtComputeClosestTimerExpiryForSelect(ThreadPID,
+			readfds, nfds, &minNxtTimerExpiry);
+		assert(relevantTimer > 0);
+		assert(minNxtTimerExpiry >= 0);
+		
+		// there is some timer due to expire in minNxtTimerExpiry nanosec
+		if (minNxtTimerExpiry)
+			vtSleepForNS(ThreadPID, minNxtTimerExpiry);
+
+		FD_SET(relevantTimer, readfds);
+
+		return 1;
+	} else if (num_timers > 0) {
+		// some are timers, there are some non-timer fds as well
+		assert(readfds);
+		relevantTimer = vtComputeClosestTimerExpiryForSelect(ThreadPID,
+			readfds, nfds, &minNxtTimerExpiry);
+		assert(relevantTimer > 0);
+		assert(minNxtTimerExpiry >= 0);
+		
+
+	} else {
+		// there are no timers
+
+		relevantTimer = 0;
+
+		if  (!timeout)
+			minNxtTimerExpiry = -1;
+		else
+			minNxtTimerExpiry 
+				= timeout->tv_sec * NSEC_PER_SEC 
+					+ timeout->tv_usec * NSEC_PER_US;
+	}
+
+	if (!timeout) {
+		max_duration = minNxtTimerExpiry;
+	} else if(timeout->tv_sec == 0 && timeout->tv_usec == 0) {
+		max_duration = 0;
+	} else if (minNxtTimerExpiry > 
+				(s64)(timeout->tv_sec * NSEC_PER_SEC 
+					+ timeout->tv_usec * NSEC_PER_US)) {
+		max_duration = timeout->tv_sec * NSEC_PER_SEC 
+						+ timeout->tv_usec * NSEC_PER_US;
+	} else {
+		max_duration = minNxtTimerExpiry;
+	}
+
+
+
 	isReadInc = 0, isWriteInc = 0, isExceptInc = 0;
 
 	//return orig_select(nfds, readfds, writefds, exceptfds, timeout);
 
 	
-	if (!timeout) {
+	if (max_duration < 0) {
+		assert(!timeout);
 		vtTriggerSyscallWait(ThreadPID, 1);
-		ret = orig_select(nfds, readfds, writefds, exceptfds, timeout);
+		ret = orig_select(actual_nfds, readfds_mod, writefds, exceptfds,
+						  NULL);
 		vtTriggerSyscallFinish(ThreadPID);
+	} else if (max_duration == 0) {
+			timeout_cpy.tv_sec = 0, timeout_cpy.tv_usec = 0;
+			ret = orig_select(actual_nfds, readfds_mod, writefds, exceptfds,
+							  &timeout_cpy); 
 	} else {
-		if (timeout->tv_sec == 0 && timeout->tv_usec == 0)
-			return orig_select(nfds, readfds, writefds, exceptfds, timeout);
 
 		if (readfds) {
-			memcpy(&readfds_copy, readfds, sizeof(fd_set));
+			memcpy(&readfds_copy, readfds_mod, sizeof(fd_set));
 			isReadInc = 1;
 		}
 
@@ -591,17 +802,25 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 		}
 
 		if (exceptfds) {
-			exceptfds_copy = *exceptfds;
 			memcpy(&exceptfds_copy, exceptfds, sizeof(fd_set));
 			isExceptInc = 1;
 		}
-		max_duration 
-			= timeout->tv_sec * NSEC_PER_SEC + timeout->tv_usec * NSEC_PER_US;
+		
 		start_time = vtGetCurrentTime();
+
+		if (timeout) {
+			orig_max_duration = start_time + timeout->tv_sec * NSEC_PER_SEC 
+								+ timeout->tv_usec * NSEC_PER_US;
+			timeout->tv_sec = 0, timeout->tv_usec = 0;
+		} else {
+			orig_max_duration = max_duration;
+		}
+
 		vtTriggerSyscallWait(ThreadPID, 1);
-		timeout->tv_sec = 0, timeout->tv_usec = 0;
+		timeout_cpy.tv_sec = 0, timeout_cpy.tv_usec = 0;
 		do {
-			ret = orig_select(nfds, readfds, writefds, exceptfds, timeout);
+			ret = orig_select(actual_nfds, readfds_mod, writefds, exceptfds,
+							  &timeout_cpy);
 			if (ret != 0)
 				break;
 			elapsed_time = vtGetCurrentTime() - start_time;
@@ -609,7 +828,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 				vtTriggerSyscallWait(ThreadPID, 0);
 			
 			if (isReadInc)
-				memcpy(readfds, &readfds_copy, sizeof(fd_set));
+				memcpy(readfds_mod, &readfds_copy, sizeof(fd_set));
 			if (isWriteInc)
 				memcpy(writefds, &writefds_copy, sizeof(fd_set));
 			if (isExceptInc)
@@ -618,15 +837,134 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 		} while (elapsed_time < max_duration);
 		vtTriggerSyscallFinish(ThreadPID);
 		
-		if (elapsed_time < max_duration) {
-			timeout->tv_sec = (max_duration - elapsed_time) / NSEC_PER_SEC;
-			rem  = (max_duration - elapsed_time)
+		if (timeout && elapsed_time < orig_max_duration) {
+			timeout->tv_sec = (orig_max_duration - elapsed_time) / NSEC_PER_SEC;
+			rem  = (orig_max_duration - elapsed_time)
 					- timeout->tv_sec * NSEC_PER_SEC;
 			timeout->tv_usec = rem / NSEC_PER_US;
 		}
 	}
 
+	if (readfds) {
+		assert(readfds_mod);
+		memcpy(readfds, readfds_mod, sizeof(fd_set));
+		free(readfds_mod);
+	}
+
+	if (ret == 0 && relevantTimer > 0) {
+		// Timer expired
+		FD_SET(relevantTimer, readfds);
+		ret = 1;
+	}
+
 	return ret;
+}
+
+static void handle_vt_read_syscall(int ThreadPID, int fd, void * buf,
+								   size_t count, long * result) {
+	int goingToBlock = 1;
+	if (vtInitialized && *vtInitialized == 1) {
+		if (vtIsSocketFd(ThreadPID, fd)) {
+			if(!vtIsSocketFdNonBlocking(ThreadPID, fd)) {
+				// get eat and set lookahead here after polling if there's 
+				// nothing to read right away.
+
+				struct pollfd poll_fd;
+				poll_fd.events = POLLIN;
+				poll_fd.fd = fd;
+				if (syscall_no_intercept(SYS_poll, &poll_fd, 1, 0) <= 0) {
+					// nothing to read as of now. set lookahead here.
+					s64 bulkLA = vtGetPacketEAT();
+					long bblLA = vtGetBBLLookahead();
+					vtSetLookahead(bulkLA, bblLA);
+				}
+				goingToBlock = 1;
+			} else {
+				goingToBlock = 0;
+			}
+		} else if(vtIsTimerFd(ThreadPID, fd)) {
+			if (count <= sizeof(uint64_t))
+					return -EINVAL;
+
+			// it is blocking
+			s64 nxtExpiryDuration;
+			uint64_t numNewExpiries = vtGetNumNewTimerFdExpiries(
+				ThreadPID, fd, &nxtExpiryDuration);
+
+			if(!vtIsTimerFdNonBlocking(ThreadPID, fd)) {
+	
+				if (!numNewExpiries && nxtExpiryDuration > 0) {
+					// its going to block. set lookahead.
+					long bblLA = vtGetBBLLookahead();
+					vtSetLookahead(nxtExpiryDuration + vtGetCurrentTime(),
+								   bblLA);
+					vtSleepForNS(ThreadPID, nxtExpiryDuration);
+					numNewExpiries = 1;
+				} 
+
+				memcpy(buf, &numNewExpiries, sizeof(uint64_t));
+				*result = sizeof(uint64_t);
+				
+			} else {
+				if (!numNewExpiries && nxtExpiryDuration > 0)
+					*result = -EAGAIN;
+				else
+					*result = sizeof(uint64_t);
+				memcpy(buf, &numNewExpiries, sizeof(uint64_t));
+			}
+
+			return;
+		}
+	}
+
+	if (goingToBlock && vtInitialized && *vtInitialized == 1)
+		vtYieldVTBurst(ThreadPID, 1, SYS_read);
+
+	
+	*result = syscall_no_intercept(SYS_read, fd, buf, count);
+
+	if (goingToBlock && vtInitialized && *vtInitialized == 1)
+		vtForceCompleteBurst(ThreadPID, 0, SYS_read);
+}
+
+static void handle_vt_packet_receive_syscalls(long syscall_number, long arg0,
+	long arg1, long arg2, long arg3, long arg4, long arg5, long *result,
+	int ThreadPID) {
+
+	if (syscall_number != SYS_recvfrom
+		&& syscall_number != SYS_recvmsg
+		&& syscall_number != SYS_recvmmsg)
+		return;
+
+	int sockfd = (int) arg0;
+	int goingToBlock = 1;
+	if(!vtIsSocketFdNonBlocking(ThreadPID, sockfd)) {
+		// get eat and set lookahead here after polling if there's 
+		// nothing to read right away.
+
+		struct pollfd poll_fd;
+		poll_fd.events = POLLIN;
+		poll_fd.fd = sockfd;
+		if (syscall_no_intercept(SYS_poll, &poll_fd, 1, 0) <= 0) {
+			// nothing to read as of now. set lookahead here.
+			s64 bulkLA = vtGetPacketEAT();
+			long bblLA = vtGetBBLLookahead();
+			vtSetLookahead(bulkLA, bblLA);
+		}
+		goingToBlock = 1;
+	} else {
+		goingToBlock = 0;
+	}
+
+	if (goingToBlock && vtInitialized && *vtInitialized == 1)
+		vtYieldVTBurst(ThreadPID, 1, SYS_read);
+
+	
+	*result = syscall_no_intercept(syscall_number, arg0, arg1, arg2, arg3, arg4,
+								   arg5);
+
+	if (goingToBlock && vtInitialized && *vtInitialized == 1)
+		vtForceCompleteBurst(ThreadPID, 0, SYS_read);
 }
 
 static void execute_cpu_yielding_syscall(long syscall_number, long arg0,
@@ -649,15 +987,6 @@ static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
 
 	int ThreadPID = 0;
 	
-
-	if (syscall_number == SYS_sendto
-		|| syscall_number == SYS_sendmsg
-		|| syscall_number == SYS_sendmmsg) {
-		ThreadPID = syscall_no_intercept(SYS_gettid);
-
-		if (vtInitialized && *vtInitialized == 1)
-			vtMarkCurrBBL(ThreadPID);
-	}
 
 	if (syscall_number == SYS_futex
 		|| syscall_number == SYS_read
