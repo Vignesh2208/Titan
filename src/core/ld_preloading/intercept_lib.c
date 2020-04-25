@@ -557,12 +557,23 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
 	int i =0 , j = 0;
 	int relevantTimer;
 	s64 start_time, elapsed_time, max_duration, minNxtTimerExpiry;
+	int allSpecialFDS = 1;
 	ThreadPID = syscall(SYS_gettid);
 	printf("In my poll: %d\n", ThreadPID);
 
 	for(i = 0; i < nfds; i++) {
-		if(!vtIsTimerFd(ThreadPID, fds[i].fd))
+		if(!vtIsTimerFd(ThreadPID, fds[i].fd)) {
 			actual_nfds ++;
+
+			if(!vtIsSocketFd(ThreadPID, fds[i].fd)) {
+				allSpecialFDS = 0;
+			} else {
+				// if there is a socket, it should only be readable
+				if(fds[i].events != POLLIN)
+					allSpecialFDS = 0;
+			}
+		}
+		
 	}
 
 	if (actual_nfds) {
@@ -624,12 +635,25 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
 	} else {
 		
 		start_time = vtGetCurrentTime();
+		long bblLA = vtGetBBLLookahead();
 		vtTriggerSyscallWait(ThreadPID, 1);
 		do {
 			ret = orig_poll(modified_fds, actual_nfds, 0);
 			if (ret != 0)
 				break;
+
+ 
 			elapsed_time = vtGetCurrentTime() - start_time;
+
+			if (elapsed_time < max_duration && allSpecialFDS) {
+				s64 minBulkLA = start_time + max_duration;
+				s64 pktEAT = vtGetPacketEAT();
+				if (minBulkLA > pktEAT)
+					minBulkLA = pktEAT;
+
+				vtSetLookahead(minBulkLA, bblLA);
+				allSpecialFDS = 0;
+			}
 
 			if (elapsed_time < max_duration)
 				vtTriggerSyscallWait(ThreadPID, 0);
@@ -676,6 +700,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 	struct timeval timeout_cpy;
 	int actual_nfds = 0;
 	int i = 0, j = 0, relevantTimer = 0, num_timers = 0, isTimer;
+	int allSpecialFDS = 1;
 	ThreadPID = syscall(SYS_gettid);
 
 	printf("In my select: %d\n", ThreadPID);
@@ -690,6 +715,10 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 				if (actual_nfds <= i)
 					actual_nfds = i;
 			if (!isTimer) {
+
+				if(!vtIsSocketFd(ThreadPID, i))
+					allSpecialFDS = 0;
+
 				FD_SET(i, readfds_mod);
 			} else {
 				FD_CLR(i, readfds);
@@ -701,6 +730,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 	}
 
 	if (writefds) {
+		allSpecialFDS = 0;
 		for(i = 0; i < nfds; i++) {
 			if(FD_ISSET(i, writefds))
 				if (actual_nfds <= i)
@@ -709,6 +739,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 	}
 
 	if (exceptfds) {
+		allSpecialFDS = 0;
 		for(i = 0; i < nfds; i++) {
 			if(FD_ISSET(i, exceptfds))
 				if (actual_nfds <= i)
@@ -816,6 +847,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 			orig_max_duration = max_duration;
 		}
 
+		long bblLA = vtGetBBLLookahead();
 		vtTriggerSyscallWait(ThreadPID, 1);
 		timeout_cpy.tv_sec = 0, timeout_cpy.tv_usec = 0;
 		do {
@@ -823,7 +855,19 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 							  &timeout_cpy);
 			if (ret != 0)
 				break;
+
 			elapsed_time = vtGetCurrentTime() - start_time;
+
+			if (elapsed_time < max_duration && allSpecialFDS) {
+				s64 minBulkLA = start_time + max_duration;
+				s64 pktEAT = vtGetPacketEAT();
+				if (minBulkLA > pktEAT)
+					minBulkLA = pktEAT;
+
+				vtSetLookahead(minBulkLA, bblLA);
+				allSpecialFDS = 0;
+			} 
+
 			if (elapsed_time < max_duration)
 				vtTriggerSyscallWait(ThreadPID, 0);
 			
