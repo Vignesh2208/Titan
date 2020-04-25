@@ -27,8 +27,12 @@ void  addTimerFd(int ThreadID, int fd, int isNonBlocking);
 int isTimerFd(int ThreadID, int fd);
 int isTimerFdNonBlocking(int ThreadID, int fd);
 int isTimerArmed(int ThreadID, int fd);
+int getNxtTimerFdNumber(int ThreadID);
 
-void setTimerFdParams(int ThreadID, int fd, s64 absExpiryTime, s64 intervalNS);
+void setTimerFdParams(int ThreadID, int fd, s64 absExpiryTime, s64 intervalNS,
+                    s64 relExpiryDuration);
+void getTimerFdParams(int ThreadID, int fd, s64* absExpiryTime, s64* intervalNS,
+                    s64* relExpiryDuration);
 int getNumNewTimerFdExpiries(int ThreadID, int fd, s64 * nxtExpiryDurationNS);
 int computeClosestTimerExpiryForSelect(int ThreadID, fd_set * readfs, int nfds,
                                       s64 * closestTimerExpiryDurationNS);

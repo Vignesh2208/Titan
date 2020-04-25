@@ -23,6 +23,7 @@ void (*vtTriggerSyscallFinish)(int ThreadID) = NULL;
 void (*vtSleepForNS)(int ThreadID, s64 duration) = NULL;
 void (*vtGetCurrentTimespec)(struct timespec *tp) = NULL;
 void (*vtGetCurrentTimeval)(struct timeval * tv) = NULL;
+void (*vt_ns_2_timespec)(s64 nsec, struct timespec * ts) = NULL;
 s64 (*vtGetCurrentTime)() = NULL;
 void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp) = NULL;
 
@@ -36,9 +37,13 @@ void  (*vtAddTimerFd)(int ThreadID, int fd, int isNonBlocking) = NULL;
 int (*vtIsTimerFd)(int ThreadID, int fd) = NULL;
 int (*vtIsTimerFdNonBlocking)(int ThreadID, int fd) = NULL;
 int (*vtIsTimerArmed)(int ThreadID, int fd) = NULL;
+int (*vtGetNxtTimerFdNumber)(int ThreadID) = NULL;
 
 void (*vtSetTimerFdParams)(int ThreadID, int fd, s64 absExpiryTime,
-                         s64 intervalNS) = NULL;
+                         s64 intervalNS, s64 relExpDuration) = NULL;
+
+void (*vtGetTimerFdParams)(int ThreadID, int fd, s64* absExpiryTime,
+                         s64* intervalNS, s64* relExpDuration) = NULL;
 
 int (*vtGetNumNewTimerFdExpiries)(int ThreadID, int fd,
                                 s64 * nxtExpiryDurationNS) = NULL;
@@ -101,6 +106,12 @@ void load_all_vtl_functions(void * lib_vt_lib_handle) {
     vtGetCurrentTime = dlsym(lib_vt_lib_handle, "GetCurrentTime");
     if (!vtGetCurrentTime) {
         printf("vtGetCurrentTime not found !\n");
+        abort();
+    }
+
+    vt_ns_2_timespec = dlsym(lib_vt_lib_handle, "ns_2_timespec");
+    if (!vt_ns_2_timespec) {
+        printf("ns_2_timespec not found !\n");
         abort();
     }
 
@@ -198,9 +209,21 @@ void load_all_vtl_functions(void * lib_vt_lib_handle) {
         abort();
     }
 
+    vtGetNxtTimerFdNumber = dlsym(lib_vt_lib_handle, "getNxtTimerFdNumber");
+    if (!vtGetNxtTimerFdNumber) {
+        printf("getNxtTimerFdNumber not found !\n");
+        abort();
+    }
+
     vtSetTimerFdParams = dlsym(lib_vt_lib_handle, "setTimerFdParams");
     if (!vtSetTimerFdParams) {
         printf("setTimerFdParams not found !\n");
+        abort();
+    }
+
+    vtGetTimerFdParams = dlsym(lib_vt_lib_handle, "getTimerFdParams");
+    if (!vtGetTimerFdParams) {
+        printf("getTimerFdParams not found !\n");
         abort();
     }
 

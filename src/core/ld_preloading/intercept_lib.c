@@ -31,6 +31,8 @@ int (*orig_futex)(int *uaddr, int futex_op, int val,
 
 long (*orig_syscall)(long number, ...);
 
+
+/*** Orig socket fns ***/
 ssize_t (*orig_send)(int sockfd, const void *buf, size_t len, int flags);
 
 ssize_t (*orig_sendto)(int sockfd, const void *buf, size_t len, int flags,
@@ -39,6 +41,21 @@ ssize_t (*orig_sendto)(int sockfd, const void *buf, size_t len, int flags,
 int (*orig_socket)(int domain, int type, int protocol);
 
 int (*orig_close)(int fd);
+
+int (*orig_accept)(int sockfd, struct sockaddr * addr, socklen_t * addrlen);
+
+int (*orig_accept4)(int sockfd, struct sockaddr * addr, socklen_t * addrlen,
+					int flags);
+
+/*** Orig timerfd fns ***/
+
+int (*orig_timerfd_create)(int clockid, int flags);
+
+int (*orig_timerfd_settime)(int fd, int flags, 
+							const struct itimerspec *new_value,
+                           struct itimerspec *old_value);
+
+int (*orig_timerfd_gettime)(int fd, struct itimerspec *curr_value);
 
 void __attribute__ ((noreturn)) (*orig_exit)(int status);
 
@@ -65,6 +82,7 @@ extern void (*vtGetCurrentTimespec)(struct timespec *ts);
 extern void (*vtGetCurrentTimeval)(struct timeval * tv);
 extern void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp);
 extern s64 (*vtGetCurrentTime)();
+extern void (*vt_ns_2_timespec)(s64 nsec, struct timespec * ts);
 
 /*** For Socket Handling ***/
 extern void  (*vtAddSocket)(int ThreadID, int sockFD, int isNonBlocking);
@@ -76,16 +94,17 @@ extern void  (*vtAddTimerFd)(int ThreadID, int fd, int isNonBlocking);
 extern int (*vtIsTimerFd)(int ThreadID, int fd);
 extern int (*vtIsTimerFdNonBlocking)(int ThreadID, int fd);
 extern int (*vtIsTimerArmed)(int ThreadID, int fd);
+extern int (*vtGetNxtTimerFdNumber)(int ThreadID);
+
 
 extern void (*vtSetTimerFdParams)(int ThreadID, int fd, s64 absExpiryTime,
-                         s64 intervalNS);
-
+                         s64 intervalNS, s64 relExpDuration);
+extern void (*vtGetTimerFdParams)(int ThreadID, int fd, s64* absExpiryTime,
+                         s64* intervalNS, s64* relExpDuration);
 extern int (*vtGetNumNewTimerFdExpiries)(int ThreadID, int fd,
                                 s64 * nxtExpiryDurationNS);
-
 extern int (*vtComputeClosestTimerExpiryForSelect)(int ThreadID,
     fd_set * readfs, int nfds, s64 * closestTimerExpiryDurationNS);
-
 extern int (*vtComputeClosestTimerExpiryForPoll)(int ThreadID,
 	struct pollfd * fds, int nfds, s64 * closestTimerExpiryDurationNS);
 
@@ -104,7 +123,6 @@ void load_orig_functions();
 struct Thunk {
     void *(*start_routine)(void *);
     void *arg;
-	int ParentThreadID;
 };
 
 
@@ -112,17 +130,13 @@ static void * wrap_threadFn(void *thunk_vp) {
     
     struct Thunk *thunk_p = (struct Thunk *)thunk_vp;
 	int ThreadPID = syscall(SYS_gettid);
-	//printf ("New Thread Starting: PID = %d\n", ThreadPID);
-        //fflush(stdout);
-
+	
 	vtThreadStart(ThreadPID);
 
     void *result = (thunk_p->start_routine)(thunk_p->arg);
 
 	free(thunk_p);
-	//printf ("Thread Exiting. PID = %d\n", ThreadPID);
-        //fflush(stdout);
-
+	
 	vtThreadFini(ThreadPID);
     return result;
 }
@@ -145,7 +159,6 @@ int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
     struct Thunk *thunk_p = malloc(sizeof(struct Thunk));
     thunk_p->start_routine = start_routine;
     thunk_p->arg = arg;
-	thunk_p->ParentThreadID = ParentThreadID;
     return real_pthread_create(thread, attr, wrap_threadFn, thunk_p);
 }
 
@@ -173,10 +186,10 @@ static int fake_main(int argc, char **argv, char **envp)
 	 * process termination */
 	atexit(my_exit);
 	int ThreadPID = syscall(SYS_gettid);
-    	printf ("Starting main program: Pid = %d\n", ThreadPID);
+    printf ("Starting main program: Pid = %d\n", ThreadPID);
 	initialize_vtl();
 	*vtInitialized = 1;
-	vtAfterForkInChild(ThreadPID);
+	vtAfterForkInChild(ThreadPID, ThreadPID);
 	/* Finally call the real main function */
 	return real_main(argc, argv, envp);
 }
@@ -315,6 +328,36 @@ int __libc_start_main(int (*main) (int, char **, char **),
 		_exit(EXIT_FAILURE);
 	}
 
+	orig_accept = dlsym(libc_handle, "accept");
+	if (!orig_accept) {
+		fprintf(stderr, "can't find accept(...):%s\n", dlerror());
+		_exit(EXIT_FAILURE);
+	}
+
+	orig_accept4 = dlsym(libc_handle, "accept4");
+	if (!orig_accept4) {
+		fprintf(stderr, "can't find accept4(...):%s\n", dlerror());
+		_exit(EXIT_FAILURE);
+	}
+
+	orig_timerfd_create = dlsym(libc_handle, "timerfd_create");
+	if (!orig_timerfd_create) {
+		fprintf(stderr, "can't find timerfd_create(...):%s\n", dlerror());
+		_exit(EXIT_FAILURE);
+	}
+
+	orig_timerfd_settime = dlsym(libc_handle, "timerfd_settime");
+	if (!orig_timerfd_settime) {
+		fprintf(stderr, "can't find timerfd_settime(...):%s\n", dlerror());
+		_exit(EXIT_FAILURE);
+	}
+
+	orig_timerfd_gettime = dlsym(libc_handle, "timerfd_gettime");
+	if (!orig_timerfd_gettime) {
+		fprintf(stderr, "can't find timerfd_gettime(...):%s\n", dlerror());
+		_exit(EXIT_FAILURE);
+	}
+
 	real_libc_start_main.sym = sym;
 	real_main = main;
 	
@@ -437,34 +480,144 @@ void load_orig_functions() {
 
 
 pid_t fork() {
-	int ParentPID = syscall(SYS_gettid);
-	printf("Before fork in parent: %d\n", ParentPID);
-        fflush(stdout);
+	int ParentPID = syscall(SYS_getpid);
+	int ParentTID = syscall(SYS_gettid);
+	printf("Before fork in parent: %d\n", ParentTID);
+    fflush(stdout);
 	pid_t ret;
 	
 	ret = orig_fork();
 	if (ret == 0) {
 		int ChildPID = syscall(SYS_gettid);
 		printf("After fork in child: PID = %d\n", ChildPID);
-		vtAfterForkInChild(ChildPID);
+		vtAfterForkInChild(ChildPID, ParentPID);
 	} else {
-		printf("After fork in parent: PID = %d\n", ParentPID);
-		vtForceCompleteBurst(ParentPID, 1, SYS_fork);
+		printf("After fork in parent: PID = %d\n", ParentTID);
+		vtForceCompleteBurst(ParentTID, 1, SYS_fork);
 	}
 
 	return ret;
 }
 
+/*** Timerfd functions ***/
+
+int timerfd_create(int clockid, int flags) {
+	int ThreadID = syscall(SYS_gettid);
+	int alottedFd = vtGetNxtTimerFdNumber(ThreadID);
+
+	
+	if (alottedFd) {
+		int isNonBlocking = (flags & TFD_NONBLOCK != 0) ? 1: 0;
+		vtAddTimerFd(ThreadID, alottedFd, isNonBlocking);
+		return alottedFd;
+	}
+	errno = EMFILE;
+	return -1;
+
+}
+
+int timerfd_settime(int fd, int flags,
+                    const struct itimerspec *new_value,
+                    struct itimerspec *old_value) {
+	int ThreadID = syscall(SYS_gettid);
+	s64 currAbsExpiryTime, currIntervalNS, relExpDuration;
+	if (!vtIsTimerFd(ThreadID, fd)) {
+		errno = EBADF;
+		return -1;
+	}
+
+	if (!new_value) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (flags & TFD_TIMER_ABSTIME) {
+		currAbsExpiryTime = new_value->it_value.tv_sec 
+			+ (s64)new_value->it_value.tv_nsec*NSEC_PER_SEC;
+	} else {
+		currAbsExpiryTime = vtGetCurrentTime() + new_value->it_value.tv_sec 
+			+ (s64)new_value->it_value.tv_nsec*NSEC_PER_SEC;
+	}
+
+	relExpDuration = currAbsExpiryTime - vtGetCurrentTime();
+
+	if (relExpDuration <= 0)
+		relExpDuration = 0;
+	currIntervalNS = new_value->it_interval.tv_sec 
+			+ (s64)new_value->it_interval.tv_nsec*NSEC_PER_SEC;
+
+	if (old_value) {
+		vtGetTimerFdParams(ThreadID, fd, &currAbsExpiryTime, &currIntervalNS,
+							&relExpDuration);
+
+		vt_ns_2_timespec(relExpDuration, &old_value->it_value);
+		vt_ns_2_timespec(currIntervalNS, &old_value->it_interval);
+	}
+
+	vtSetTimerFdParams(ThreadID, fd, currAbsExpiryTime, currIntervalNS,
+						relExpDuration);
+
+	return 0;
+
+}
+
+int timerfd_gettime(int fd, struct itimerspec *curr_value) {
+
+	int ThreadID = syscall(SYS_gettid);
+	if (!vtIsTimerFd(ThreadID, fd)) {
+		errno = -EBADF;
+		return -1;
+	}
+
+	if(!curr_value) {
+		errno = -EINVAL;
+		return -1;
+	}
+
+	s64 currAbsExpiryTime, currIntervalNS, relExpDuration;
+	vtGetTimerFdParams(ThreadID, fd, &currAbsExpiryTime, &currIntervalNS,
+						&relExpDuration);
+
+	vt_ns_2_timespec(relExpDuration, &curr_value->it_value);
+	vt_ns_2_timespec(currIntervalNS, &curr_value->it_interval);
+
+	return 0;
+}
 
 /***** Socket Functions ****/
+
+int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
+
+	int ThreadID = syscall(SYS_gettid);
+	int ret = orig_accept(sockfd, addr, addrlen);
+
+	if(ret) {
+		vtAddSocket(ThreadID, ret, 0);
+	}
+
+	return ret;
+} 
+
+int accept4(int sockfd, struct sockaddr *addr,
+                   socklen_t *addrlen, int flags) {
+	int ThreadID = syscall(SYS_gettid);
+	int ret = orig_accept4(sockfd, addr, addrlen, flags);
+
+	if(ret) {
+		int isNonBlocking = (flags & SOCK_NONBLOCK != 0) ? 1: 0; 
+		vtAddSocket(ThreadID, ret, isNonBlocking);
+	}
+
+	return ret;
+
+}
+
 ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
 	int payload_hash;
 	ssize_t ret = orig_send(sockfd, buf, len, flags);
 	if (len > 0 && ret > 0) {
 		payload_hash = get_payload_hash(buf, ret);
 		if (payload_hash) {
-			//printf("Send: Sending packet with payload_hash: %d\n",
-			//	payload_hash);
 			vtSetPktSendTime(payload_hash, ret, vtGetCurrentTime());
 		}
 	}
@@ -480,8 +633,6 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 	if (len > 0 && ret > 0) {
 		payload_hash = get_payload_hash(buf, ret);
 		if (payload_hash) {
-			//printf("Sendto: Sending packet with payload_hash: %d\n",
-			//	payload_hash);
 			vtSetPktSendTime(payload_hash, ret, vtGetCurrentTime());
 		}
 	}
@@ -494,7 +645,7 @@ int socket(int domain, int type, int protocol) {
 	if(retFD) {
 		int ThreadPID = syscall(SYS_gettid);
 		int isNonBlocking = (type & SOCK_NONBLOCK) != 0 ? 1: 0;
-		vtOpenSocket(ThreadPID, retFD, isNonBlocking);
+		vtAddSocket(ThreadPID, retFD, isNonBlocking);
 	}
 
 	return retFD;
@@ -502,20 +653,22 @@ int socket(int domain, int type, int protocol) {
 
 int close(int fd) {
 
-	int ret = orig_close(fd);
 	int ThreadPID = syscall(SYS_gettid);
-	if (vtIsSocketFD(ThreadPID, fd)) {
-		vtCloseSocket(ThreadPID, fd);
+	int isTimer = vtIsTimerFd(ThreadPID, fd);
+	if (vtIsSocketFD(ThreadPID, fd) || isTimer) {
+		vtCloseFd(ThreadPID, fd);
 	}
 
+	if (!isTimer)
+		return orig_close(fd);
+	else
+		return 0;
 }
 
 /***** Time related functions ****/
 
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
 	int ThreadPID =  syscall(SYS_gettid);
-	//printf("In my gettimeofday: %d\n", ThreadPID);
-	//fflush(stdout);
 	vtGetCurrentTimeval(tv);
 	return 0;
 }
@@ -523,8 +676,6 @@ int gettimeofday(struct timeval *tv, struct timezone *tz) {
 
 int clock_gettime(clockid_t clk_id, struct timespec *tp) {
 	int ThreadPID =  syscall(SYS_gettid);
-	//printf("In my clock_gettime: %d\n", ThreadPID);
-        //fflush(stdout);
 	vtGetCurrentTimespec(tp);
 	return 0;
 }
@@ -532,19 +683,22 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp) {
 
 unsigned int sleep(unsigned int seconds) {
 	int ThreadPID = syscall(SYS_gettid);
-	//printf("In my sleep: %d\n", ThreadPID);
-        //fflush(stdout);
-	vtSleepForNS(ThreadPID, seconds*NSEC_PER_SEC);
+	if (seconds) {
+		vtSetLookahead(seconds*NSEC_PER_SEC + vtGetCurrentTime(),
+						vtGetBBLLookahead());
+		vtSleepForNS(ThreadPID, seconds*NSEC_PER_SEC);
+	}
 	return 0;
 }
 
 int usleep(useconds_t usec) {
 	int ThreadPID = syscall(SYS_gettid);
-	//printf("In my usleep: %d\n", ThreadPID);
-        //fflush(stdout);
-	vtSleepForNS(ThreadPID, usec*NSEC_PER_US);
-	//printf("Returning from my usleep: %d\n", ThreadPID);
-        //fflush(stdout);
+	if (usec) {
+		vtSetLookahead(usec*NSEC_PER_US + vtGetCurrentTime(),
+						vtGetBBLLookahead());
+		vtSleepForNS(ThreadPID, usec*NSEC_PER_US);
+	}
+	
 	return 0;
 }
 
@@ -599,6 +753,9 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
 			if(fds[i].fd == relevantTimer)
 				fds[i].revents |= POLLIN;
 		}
+
+		if(modified_fds)
+			free(modified_fds);
 
 		return 1;
 	} else if (actual_nfds < nfds) {
@@ -767,6 +924,9 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 
 		FD_SET(relevantTimer, readfds);
 
+		if (readfds_mod)
+			free(readfds_mod);
+
 		return 1;
 	} else if (num_timers > 0) {
 		// some are timers, there are some non-timer fds as well
@@ -807,9 +967,6 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 
 	isReadInc = 0, isWriteInc = 0, isExceptInc = 0;
 
-	//return orig_select(nfds, readfds, writefds, exceptfds, timeout);
-
-	
 	if (max_duration < 0) {
 		assert(!timeout);
 		vtTriggerSyscallWait(ThreadPID, 1);
@@ -977,11 +1134,20 @@ static void handle_vt_packet_receive_syscalls(long syscall_number, long arg0,
 
 	if (syscall_number != SYS_recvfrom
 		&& syscall_number != SYS_recvmsg
-		&& syscall_number != SYS_recvmmsg)
+		&& syscall_number != SYS_recvmmsg
+		&& syscall_number != SYS_accept
+		&& syscall_number != SYS_accept4)
 		return;
 
 	int sockfd = (int) arg0;
 	int goingToBlock = 1;
+
+	if (!vtIsSocketFd(ThreadPID, sockfd)) {
+		// this is erroneous. we just let the syscall return the appropriate error
+		*result = syscall_no_intercept(syscall_number, arg0, arg1, arg2, arg3,
+									   arg4, arg5);
+		return;
+	}
 	if(!vtIsSocketFdNonBlocking(ThreadPID, sockfd)) {
 		// get eat and set lookahead here after polling if there's 
 		// nothing to read right away.
@@ -1015,15 +1181,36 @@ static void execute_cpu_yielding_syscall(long syscall_number, long arg0,
 	long arg1, long arg2, long arg3, long arg4, long arg5, long *result,
 	int ThreadPID) {
 
-	if (vtInitialized && *vtInitialized == 1)
-		vtYieldVTBurst(ThreadPID, 1, syscall_number);
 
+	switch(syscall_number) {
 	
-	*result = syscall_no_intercept(syscall_number, arg0, arg1, arg2, arg3, arg4,
-								   arg5);
+		case SYS_accept:
+		case SYS_accept4:
+		case SYS_recvmsg:
+		case SYS_recvfrom:
+		case SYS_recvmmsg:  handle_vt_packet_receive_syscalls(syscall_number,
+								arg0, arg1, arg2, arg3, arg4, arg5, result,
+								ThreadPID);
+							break;
+		case SYS_read:		handle_vt_read_syscall(ThreadPID, (int)arg0,
+												   (void *)arg1, (size_t)arg2,
+												   result);
+							break;
+		default:			if (vtInitialized && *vtInitialized == 1)
+								vtYieldVTBurst(ThreadPID, 1, syscall_number);
 
-	if (vtInitialized && *vtInitialized == 1)
-		vtForceCompleteBurst(ThreadPID, 0, syscall_number);
+
+							*result = syscall_no_intercept(
+								syscall_number, arg0, arg1, arg2, arg3, 
+								arg4, arg5);
+
+							if (vtInitialized && *vtInitialized == 1) {
+								vtForceCompleteBurst(ThreadPID, 0,
+													syscall_number);
+							}
+							break;
+	}
+
 }
 
 static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
@@ -1033,6 +1220,9 @@ static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
 	
 
 	if (syscall_number == SYS_futex
+		|| syscall_number == SYS_connect
+		|| syscall_number == SYS_accept
+		|| syscall_number == SYS_accept4
 		|| syscall_number == SYS_read
 		|| syscall_number == SYS_wait4
 		|| syscall_number == SYS_waitid

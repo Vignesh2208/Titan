@@ -23,6 +23,7 @@ typedef struct fdInfoStruct {
     int isNonBlocking;
 
     // Following fields only used if fdType is FD_TYPE_TIMERFD
+    s64 relativeExpiryDuration;
     s64 absExpiryTime;
     s64 intervalNS;
     int numExpiriesProcessed;
