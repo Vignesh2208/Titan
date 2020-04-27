@@ -34,6 +34,7 @@ struct dilated_task_struct {
 	int buffer_window_len;
 	int pid;
 	int syscall_waiting;
+	int resumed_by_dilated_timer;
 	wait_queue_head_t d_task_wqueue;
 	struct task_struct * vt_exec_task;
 	struct task_struct * base_task;

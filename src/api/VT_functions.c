@@ -250,6 +250,7 @@ s64 finish_burst() {
 
 s64 mark_burst_complete(int signal_syscall_finish) {
 
+  // signal = 1 indicates finish of syscall like poll/select/sleep
   ioctl_args arg;
   init_ioctl_arg(&arg); 
 

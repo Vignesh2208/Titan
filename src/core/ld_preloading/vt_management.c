@@ -75,201 +75,210 @@ void load_all_vtl_functions(void * lib_vt_lib_handle) {
                                "TriggerSyscallWait");
     if (!vtTriggerSyscallWait) {
         printf("vtTriggerSyscallWait not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtTriggerSyscallFinish = dlsym(lib_vt_lib_handle,
                                "TriggerSyscallFinish");
     if (!vtTriggerSyscallFinish) {
         printf("vtTriggerSyscallFinish not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
     
     vtSleepForNS = dlsym(lib_vt_lib_handle, "SleepForNS");
     if (!vtSleepForNS) {
         printf("vtSleepForNS not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtGetCurrentTimespec = dlsym(lib_vt_lib_handle, "GetCurrentTimespec");
     if (!vtGetCurrentTimespec) {
         printf("vtGetCurrentTimespec not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtGetCurrentTimeval = dlsym(lib_vt_lib_handle, "GetCurrentTimeval");
     if (!vtGetCurrentTimeval) {
         printf("vtGetCurrentTimeval not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtGetCurrentTime = dlsym(lib_vt_lib_handle, "GetCurrentTime");
     if (!vtGetCurrentTime) {
         printf("vtGetCurrentTime not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vt_ns_2_timespec = dlsym(lib_vt_lib_handle, "ns_2_timespec");
     if (!vt_ns_2_timespec) {
         printf("ns_2_timespec not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtAfterForkInChild = dlsym(lib_vt_lib_handle, "AfterForkInChild");
     if (!vtAfterForkInChild) {
         printf("vtAfterForkInChild not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtThreadStart = dlsym(lib_vt_lib_handle, "ThreadStart");
     if (!vtThreadStart) {
         printf("vtThreadStart not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtThreadFini = dlsym(lib_vt_lib_handle, "ThreadFini");
     if (!vtThreadFini) {
         printf("vtThreadFini not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtAppFini = dlsym(lib_vt_lib_handle, "AppFini");
     if (!vtAppFini) {
         printf("vtAppFini not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtInitialize = dlsym(lib_vt_lib_handle, "initialize_vt_management");
     if (!vtInitialize) {
         printf("vtInitialize not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtYieldVTBurst = dlsym(lib_vt_lib_handle, "YieldVTBurst");
     if (!vtYieldVTBurst) {
         printf("vtYieldVTBurst not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtForceCompleteBurst = dlsym(lib_vt_lib_handle, "ForceCompleteBurst");
     if (!vtForceCompleteBurst) {
         printf("vtForceCompleteBurst not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtSetPktSendTime = dlsym(lib_vt_lib_handle, "SetPktSendTime");
     if (!vtSetPktSendTime) {
         printf("SetPktSendTime not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     /*** For Socket Handling **/
     vtAddSocket = dlsym(lib_vt_lib_handle, "addSocket");
     if (!vtAddSocket) {
         printf("openSocket not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
-
+    
     vtIsSocketFd = dlsym(lib_vt_lib_handle, "isSocketFd");
     if (!vtIsSocketFd) {
         printf("isSocketFd not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
+    
     vtIsSocketFdNonBlocking = dlsym(lib_vt_lib_handle, "isSocketFdNonBlocking");
     if (!vtIsSocketFdNonBlocking) {
         printf("isSocketFdNonBlocking not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
+    
     /*** For TimerFD Handling ***/
     vtAddTimerFd = dlsym(lib_vt_lib_handle, "addTimerFd");
     if (!vtAddTimerFd) {
         printf("addTimerFd not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
-
+    
     vtIsTimerFd = dlsym(lib_vt_lib_handle, "isTimerFd");
     if (!vtIsTimerFd) {
         printf("isTimerFd not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
+
+    
 
     vtIsTimerFdNonBlocking = dlsym(lib_vt_lib_handle, "isTimerFdNonBlocking");
     if (!vtIsTimerFdNonBlocking) {
         printf("isTimerFdNonBlocking not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
-
+    
     vtIsTimerArmed = dlsym(lib_vt_lib_handle, "isTimerArmed");
     if (!vtIsTimerArmed) {
         printf("isTimerArmed not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
+
 
     vtGetNxtTimerFdNumber = dlsym(lib_vt_lib_handle, "getNxtTimerFdNumber");
     if (!vtGetNxtTimerFdNumber) {
         printf("getNxtTimerFdNumber not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
+
 
     vtSetTimerFdParams = dlsym(lib_vt_lib_handle, "setTimerFdParams");
     if (!vtSetTimerFdParams) {
         printf("setTimerFdParams not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
+
 
     vtGetTimerFdParams = dlsym(lib_vt_lib_handle, "getTimerFdParams");
     if (!vtGetTimerFdParams) {
         printf("getTimerFdParams not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
+
 
     vtGetNumNewTimerFdExpiries = dlsym(lib_vt_lib_handle,
                                         "getNumNewTimerFdExpiries");
     if (!vtGetNumNewTimerFdExpiries) {
         printf("getNumNewTimerFdExpiries not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
+  
 
     vtComputeClosestTimerExpiryForSelect = dlsym(lib_vt_lib_handle,
-                                "vtComputeClosestTimerExpiryForSelect");
+                                "computeClosestTimerExpiryForSelect");
     if (!vtComputeClosestTimerExpiryForSelect) {
         printf("computeClosestTimerExpiryForSelect not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtComputeClosestTimerExpiryForPoll = dlsym(lib_vt_lib_handle,
                                 "computeClosestTimerExpiryForPoll");
     if (!vtComputeClosestTimerExpiryForPoll) {
         printf("computeClosestTimerExpiryForPoll not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtCloseFd = dlsym(lib_vt_lib_handle, "closeFd");
     if (!vtCloseFd) {
         printf("closeSocket not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     /*** For lookahead handling ***/
     vtGetPacketEAT = dlsym(lib_vt_lib_handle, "getPacketEAT");
     if (!vtGetPacketEAT) {
         printf("getPacketEAT not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 
     vtGetBBLLookahead = dlsym(lib_vt_lib_handle, "getBBLLookahead");
     if (!vtGetBBLLookahead) {
         printf("getBBLLookahead not found !\n");
-        abort();
+        fflush(stdout); abort();
     } 
     vtSetLookahead = dlsym(lib_vt_lib_handle, "setLookahead");
     if (!vtSetLookahead) {
         printf("setLookahead not found !\n");
-        abort();
+        fflush(stdout); abort();
     }
 }
 
@@ -277,61 +286,65 @@ void initialize_vtl() {
     void * lib_vt_lib_handle;
 
     lib_vt_lib_handle = dlopen("libvtllogic.so", RTLD_NOLOAD | RTLD_NOW);
+    printf("Loading pointers to VTL Logic functions\n");
+    fflush(stdout);
 
     if (lib_vt_lib_handle) {
         globalCurrBurstLength = dlsym(lib_vt_lib_handle, "currBurstLength");
         if (!globalCurrBurstLength) {
             printf("GLOBAL insn counter not found !\n");
-            abort();
+            fflush(stdout); abort();
         }
 
         globalCurrBBID = dlsym(lib_vt_lib_handle, "currBBID");
         if (!globalCurrBBID) {
             printf("globalCurrBBID not found !\n");
-            abort();
+            fflush(stdout); abort();
         }
 
         globalCurrBBSize = dlsym(lib_vt_lib_handle, "currBBSize");
         if (!globalCurrBBSize) {
             printf("globalCurrBBSize not found !\n");
-            abort();
+            fflush(stdout); abort();
         }
 
         vtAlwaysOn = dlsym(lib_vt_lib_handle, "alwaysOn");
         if (!vtAlwaysOn) {
             printf("vtAlwaysOn not found !\n");
-            abort();
+            fflush(stdout); abort();
         }
 
 
         vtGlobalTracerID = dlsym(lib_vt_lib_handle, "globalTracerID");
         if (!vtGlobalTracerID) {
             printf("globalTracerID not found !\n");
-            abort();
+            fflush(stdout); abort();
         }
 
         vtGlobalTimelineID = dlsym(lib_vt_lib_handle, "globalTimelineID");
         if (!vtGlobalTimelineID) {
             printf("globalTimelineID not found !\n");
-            abort();
+            fflush(stdout); abort();
         }
 
         vtInitialized = dlsym(lib_vt_lib_handle, "vtInitializationComplete");
         if (!vtInitialized) {
             printf("vtInitializationComplete not found !");
-            abort();
+            fflush(stdout); abort();
         }
 
     }
 
     load_all_vtl_functions(lib_vt_lib_handle);
 
+
     if(lib_vt_lib_handle && dlclose(lib_vt_lib_handle)) {
         fprintf(stderr, "can't close handle to libvt_clock.so: %s\n",
                 dlerror());
         _exit(EXIT_FAILURE);
     }
-
-    printf("Initializing VT-Management \n");
+    printf("Loaded pointers to all VTL Logic functions\n");
+    printf("Now Initializing VT-Management \n");
+    fflush(stdout);
     vtInitialize();
 }

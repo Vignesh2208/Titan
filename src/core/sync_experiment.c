@@ -82,6 +82,56 @@ void initiate_experiment_stop_operation() {
 	clean_exp();
 }
 
+void wait_for_all_processes_resumed_from_dilated_timers_on(tracer * tracer_entry) {
+	if (!tracer_entry)
+		return;
+
+	lxc_schedule_elem * curr_elem;
+	llist_elem * head;
+	head = tracer_entry->schedule_queue.head;
+
+	while (head != NULL) {
+		if (head) {
+			curr_elem = (lxc_schedule_elem *)head->item;
+			if (curr_elem && curr_elem->curr_task->resumed_by_dilated_timer) {
+				
+				if (curr_elem == tracer_entry->last_run) {
+					tracer_entry->last_run->quanta_left_from_prev_round = 0;
+					tracer_entry->last_run = NULL;
+				}
+				
+				wait_event_interruptible(
+					curr_elem->curr_task->d_task_wqueue,
+					curr_elem->curr_task->ready == 1
+					&& curr_elem->curr_task->syscall_waiting == 0);
+				curr_elem->curr_task->resumed_by_dilated_timer = 0;
+				PDEBUG_I("Resuming after waiting for process: %d resumed by dilated timer\n",
+					 curr_elem->curr_task->pid);
+			}
+			head = head->next;
+		}
+	}
+}
+
+void wait_for_all_processes_resumed_from_dilated_timers(int timelineID) {
+	llist_elem * head;
+	llist * tracer_list;
+	tracer * curr_tracer;
+	s64 target_increment;
+
+	tracer_list =  &per_timeline_tracer_list[timelineID];
+	head = tracer_list->head;
+
+
+	while (head != NULL) {
+		curr_tracer = (tracer*)head->item;
+		get_tracer_struct_write(curr_tracer);
+		wait_for_all_processes_resumed_from_dilated_timers_on(curr_tracer);
+		put_tracer_struct_write(curr_tracer);
+		head = head->next;
+	}
+}
+
 /***
 The main synchronization function (For CBE mode). When all timeline workers 
 in a round have completed, this will get woken up, increment the experiment
@@ -132,6 +182,11 @@ void round_synchronization() {
 		local_irq_enable();
 		preempt_enable();
 
+		for (i = 0; i < total_num_timelines; i++) {
+			wait_for_all_processes_resumed_from_dilated_timers(i);
+		}
+		
+
 		if (current_progress_n_rounds <= 1) {
 			current_progress_n_rounds = 0;
 			total_completed_rounds++;
@@ -144,6 +199,8 @@ void round_synchronization() {
 		}
 	}
 }
+
+
 
 
 /***
@@ -232,6 +289,8 @@ int progress_timeline_by(int timeline_id, s64 progress_duration) {
 	dilated_hrtimer_run_queues(timeline_id);
 	local_irq_enable();
 	preempt_enable();
+
+	wait_for_all_processes_resumed_from_dilated_timers(timeline_id);
 
 	curr_timeline->status = 0;
 	curr_timeline->nxt_round_burst_length = 0;
@@ -485,6 +544,7 @@ int sync_and_freeze() {
 	tracer * curr_tracer;
 	int ret;
 
+	struct timeval ktv;
 
 
 	if (initialization_status != INITIALIZED
@@ -523,6 +583,8 @@ int sync_and_freeze() {
 	}
 
 	now = ktime_get_real();
+	ktv = ns_to_timeval(now);
+	now = ktv.tv_sec*1000000000;
    	virt_exp_start_time = now;
 
 	for (i = 1; i <= tracer_num; i++) {

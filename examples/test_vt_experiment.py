@@ -35,11 +35,11 @@ def main():
 
     parser.add_argument('--progress_ns_per_round', dest='progress_ns_per_round',
                         help='Number of insns per round', type=int,
-                        default=1500)
+                        default=1000000)
 
     parser.add_argument('--num_progress_rounds', dest='num_progress_rounds',
                         help='Number of rounds to run', type=int,
-                        default=1000000)
+                        default=10000)
 
     parser.add_argument('--exp_type', dest='exp_type',
         help='Number of rounds to run', type=int, default=EXP_CBE)

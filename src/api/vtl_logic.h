@@ -49,5 +49,15 @@ typedef struct ThreadInfoStruct {
 
 s64 GetCurrentTime();
 void HandleVTExpEnd(int ThreadID);
+/*** For Socket Handling ***/
+void addSocket(int ThreadID, int sockFD, int isNonBlocking);
+int isSocketFd(int ThreadID, int sockFD);
+int isSocketFdNonBlocking(int ThreadID, int sockFD);
+
+/*** For TimerFd Handlng ***/
+void  addTimerFd(int ThreadID, int fd, int isNonBlocking);
+int isTimerFd(int ThreadID, int fd);
+int isTimerFdNonBlocking(int ThreadID, int fd);
+int isTimerArmed(int ThreadID, int fd);
 
 #endif

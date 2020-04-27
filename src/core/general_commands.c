@@ -665,7 +665,7 @@ int handle_vt_sleep_for(unsigned long arg, struct dilated_task_struct * dilated_
       invoked_api *api_info;
       invoked_api api_info_tmp;
       ktime_t duration;
-
+      
       memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
 
 
@@ -698,8 +698,8 @@ int handle_vt_sleep_for(unsigned long arg, struct dilated_task_struct * dilated_
 
       PDEBUG_V(
         "VT_SLEEP_FOR: Process: %d, duration: %llu\n", current->pid, duration);
-           
-      return dilated_hrtimer_sleep(duration);
+             
+      return dilated_hrtimer_sleep(duration, dilated_task);
 
 }
 
@@ -782,8 +782,12 @@ int handle_vt_set_runnable(unsigned long arg, struct dilated_task_struct * dilat
         PDEBUG_V(
         "VT_SET_RUNNABLE: Associated Tracer : %d, Process: %d, "
         "signalling syscall finish\n", tracer_id, current->pid);
-        wake_up_interruptible(
-          &syscall_wait_wqueue[curr_tracer->timeline_assignment]);
+	if (!dilated_task->resumed_by_dilated_timer)
+        	wake_up_interruptible(
+         	 &syscall_wait_wqueue[curr_tracer->timeline_assignment]);
+	else {
+		wake_up_interruptible(&dilated_task->d_task_wqueue);
+	}
       }
       PDEBUG_V(
         "VT_SET_RUNNABLE: Associated Tracer : %d, Process: %d, "

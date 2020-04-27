@@ -17,16 +17,6 @@ int isFdNonBlocking(int ThreadID, int fd);
 void setFdBlockingMode(int ThreadID, int fd, int isNonBlocking);
 void closeFd(int ThreadID, int fd);
 
-/*** For Socket Handling ***/
-void addSocket(int ThreadID, int sockFD, int isNonBlocking);
-int isSocketFd(int ThreadID, int sockFD);
-int isSocketFdNonBlocking(int ThreadID, int sockFD);
-
-/*** For TimerFd Handlng ***/
-void  addTimerFd(int ThreadID, int fd, int isNonBlocking);
-int isTimerFd(int ThreadID, int fd);
-int isTimerFdNonBlocking(int ThreadID, int fd);
-int isTimerArmed(int ThreadID, int fd);
 int getNxtTimerFdNumber(int ThreadID);
 
 void setTimerFdParams(int ThreadID, int fd, s64 absExpiryTime, s64 intervalNS,

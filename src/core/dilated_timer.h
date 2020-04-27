@@ -15,6 +15,7 @@
 struct hrtimer_dilated;
 struct hrtimer_dilated_clock_base;
 struct dilated_timer_timeline_base;
+struct dilated_task_struct;
 
 struct hrtimer_dilated {
 	struct timerqueue_node node;
@@ -28,6 +29,7 @@ struct hrtimer_dilated {
 
 struct dilated_hrtimer_sleeper {
 	struct hrtimer_dilated timer_dilated;
+	struct dilated_task_struct * associated_dilated_task_struct;
 	struct task_struct * task;
 };
 
@@ -65,7 +67,7 @@ int dilated_hrtimer_forward(struct hrtimer_dilated *timer, ktime_t interval);
 void dilated_hrtimer_start_range_ns(struct hrtimer_dilated *timer,
                                     ktime_t expiry_time,
                                     const enum hrtimer_mode mode);
-int dilated_hrtimer_sleep(ktime_t duration);
+int dilated_hrtimer_sleep(ktime_t duration, struct dilated_task_struct * dilated_task);
 void dilated_hrtimer_run_queues_flush(int timeline_id);
 void dilated_hrtimer_run_queues(int timeline_id);
 struct dilated_timer_timeline_base *get_timeline_base(int timeline_id);

@@ -13,9 +13,8 @@ void addFd(int ThreadID, int fd, int fdType, int isNonBlocking) {
     fdInfo * currFdInfo;
     assert(currThreadInfo != NULL);
 
-    if (currThreadInfo->in_callback)
-	    return;
-
+    assert(!currThreadInfo->in_callback);
+    
     if (currThreadInfo->processPID != ThreadID) {
         // need to get processPID's threadInfo
         currThreadInfo = hmap_get_abs(&thread_info_map,
@@ -274,18 +273,26 @@ int __getNumNewTimerFdExpires(fdInfo * currFdInfo, s64 * nxtExpiryDurationNS) {
         *nxtExpiryDurationNS = 0;
     } else {
         diff = currTime - currFdInfo->absExpiryTime;
-        numNewExpiries = (diff/currFdInfo->intervalNS) + 1;
+        numNewExpiries = (int)(diff/currFdInfo->intervalNS) + 1;
         rem = diff - (numNewExpiries - 1)*currFdInfo->intervalNS;
     }
 
+    if(numNewExpiries < currFdInfo->numExpiriesProcessed) {
+	printf("WARN: NumNewExpiries less!\n");
+	fflush(stdout);
+	assert(FALSE);
+    }
     numNewExpiries -= currFdInfo->numExpiriesProcessed; 
     currFdInfo->numExpiriesProcessed += numNewExpiries;
+
+    
 
     if (numNewExpiries == 0 && currFdInfo->intervalNS) {
         *nxtExpiryDurationNS = currFdInfo->intervalNS - rem;
     } else {
         *nxtExpiryDurationNS = 0;
     }
+   
     return numNewExpiries;
 
 }
@@ -298,6 +305,8 @@ int getNumNewTimerFdExpiries(int ThreadID, int fd, s64 * nxtExpiryDurationNS) {
     assert(nxtExpiryDurationNS != NULL);
 
     assert(!currThreadInfo->in_callback);
+
+    
 
     if (currThreadInfo->processPID != ThreadID) {
         // need to get processPID's threadInfo
@@ -446,67 +455,3 @@ void closeFd(int ThreadID, int fd) {
 }
 
 
-/*** For Socket Handling ***/
-void addSocket(int ThreadID, int sockFD, int isNonBlocking) {
-    addFd(ThreadID, sockFD, FD_TYPE_SOCKET, isNonBlocking);
-}
-
-
-int isSocketFd(int ThreadID, int sockFD) {
-    return isFdTypeMatch(ThreadID, sockFD, FD_TYPE_SOCKET);
-}
-
-int isSocketFdNonBlocking(int ThreadID, int sockFD) {
-    return isFdNonBlocking(ThreadID, sockFD);
-}
-
-/*** For TimerFd Handlng ***/
-void  addTimerFd(int ThreadID, int fd, int isNonBlocking) {
-    addFd(ThreadID, fd, FD_TYPE_TIMERFD, isNonBlocking);
-}
-
-int isTimerFd(int ThreadID, int fd) {
-    return isFdTypeMatch(ThreadID, fd, FD_TYPE_TIMERFD);
-}
-
-int isTimerFdNonBlocking(int ThreadID, int fd) {
-    return isFdNonBlocking(ThreadID, fd);
-}
-
-int isTimerArmed(int ThreadID, int fd) {
-    if(!isFdTypeMatch(ThreadID, fd, FD_TYPE_TIMERFD))
-        return FALSE;
-
-    ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    assert(currThreadInfo != NULL);
-
-    assert(!currThreadInfo->in_callback);
-
-    if (currThreadInfo->processPID != ThreadID) {
-        // need to get processPID's threadInfo
-        currThreadInfo = hmap_get_abs(&thread_info_map,
-                                      currThreadInfo->processPID);
-        assert(currThreadInfo != NULL);
-    }
-
-    llist_elem * head;
-    fdInfo * currFdInfo;
-	head = currThreadInfo->special_fds.head;
-    
-	while (head != NULL) {
-        currFdInfo = (fdInfo *)head->item;
-
-        if (currFdInfo && currFdInfo->fd == fd) {
-            if (currFdInfo->absExpiryTime || currFdInfo->intervalNS) {
-                // Atleast one of them needs to be positive
-                return TRUE;
-            } 
-            return FALSE;
-        }
-		head = head->next;
-	}
-
-    assert(FALSE);
-    return FALSE;
-
-}

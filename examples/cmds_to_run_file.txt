@@ -1,5 +1,1 @@
-/usr/local/bin/sysbench --time=1 --threads=15 cpu --cpu-max-prime=10000 run > /tmp/sysbench_log_1.txt
-/usr/local/bin/sysbench --time=1 --threads=15 cpu --cpu-max-prime=10000 run > /tmp/sysbench_log_2.txt
-/usr/local/bin/sysbench --time=1 --threads=15 cpu --cpu-max-prime=10000 run > /tmp/sysbench_log_3.txt
-/usr/local/bin/sysbench --time=1 --threads=15 cpu --cpu-max-prime=10000 run > /tmp/sysbench_log_4.txt
-/usr/local/bin/sysbench --time=1 --threads=15 cpu --cpu-max-prime=10000 run > /tmp/sysbench_log_5.txt
+/home/vignesh/Titan/scripts/bin/timerfd_example 1 1 10 > /tmp/timerfd_log.txt

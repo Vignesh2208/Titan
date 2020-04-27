@@ -85,7 +85,7 @@ void SleepForNS(int ThreadID, int64_t duration) {
     if (ret < 0)
 	    HandleVTExpEnd(ThreadID);
 
-    currBurstLength = mark_burst_complete(0);
+    currBurstLength = mark_burst_complete(1);
     specifiedBurstLength = currBurstLength;
     if (currBurstLength <= 0)
         HandleVTExpEnd(ThreadID);
@@ -510,6 +510,7 @@ void initialize_vt_management() {
     int my_pid = syscall(SYS_gettid);
 
     printf("Starting VT-initialization !\n");
+    fflush(stdout);
 
  	
     if (!tracer_id_str) {
@@ -522,7 +523,10 @@ void initialize_vt_management() {
         exit(EXIT_FAILURE);
     }
 
-    printf ("Tracer-ID String: %s, Timeline-ID String %s\n", tracer_id_str, timeline_id_str);
+    if (tracer_id_str && timeline_id_str)
+    	printf ("Tracer-ID: %s, Timeline-ID: %s\n", tracer_id_str, timeline_id_str);
+    else if(tracer_id_str)
+	printf ("Tracer-ID: %s\n", tracer_id_str);
     tracer_id = atoi(tracer_id_str);
     fflush(stdout);
     if (tracer_id <= 0) {
@@ -544,7 +548,8 @@ void initialize_vt_management() {
 
     if (exp_type == EXP_CBE) {
         ret = register_tracer(tracer_id, EXP_CBE, 0);
-	    printf("Tracer registration EXP_CBE complete. Return = %d\n", ret);
+	printf("Tracer registration for EXP_CBE complete. Return = %d\n", ret);
+        fflush(stdout);
     } else {
         timeline_id = atoi(timeline_id_str);
         if (timeline_id < 0) {
@@ -554,7 +559,7 @@ void initialize_vt_management() {
         }
         ret = register_tracer(tracer_id, EXP_CS, timeline_id);
         globalTimelineID = timeline_id;
-	printf("Tracer registration EXP_CS complete. TimelineID = %d, Return = %d\n", timeline_id, ret);
+	printf("Tracer registration for EXP_CS complete. TimelineID = %d, Return = %d\n", timeline_id, ret);
     }
     printf("Tracer Adding to SQ. Tracer ID = %d\n", tracer_id);
     fflush(stdout);
@@ -572,3 +577,69 @@ void initialize_vt_management() {
     hmap_init(&thread_info_map, 1000);
     llist_init(&thread_info_list);
 } 
+
+
+/*** For Socket Handling ***/
+void addSocket(int ThreadID, int sockFD, int isNonBlocking) {
+    addFd(ThreadID, sockFD, FD_TYPE_SOCKET, isNonBlocking);
+}
+
+
+int isSocketFd(int ThreadID, int sockFD) {
+    return isFdTypeMatch(ThreadID, sockFD, FD_TYPE_SOCKET);
+}
+
+int isSocketFdNonBlocking(int ThreadID, int sockFD) {
+    return isFdNonBlocking(ThreadID, sockFD);
+}
+
+/*** For TimerFd Handlng ***/
+void  addTimerFd(int ThreadID, int fd, int isNonBlocking) {
+    addFd(ThreadID, fd, FD_TYPE_TIMERFD, isNonBlocking);
+}
+
+int isTimerFd(int ThreadID, int fd) {
+    return isFdTypeMatch(ThreadID, fd, FD_TYPE_TIMERFD);
+}
+
+int isTimerFdNonBlocking(int ThreadID, int fd) {
+    return isFdNonBlocking(ThreadID, fd);
+}
+
+int isTimerArmed(int ThreadID, int fd) {
+    if(!isFdTypeMatch(ThreadID, fd, FD_TYPE_TIMERFD))
+        return FALSE;
+
+    ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+    assert(currThreadInfo != NULL);
+
+    assert(!currThreadInfo->in_callback);
+
+    if (currThreadInfo->processPID != ThreadID) {
+        // need to get processPID's threadInfo
+        currThreadInfo = hmap_get_abs(&thread_info_map,
+                                      currThreadInfo->processPID);
+        assert(currThreadInfo != NULL);
+    }
+
+    llist_elem * head;
+    fdInfo * currFdInfo;
+	head = currThreadInfo->special_fds.head;
+    
+	while (head != NULL) {
+        currFdInfo = (fdInfo *)head->item;
+
+        if (currFdInfo && currFdInfo->fd == fd) {
+            if (currFdInfo->absExpiryTime || currFdInfo->intervalNS) {
+                // Atleast one of them needs to be positive
+                return TRUE;
+            } 
+            return FALSE;
+        }
+		head = head->next;
+	}
+
+    assert(FALSE);
+    return FALSE;
+
+}

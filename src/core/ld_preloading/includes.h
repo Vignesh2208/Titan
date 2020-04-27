@@ -5,6 +5,7 @@
 #define _GNU_SOURCE
 
 #include <libsyscall_intercept_hook_point.h>
+#include <assert.h>
 #include <syscall.h>
 #include <errno.h>
 #include <dlfcn.h>

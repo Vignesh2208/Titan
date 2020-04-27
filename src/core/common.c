@@ -271,6 +271,7 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	tracee_dilated_task_struct->buffer_window_len = 0;
 	tracee_dilated_task_struct->lookahead = 0;
 	tracee_dilated_task_struct->syscall_waiting = 0;
+	tracee_dilated_task_struct->resumed_by_dilated_timer = 0;
 	init_waitqueue_head(&tracee_dilated_task_struct->d_task_wqueue);
 	
 	BUG_ON(!chaintask[tracer_entry->timeline_assignment]);
@@ -481,9 +482,12 @@ int register_tracer_process(char * write_buffer) {
 		assigned_cpu = best_cpu;
 	}
 
-
-	PDEBUG_I("Register Tracer: Starting for tracer: %d. Registration type: %d, assigned-timeline: %d\n",
-		tracer_id, registration_type, assigned_timeline_id);
+	if (registration_type == 0)
+		PDEBUG_I("Register Tracer for EXP_CBE: Starting for tracer: %d, assigned-cpu: %d\n",
+		tracer_id, assigned_timeline_id);
+	else
+		PDEBUG_I("Register Tracer for EXP_CS: Starting for tracer: %d, assigned-timeline: %d\n",
+		tracer_id, assigned_timeline_id);
 
 	new_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
 
@@ -519,9 +523,6 @@ int register_tracer_process(char * write_buffer) {
 	llist_append(&per_timeline_tracer_list[assigned_timeline_id], new_tracer);
 	mutex_unlock(&exp_lock);
 
-	
-	PDEBUG_I("Register Tracer: ID: %d assigned timeline: %d\n",
-			 new_tracer->tracer_id, new_tracer->timeline_assignment);
 
 	get_tracer_struct_write(new_tracer);
 	bind_to_cpu(current, new_tracer->timeline_assignment);

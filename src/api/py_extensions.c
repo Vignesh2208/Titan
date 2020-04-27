@@ -13,6 +13,16 @@ static PyObject *py_gettime_pid(PyObject *self, PyObject *args) {
   return Py_BuildValue("L", ret);
 }
 
+static PyObject *py_get_la(PyObject *self, PyObject *args) {
+  s64 ret;
+  int tracer_id;
+
+  if (!PyArg_ParseTuple(args, "i", &tracer_id)) return NULL;
+
+  ret = get_tracer_lookahead(tracer_id);
+  return Py_BuildValue("L", ret);
+}
+
 static PyObject *py_stopExp(PyObject *self, PyObject *args) {
   int ret;
   ret = stopExp();
@@ -60,6 +70,16 @@ static PyObject *py_progress_timeline_by(PyObject *self, PyObject *args) {
   return Py_BuildValue("i", ret);
 }
 
+static PyObject *py_set_eat(PyObject *self, PyObject *args) {
+  s64 eat;
+  int tracer_id;
+  int ret;
+
+  if (!PyArg_ParseTuple(args, "iL", &tracer_id, &eat)) return NULL;
+  ret = set_earliest_arrival_time(tracer_id, eat);
+  return Py_BuildValue("i", ret);
+}
+
 static PyObject *py_synchronizeAndFreeze(PyObject *self, PyObject *args) {
   int ret;
   ret = synchronizeAndFreeze();
@@ -74,6 +94,8 @@ static PyMethodDef vt_functions_methods[] = {
     {"initializeVTExp", py_initializeVTExp, METH_VARARGS, NULL},
     {"progressBy", py_progress_by, METH_VARARGS, NULL},
     {"progressTimelineBy", py_progress_timeline_by, METH_VARARGS, NULL},
+    {"setEAT", py_set_eat, METH_VARARGS, NULL},
+    {"getLookahead", py_get_la, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
 
 #if PY_MAJOR_VERSION <= 2

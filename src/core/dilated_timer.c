@@ -435,13 +435,14 @@ static enum hrtimer_restart dilated_sleep_wakeup(
 		container_of(timer, struct dilated_hrtimer_sleeper, timer_dilated);
 
 	if (sleeper && sleeper->task) {
+		sleeper->associated_dilated_task_struct->resumed_by_dilated_timer = 1;
 		wake_up_process(sleeper->task);
 	}
 	return HRTIMER_NORESTART;
 }
 
 // sleeper should be allocated on heap using kmalloc
-int dilated_hrtimer_sleep(ktime_t duration) {
+int dilated_hrtimer_sleep(ktime_t duration, struct dilated_task_struct * dilated_task) {
 
 	struct dilated_hrtimer_sleeper * sleeper;
 	if (duration <= 0) {
@@ -449,13 +450,10 @@ int dilated_hrtimer_sleep(ktime_t duration) {
 		return 0;
 	}
 
-  struct dilated_task_struct * dilated_task = hmap_get_abs(
-    &get_dilated_task_struct_by_pid, (int)current->pid);
-  
-  if (!dilated_task)
-    return 0;
+  	if (!dilated_task)
+    		return 0;
 
-  tracer * associated_tracer = dilated_task->associated_tracer;
+  	tracer * associated_tracer = dilated_task->associated_tracer;
 	if (!associated_tracer)
 		return 0;
 
@@ -467,26 +465,27 @@ int dilated_hrtimer_sleep(ktime_t duration) {
 	}
 	
 	sleeper->task = current;
+	sleeper->associated_dilated_task_struct = dilated_task;
 	dilated_hrtimer_init(&sleeper->timer_dilated,
                        associated_tracer->timeline_assignment,
                        HRTIMER_MODE_REL);
 	sleeper->timer_dilated.function = dilated_sleep_wakeup;
 	set_current_state(TASK_INTERRUPTIBLE);
 
-  // Wake-up tracer timeline worker
+  	// Wake-up tracer timeline worker
 
 	PDEBUG_A("Starting dilated sleep. Sleep Duration: %llu.\n",
            duration);
 	dilated_hrtimer_start_range_ns(&sleeper->timer_dilated, duration,
                                    HRTIMER_MODE_REL);
 
-  dilated_task->ready = 0;
-  dilated_task->syscall_waiting = 0;
-  dilated_task->burst_target = 0;
-  associated_tracer->w_queue_wakeup_pid = 1;
+	dilated_task->ready = 0;
+	dilated_task->syscall_waiting = 0;
+	dilated_task->burst_target = 0;
+	associated_tracer->w_queue_wakeup_pid = 1;
 	wake_up_interruptible(associated_tracer->w_queue);
 	
-  schedule();
+  	schedule();
 	kfree(sleeper);
 	PDEBUG_A("Resuming from dilated sleep. Sleep Duration: %llu.\n",
            duration);
