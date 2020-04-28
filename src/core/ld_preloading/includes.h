@@ -30,4 +30,6 @@
 
 typedef long long s64;
 
+#define MAX_NUM_FDS_PER_PROCESS 1024
+
 #endif

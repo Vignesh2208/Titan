@@ -1,1 +1,2 @@
-/home/vignesh/Titan/scripts/bin/timerfd_example 1 1 10 > /tmp/timerfd_log.txt
+/home/vignesh/Titan/scripts/bin/tcp_server > /tmp/tcp_server_log.txt
+/home/vignesh/Titan/scripts/bin/tcp_client 0.0.0.0 > /tmp/tcp_client_log.txt

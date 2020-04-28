@@ -1,5 +1,6 @@
 #include <sys/timerfd.h>
        #include <time.h>
+       #include <poll.h>
        #include <unistd.h>
        #include <stdlib.h>
        #include <stdio.h>
@@ -39,9 +40,14 @@
        {
            struct itimerspec new_value;
            int max_exp, fd;
+	   struct pollfd pfd[2];
            struct timespec now;
            uint64_t exp, tot_exp;
            ssize_t s;
+
+	   fd_set rfds;
+           struct timeval tv;
+           int retval;
 
            if ((argc != 2) && (argc != 4)) {
                fprintf(stderr, "%s init-secs [interval-secs max-exp]\n",
@@ -77,6 +83,32 @@
            printf("timer started\n");
 
            for (tot_exp = 0; tot_exp < max_exp;) {
+		FD_ZERO(&rfds);
+		FD_SET(fd, &rfds);
+		pfd[0].events |= POLLIN;
+		pfd[0].fd = fd;
+		pfd[0].revents = 0;
+
+		pfd[1].fd = STDIN_FILENO;
+		pfd[1].events = 0;
+		pfd[1].revents = 0;
+
+		/* Wait up to five seconds. */
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
+
+		//retval = select(fd + 1, &rfds, NULL, NULL, &tv);
+		retval = poll(pfd, 2, 5000);
+		/* Don't rely on the value of tv now! */
+
+		if (retval == -1)
+			perror("select()");
+		else if (retval)
+			printf("Data is available now.\n");
+		else
+			printf("No data within five seconds.\n");
+
+
                s = read(fd, &exp, sizeof(uint64_t));
                //printf("Timerfd = %d, read value: %d, exp = %lu\n",fd, s, exp);
                if (s != sizeof(uint64_t))

@@ -362,26 +362,29 @@ int computeClosestTimerExpiryForSelect(int ThreadID, fd_set * readfs, int nfds,
 
     
 	while (head != NULL) {
-        currFdInfo = (fdInfo *)head->item;
+		currFdInfo = (fdInfo *)head->item;
 
-        if (currFdInfo && currFdInfo->fdType == FD_TYPE_TIMERFD
-            && currFdInfo->fd < nfds
-            && FD_ISSET(currFdInfo->fd, readfs)) {
-            if (__getNumNewTimerFdExpires(currFdInfo,
-                                &currTimerFDExpiryDurationNS)) {
-                *closestTimerExpiryDurationNS = 0;
-                return currFdInfo->fd;
-            } else {
-                if (*closestTimerExpiryDurationNS < 0) {
-                    *closestTimerExpiryDurationNS = currTimerFDExpiryDurationNS;
-                    TimerOfInterest = currFdInfo->fd;
-                } else if (currTimerFDExpiryDurationNS 
-                            < *closestTimerExpiryDurationNS) {
-                    *closestTimerExpiryDurationNS = currTimerFDExpiryDurationNS;
-                    TimerOfInterest = currFdInfo->fd;
-                }
-            }
-        }
+		if (currFdInfo && currFdInfo->fdType == FD_TYPE_TIMERFD
+		    && currFdInfo->fd < nfds
+		    && FD_ISSET(currFdInfo->fd, readfs)) {
+
+		    
+		    if (__getNumNewTimerFdExpires(currFdInfo,
+		                        &currTimerFDExpiryDurationNS)) {
+		        *closestTimerExpiryDurationNS = 0;
+		        return currFdInfo->fd;
+		    } else {
+
+		        if (*closestTimerExpiryDurationNS < 0) {
+		            *closestTimerExpiryDurationNS = currTimerFDExpiryDurationNS;
+		            TimerOfInterest = currFdInfo->fd;
+		        } else if (currTimerFDExpiryDurationNS 
+		                    < *closestTimerExpiryDurationNS) {
+		            *closestTimerExpiryDurationNS = currTimerFDExpiryDurationNS;
+		            TimerOfInterest = currFdInfo->fd;
+		        }
+		    }
+		}
 		head = head->next;
 	}
 
