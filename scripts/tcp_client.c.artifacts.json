@@ -1,0 +1,258 @@
+{
+  "main": {
+    "bbls": {
+      "13": {
+        "called_fns": [
+          "",
+          "socket"
+        ],
+        "edges": [
+          15
+        ],
+        "weight": 23
+      },
+      "14": {
+        "called_fns": [
+          "perror",
+          "exit"
+        ],
+        "edges": [],
+        "weight": 4
+      },
+      "15": {
+        "called_fns": [
+          "printf"
+        ],
+        "edges": [
+          16
+        ],
+        "weight": 3
+      },
+      "16": {
+        "called_fns": [
+          "printf",
+          "usleep"
+        ],
+        "edges": [
+          18
+        ],
+        "weight": 8
+      },
+      "17": {
+        "called_fns": [
+          "strcpy",
+          "printf"
+        ],
+        "edges": [
+          19
+        ],
+        "weight": 13
+      },
+      "18": {
+        "called_fns": [
+          "strcpy"
+        ],
+        "edges": [
+          19
+        ],
+        "weight": 3
+      },
+      "19": {
+        "called_fns": [
+          "",
+          "htons",
+          "inet_addr"
+        ],
+        "edges": [
+          23
+        ],
+        "weight": 17
+      },
+      "20": {
+        "called_fns": [
+          "gethostbyname"
+        ],
+        "edges": [
+          22
+        ],
+        "weight": 5
+      },
+      "21": {
+        "called_fns": [
+          "printf",
+          "__h_errno_location",
+          "printf",
+          "printf",
+          "printf",
+          "close",
+          "exit"
+        ],
+        "edges": [],
+        "weight": 25
+      },
+      "22": {
+        "called_fns": [],
+        "edges": [
+          23
+        ],
+        "weight": 5
+      },
+      "23": {
+        "called_fns": [
+          "connect"
+        ],
+        "edges": [
+          25
+        ],
+        "weight": 8
+      },
+      "24": {
+        "called_fns": [
+          "perror",
+          "close",
+          "exit"
+        ],
+        "edges": [],
+        "weight": 7
+      },
+      "25": {
+        "called_fns": [
+          "printf"
+        ],
+        "edges": [
+          26
+        ],
+        "weight": 3
+      },
+      "26": {
+        "called_fns": [
+          "printf",
+          "write"
+        ],
+        "edges": [
+          30
+        ],
+        "weight": 13
+      },
+      "27": {
+        "called_fns": [
+          "perror",
+          "getsockopt"
+        ],
+        "edges": [
+          29
+        ],
+        "weight": 11
+      },
+      "28": {
+        "called_fns": [
+          "__errno_location",
+          "perror"
+        ],
+        "edges": [
+          29
+        ],
+        "weight": 7
+      },
+      "29": {
+        "called_fns": [
+          "close",
+          "exit"
+        ],
+        "edges": [],
+        "weight": 5
+      },
+      "30": {
+        "called_fns": [
+          "printf",
+          "printf",
+          "printf"
+        ],
+        "edges": [
+          31
+        ],
+        "weight": 12
+      },
+      "31": {
+        "called_fns": [],
+        "edges": [
+          32
+        ],
+        "weight": 1
+      },
+      "32": {
+        "called_fns": [],
+        "edges": [
+          40
+        ],
+        "weight": 2
+      },
+      "33": {
+        "called_fns": [
+          "read"
+        ],
+        "edges": [
+          35
+        ],
+        "weight": 13
+      },
+      "34": {
+        "called_fns": [
+          "perror",
+          "close",
+          "exit"
+        ],
+        "edges": [],
+        "weight": 7
+      },
+      "35": {
+        "called_fns": [],
+        "edges": [
+          37
+        ],
+        "weight": 2
+      },
+      "36": {
+        "called_fns": [
+          "printf",
+          "close",
+          "exit"
+        ],
+        "edges": [],
+        "weight": 9
+      },
+      "37": {
+        "called_fns": [],
+        "edges": [
+          38
+        ],
+        "weight": 3
+      },
+      "38": {
+        "called_fns": [],
+        "edges": [
+          39
+        ],
+        "weight": 1
+      },
+      "39": {
+        "called_fns": [],
+        "edges": [
+          32
+        ],
+        "weight": 1
+      },
+      "40": {
+        "called_fns": [
+          "printf",
+          "printf",
+          "close",
+          "exit"
+        ],
+        "edges": [],
+        "weight": 14
+      }
+    },
+    "returning_blocks": []
+  }
+}

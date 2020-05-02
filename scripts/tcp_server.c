@@ -34,7 +34,7 @@
 
  
 
-int main()
+void main()
 
 {
 
@@ -458,8 +458,6 @@ int main()
 
 	close(sd);
 
-	exit(0);
-
-	return 0;
+	//return 0;
 
 }

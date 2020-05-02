@@ -1142,13 +1142,14 @@ static void handle_vt_read_syscall(int ThreadPID, int fd, void * buf,
 					s64 bulkLA = vtGetPacketEAT();
 					long bblLA = vtGetBBLLookahead();
 					vtSetLookahead(bulkLA, bblLA);
+					goingToBlock = 1;
 					
-				} 
-				// we are force setting this just for safety.
-				goingToBlock = 1;
+				} else{
+					// there is something to read
+					goingToBlock = 0;
+				}
 				
 			} else {
-				printf("Read is not going to block !\n");
 				goingToBlock = 0;
 			}
 		} else if(vtIsTimerFd(ThreadPID, fd)) {

@@ -6,8 +6,11 @@
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
 #include "llvm/Pass.h"
+#include "llvm/Support/JSON.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/raw_ostream.h"
 
-#include <unordered_map>
+
 
 
 
@@ -29,29 +32,6 @@ DisableVtInsertion("no-vt-insertion",
 
 char VirtualTimeManager::ID = 0;
 
-/*
-VirtualTimeManager::VirtualTimeManager() : llvm::MachineFunctionPass(ID) {
-	Printed = false;
-}
-
-bool VirtualTimeManager::runOnMachineFunction(llvm::MachineFunction &fn) {
-	const llvm::TargetInstrInfo &TII = *fn.getSubtarget().getInstrInfo();
-	MachineBasicBlock& bb = *fn.begin();
-	
-        if (DisableVtInsertion) {
-		outs() << "Virtual time insertion is disabled" << "\n";
-		return false;
-	}
-
-	if (!Printed) {
-		outs() << "Running VirtualTimeManager Pass on Function" << fn.getName() << "\n";
-		Printed = true;
-	}
-
-	llvm::BuildMI(bb, bb.begin(), llvm::DebugLoc(), TII.get(llvm::X86::NOOP));
-	return true;
-}*/
-
 char &llvm::VirtualTimeManagerID = VirtualTimeManager::ID;
 
 
@@ -62,9 +42,6 @@ INITIALIZE_PASS_END(VirtualTimeManager, "vt-manager",
   "Insert virtual time counting instructions", false, false)
 
 
-
-
-
 using namespace llvm;
 
 
@@ -73,9 +50,10 @@ void VirtualTimeManager::createStubFunction(Module &M) {
    LLVMContext &Ctx = M.getContext();
    auto Type = FunctionType::get(Type::getVoidTy(Ctx), false);
    Function *F =
-       Function::Create(Type, GlobalValue::LinkOnceODRLinkage, stubFunctionName, &M);
+       Function::Create(Type, GlobalValue::LinkOnceODRLinkage,
+	   					VT_STUB_FUNC, &M);
    F->setVisibility(GlobalValue::DefaultVisibility);
-   F->setComdat(M.getOrInsertComdat(stubFunctionName));
+   F->setComdat(M.getOrInsertComdat(VT_STUB_FUNC));
  
    // Add Attributes so that we don't create a frame, unwind information, or
    // inline.
@@ -180,206 +158,132 @@ void VirtualTimeManager::printGlobalVar(llvm::GlobalVariable * gvar) {
 
 void VirtualTimeManager::createExternDefinitions(Module &M, bool ContainsMain) {
    LLVMContext &Ctx = M.getContext();
+
   
-   // vtInsnCounterGlobalVar
-   M.getOrInsertGlobal(vtInsnCounterGlobalVar, Type::getInt64Ty(Ctx));
-   auto *gVar = M.getNamedGlobal(vtInsnCounterGlobalVar);
+   // VT_INSN_COUNTER_VAR
+   M.getOrInsertGlobal(VT_INSN_COUNTER_VAR, Type::getInt64Ty(Ctx));
+   auto *gVar = M.getNamedGlobal(VT_INSN_COUNTER_VAR);
    gVar->setLinkage(GlobalValue::ExternalLinkage);
    gVar->setAlignment(8);
 
-   // vtCurrBBSizeVar
-   M.getOrInsertGlobal(vtCurrBBSizeVar, Type::getInt64Ty(Ctx));
-   gVar = M.getNamedGlobal(vtCurrBBSizeVar);
+   // VT_CURR_BBL_SIZE_VAR
+   M.getOrInsertGlobal(VT_CURR_BBL_SIZE_VAR, Type::getInt64Ty(Ctx));
+   gVar = M.getNamedGlobal(VT_CURR_BBL_SIZE_VAR);
    gVar->setLinkage(GlobalValue::ExternalLinkage);
    gVar->setAlignment(8);
 
-   // vtCurrBasicBlockIDVar
-   M.getOrInsertGlobal(vtCurrBasicBlockIDVar, Type::getInt64Ty(Ctx));
-   gVar = M.getNamedGlobal(vtCurrBasicBlockIDVar);
+   // VT_CURR_BBID_VAR
+   M.getOrInsertGlobal(VT_CURR_BBID_VAR, Type::getInt64Ty(Ctx));
+   gVar = M.getNamedGlobal(VT_CURR_BBID_VAR);
    gVar->setLinkage(GlobalValue::ExternalLinkage);
    gVar->setAlignment(8);
 
-   // enabled
-   M.getOrInsertGlobal(enabled, Type::getInt32Ty(Ctx));
-   gVar = M.getNamedGlobal(enabled);
+   // VT_FORCE_INVOKE_CALLBACK_VAR
+   M.getOrInsertGlobal(VT_FORCE_INVOKE_CALLBACK_VAR, Type::getInt32Ty(Ctx));
+   gVar = M.getNamedGlobal(VT_FORCE_INVOKE_CALLBACK_VAR);
    gVar->setLinkage(GlobalValue::ExternalLinkage);
    gVar->setAlignment(4);
 
-   // vtControlFunctionName
+   // VT_CALLBACK_FUNC
    auto Type = FunctionType::get(Type::getVoidTy(Ctx), false);
-   Function::Create(Type, GlobalValue::ExternalLinkage, vtControlFunctionName, &M);  
+   Function::Create(Type, GlobalValue::ExternalLinkage, VT_CALLBACK_FUNC, &M);  
 
    if (ContainsMain) {
         outs() << "Contains Main: Creating __VT_Stub function body" << "\n";
-	createStubFunction(M);
+		createStubFunction(M);
    } else {
-	// declare stub as extern
-        //outs() << "Does not contain Main: Declaring __X86_Stub as extern" << "\n";
-        Function::Create(FunctionType::get(Type::getVoidTy(Ctx), false), GlobalValue::ExternalLinkage, stubFunctionName, &M); 
+
+		Function::Create(FunctionType::get(Type::getVoidTy(Ctx), false),
+			GlobalValue::ExternalLinkage, VT_STUB_FUNC, &M); 
    }
 	 
 }
 
-bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
+void VirtualTimeManager::__acquireFlock() {
+	lockFd = open("/tmp/llvm.lock", O_RDWR | O_CREAT, 0666);
+	int rc = 0;
+	do {
+		 rc = flock(lockFd, LOCK_EX | LOCK_NB);
+		 if (rc != 0)
+			usleep(100000);
+	} while (rc != 0);
+	outs() << "Acquired File Lock \n";
 
-    const llvm::TargetInstrInfo &TII = *MF.getSubtarget().getInstrInfo();
-    //outs() << "##############   Function Name: " << MF.getName() << "################\n";
-    MMI = &MF.getMMI();
-    llvm::Module &M = const_cast<Module &>(*MMI->getModule());
+	// create file if it does not exist !
+	std::fstream fs;
+  	fs.open("/tmp/llvm_init_params.json", std::ios::out | std::ios::app);
+  	fs.close();
+}
 
-    bool ret = false;
-    int blockNumber = 0;
-    llvm::StringRef mainFnName = "main";
-    //llvm::StringRef targetGvar = "global_var_3";
-    bool ContainsMain = (M.getFunction(mainFnName) != nullptr);
-    int InstrCount;
-    std::string sourceFileName = M.getSourceFileName();
+void VirtualTimeManager::__releaseFlock() {
+	flock(lockFd, LOCK_UN);
+	close(lockFd);
+	outs() << "Released File Lock \n";
+}
 
-    std::hash<std::string> hasher;
+bool VirtualTimeManager::doInitialization(Module& M) {
 
-    if (!DisableVtInsertion) {
-	if (!Printed) {
-		outs() << "~~~~ Inserting Virtual time specific code ~~~~~" << "\n";
-                //auto *gVar = M.getNamedGlobal(targetGvar);
-		//printGlobalVar(gVar);
-		Printed = true;
-	}
-	
-    } else if (DisableVtInsertion) {
-	return false;
-    }
+	__acquireFlock();
+	auto Text = llvm::MemoryBuffer::getFileAsStream(
+		"/tmp/llvm_init_params.json");
+		
+	StringRef Content = Text ? Text->get()->getBuffer() : "";
 
+	int64_t lastUsedBBL = 0;
+	int64_t lastUsedLoop = 0;
 
-    if (vtControlFunctionName.equals(MF.getName()))
-	return false;
-
-    if (!stubFunctionName.equals(MF.getName()) && !CreatedExternDefinitions) {
-	createExternDefinitions(M, ContainsMain);
-	CreatedExternDefinitions = true;
-        ret = true;
-    }
-
-    if (!stubFunctionName.equals(MF.getName())) {
-	// Already created stub function. Do other inserts here and call StubFunction
-	ret = true;
-
-	for (auto &MBB : MF) {
-		InstrCount = 0;
-		for (MachineBasicBlock::instr_iterator Iter = MBB.instr_begin(), E = MBB.instr_end(); Iter != E; Iter++) {
-	     	     MachineInstr &Inst = *Iter;
-		     if (!Inst.isCFIInstruction()) {
-		     	InstrCount ++;	    
-		     } 
-		}
-
-		globalBBCounter ++;
-		blockNumber ++;
-
-		long currBBID = std::abs((long)hasher(sourceFileName + std::to_string(globalBBCounter)));
-
-		MachineBasicBlock* origMBB = &MBB;
-
-		if (blockNumber <= 1)
-			continue;
+	outs() << "Read Json Content: " << Content << "\n";
+	if (!Content.empty()) {
+		auto E = llvm::json::parse(Content);
+		if (E) {
+			llvm:json::Object * O = E->getAsObject();
 			
-		// origMBB:
-
-		// pop %rax
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RAX);
-
-		// popf 
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POPF64));
-
-		// push %rax
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RAX);
-
-		// pop %rax
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RAX);
-
-
-		// pop %rdx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RDX);
-
-		// pop %rcx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RCX);
-
-		// pop %rbx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RBX);
-
-
-
-		// callq stubFunctionName
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::CALL64pcrel32)).addGlobalAddress(M.getNamedValue(stubFunctionName));
-
-				
-		// movq (%rcx) %rbx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm)).addDef(X86::RBX).addReg(X86::RCX).addImm(1).addReg(0).addImm(0).addReg(0);
-		
-		// movq enabled@GOTPCREL(%rip) %rcx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
-			      .addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0).addGlobalAddress(M.getNamedValue(enabled), 0, MO_GOTPCREL).addReg(0);
-
-		// movq BasicBlockID (%rcx)
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64mi32))
-				.addReg(X86::RCX).addImm(1).addReg(0).addImm(0).addReg(0).addImm(currBBID);
-
-		// movq vtCurrBasicBlockIDVar@GOTPCREL(%rip) %rcx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
-				.addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0).addGlobalAddress(M.getNamedValue(vtCurrBasicBlockIDVar), 0, MO_GOTPCREL).addReg(0);
-
-		// movq InstrCount (%rcx)
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64mi32))
-				.addReg(X86::RCX).addImm(1).addReg(0).addImm(0).addReg(0).addImm(InstrCount);
-
-		// movq vtCurrBBSizeVar@GOTPCREL(%rip) %rcx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
-				.addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0).addGlobalAddress(M.getNamedValue(vtCurrBBSizeVar), 0, MO_GOTPCREL).addReg(0);
-
-		// movq %rdx %(rcx)
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64mr))
-				.addReg(X86::RCX).addImm(1).addReg(0).addImm(0).addReg(0).addReg(X86::RDX);
-
-		// subq	InstrCount, %rdx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::SUB64ri8)).addDef(X86::RDX).addReg(X86::RDX).addImm(InstrCount);
-
-
-		// movq (%rcx) %rdx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm)).addDef(X86::RDX).addReg(X86::RCX).addImm(1).addReg(0).addImm(0).addReg(0);
-
-		// movq vtInsnCounterGlobalVar@GOTPCREL(%rip) %rcx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
-				.addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0).addGlobalAddress(M.getNamedValue(vtInsnCounterGlobalVar), 0, MO_GOTPCREL).addReg(0);
-
-		
-
-
-		
-		// push %rbx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RBX);
-
-		// push %rcx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RCX);
-
-		// push %rdx
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RDX);
-
-		// push %rax
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RAX);
-
-		// pop %rax
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RAX);
-
-		// pushf
-		MachineInstr *Push = BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSHF64));
-		Push->getOperand(2).setIsUndef();
-
-		// push %rax
-		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RAX);
+			auto lastUsedBBLCounter = O->getInteger("BBL_Counter");
+			auto lastUsedLoopCounter = O->getInteger("Loop_Counter");
+			if (lastUsedBBLCounter.hasValue()) {
+				lastUsedBBL = *(lastUsedBBLCounter.getPointer());
+			}
+			if (lastUsedLoopCounter.hasValue()) {
+				lastUsedLoop = *(lastUsedLoopCounter.getPointer());
+			}
+			outs() << "Last Used BBL = " << lastUsedBBL << " Last Used Loop = " << lastUsedLoop << "\n";
+		} else {
+			outs() << "JSON parse error \n";
+		}
 	}
 
-    } else if  (stubFunctionName.equals(MF.getName()) and ContainsMain) {
-	// Inside stub function. Add comparison instructions. 
-	ret = true;
+	globalBBCounter = (long )lastUsedBBL;
+
+	if (!DisableVtInsertion) {
+		outs() << "~~~~ Inserting Virtual time specific code ~~~~~" << "\n";
+    }
+	return false;
+}
+
+bool VirtualTimeManager::doFinalization(Module& M) {
+	__releaseFlock();
+
+	// writing json output
+	std::error_code EC;
+	std::string OutputFile = M.getSourceFileName() + ".artifacts.json";
+	llvm::raw_fd_ostream OS(OutputFile, EC, llvm::sys::fs::OF_Text);
+	if (EC) {
+		llvm::errs() << "warning: could not create file: " << OutputFile 
+		<< " " << EC.message() << '\n';
+		return false;
+   	}
+	outs() << "Writing json output to:  " << OutputFile << "\n";
+   	llvm::json::Object Sarif = perModuleObj;
+	OS << llvm::formatv("{0:2}\n", json::Value(std::move(Sarif)));
+	perModuleObj.clear();
+	return false;
+}
+
+void VirtualTimeManager::__insertVtStubFn(MachineFunction &MF) {
+
+	const llvm::TargetInstrInfo &TII = *MF.getSubtarget().getInstrInfo();
+	llvm::Module &M = const_cast<Module &>(*MMI->getModule());
+
 	MachineBasicBlock *origMBB = &MF.front();
 	origMBB->clear();
 	while (MF.size() > 1)
@@ -404,86 +308,401 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 			.addReg(X86::EBX).addReg(X86::EBX);
 
 	// jne FunctionCallMBB - jmp to FunctionCall if ebx != 0
-	llvm::BuildMI(*InitMBB, InitMBB->end(), DebugLoc(), TII.get(X86::JCC_1)).addMBB(FunctionCallMBB).addImm(5);
+	llvm::BuildMI(*InitMBB, InitMBB->end(), DebugLoc(),
+		TII.get(X86::JCC_1)).addMBB(FunctionCallMBB).addImm(5);
 
 	// test %rdx, %rdx
-	llvm::BuildMI(*InitFalseMBB, InitFalseMBB->end(), DebugLoc(), TII.get(X86::TEST64rr))
-			.addReg(X86::RDX).addReg(X86::RDX);
+	llvm::BuildMI(*InitFalseMBB, InitFalseMBB->end(), DebugLoc(),
+		TII.get(X86::TEST64rr)).addReg(X86::RDX).addReg(X86::RDX);
+
 	// jns origMBB - jmp to exit if rdx > 0
-	llvm::BuildMI(*InitFalseMBB, InitFalseMBB->end(), DebugLoc(), TII.get(X86::JCC_1)).addMBB(origMBB).addImm(9);
+	llvm::BuildMI(*InitFalseMBB, InitFalseMBB->end(), DebugLoc(),
+		TII.get(X86::JCC_1)).addMBB(origMBB).addImm(9);
 	
 
 	// FunctionCallMBB: (add push pop of other registers here)
-
 	// push %rbp
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RBP);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::RBP);
 
 	// push %rax
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RAX);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::RAX);
 
 	// push %rsi
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RSI);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::RSI);
 
 	// push %rdi
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::RDI);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::RDI);
 
 	// push %r8
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::R8);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::R8);
 
 	// push %r9
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::R9);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::R9);
 
 	// push %r10
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::R10);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::R10);
 
 	// push %r11
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::PUSH64r)).addReg(X86::R11);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::R11);
 
 
-	// callq vtControlFunctionName
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::CALL64pcrel32)).addGlobalAddress(M.getNamedValue(vtControlFunctionName));
+	// callq VT_CALLBACK_FUNC
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::CALL64pcrel32)).addGlobalAddress(
+			M.getNamedValue(VT_CALLBACK_FUNC));
 
 	
 	// pop %r11
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::R11);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::R11);
 
 	// pop %r10
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::R10);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::R10);
 
 	// pop %r9
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::R9);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::R9);
 
 	// pop %r8
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::R8);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::R8);
 
 	// pop %rdi
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RDI);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::RDI);
 
 	// pop %rsi
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RSI);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::RSI);
 
 	// pop %rax
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RAX);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::RAX);
 
 	// pop %rbp
-	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(), TII.get(X86::POP64r)).addReg(X86::RBP);
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::RBP);
 
 	llvm::BuildMI(*origMBB, origMBB->end(), DebugLoc(), TII.get(X86::RETQ));
+}
+
+void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
+	MachineBasicBlock* origMBB, long blockNumber, int bbTimeConsumed) {
+
+	const llvm::TargetInstrInfo &TII = *MF.getSubtarget().getInstrInfo();
+	llvm::Module &M = const_cast<Module &>(*MMI->getModule());
+
+	long currBBID = blockNumber;
+	// origMBB:
+
+	// pop %rax
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::RAX);
+
+	// popf 
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POPF64));
+
+	// push %rax
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::RAX);
+
+	// pop %rax
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::RAX);
+
+
+	// pop %rdx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::RDX);
+
+	// pop %rcx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::RCX);
+
+	// pop %rbx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::RBX);
+
+	// callq VT_STUB_FUNC
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::CALL64pcrel32)).addGlobalAddress(
+			M.getNamedValue(VT_STUB_FUNC));
+
+			
+	// movq (%rcx) %rbx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::MOV64rm)).addDef(X86::RBX)
+			.addReg(X86::RCX).addImm(1).addReg(0).addImm(0).addReg(0);
+	
+	// movq VT_FORCE_INVOKE_CALLBACK_VAR@GOTPCREL(%rip) %rcx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
+			.addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0)
+			.addGlobalAddress(
+				M.getNamedValue(VT_FORCE_INVOKE_CALLBACK_VAR), 0, MO_GOTPCREL)
+				.addReg(0);
+
+	// movq BasicBlockID (%rcx)
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::MOV64mi32)).addReg(X86::RCX).addImm(1).addReg(0)
+		.addImm(0).addReg(0).addImm(currBBID);
+
+	// movq VT_CURR_BBID_VAR@GOTPCREL(%rip) %rcx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
+			.addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0)
+			.addGlobalAddress(
+				M.getNamedValue(VT_CURR_BBID_VAR), 0, MO_GOTPCREL).addReg(0);
+
+	// movq bbTimeConsumed (%rcx)
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::MOV64mi32)).addReg(X86::RCX).addImm(1).addReg(0)
+			.addImm(0).addReg(0).addImm(bbTimeConsumed);
+
+	// movq VT_CURR_BBL_SIZE_VAR@GOTPCREL(%rip) %rcx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
+		.addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0)
+		.addGlobalAddress(
+			M.getNamedValue(VT_CURR_BBL_SIZE_VAR), 0, MO_GOTPCREL).addReg(0);
+
+	// movq %rdx %(rcx)
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64mr))
+			.addReg(X86::RCX).addImm(1).addReg(0).addImm(0).addReg(0)
+			.addReg(X86::RDX);
+
+	// subq	bbTimeConsumed, %rdx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::SUB64ri8)).addDef(X86::RDX).addReg(X86::RDX)
+			.addImm(bbTimeConsumed);
+
+
+	// movq (%rcx) %rdx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::MOV64rm)).addDef(X86::RDX).addReg(X86::RCX)
+			.addImm(1).addReg(0).addImm(0).addReg(0);
+
+	// movq VT_INSN_COUNTER_VAR@GOTPCREL(%rip) %rcx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::MOV64rm)).addReg(X86::RCX).addReg(X86::RIP).addImm(1)
+			.addReg(0).addGlobalAddress(
+				M.getNamedValue(VT_INSN_COUNTER_VAR), 0, MO_GOTPCREL).addReg(0);
+
+		
+	// push %rbx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::RBX);
+
+	// push %rcx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::RCX);
+
+	// push %rdx
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::RDX);
+
+	// push %rax
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::RAX);
+
+	// pop %rax
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), 
+		TII.get(X86::POP64r)).addReg(X86::RAX);
+
+	// pushf
+	MachineInstr *Push = BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::PUSHF64));
+	Push->getOperand(2).setIsUndef();
+
+	// push %rax
+	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::RAX);
+
+}
+
+llvm::json::Array VirtualTimeManager::getAllEdgesFromBBL(long bblNumber,
+	std::unordered_map<long, long>& edges) {
+	llvm::json::Array bblEdges;
+	for (auto element : edges) {
+		if (element.first == bblNumber) {
+			bblEdges.push_back(llvm::json::Value(element.second));
+		}	
+	}
+	return bblEdges;
+}
+
+llvm::json::Array VirtualTimeManager::getAllCalledFnsFromBBL(long bblNumber,
+	std::unordered_map<long, std::vector<std::string>>& calledFunctions) {
+	llvm::json::Array calledFuncs;
+
+	if (calledFunctions.find(bblNumber) == calledFunctions.end())
+		return calledFuncs;
+
+	for(auto calledFn: calledFunctions.find(bblNumber)->second) {
+		calledFuncs.push_back(calledFn);
+	}
+	return calledFuncs;
+}
+
+llvm::json::Object VirtualTimeManager::composeBBLObject(long bblNumber,
+	std::unordered_map<long, std::vector<std::string>>& calledFunctions,
+	std::unordered_map<long, long>& edges, long bblWeight) {
+
+	llvm::json::Object bblObj;
+
+	bblObj.insert(llvm::json::Object::KV{"edges", getAllEdgesFromBBL(bblNumber, edges)});
+	bblObj.insert(llvm::json::Object::KV{"called_fns", getAllCalledFnsFromBBL(bblNumber,
+		calledFunctions)});
+	bblObj.insert(llvm::json::Object::KV{"weight", llvm::json::Value(bblWeight)});
+
+	return bblObj;
+}
+
+bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
+
+    
+    //outs() << "##############   Function Name: " 
+	// << MF.getName() << "################\n";
+    MMI = &MF.getMMI();
+    llvm::Module &M = const_cast<Module &>(*MMI->getModule());
+
+    bool ret = false;
+    int blockNumber = 0;
+    bool ContainsMain = (M.getFunction(MAIN_FUNC) != nullptr);
+    int InstrCount;
+    std::string sourceFileName = M.getSourceFileName();
+
+    std::unordered_map<long, std::vector<std::string>> calledFunctions;
+	std::unordered_map<long, long> edges;
+	std::unordered_map<long, long> bblWeights;
+	std::vector<long> returningBlocks;
+	std::unordered_map<int, long> localToGlobalBBL;
+
+    if (DisableVtInsertion) {
+		return false;
+    }
+
+
+	if (MF.getName().equals(VT_CALLBACK_FUNC))
+		return false;
+
+    if (!MF.getName().equals(VT_STUB_FUNC) && !CreatedExternDefinitions) {
+		createExternDefinitions(M, ContainsMain);
+		CreatedExternDefinitions = true;
+        ret = true;
+    }
+
+    if (!MF.getName().equals(VT_STUB_FUNC)) {
+		// Already created stub function. Do other inserts here and call StubFunction
+		ret = true;
+
+		for (auto &MBB : MF) {
+			globalBBCounter ++;
+			blockNumber ++;
+
+			MachineBasicBlock* origMBB = &MBB;
+			localToGlobalBBL.insert(std::make_pair(origMBB->getNumber(),
+								globalBBCounter));
+
+			if (origMBB->isReturnBlock()) {
+				// block ends in a return instruction
+				returningBlocks.push_back(globalBBCounter);
+			}
+
+			InstrCount = 0;
+			for (MachineBasicBlock::instr_iterator Iter = MBB.instr_begin(),
+				E = MBB.instr_end(); Iter != E; Iter++) {
+					MachineInstr &Inst = *Iter;
+				if (!Inst.isCFIInstruction()) {
+					InstrCount ++;	    
+				} 
+
+				
+				if (Inst.isCall()) {
+					std::string fnName;
+					for (unsigned OpIdx = 0; OpIdx  != Inst.getNumOperands();
+						++OpIdx) {
+						const MachineOperand &MO = Inst.getOperand(OpIdx);
+						if (!MO.isGlobal()) continue;
+						const Function * F = dyn_cast<Function>(MO.getGlobal());
+						if (!F) continue;
+
+						if (F->hasName()) {
+							fnName = F->getName();
+						} else {
+							fnName = "__unknown__";
+						}
+					}
+
+					if (calledFunctions.count(globalBBCounter)) {
+						// key already exists
+						calledFunctions.at(globalBBCounter).push_back(fnName);
+					} else {
+						calledFunctions.insert(std::make_pair(
+							globalBBCounter, std::vector<std::string>()));
+						calledFunctions.at(globalBBCounter).push_back(fnName);
+					}
+				}
+			}
+
+			bblWeights.insert(std::make_pair(globalBBCounter, InstrCount));
+
+			// check the impact of this later ...
+			//if (blockNumber <= 1)
+			//	continue;
+
+			__insertVtlLogic(MF, origMBB, globalBBCounter, InstrCount);			
+		}
+
+
+		// add edges ...
+		for (auto &MBB : MF) {
+			MachineBasicBlock* currMBB = &MBB;
+			long currMBBGlobalNumber = localToGlobalBBL.find(
+				currMBB->getNumber())->second;
+			
+			for (MachineBasicBlock * successorBlock : MBB.successors()) {
+				long successorBlockGlobalNumber = localToGlobalBBL.find(
+					successorBlock->getNumber())->second;
+				edges.insert(std::make_pair(currMBBGlobalNumber,
+					successorBlockGlobalNumber));
+   			}
+		}
+
+		llvm::json::Array returning_blocks;
+		llvm::json::Object all_bbls;
+		llvm::json::Object mf_obj;
+
+		for (auto element : bblWeights) {
+			all_bbls.insert(
+				llvm::json::Object::KV{
+					std::to_string(element.first),
+					composeBBLObject(
+						element.first, calledFunctions, edges,
+						element.second)
+				});
+		}
+		for (int i = 0; i < returningBlocks.size(); i++) {
+			returning_blocks.push_back(returningBlocks[i]);
+		}
+
+		mf_obj.insert(llvm::json::Object::KV{"bbls", llvm::json::Value(std::move(all_bbls))});
+		mf_obj.insert(llvm::json::Object::KV{"returning_blocks", llvm::json::Value(std::move(returning_blocks))});
+		// Iterate over an unordered_map using range based for loop
+
+		perModuleObj.insert(llvm::json::Object::KV{MF.getName(), llvm::json::Value(std::move(mf_obj)) });		 
+
+	} else if  (MF.getName().equals(VT_STUB_FUNC) and ContainsMain) {
+		// Inside stub function. Add comparison instructions. 
+		ret = true;
+		__insertVtStubFn(MF);
     }
 
     return ret;
 }
-
-
-/*
-INITIALIZE_PASS(X86MachineInstrPrinter, "x86-machineinstr-printer",
-    X86_MACHINEINSTR_PRINTER_PASS_NAME,
-    false, // is CFG only?
-    false  // is analysis?
-)
-
-namespace llvm {
-
-FunctionPass *createX86MachineInstrPrinterPass() { return new X86MachineInstrPrinter(); }
-
-}*/
