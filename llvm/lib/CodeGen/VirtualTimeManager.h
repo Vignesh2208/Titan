@@ -36,14 +36,14 @@ namespace llvm {
         void __insertVtStubFn(MachineFunction &MF);
 
         llvm::json::Array getAllEdgesFromBBL(long bblNumber,
-	        std::unordered_map<long, long>& edges);
+	        std::unordered_map<long, std::vector<long>>& edges);
 
         llvm::json::Array getAllCalledFnsFromBBL(long bblNumber,
 	        std::unordered_map<long, std::vector<std::string>>& calledFunctions);
 
         llvm::json::Object composeBBLObject(long bblNumber,
 	        std::unordered_map<long, std::vector<std::string>>& calledFunctions,
-	        std::unordered_map<long, long>& edges, long bblWeight);
+	        std::unordered_map<long, std::vector<long>>& edges, long bblWeight);
     public:
     static char ID;
     

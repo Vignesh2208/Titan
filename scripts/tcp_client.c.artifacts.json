@@ -7,7 +7,8 @@
           "socket"
         ],
         "edges": [
-          15
+          15,
+          14
         ],
         "weight": 23
       },
@@ -34,7 +35,8 @@
           "usleep"
         ],
         "edges": [
-          18
+          18,
+          17
         ],
         "weight": 8
       },
@@ -64,7 +66,8 @@
           "inet_addr"
         ],
         "edges": [
-          23
+          23,
+          20
         ],
         "weight": 17
       },
@@ -73,7 +76,8 @@
           "gethostbyname"
         ],
         "edges": [
-          22
+          22,
+          21
         ],
         "weight": 5
       },
@@ -102,7 +106,8 @@
           "connect"
         ],
         "edges": [
-          25
+          25,
+          24
         ],
         "weight": 8
       },
@@ -130,7 +135,8 @@
           "write"
         ],
         "edges": [
-          30
+          30,
+          27
         ],
         "weight": 13
       },
@@ -140,7 +146,8 @@
           "getsockopt"
         ],
         "edges": [
-          29
+          29,
+          28
         ],
         "weight": 11
       },
@@ -183,7 +190,8 @@
       "32": {
         "called_fns": [],
         "edges": [
-          40
+          40,
+          33
         ],
         "weight": 2
       },
@@ -192,7 +200,8 @@
           "read"
         ],
         "edges": [
-          35
+          35,
+          34
         ],
         "weight": 13
       },
@@ -208,7 +217,8 @@
       "35": {
         "called_fns": [],
         "edges": [
-          37
+          37,
+          36
         ],
         "weight": 2
       },

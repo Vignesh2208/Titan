@@ -527,12 +527,14 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
 }
 
 llvm::json::Array VirtualTimeManager::getAllEdgesFromBBL(long bblNumber,
-	std::unordered_map<long, long>& edges) {
+	std::unordered_map<long, std::vector<long>>& edges) {
 	llvm::json::Array bblEdges;
-	for (auto element : edges) {
-		if (element.first == bblNumber) {
-			bblEdges.push_back(llvm::json::Value(element.second));
-		}	
+
+	if (edges.find(bblNumber) == edges.end())
+		return bblEdges;
+
+	for (auto successor : edges.find(bblNumber)->second) {
+		bblEdges.push_back(llvm::json::Value(successor));	
 	}
 	return bblEdges;
 }
@@ -552,7 +554,7 @@ llvm::json::Array VirtualTimeManager::getAllCalledFnsFromBBL(long bblNumber,
 
 llvm::json::Object VirtualTimeManager::composeBBLObject(long bblNumber,
 	std::unordered_map<long, std::vector<std::string>>& calledFunctions,
-	std::unordered_map<long, long>& edges, long bblWeight) {
+	std::unordered_map<long, std::vector<long>>& edges, long bblWeight) {
 
 	llvm::json::Object bblObj;
 
@@ -579,7 +581,7 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
     std::string sourceFileName = M.getSourceFileName();
 
     std::unordered_map<long, std::vector<std::string>> calledFunctions;
-	std::unordered_map<long, long> edges;
+	std::unordered_map<long, std::vector<long>> edges;
 	std::unordered_map<long, long> bblWeights;
 	std::vector<long> returningBlocks;
 	std::unordered_map<int, long> localToGlobalBBL;
@@ -670,8 +672,17 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 			for (MachineBasicBlock * successorBlock : MBB.successors()) {
 				long successorBlockGlobalNumber = localToGlobalBBL.find(
 					successorBlock->getNumber())->second;
-				edges.insert(std::make_pair(currMBBGlobalNumber,
-					successorBlockGlobalNumber));
+
+				if (edges.count(currMBBGlobalNumber)) {
+					// key already exists
+					edges.at(currMBBGlobalNumber).push_back(
+						successorBlockGlobalNumber);
+				} else {
+					edges.insert(std::make_pair(
+						currMBBGlobalNumber, std::vector<long>()));
+					edges.at(currMBBGlobalNumber).push_back(
+						successorBlockGlobalNumber);
+				}
    			}
 		}
 
