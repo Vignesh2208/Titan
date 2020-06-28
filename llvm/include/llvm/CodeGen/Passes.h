@@ -452,6 +452,8 @@ namespace llvm {
 
   extern char &VirtualTimeManagerID;
 
+  extern char &VirtualTimeLoopIRPassID;
+
 } // End llvm namespace
 
 #endif

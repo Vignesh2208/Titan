@@ -717,3 +717,4 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 
     return ret;
 }
+

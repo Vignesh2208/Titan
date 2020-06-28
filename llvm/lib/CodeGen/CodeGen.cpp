@@ -110,6 +110,7 @@ void llvm::initializeCodeGen(PassRegistry &Registry) {
   initializeWinEHPreparePass(Registry);
   initializeXRayInstrumentationPass(Registry);
   initializeVirtualTimeManagerPass(Registry);
+  initializeVirtualTimeLoopIRPassPass(Registry);
 }
 
 void LLVMInitializeCodeGen(LLVMPassRegistryRef R) {

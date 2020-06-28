@@ -675,6 +675,9 @@ void TargetPassConfig::addIRPasses() {
 
   // Expand reduction intrinsics into shuffle sequences if the target wants to.
   addPass(createExpandReductionsPass());
+
+  addPass(&VirtualTimeLoopIRPassID, false);
+  //addPass(createVirtualTimeLoopIRPass());
 }
 
 /// Turn exception handling constructs into something the code generators can

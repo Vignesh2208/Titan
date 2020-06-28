@@ -29,6 +29,10 @@ llist thread_info_list;
 extern void ns_2_timespec(s64 nsec, struct timespec * ts);
 extern void ns_2_timeval(s64 nsec, struct timeval * tv);
 
+void SetLoopLookahead(int initValue, int finalValue, int stepValue) {
+	printf("Called SetLoopLookahead: init: %d, final: %d, step: %d\n",
+		initValue, finalValue, stepValue);
+}
 
 void SetPktSendTime(int payloadHash, int payloadLen, s64 pktSendTimeStamp) {
 	set_pkt_send_time(payloadHash, payloadLen, pktSendTimeStamp);

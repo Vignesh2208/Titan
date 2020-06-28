@@ -415,7 +415,9 @@ void initializeWriteBitcodePassPass(PassRegistry&);
 void initializeWriteThinLTOBitcodePass(PassRegistry&);
 void initializeXRayInstrumentationPass(PassRegistry&);
 
+void initializeVirtualTimeLoopIRPassPass(PassRegistry&);
 void initializeVirtualTimeManagerPass(PassRegistry&);
+
 
 } // end namespace llvm
 

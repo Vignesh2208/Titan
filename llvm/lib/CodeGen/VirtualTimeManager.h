@@ -70,3 +70,4 @@ namespace llvm {
     StringRef getPassName() const override { return X86_VIRTUAL_TIME_MANAGER_PASS_NAME; }
   };
 }
+
