@@ -27,17 +27,13 @@ extern wait_queue_head_t * syscall_wait_wqueue;
 
 extern int run_usermode_tracer_spin_process(char *path, char **argv,
         char **envp, int wait);
-extern void signal_cpu_worker_resume(tracer * curr_tracer);
-extern s64 get_dilated_time(struct task_struct * task);
-extern int cleanup_experiment_components(void);
+extern void SignalCpuWorkerResume(tracer * curr_tracer);
+extern s64 GetCurrentVirtualTime(struct task_struct * task);
+extern int CleanupExperimentComponents(void);
 
 
 
-
-
-
-
-struct task_struct* get_task_ns(pid_t pid, struct task_struct * parent) {
+struct task_struct* GetTaskNs(pid_t pid, struct task_struct * parent) {
 	if (!parent)
 		return NULL;
 	int num_children = 0;
@@ -58,7 +54,7 @@ struct task_struct* get_task_ns(pid_t pid, struct task_struct * parent) {
 			struct task_struct, sibling);
 		if (task_pid_nr_ns(taskRecurse, task_active_pid_ns(taskRecurse)) == pid)
 			return taskRecurse;
-		t =  get_task_ns(pid, taskRecurse);
+		t =  GetTaskNs(pid, taskRecurse);
 		if (t != NULL)
 			return t;
 	}
@@ -71,7 +67,7 @@ struct task_struct* get_task_ns(pid_t pid, struct task_struct * parent) {
 Remove head of schedule queue and return the pid of the head element.
 Assumes tracer write lock is acquired prior to call.
 ***/
-int pop_schedule_list(tracer * tracer_entry) {
+int PopScheduleList(tracer * tracer_entry) {
 	if (!tracer_entry)
 		return 0;
 	lxc_schedule_elem * head;
@@ -89,7 +85,7 @@ int pop_schedule_list(tracer * tracer_entry) {
 Requeue schedule queue, i.e pop from head and add to tail. Assumes tracer
 write lock is acquired prior to call
 ***/
-void requeue_schedule_list(tracer * tracer_entry) {
+void RequeueScheduleList(tracer * tracer_entry) {
 	if (tracer_entry == NULL)
 		return;
 	llist_requeue(&tracer_entry->schedule_queue);
@@ -100,7 +96,7 @@ void requeue_schedule_list(tracer * tracer_entry) {
 Remove head of schedule queue and return the task_struct of the head element.
 Assumes tracer write lock is acquired prior to call.
 ***/
-lxc_schedule_elem * pop_run_queue(tracer * tracer_entry) {
+lxc_schedule_elem * PopRunQueue(tracer * tracer_entry) {
 	if (!tracer_entry)
 		return 0;
 	return llist_pop(&tracer_entry->run_queue);
@@ -110,7 +106,7 @@ lxc_schedule_elem * pop_run_queue(tracer * tracer_entry) {
 Requeue schedule queue, i.e pop from head and add to tail. Assumes tracer
 write lock is acquired prior to call
 ***/
-void requeue_run_queue(tracer * tracer_entry) {
+void RequeueRunQueue(tracer * tracer_entry) {
 	if (!tracer_entry)
 		return;
 	llist_requeue(&tracer_entry->run_queue);
@@ -120,7 +116,7 @@ void requeue_run_queue(tracer * tracer_entry) {
 Assumes tracer write lock is acquired prior to call. Must return with lock
 still held
 */
-void clean_up_schedule_list(tracer * tracer_entry) {
+void CleanUpScheduleList(tracer * tracer_entry) {
 
 	int pid = 1;
 	struct pid *pid_struct;
@@ -150,7 +146,7 @@ void clean_up_schedule_list(tracer * tracer_entry) {
 	}
 
 	while ( pid != 0) {
-		pid = pop_schedule_list(tracer_entry);
+		pid = PopScheduleList(tracer_entry);
 		if (pid != 0) {
 			d_task = hmap_get_abs(&get_dilated_task_struct_by_pid, pid);
 			if (d_task != NULL) {
@@ -161,13 +157,13 @@ void clean_up_schedule_list(tracer * tracer_entry) {
 	tracer_entry->main_task = NULL;
 }
 
-void clean_up_run_queue(tracer * tracer_entry) {
+void CleanUpRunQueue(tracer * tracer_entry) {
 
 	if (!tracer_entry)
 		return;
 
 	while (llist_size(&tracer_entry->run_queue)) {
-		pop_run_queue(tracer_entry);
+		PopRunQueue(tracer_entry);
 	}
 }
 
@@ -176,7 +172,7 @@ void clean_up_run_queue(tracer * tracer_entry) {
 /*
 Assumes tracer read lock is acquired before function call
 */
-int schedule_list_size(tracer * tracer_entry) {
+int ScheduleListSize(tracer * tracer_entry) {
 	if (!tracer_entry)
 		return 0;
 	return llist_size(&tracer_entry->schedule_queue);
@@ -186,7 +182,7 @@ int schedule_list_size(tracer * tracer_entry) {
 /*
 Assumes tracer read lock is acquired before function call
 */
-int run_queue_size(tracer * tracer_entry) {
+int RunQueueSize(tracer * tracer_entry) {
 	if (!tracer_entry)
 		return 0;
 	return llist_size(&tracer_entry->run_queue);
@@ -198,8 +194,8 @@ int run_queue_size(tracer * tracer_entry) {
 Assumes tracer write lock is acquired prior to call. Must return with lock still
 acquired. It is assumed that tracee_pid is according to the outermost namespace
 */
-void add_to_tracer_schedule_queue(tracer * tracer_entry,
-                                  struct task_struct * tracee) {
+void AddToTracerScheduleQueue(tracer * tracer_entry,
+							  struct task_struct * tracee) {
 
 	lxc_schedule_elem * new_elem;
 	//represents base time allotted to each process by the Kronos scheduler
@@ -215,12 +211,6 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	BUG_ON(!tracee);
 	tracee_pid = tracee->pid;
 
-	/*
-	if (!tracee) {
-		PDEBUG_I("add_to_tracer_schedule_queue: tracee: %d not found!\n",
-				 tracee_pid);
-		return;
-	}*/
 
 	if (hmap_get_abs(&get_dilated_task_struct_by_pid, tracee_pid)) {
 		PDEBUG_I("Tracee : %d already exists !\n", tracee_pid);
@@ -228,12 +218,12 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	}
 	
 	if (experiment_status == STOPPING) {
-		PDEBUG_I("add_to_tracer_schedule_queue: cannot add when experiment is "
+		PDEBUG_I("AddToTracerScheduleQueue: cannot add when experiment is "
 				 "stopping !\n");
 		return;
 	}
 
-	PDEBUG_I("add_to_tracer_schedule_queue: "
+	PDEBUG_I("AddToTracerScheduleQueue: "
 	         "Adding new tracee %d to tracer-id: %d\n",
 	         tracee->pid, tracer_entry->tracer_id);
 
@@ -246,7 +236,8 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	}
 	//memset(new_elem, 0, sizeof(lxc_schedule_elem));
 
-	tracee_dilated_task_struct = (struct dilated_task_struct *)kmalloc(sizeof(struct dilated_task_struct), GFP_KERNEL);
+	tracee_dilated_task_struct = (struct dilated_task_struct *)kmalloc(
+		sizeof(struct dilated_task_struct), GFP_KERNEL);
 	if (!tracee_dilated_task_struct) {
 		PDEBUG_E("Tracer %d, tracee: %d. Failed to alot Memory to add tracee\n",
 		         tracer_entry->tracer_id, tracee->pid);
@@ -285,13 +276,13 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 	//bitmap_zero((&tracee->cpus_allowed)->bits, 8);
 	//cpumask_set_cpu(tracer_entry->cpu_assignment, &tracee->cpus_allowed);
 
-	bind_to_cpu(tracee, tracer_entry->cpu_assignment);
+	BindToCpu(tracee, tracer_entry->cpu_assignment);
 
 	hmap_put_abs(&get_dilated_task_struct_by_pid, tracee->pid,
 		     tracee_dilated_task_struct);
-	PDEBUG_I("add_to_tracer_schedule_queue:  Tracee %d added successfully to "
+	PDEBUG_I("AddToTracerScheduleQueue:  Tracee %d added successfully to "
 			"tracer-id: %d. schedule list size: %d\n", tracee->pid,
-			tracer_entry->tracer_id, schedule_list_size(tracer_entry));
+			tracer_entry->tracer_id, ScheduleListSize(tracer_entry));
 
         sp.sched_priority = 99;
 	sched_setscheduler(tracee, SCHED_RR, &sp);
@@ -301,7 +292,7 @@ void add_to_tracer_schedule_queue(tracer * tracer_entry,
 }
 
 
-void add_to_pkt_info_queue(tracer * tracer_entry,
+void AddToPktInfoQueue(tracer * tracer_entry,
                            int payload_hash,
 			   int payload_len,
 			   s64 pkt_send_tstamp) {
@@ -324,11 +315,12 @@ void add_to_pkt_info_queue(tracer * tracer_entry,
 }
 
 
-void cleanup_pkt_info_queue(tracer * tracer_entry) {
+void CleanUpPktInfoQueue(tracer * tracer_entry) {
 
 	BUG_ON(!tracer_entry);
 	if (llist_size(&tracer_entry->pkt_info_queue))
-		PDEBUG_I("Cleaning up pkt info queue for tracer: %d, at time: %llu\n", tracer_entry->tracer_id, tracer_entry->curr_virtual_time);
+		PDEBUG_I("Cleaning up pkt info queue for tracer: %d, at time: %llu\n",
+			tracer_entry->tracer_id, tracer_entry->curr_virtual_time);
 
 	while(llist_size(&tracer_entry->pkt_info_queue)) {
 		pkt_info * head;
@@ -337,7 +329,7 @@ void cleanup_pkt_info_queue(tracer * tracer_entry) {
 	}
 }
 
-int get_num_enqueued_bytes(tracer * tracer_entry) {
+int GetNumEnqueuedBytes(tracer * tracer_entry) {
 	if (!tracer_entry)
 		return 0;
 	llist_elem * head = tracer_entry->pkt_info_queue.head;
@@ -353,7 +345,7 @@ int get_num_enqueued_bytes(tracer * tracer_entry) {
 	return total_enqueued_bytes;
 }
 
-s64 get_pkt_send_tstamp(tracer * tracer_entry, int payload_hash) {
+s64 GetPktSendTstamp(tracer * tracer_entry, int payload_hash) {
 	BUG_ON(!tracer_entry);
 
 	llist_elem * head = tracer_entry->pkt_info_queue.head;
@@ -384,11 +376,11 @@ s64 get_pkt_send_tstamp(tracer * tracer_entry, int payload_hash) {
 Assumes tracer write lock is acquired prior to call. Must return with lock still
 acquired. It is assumed that tracee_pid is according to the outermost namespace
 */
-void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid) {
+void RemoveFromTracerScheduleQueue(tracer * tracer_entry, int tracee_pid) {
 
 	lxc_schedule_elem * curr_elem;
 	lxc_schedule_elem * removed_elem;
-	struct task_struct * tracee = find_task_by_pid(tracee_pid);
+	struct task_struct * tracee = FindTaskByPid(tracee_pid);
 
 	llist_elem * head_1;
 	llist_elem * head_2;
@@ -439,7 +431,7 @@ void remove_from_tracer_schedule_queue(tracer * tracer_entry, int tracee_pid) {
 /**
 * write_buffer: <tracer_id>,<registration_type>,<optional_timeline_id>
 **/
-int register_tracer_process(char * write_buffer) {
+int RegisterTracerProcess(char * write_buffer) {
 
 	tracer * new_tracer;
 	uint32_t tracer_id;
@@ -452,7 +444,7 @@ int register_tracer_process(char * write_buffer) {
 	int num_args;
 
 
-	num_args = convert_string_to_array(write_buffer, api_args,
+	num_args = ConvertStringToArray(write_buffer, api_args,
 					  MAX_API_ARGUMENT_SIZE);
 
 	BUG_ON(num_args < 2);
@@ -492,11 +484,11 @@ int register_tracer_process(char * write_buffer) {
 	new_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
 
 	if (!new_tracer) {
-		new_tracer = alloc_tracer_entry(tracer_id);
+		new_tracer = AllocTracerEntry(tracer_id);
 		hmap_put_abs(&get_tracer_by_id, tracer_id, new_tracer);
 		hmap_put_abs(&get_tracer_by_pid, current->pid, new_tracer);
 	} else {
-		initialize_tracer_entry(new_tracer, tracer_id);
+		InitializeTracerEntry(new_tracer, tracer_id);
 		hmap_put_abs(&get_tracer_by_pid, current->pid, new_tracer);
 	}
 
@@ -524,10 +516,10 @@ int register_tracer_process(char * write_buffer) {
 	mutex_unlock(&exp_lock);
 
 
-	get_tracer_struct_write(new_tracer);
-	bind_to_cpu(current, new_tracer->timeline_assignment);
-	add_to_tracer_schedule_queue(new_tracer, current);
-	put_tracer_struct_write(new_tracer);
+	GetTracerStructWrite(new_tracer);
+	BindToCpu(current, new_tracer->timeline_assignment);
+	AddToTracerScheduleQueue(new_tracer, current);
+	PutTracerStructWrite(new_tracer);
 	PDEBUG_I("Register Tracer: Finished for tracer: %d\n", tracer_id);
 
 	//return the allotted timeline_id back to the tracer.
@@ -540,14 +532,14 @@ int register_tracer_process(char * write_buffer) {
 Assumes tracer write lock is acquired prior to call. Must return with write lock
 still acquired.
 */
-void update_all_children_virtual_time(tracer * tracer_entry, s64 time_increment) {
+void UpdateAllChildrenVirtualTime(tracer * tracer_entry, s64 time_increment) {
 	if (tracer_entry && tracer_entry->main_task) {
 
 		tracer_entry->round_start_virt_time += time_increment;
 		tracer_entry->curr_virtual_time = tracer_entry->round_start_virt_time;
 
-		if (schedule_list_size(tracer_entry) > 0)
-			set_children_time(tracer_entry, tracer_entry->curr_virtual_time, 0);
+		if (ScheduleListSize(tracer_entry) > 0)
+			SetChildrenTime(tracer_entry, tracer_entry->curr_virtual_time, 0);
 	}
 }
 
@@ -556,7 +548,7 @@ void update_all_children_virtual_time(tracer * tracer_entry, s64 time_increment)
 /*
 Assumes no tracer lock is acquired prior to call
 */
-void update_all_tracers_virtual_time(int timelineID) {
+void UpdateAllTracersVirtualTime(int timelineID) {
 	llist_elem * head;
 	llist * tracer_list;
 	tracer * curr_tracer;
@@ -569,16 +561,16 @@ void update_all_tracers_virtual_time(int timelineID) {
 	while (head != NULL) {
 
 		curr_tracer = (tracer*)head->item;
-		get_tracer_struct_write(curr_tracer);
+		GetTracerStructWrite(curr_tracer);
 		target_increment = curr_tracer->nxt_round_burst_length;
 
 		if (target_increment > 0) {
-			update_all_children_virtual_time(curr_tracer, target_increment);
+			UpdateAllChildrenVirtualTime(curr_tracer, target_increment);
 		} else {
 			PDEBUG_E("Tracer nxt round burst length is 0\n");
 		}
 		curr_tracer->nxt_round_burst_length = 0;
-		put_tracer_struct_write(curr_tracer);
+		PutTracerStructWrite(curr_tracer);
 		head = head->next;
 	}
 }
@@ -620,7 +612,7 @@ void wake_up_syscall_waiting_processes(tracer * tracer_entry) {
 	}
 }
 
-void wake_up_processes_waiting_on_syscalls(int timelineID) {
+void WakeUpProcessesWaitingOnSyscalls(int timelineID) {
 	llist_elem * head;
 	llist * tracer_list;
 	tracer * curr_tracer;
@@ -632,9 +624,9 @@ void wake_up_processes_waiting_on_syscalls(int timelineID) {
 
 	while (head != NULL) {
 		curr_tracer = (tracer*)head->item;
-		get_tracer_struct_write(curr_tracer);
+		GetTracerStructWrite(curr_tracer);
 		wake_up_syscall_waiting_processes(curr_tracer);
-		put_tracer_struct_write(curr_tracer);
+		PutTracerStructWrite(curr_tracer);
 		head = head->next;
 	}
 
@@ -647,7 +639,7 @@ void wake_up_processes_waiting_on_syscalls(int timelineID) {
   and run queues. These process-IDs are no longer a part of the VT experiment.
 **/
 
-int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
+int HandleTracerResults(tracer * curr_tracer, int * api_args, int num_args) {
 
 	struct pid *pid_struct;
 	struct task_struct * task;
@@ -660,7 +652,7 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 
 	BUG_ON(!curr_tracer->main_task);
 
-	get_tracer_struct_write(curr_tracer);
+	GetTracerStructWrite(curr_tracer);
 	for (i = 0; i < num_args; i++) {
 		pid_to_remove = api_args[i];
 		if (pid_to_remove <= 0)
@@ -669,27 +661,27 @@ int handle_tracer_results(tracer * curr_tracer, int * api_args, int num_args) {
 		PDEBUG_I("Handle tracer results: Tracer ID: %d, "
 			     "Ignoring Process: %d\n", curr_tracer->tracer_id,
 				 pid_to_remove);
-		struct task_struct * mappedTask = get_task_ns(pid_to_remove,
+		struct task_struct * mappedTask = GetTaskNs(pid_to_remove,
 			curr_tracer->main_task->base_task);
 
 		WARN_ON(mappedTask && mappedTask->pid != current->pid);
 		
 		if (mappedTask != NULL) {
-			remove_from_tracer_schedule_queue(curr_tracer, mappedTask->pid);
+			RemoveFromTracerScheduleQueue(curr_tracer, mappedTask->pid);
 		}
 	}
 
-	put_tracer_struct_write(curr_tracer);
+	PutTracerStructWrite(curr_tracer);
 
 	if (dilated_task && dilated_task->burst_target > 0) {
 		dilated_task->burst_target = 0;
-		signal_cpu_worker_resume(curr_tracer);
+		SignalCpuWorkerResume(curr_tracer);
 
 	}
 	return SUCCESS;
 }
 
-void wait_for_task_completion(tracer * curr_tracer,
+void WaitForTaskCompletion(tracer * curr_tracer,
 			      struct dilated_task_struct * relevant_task) {
 	if (!curr_tracer || !relevant_task) {
 		return;
@@ -709,7 +701,7 @@ void wait_for_task_completion(tracer * curr_tracer,
 	
 }
 
-void signal_cpu_worker_resume(tracer * curr_tracer) {
+void SignalCpuWorkerResume(tracer * curr_tracer) {
 
 	if (!curr_tracer)
 		return;
@@ -721,17 +713,17 @@ void signal_cpu_worker_resume(tracer * curr_tracer) {
 	wake_up_interruptible(curr_tracer->w_queue);
 }
 
-int handle_stop_exp_cmd() {
+int HandleStopExpCmd() {
 	experiment_status = STOPPING;
-	initiate_experiment_stop_operation();
-	return cleanup_experiment_components();
+	InitiateExperimentStopOperation();
+	return CleanupExperimentComponents();
 }
 
-int handle_initialize_exp_cmd(int exp_type, int num_timelines,
+int HandleInitializeExpCmd(int exp_type, int num_timelines,
 			      int num_expected_tracers) {
 
 	if (num_expected_tracers) {
-		return initialize_experiment_components(exp_type, num_timelines,
+		return InitializeExperimentComponents(exp_type, num_timelines,
 							num_expected_tracers);
 	}
 	return FAIL;
@@ -739,7 +731,7 @@ int handle_initialize_exp_cmd(int exp_type, int num_timelines,
 
 
 
-s64 get_dilated_time(struct task_struct * task) {
+s64 GetCurrentVirtualTime(struct task_struct * task) {
 	tracer * associated_tracer;
 	lxc_schedule_elem * curr_elem;
 	llist_elem * head;
@@ -763,17 +755,17 @@ s64 get_dilated_time(struct task_struct * task) {
 /**
 * write_buffer: <pid> of process
 **/
-s64 handle_gettimepid(char * write_buffer) {
+s64 HandleGettimepid(char * write_buffer) {
 
 	struct pid *pid_struct;
 	struct task_struct * task;
 	int pid;
 
 	pid = atoi(write_buffer);
-	task = find_task_by_pid(pid);
+	task = FindTaskByPid(pid);
 	if (!task)
 		return 0;
-	return get_dilated_time(task);
+	return GetCurrentVirtualTime(task);
 }
 
 

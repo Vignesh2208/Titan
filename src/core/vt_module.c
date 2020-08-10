@@ -4,11 +4,11 @@
 #include "sync_experiment.h"
 #include "general_commands.h"
 
-/*
+/**
 Has basic functionality for the Kernel Module itself. It defines how the
 userland process communicates with the kernel module,
 as well as what should happen when the kernel module is initialized and removed.
-*/
+**/
 
 /** LOCAL DECLARATIONS **/
 int tracer_num;
@@ -74,10 +74,10 @@ static const struct file_operations proc_file_fops = {
 /***
 Gets the PID of our synchronizer spinner task (only in 64 bit)
 ***/
-int getSpinnerPid(struct subprocess_info *info, struct cred *new) {
+int GetSpinnerPid(struct subprocess_info *info, struct cred *new) {
   loop_task = current;
   printk(KERN_INFO "Titan: Loop Task Started. Pid: %d\n", current->pid);
-  return 0;
+  return loop_task->pid;
 }
 
 
@@ -86,12 +86,12 @@ Hack to get 64 bit running correctly. Starts a process that will just loop
 while the experiment is going on. Starts an executable specified in the path
 in user space from kernel space.
 ***/
-int run_usermode_synchronizer_process(char *path, char **argv, char **envp,
-                                      int wait) {
+int RunUserModeSynchronizerProcess(char *path, char **argv, char **envp,
+                                   int wait) {
   struct subprocess_info *info;
   gfp_t gfp_mask = (wait == UMH_NO_WAIT) ? GFP_ATOMIC : GFP_KERNEL;
 
-  info = call_usermodehelper_setup(path, argv, envp, gfp_mask, getSpinnerPid,
+  info = call_usermodehelper_setup(path, argv, envp, gfp_mask, GetSpinnerPid,
                                    NULL, NULL);
   if (info == NULL) return -ENOMEM;
   return call_usermodehelper_exec(info, wait);
@@ -121,8 +121,8 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
    * wrong cmds: return ENOTTY (inappropriate ioctl) before access_ok()
    */
   if (_IOC_TYPE(cmd) != VT_IOC_MAGIC) {
-	PDEBUG_V("VT-IO: Error ENOTTY\n");
-	return -ENOTTY;
+    PDEBUG_V("VT-IO: Error ENOTTY\n");
+    return -ENOTTY;
   }
 
   /*
@@ -137,12 +137,13 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
     err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
 
   if (err) {
-	PDEBUG_V("VT-IO: Error Access\n");
-	return -EFAULT;
+    PDEBUG_V("VT-IO: Error Access\n");
+    return -EFAULT;
   }
 
   if (cmd != VT_INITIALIZE_EXP) {
-    dilated_task = hmap_get_abs(&get_dilated_task_struct_by_pid, (int)current->pid);
+    dilated_task = hmap_get_abs(&get_dilated_task_struct_by_pid,
+                                (int)current->pid);
   } else {
     dilated_task = NULL;
   }
@@ -150,79 +151,79 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
   switch (cmd) {
 	
     case VT_UPDATE_TRACER_CLOCK:
-      return handle_vt_update_tracer_clock(arg, dilated_task);
+      return HandleVtUpdateTracerClock(arg, dilated_task);
 	
     case VT_WRITE_RESULTS:
-      return handle_vt_write_results(arg, dilated_task);
+      return HandleVtWriteResults(arg, dilated_task);
 
     case VT_REGISTER_TRACER:
-      return handle_vt_register_tracer(arg, dilated_task);
+      return HandleVtRegisterTracer(arg, dilated_task);
 
     case VT_ADD_PROCESSES_TO_SQ:
-      return handle_vt_add_processes_to_sq(arg, dilated_task);
+      return HandleVtAddProcessesToSchQueue(arg, dilated_task);
 
     case VT_SYNC_AND_FREEZE:
-      return handle_vt_sync_freeze();
+      return HandleVtSyncFreeze();
       
     case VT_INITIALIZE_EXP:
-      return handle_vt_initialize_exp(arg);
+      return HandleVtInitializeExp(arg);
 
     case VT_GETTIME_PID:
-      return handle_vt_gettimepid(arg);
+      return HandleVtGettimePid(arg);
 
     case VT_GETTIME_TRACER:
-      return handle_vt_gettime_tracer(arg, dilated_task);
+      return HandleVtGettimeTracer(arg, dilated_task);
       
     case VT_STOP_EXP:
-      return handle_vt_stop_exp();
+      return HandleVtStopExp();
       
     case VT_PROGRESS_BY:
-      return handle_vt_progress_by(arg);
+      return HandleVtProgressBy(arg);
       
     case VT_PROGRESS_TIMELINE_BY:
-      return handle_vt_progress_timeline_by(arg);
+      return HandleVtProgressTimelineBy(arg);
       
     case VT_WAIT_FOR_EXIT:
-      return handle_vt_wait_for_exit(arg, dilated_task);
+      return HandleVtWaitForExit(arg, dilated_task);
 
     case VT_SLEEP_FOR:
-      return handle_vt_sleep_for(arg, dilated_task);
+      return HandleVtSleepFor(arg, dilated_task);
 
     case VT_RELEASE_WORKER:
-      return handle_vt_release_worker(arg, dilated_task);
+      return HandleVtReleaseWorker(arg, dilated_task);
 
     case VT_SET_RUNNABLE:
-      return handle_vt_set_runnable(arg, dilated_task);
+      return HandleVtSetRunnable(arg, dilated_task);
 
     case VT_GETTIME_MY_PID:
-      return handle_vt_gettime_my_pid(arg);
+      return HandleVtGettimeMyPid(arg);
 
     case VT_ADD_TO_SQ:
-      return handle_vt_add_to_sq(arg);
+      return HandleVtAddToSchQueue(arg);
 
     case VT_SYSCALL_WAIT:
-      return handle_vt_syscall_wait(arg, dilated_task);
+      return HandleVtSyscallWait(arg, dilated_task);
 
     case VT_SET_PACKET_SEND_TIME:
-      return handle_vt_set_packet_send_time(arg, dilated_task);
+      return HandleVtSetPacketSendTime(arg, dilated_task);
 	
     case VT_GET_PACKET_SEND_TIME:
-      return handle_vt_get_packet_send_time(arg);
+      return HandleVtGetPacketSendTime(arg);
 
     case VT_GET_NUM_ENQUEUED_BYTES:
-      return handle_vt_get_num_queued_bytes(arg);
+      return HandleVtGetNumQueuedBytes(arg);
 	
     case VT_SET_EAT:
-      return handle_vt_set_eat(arg);
+      return HandleVtSetEat(arg);
 
     case VT_GET_EAT:
-      return handle_vt_get_eat(arg, dilated_task);
+      return HandleVtGetEat(arg, dilated_task);
 
     case VT_SET_PROCESS_LOOKAHEAD:
-      return handle_vt_set_process_lookahead(arg, dilated_task);
+      return HandleVtSetProcessLookahead(arg, dilated_task);
 
     case VT_GET_TRACER_LOOKAHEAD:
-      return handle_vt_get_tracer_lookahead(arg);
+      return HandleVtGetTracerLookahead(arg);
 
 	
     default:
@@ -274,7 +275,7 @@ int __init my_module_init(void) {
   char *argv[] = {"/bin/x64_synchronizer", NULL};
   static char *envp[] = {"HOME=/", "TERM=linux",
                          "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL};
-  run_usermode_synchronizer_process(argv[0], argv, envp, UMH_NO_WAIT);
+  RunUserModeSynchronizerProcess(argv[0], argv, envp, UMH_NO_WAIT);
 #endif
 
   initialization_status = NOT_INITIALIZED;
@@ -312,13 +313,13 @@ void __exit my_module_exit(void) {
 
   if (tracer_num > 0) {
     // Free all tracer structs from previous experiment if any
-    free_all_tracers();
+    FreeAllTracers();
     tracer_num = 0;
   }
 
   /* Kill the looping task */
 #ifdef __x86_64
-  if (loop_task != NULL) kill_p(loop_task, SIGKILL);
+  if (loop_task != NULL) SendSignalToProcess(loop_task, SIGKILL);
 #endif
   PDEBUG_A("MODULE UNLOADED\n");
 }

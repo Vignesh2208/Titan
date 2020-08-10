@@ -16,6 +16,7 @@
 #define FD_TYPE_TIMERFD 0x2
 #define MAX_ASSIGNABLE_FD 1024
 
+typedef long long s64;
 
 typedef struct fdInfoStruct {
     int fd;
@@ -49,15 +50,19 @@ typedef struct ThreadInfoStruct {
 
 s64 GetCurrentTime();
 void HandleVTExpEnd(int ThreadID);
+
 /*** For Socket Handling ***/
-void addSocket(int ThreadID, int sockFD, int isNonBlocking);
-int isSocketFd(int ThreadID, int sockFD);
-int isSocketFdNonBlocking(int ThreadID, int sockFD);
+void AddSocket(int ThreadID, int sockFD, int isNonBlocking);
+int IsSocketFd(int ThreadID, int sockFD);
+int IsSocketFdNonBlocking(int ThreadID, int sockFD);
 
 /*** For TimerFd Handlng ***/
-void  addTimerFd(int ThreadID, int fd, int isNonBlocking);
-int isTimerFd(int ThreadID, int fd);
-int isTimerFdNonBlocking(int ThreadID, int fd);
-int isTimerArmed(int ThreadID, int fd);
+void  AddTimerFd(int ThreadID, int fd, int isNonBlocking);
+int IsTimerFd(int ThreadID, int fd);
+int IsTimerFdNonBlocking(int ThreadID, int fd);
+int IsTimerArmed(int ThreadID, int fd);
+
+/*** For setting lookaheads ***/
+int SetLookahead(s64 bulkLookaheadValue, long spLookaheadValue);
 
 #endif

@@ -4,15 +4,17 @@
 #include <assert.h>
 #include "VT_functions.h"
 #include "utility_functions.h"
+#include "lookahead_parsing.h"
 #include "vtl_logic.h"
 #include "fd_handling.h"
 
 
 
-long long currBurstLength = 0;
-long long specifiedBurstLength = 0;
-long long currBBID = 0;
-long long currBBSize = 0;
+s64 currBurstLength = 0;
+s64 specifiedBurstLength = 0;
+s64 currBBID = 0;
+s64 currBBSize = 0;
+s64 currLoopID = 0;
 int expStopping = 0;
 int interesting = 0;
 int vtInitializationComplete = 0;
@@ -23,19 +25,59 @@ int globalThreadID = 0;
 hashmap thread_info_map;
 llist thread_info_list;
 
+struct lookahead_map * bblLookAheadMap = NULL;
+struct lookahead_map * loopLookAheadMap = NULL;
+
 #define FLIP_ALWAYS_ON_THRESHOLD 100000000
 
 
 extern void ns_2_timespec(s64 nsec, struct timespec * ts);
 extern void ns_2_timeval(s64 nsec, struct timeval * tv);
 
-void SetLoopLookahead(int initValue, int finalValue, int stepValue) {
-	printf("Called SetLoopLookahead: init: %d, final: %d, step: %d\n",
-		initValue, finalValue, stepValue);
+//! Returns loop lookahead for a specific loop number
+s64 GetLoopLookAhead(int loopNumber) {
+    if (!loopLookAheadMap ||
+        (loopNumber < loopLookAheadMap->start_offset) ||
+        (loopNumber > loopLookAheadMap->finish_offset))
+        return 0;
+    return loopLookAheadMap->lookaheads[loopNumber - loopLookAheadMap->start_offset];
 }
 
+//! Returns lookahead from a specific basic block
+s64 GetBBLLookAhead(int bblNumber) {
+    if (!bblLookAheadMap ||
+        (bblNumber < bblLookAheadMap->start_offset) ||
+        (bblNumber > bblLookAheadMap->finish_offset))
+        return 0;
+    return bblLookAheadMap->lookaheads[bblNumber - bblLookAheadMap->start_offset];
+}
+
+//! Sets the lookahead for a specific loop by estimating the number of iterations it would make
+void SetLoopLookahead(int initValue, int finalValue, int stepValue) {
+	printf("SetLoopLookahead, return address: %p, currBBID: %llu, currLoopID: %llu\n",
+        __builtin_return_address(0), currBBID, currLoopID);
+	printf("Called SetLoopLookahead: init: %d, final: %d, step: %d\n",
+		initValue, finalValue, stepValue);
+    if (!vtInitializationComplete)
+        return;
+    int numIterations = 0;
+    if ((finalValue > initValue && stepValue > 0) ||
+        (finalValue < initValue && stepValue < 0))
+        numIterations = (finalValue - initValue)/stepValue;
+    s64 loop_lookahead = GetLoopLookAhead((int)currLoopID)*numIterations;
+    SetLookahead(loop_lookahead, 0);
+}
+
+//! Sets the lookahead at a specific basic block
+void SetBBLLookAhead(int bblNumber) {
+    if (!vtInitializationComplete)
+        return;
+    SetLookahead(0, GetBBLLookAhead(bblNumber));
+}
+
+//! Sets packet send time for a specific packet
 void SetPktSendTime(int payloadHash, int payloadLen, s64 pktSendTimeStamp) {
-	set_pkt_send_time(payloadHash, payloadLen, pktSendTimeStamp);
+	SetPktSendTimeAPI(payloadHash, payloadLen, pktSendTimeStamp);
 }
 
 
@@ -64,7 +106,7 @@ void CopyAllSpecialFds(int FromProcessID, int ToProcessID) {
 
 }
 
-
+//! Makes the specific thread sleep for a duration (nanoseconds) in virtual time
 void SleepForNS(int ThreadID, int64_t duration) {
 
     if (duration <= 0)
@@ -84,12 +126,12 @@ void SleepForNS(int ThreadID, int64_t duration) {
     currThreadInfo->stack.currBBSize = currBBSize;
     currThreadInfo->stack.alwaysOn = alwaysOn;
 
-    ret = vt_sleep_for(duration);
+    ret = VtSleepFor(duration);
 
     if (ret < 0)
 	    HandleVTExpEnd(ThreadID);
 
-    currBurstLength = mark_burst_complete(1);
+    currBurstLength = MarkBurstComplete(1);
     specifiedBurstLength = currBurstLength;
     if (currBurstLength <= 0)
         HandleVTExpEnd(ThreadID);
@@ -105,42 +147,55 @@ void SleepForNS(int ThreadID, int64_t duration) {
 	
 }
 
+//! Returns current virtual time as timespec
 void GetCurrentTimespec(struct timespec *ts) {
-    ns_2_timespec(get_current_vt_time(), ts);
+    ns_2_timespec(GetCurrentVtTime(), ts);
 }
 
+//! Returns current virtual time as timeval
 void GetCurrentTimeval(struct timeval * tv) {
-    ns_2_timeval(get_current_vt_time(), tv);
+    ns_2_timeval(GetCurrentVtTime(), tv);
 }
 
+//! Returns earliest arrival time of any packet intended for this node 
+s64 GetPacketEAT() {
+    return GetEarliestArrivalTime();
+}
 
-s64 getPacketEAT() {
-    // returns earliest arrival time of any packet intended for this tracer
+//! Common wrapper to set a lookahead for this node
+int SetLookahead(s64 bulkLookaheadValue, long spLookaheadValue) {
+    if (bulkLookaheadValue || spLookaheadValue)
+        return SetProcessLookahead(bulkLookaheadValue, spLookaheadValue);
     return 0;
 }
 
-long getBBLLookahead() {
-    // returns shortest path lookahead from BBL
-    return 0;
-}
-
-int setLookahead(s64 bulkLookaheadValue, long spLookaheadValue) {
-    return 0;
-}
-
+//! Returns current virtual time as nanoseconds
 s64 GetCurrentTime() {
     if (currBurstLength > 0 && specifiedBurstLength > 0)
-    	return get_current_vt_time() + specifiedBurstLength - currBurstLength;
+    	return GetCurrentVtTime() + specifiedBurstLength - currBurstLength;
     else
-	return get_current_vt_time();
+	    return GetCurrentVtTime();
 }
 
+//! Called when the virtual time experiment is about to end
 void HandleVTExpEnd(int ThreadID) {
     printf("Process: %d exiting VT experiment !\n", ThreadID);
     expStopping = 1;
+    if (loopLookAheadMap) {
+        free(loopLookAheadMap->lookaheads);
+        free(loopLookAheadMap);
+        loopLookAheadMap = NULL;
+    }
+
+    if (bblLookAheadMap) {
+        free(bblLookAheadMap->lookaheads);
+        free(bblLookAheadMap);
+        bblLookAheadMap = NULL;
+    }
     exit(0);
 }
 
+//! Deallocates thread specific information
 void CleanupThreadInfo(ThreadInfo * relevantThreadInfo) {
     if (!relevantThreadInfo)
         return;
@@ -157,6 +212,7 @@ void CleanupThreadInfo(ThreadInfo * relevantThreadInfo) {
 	
 }
 
+//! Allots thread specific information
 ThreadInfo * AllotThreadInfo(int ThreadID, int processPID) {
     ThreadInfo * currThreadInfo = NULL;
     if (!hmap_get_abs(&thread_info_map, ThreadID)) {
@@ -181,7 +237,7 @@ ThreadInfo * AllotThreadInfo(int ThreadID, int processPID) {
     return currThreadInfo;
 }
 
-
+//! Called by a thread when it is about to yield its CPU
 void YieldVTBurst(int ThreadID, int save, long syscall_number) {
 
 
@@ -199,9 +255,6 @@ void YieldVTBurst(int ThreadID, int save, long syscall_number) {
     currThreadInfo->in_callback = TRUE;
 
     if (currThreadInfo->yielded == 0) {
-	    //printf("Yielding VT Burst. ThreadID: %d. Syscall number: %d!. In_Callback = %d\n", ThreadID, syscall_number, currThreadInfo->in_callback);
-    	    //fflush(stdout);
-
 	    currThreadInfo->yielded = TRUE;
 	    if (save) {
             currThreadInfo->stack.currBBID = currBBID;
@@ -209,13 +262,14 @@ void YieldVTBurst(int ThreadID, int save, long syscall_number) {
             currThreadInfo->stack.alwaysOn = alwaysOn;
 	    }
 
-	    release_worker();
+	    ReleaseWorker();
             
     }
     currThreadInfo->in_callback = FALSE;
 	
 }
 
+//! Called by a thread to indicate that it has completed its previous execution burst
 void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
     if (!currThreadInfo)
@@ -229,12 +283,6 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
 
     currThreadInfo->in_force_completed = TRUE;
 
-    //printf("Force Complete Burst. Paused ThreadID: %d. "
-    //       "Syscall number: %d!\n", ThreadID, syscall_number);
-    //fflush(stdout);
-
-    
-
     if (save && currThreadInfo) {
         currThreadInfo->stack.currBBID = currBBID;
         currThreadInfo->stack.currBBSize = currBBSize;
@@ -243,7 +291,7 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
 
     
 
-    currBurstLength = mark_burst_complete(0);
+    currBurstLength = MarkBurstComplete(0);
     specifiedBurstLength = currBurstLength;
 
     if (currBurstLength <= 0)
@@ -259,10 +307,6 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     	currBBSize = currThreadInfo->stack.currBBSize;
     }
 
-    //printf("Force Complete Burst. Resumed ThreadID: %d. "
-    //       "Syscall number: %d!\n", ThreadID, syscall_number);
-    //fflush(stdout);
-    
     if (currThreadInfo->yielded == TRUE)
     	currThreadInfo->yielded = FALSE;
 
@@ -270,6 +314,8 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     	currThreadInfo->in_force_completed = FALSE;
 }
 
+
+//! Called by a thread to indicate that it has completed its previous execution burst
 void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
 
     
@@ -280,7 +326,7 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
         currThreadInfo->stack.alwaysOn = alwaysOn;  
     }
 
-    currBurstLength = finish_burst();
+    currBurstLength = FinishBurst();
     specifiedBurstLength = currBurstLength;
     if (currBurstLength <= 0)
         HandleVTExpEnd(currThreadInfo->pid);
@@ -293,18 +339,17 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     currBBSize = currThreadInfo->stack.currBBSize;
 }
 
+
+//! Called in the forked child process as soon as it starts
 void AfterForkInChild(int ThreadID, int ParentProcessID) {
 
     // destroy existing hmap
     ThreadInfo * currThreadInfo;
     ThreadInfo * tmp;
-    
 
 
-    currThreadInfo = AllotThreadInfo(ThreadID, ThreadID);
-     
+    currThreadInfo = AllotThreadInfo(ThreadID, ThreadID);     
     assert(currThreadInfo != NULL);
-
     currBurstLength = 0;
     currBBID = 0;
     currBBSize = 0;
@@ -316,7 +361,7 @@ void AfterForkInChild(int ThreadID, int ParentProcessID) {
     printf("Adding new child process\n");
     fflush(stdout);
 
-    add_to_tracer_sq(globalTracerID);
+    AddToTracerSchQueue(globalTracerID);
     globalThreadID = syscall(SYS_gettid);
     SignalBurstCompletion(currThreadInfo, 1);
 
@@ -339,6 +384,7 @@ void AfterForkInChild(int ThreadID, int ParentProcessID) {
     currThreadInfo->in_callback = FALSE;
 }
 
+//! Called at the start of thread spawned by this process
 void ThreadStart(int ThreadID) {
 
     ThreadInfo * currThreadInfo;
@@ -353,13 +399,14 @@ void ThreadStart(int ThreadID) {
     currThreadInfo->in_callback = TRUE;
     printf("Adding new Thread: %d\n", ThreadID);
     fflush(stdout);
-    add_to_tracer_sq(globalTracerID);
+    AddToTracerSchQueue(globalTracerID);
     SignalBurstCompletion(currThreadInfo, 0);
     printf("Resuming new Thread with Burst of length: %llu\n", currBurstLength);
     fflush(stdout);
     currThreadInfo->in_callback = FALSE;
 }
 
+//! Called when a thread is about to finish
 void ThreadFini(int ThreadID) {
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
@@ -379,12 +426,13 @@ void ThreadFini(int ThreadID) {
     hmap_remove_abs(&thread_info_map, ThreadID);
     
     if (!expStopping)
-    	finish_burst_and_discard(); 
+    	FinishBurstAndDiscard(); 
     currThreadInfo->in_callback = FALSE;
     free(currThreadInfo);  
 	 
 }
 
+//! Called when the whole application is about to finish
 void AppFini(int ThreadID) {
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
@@ -399,7 +447,7 @@ void AppFini(int ThreadID) {
     fflush(stdout);
 
     if (!expStopping)
-	finish_burst_and_discard();  
+	FinishBurstAndDiscard();  
 
     while(llist_size(&thread_info_list)) {
        currThreadInfo = llist_pop(&thread_info_list);
@@ -417,6 +465,7 @@ void AppFini(int ThreadID) {
     hmap_destroy(&thread_info_map);
 }
 
+//! Called before a syscall which may involve some sleeping/timed wait like select, poll etc
 void TriggerSyscallWait(int ThreadID, int save) {
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
     if (!currThreadInfo)
@@ -427,37 +476,31 @@ void TriggerSyscallWait(int ThreadID, int save) {
     
     currThreadInfo->in_callback = TRUE;
 
-    //printf("Trigger Syscall Wait: %d\n", ThreadID);
-    //fflush(stdout);
-	
     if  (save) {
         currThreadInfo->stack.currBBID = currBBID;
         currThreadInfo->stack.currBBSize = currBBSize;
         currThreadInfo->stack.alwaysOn = alwaysOn;
     }
 
-    if (trigger_syscall_wait() <= 0)
+    if (TriggerSyscallWaitAPI() <= 0)
         HandleVTExpEnd(ThreadID);
 
     currThreadInfo->in_callback = FALSE;
 }
 
+//! Called upon return from a syscall which may have involved timed wait like select, poll etc
 void TriggerSyscallFinish(int ThreadID) {
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
     if(!currThreadInfo)
-	return;
+	    return;
 
     if (currThreadInfo->in_callback)
-	return;
+	    return;
  
     currThreadInfo->in_callback = TRUE;
-
-    //printf("Trigger Syscall Finish: %d\n", ThreadID);
-    //fflush(stdout);
-
 	
-    currBurstLength = mark_burst_complete(1);
+    currBurstLength = MarkBurstComplete(1);
     specifiedBurstLength = currBurstLength;
 
     if (currBurstLength <= 0)
@@ -471,7 +514,7 @@ void TriggerSyscallFinish(int ThreadID) {
     currThreadInfo->in_callback = FALSE;
 }
 
-
+//! Called after the current execution burst is finished
 void vtCallbackFn() {
 
     int ThreadID;
@@ -495,6 +538,7 @@ void vtCallbackFn() {
 
         if (currThreadInfo != NULL) {
             currThreadInfo->in_callback = TRUE;
+            SetBBLLookAhead((int)currBBID);
             SignalBurstCompletion(currThreadInfo, 1);
             currThreadInfo->in_callback = FALSE;
         }
@@ -502,116 +546,41 @@ void vtCallbackFn() {
     } 
 }
 
-
-void initialize_vt_management() {
-
-    char * tracer_id_str = getenv("VT_TRACER_ID");
-    char * timeline_id_str = getenv("VT_TIMELINE_ID");
-    char * exp_type_str = getenv("VT_EXP_TYPE");
-    int tracer_id;
-    int timeline_id;
-    int exp_type, ret;
-    int my_pid = syscall(SYS_gettid);
-
-    printf("Starting VT-initialization !\n");
-    fflush(stdout);
-
- 	
-    if (!tracer_id_str) {
-        printf("Missing Tracer ID !\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (!exp_type_str){
-        printf("Missing Exp Type\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (tracer_id_str && timeline_id_str)
-    	printf ("Tracer-ID: %s, Timeline-ID: %s\n", tracer_id_str, timeline_id_str);
-    else if(tracer_id_str)
-	printf ("Tracer-ID: %s\n", tracer_id_str);
-    tracer_id = atoi(tracer_id_str);
-    fflush(stdout);
-    if (tracer_id <= 0) {
-        printf("Tracer ID must be positive: Received Value: %d\n", tracer_id);
-        exit(EXIT_FAILURE);
-    }
-
-    exp_type = atoi(exp_type_str);
-	
-    if (exp_type != EXP_CBE && exp_type != EXP_CS) {
-        printf("Exp type must be one of EXP_CBE or EXP_CS\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (exp_type == EXP_CS && !timeline_id_str) {
-        printf("No timeline specified for EXP_CS experiment\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (exp_type == EXP_CBE) {
-        ret = register_tracer(tracer_id, EXP_CBE, 0);
-	printf("Tracer registration for EXP_CBE complete. Return = %d\n", ret);
-        fflush(stdout);
-    } else {
-        timeline_id = atoi(timeline_id_str);
-        if (timeline_id < 0) {
-            printf("Timeline ID must be >= 0. Received Value: %d\n",
-                    timeline_id);
-            exit(EXIT_FAILURE);
-        }
-        ret = register_tracer(tracer_id, EXP_CS, timeline_id);
-        globalTimelineID = timeline_id;
-	printf("Tracer registration for EXP_CS complete. TimelineID = %d, Return = %d\n", timeline_id, ret);
-    }
-    printf("Tracer Adding to SQ. Tracer ID = %d\n", tracer_id);
-    fflush(stdout);
-
-    if (add_to_tracer_sq(tracer_id) < 0) {
-        printf("Failed To add tracee to tracer schedule queue for pid: %d\n",
-                my_pid);
-    }
-
-    globalTracerID = tracer_id;
-    printf("VT initialization successfull !\n");
-    fflush(stdout);
-
-    // Initializing helper data structures
-    hmap_init(&thread_info_map, 1000);
-    llist_init(&thread_info_list);
-} 
-
-
 /*** For Socket Handling ***/
-void addSocket(int ThreadID, int sockFD, int isNonBlocking) {
-    addFd(ThreadID, sockFD, FD_TYPE_SOCKET, isNonBlocking);
+//! Notes a particular filedescriptor as a socket in internal book-keeping
+void AddSocket(int ThreadID, int sockFD, int isNonBlocking) {
+    AddFd(ThreadID, sockFD, FD_TYPE_SOCKET, isNonBlocking);
 }
 
-
-int isSocketFd(int ThreadID, int sockFD) {
-    return isFdTypeMatch(ThreadID, sockFD, FD_TYPE_SOCKET);
+//! Returns a positive number if a particular filedescriptor is a socket
+int IsSocketFd(int ThreadID, int sockFD) {
+    return IsFdTypeMatch(ThreadID, sockFD, FD_TYPE_SOCKET);
 }
 
-int isSocketFdNonBlocking(int ThreadID, int sockFD) {
-    return isFdNonBlocking(ThreadID, sockFD);
+//! Returns a positive number if a particular filedescriptor is a non-blocking socket
+int IsSocketFdNonBlocking(int ThreadID, int sockFD) {
+    return IsFdNonBlocking(ThreadID, sockFD);
 }
 
 /*** For TimerFd Handlng ***/
-void  addTimerFd(int ThreadID, int fd, int isNonBlocking) {
-    addFd(ThreadID, fd, FD_TYPE_TIMERFD, isNonBlocking);
+//! Notes a particular filedescriptor as a timerfd in internal book-keeping
+void  AddTimerFd(int ThreadID, int fd, int isNonBlocking) {
+    AddFd(ThreadID, fd, FD_TYPE_TIMERFD, isNonBlocking);
 }
 
-int isTimerFd(int ThreadID, int fd) {
-    return isFdTypeMatch(ThreadID, fd, FD_TYPE_TIMERFD);
+//! Returns a positive number if a particular filedescriptor is a timerfd
+int IsTimerFd(int ThreadID, int fd) {
+    return IsFdTypeMatch(ThreadID, fd, FD_TYPE_TIMERFD);
 }
 
-int isTimerFdNonBlocking(int ThreadID, int fd) {
-    return isFdNonBlocking(ThreadID, fd);
+//! Returns a positive number if a particular filedescriptor is a non-blocking timerfd
+int IsTimerFdNonBlocking(int ThreadID, int fd) {
+    return IsFdNonBlocking(ThreadID, fd);
 }
 
-int isTimerArmed(int ThreadID, int fd) {
-    if(!isFdTypeMatch(ThreadID, fd, FD_TYPE_TIMERFD))
+//! Returns a positive number if a filedescriptor is of type timerfd and if it has been armed
+int IsTimerArmed(int ThreadID, int fd) {
+    if(!IsFdTypeMatch(ThreadID, fd, FD_TYPE_TIMERFD))
         return FALSE;
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
@@ -647,3 +616,109 @@ int isTimerArmed(int ThreadID, int fd) {
     return FALSE;
 
 }
+
+
+//! Registers as a new tracer and loads any available lookahead information
+void InitializeVtManagement() {
+
+    char * tracer_id_str = getenv("VT_TRACER_ID");
+    char * timeline_id_str = getenv("VT_TIMELINE_ID");
+    char * exp_type_str = getenv("VT_EXP_TYPE");
+    char * bbl_lookahead_file = getenv("VT_BBL_LOOKAHEAD_FILE");
+    char * loop_lookahead_file = getenv("VT_LOOP_LOOKAHEAD_FILE");
+    int tracer_id;
+    int timeline_id;
+    int exp_type, ret;
+    int my_pid = syscall(SYS_gettid);
+
+    printf("Starting VT-initialization !\n");
+    fflush(stdout);
+
+ 	
+    if (!tracer_id_str) {
+        printf("Missing Tracer ID !\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (!exp_type_str){
+        printf("Missing Exp Type\n");
+        exit(EXIT_FAILURE);
+    }
+
+
+
+    if (tracer_id_str && timeline_id_str)
+    	printf ("Tracer-ID: %s, Timeline-ID: %s\n", tracer_id_str, timeline_id_str);
+    else if(tracer_id_str)
+	printf ("Tracer-ID: %s\n", tracer_id_str);
+    tracer_id = atoi(tracer_id_str);
+    fflush(stdout);
+    if (tracer_id <= 0) {
+        printf("Tracer ID must be positive: Received Value: %d\n", tracer_id);
+        exit(EXIT_FAILURE);
+    }
+
+    exp_type = atoi(exp_type_str);
+	
+    if (exp_type != EXP_CBE && exp_type != EXP_CS) {
+        printf("Exp type must be one of EXP_CBE or EXP_CS\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (exp_type == EXP_CS && !timeline_id_str) {
+        printf("No timeline specified for EXP_CS experiment\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (exp_type == EXP_CBE) {
+        ret = RegisterTracer(tracer_id, EXP_CBE, 0);
+	    printf("Tracer registration for EXP_CBE complete. Return = %d\n", ret);
+        fflush(stdout);
+    } else {
+        timeline_id = atoi(timeline_id_str);
+        if (timeline_id < 0) {
+            printf("Timeline ID must be >= 0. Received Value: %d\n",
+                    timeline_id);
+            exit(EXIT_FAILURE);
+        }
+        ret = RegisterTracer(tracer_id, EXP_CS, timeline_id);
+        globalTimelineID = timeline_id;
+	    printf(
+            "Tracer registration for EXP_CS complete. TimelineID = %d, Return = %d\n",
+            timeline_id, ret);
+    }
+    printf("Tracer Adding to SQ. Tracer ID = %d\n", tracer_id);
+    fflush(stdout);
+
+    if (AddToTracerSchQueue(tracer_id) < 0) {
+        printf("Failed To add tracee to tracer schedule queue for pid: %d\n",
+                my_pid);
+    }
+
+    globalTracerID = tracer_id;
+    printf("Parsing any provided lookahead information ...\n");
+    if (bbl_lookahead_file && !ParseLookaheadJsonFile(
+        bbl_lookahead_file, &bblLookAheadMap)) {
+        printf("Failed to parse BBL Lookaheads. Ignoring ...\n");
+        bblLookAheadMap = NULL;
+    } else {
+        printf("Loaded lookaheads for %d basic blocks ...\n",
+            (int)bblLookAheadMap->num_entries);
+    }
+    if (loop_lookahead_file && !ParseLookaheadJsonFile(
+        loop_lookahead_file, &loopLookAheadMap)) {
+        printf("Failed to parse Loop Lookaheads. Ignoring ...\n");
+        loopLookAheadMap = NULL;
+    } else {
+        printf("Loaded lookaheads for %d loops ...\n",
+            (int)loopLookAheadMap->num_entries);
+    }
+    printf("VT initialization successfull !\n");
+    fflush(stdout);
+
+    // Initializing helper data structures
+    hmap_init(&thread_info_map, 1000);
+    llist_init(&thread_info_list);
+} 
+
+

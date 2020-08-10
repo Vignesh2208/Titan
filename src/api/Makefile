@@ -13,23 +13,26 @@ build_api:
 
 	 @cp ${api_dir}/VT_functions.h /usr/local/include
 	 @cp ${api_dir}/utility_functions.h /usr/local/include
-	 
+
 
 	 @echo "Building VTL-Logic shared library ..."
 	 @gcc -w -c -Wall -Werror -fpic ${api_dir}/VT_functions.c \
 	 ${api_dir}/utility_functions.c ${api_dir}/vtl_logic.c \
-	 ${api_dir}/fd_handling.c \
-	 ${api_dir}/utils/linkedlist.c ${api_dir}/utils/hashmap.c
+	 ${api_dir}/fd_handling.c ${api_dir}/lookahead_parsing.c \
+	 ${api_dir}/cJSON/cJSON.c ${api_dir}/utils/linkedlist.c \
+	 ${api_dir}/utils/hashmap.c
 
 	 @gcc -w -shared -o libvtllogic.so ${api_dir}/VT_functions.o \
 	 ${api_dir}/utility_functions.o ${api_dir}/vtl_logic.o \
-	 ${api_dir}/fd_handling.o \
-	 ${api_dir}/utils/linkedlist.o ${api_dir}/utils/hashmap.o
+	 ${api_dir}/fd_handling.o  ${api_dir}/lookahead_parsing.o \
+	 ${api_dir}/cJSON.o ${api_dir}/utils/linkedlist.o \
+	 ${api_dir}/utils/hashmap.o
 
 	 @mv libvtllogic.so /usr/lib
 	 @chmod 777 /usr/lib/libvtllogic.so
 
 	 @python setup.py install
+
 
 clean:
 

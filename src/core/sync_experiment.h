@@ -4,19 +4,85 @@
 #include "includes.h"
 #include "vt_module.h"
 
-void clean_exp();
-int unfreeze_proc_exp_recurse(tracer * curr_tracer);
-lxc_schedule_elem * get_next_runnable_task(tracer * curr_tracer);
-int update_all_runnable_task_timeslices(tracer * curr_tracer);
-void clean_up_all_irrelevant_processes(tracer * curr_tracer) ;
-struct task_struct * search_tracer(struct task_struct * aTask, int pid);
-int sync_and_freeze();
-int cleanup_experiment_components();
-int initialize_experiment_components(int exp_type, int num_timelines,
+
+//! Cleans up all memory allocations associated with a virtual time managed experiment
+void CleanExp();
+
+//! Appropriately schedules tracees associated with a tracer
+int UnfreezeProcExpRecurse(tracer * curr_tracer);
+
+//! Gets the nex tracee belonging to a tracer which can be run 
+lxc_schedule_elem * GetNextRunnableTask(tracer * curr_tracer);
+
+//! For each tracee in a tracer, updates the maximum virtual time duration for which it
+//  can be run before yielding the cpu to another tracee. Returns the number
+//  of runnable tracees
+int UpdateAllRunnableTaskTimeslices(tracer * curr_tracer);
+
+//! Removes any tracees which may have died, from a tracer's schedule queue
+void CleanUpAllIrrelevantProcesses(tracer * curr_tracer);
+
+//! Removes any dead tracees from a tracer's queue
+/*!
+	\param curr_tracer The tracer in question
+	\param is_schedule_queue Indicates whether the run queue should be cleaned
+		or whether the schedule queue should be cleaned
+*/
+void PruneTracerQueue(tracer * curr_tracer, int is_schedule_queue);
+
+//! Searches all children recursively of a tracer to find a process
+/*!
+	\param aTask Represents the parent process. Initially set to point to the tracer
+		process
+	\param pid Process to search for among its children
+*/
+struct task_struct * SearchTracer(struct task_struct * aTask, int pid);
+
+
+//! Represents the main function of a timeline/cpu worker thread
+int PerTimelineWorker(void *data);
+
+//! Synchronizes and freezes all tracers to a common virtual time
+int SyncAndFreeze();
+
+//! Cleans up/frees all allocated resources
+int CleanupExperimentComponents();
+
+//! Allocates memory and initializes timeline workers and clocks
+/*!
+	\param exp_type Type of the experiment: EXP_CS or EXP_CBE
+	\param num_timelines Number of timelines (in EXP_CS) or number of cpu
+		workers (in EXP_CBE)
+	\param num_expected_tracers Number of tracers which need to finish
+		registration before the experiment can proceed further
+*/
+int InitializeExperimentComponents(int exp_type, int num_timelines,
 									 int num_expected_tracers);
-void free_all_tracers();
-int progress_by(s64 progress_duration, int num_rounds);
-int progress_timeline_by(int timeline_id, s64 progress_duration);
-void initiate_experiment_stop_operation();
+
+//! Frees memory associated with all tracers
+void FreeAllTracers();
+
+
+//! The main round synchronization function (For CBE mode). When all timeline workers 
+//  in a round have completed, this will get woken up, increment the experiment
+//  virtual time.
+void RoundSynchronization();
+
+//! Invoked for a EXP_CBE experiment to run it for the specified number of rounds
+/*!
+	\param progress_duration Duration to advance by in each round
+	\param num_rounds Number of rounds to run for
+*/
+int ProgressBy(s64 progress_duration, int num_rounds);
+
+//! Invoked for a EXP_CS experiment to run a specific timeline for the specified duration
+/*!
+	\param timeline_id Represents the timeline in question
+	\param progress_duration Duration to run the timeline for
+*/
+int ProgressTimelineBy(int timeline_id, s64 progress_duration);
+
+//! Triggers stopping the experiment
+void InitiateExperimentStopOperation();
 
 #endif

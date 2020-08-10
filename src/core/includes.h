@@ -52,11 +52,6 @@
 
 
 
-#define IGNORE_BLOCKED_PROCESS_SCHED_MODE
-
-#define TRACER_TYPE_INS_VT 1
-#define TRACER_TYPE_APP_VT 2
-
 #define SIGNAL_SYSCALL_FINISH 1
 
 #define PROCESS_MIN_QUANTA_NS 1000000
@@ -70,8 +65,6 @@
 #define FAIL -1
 #define START_VIRTUAL_TIME 1000000000
 
-//Number of Instructions per uSec or 1 instruction per nano sec
-#define REF_CPU_SPEED	1000
 #define ENABLE_LOCKING
 
 

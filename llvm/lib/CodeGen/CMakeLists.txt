@@ -165,6 +165,7 @@ add_llvm_library(LLVMCodeGen
   WinEHPrepare.cpp
   XRayInstrumentation.cpp
   VirtualTimeLoopIRPass.cpp
+  VirtualTimeManagementUtils.cpp
   VirtualTimeManager.cpp
 
   ADDITIONAL_HEADER_DIRS

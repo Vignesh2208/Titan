@@ -1,6 +1,3 @@
-
-
-
 #include "includes.h"
 #include "socket_utils.h"
 #include "vt_management.h"
@@ -117,7 +114,7 @@ extern s64 (*vtGetPacketEAT)();
 extern long (*vtGetBBLLookahead)();
 extern int (*vtSetLookahead)(s64 bulkLookaheadValue, long spLookaheadValue); 
 
-void load_orig_functions();
+void LoadOrigFunctions();
 
 
 struct Thunk {
@@ -125,8 +122,8 @@ struct Thunk {
     void *arg;
 };
 
-
-static void * wrap_threadFn(void *thunk_vp) {
+//! Thread function calls are wrapped with this function
+static void * WrapThreadFn(void *thunk_vp) {
     
     struct Thunk *thunk_p = (struct Thunk *)thunk_vp;
 	int ThreadPID = syscall(SYS_gettid);
@@ -141,7 +138,7 @@ static void * wrap_threadFn(void *thunk_vp) {
     return result;
 }
 
-
+//! Overloaded pthread_create function
 int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
                	   void *(*start_routine)(void*), void *arg) {
     static pthread_create_t real_pthread_create;
@@ -159,7 +156,7 @@ int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
     struct Thunk *thunk_p = malloc(sizeof(struct Thunk));
     thunk_p->start_routine = start_routine;
     thunk_p->arg = arg;
-    return real_pthread_create(thread, attr, wrap_threadFn, thunk_p);
+    return real_pthread_create(thread, attr, WrapThreadFn, thunk_p);
 }
 
 
@@ -168,27 +165,26 @@ int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
  * (even if SIGABRT is ignored, or is caught by a handler that returns).
  */
 
-void my_exit(void) {
+void MyExit(void) {
    int ThreadPID = syscall(SYS_gettid);
    printf("Main thread exiting. PID = %d\n", ThreadPID);
    fflush(stdout);
-
    vtAppFini(ThreadPID);
 }
 
-/* The address of the real main is stored here for fake_main to access */
+/* The address of the real main is stored here for FakeMain to access */
 static int (*real_main) (int, char **, char **);
 
-/* Fake main(), spliced in before the real call to main() in __libc_start_main */
-static int fake_main(int argc, char **argv, char **envp)
+/* FakeMain(), spliced in before the real call to main() in __libc_start_main */
+static int FakeMain(int argc, char **argv, char **envp)
 {	
 	/* Register abort(3) as an atexit(3) handler to be called at normal
 	 * process termination */
-	atexit(my_exit);
+	atexit(MyExit);
 	int ThreadPID = syscall(SYS_gettid);
-    	printf ("Starting main program: Pid = %d\n", ThreadPID);
+    printf ("Starting main program: Pid = %d\n", ThreadPID);
 	fflush(stdout);
-	initialize_vtl();
+	InitializeVtlLogic();
 	printf("Successfully initialized VTL-Logic embedded into the executable\n");
 	fflush(stdout);
 	*vtInitialized = 1;
@@ -199,7 +195,7 @@ static int fake_main(int argc, char **argv, char **envp)
 
 /* LD_PRELOAD override of __libc_start_main.
  *
- * The objective is to splice fake_main above to be executed instead of the
+ * The objective is to splice FakeMain above to be executed instead of the
  * program main function. We cannot use LD_PRELOAD to override main directly as
  * LD_PRELOAD can only be used to override functions in dynamically linked
  * shared libraries whose addresses are determined via the Procedure
@@ -378,18 +374,16 @@ int __libc_start_main(int (*main) (int, char **, char **),
 	}
 
 	printf("Loading orig functions !\n");
-	load_orig_functions();
+	LoadOrigFunctions();
 
-	/* Note that we swap fake_main in for main - fake_main should call
+	/* Note that we swap FakeMain in for main - FakeMain should call
 	 * real_main after its setup is done. */
-	return real_libc_start_main.fn(fake_main, argc, ubp_av, init, fini,
+	return real_libc_start_main.fn(FakeMain, argc, ubp_av, init, fini,
 				       rtld_fini, stack_end);
 }
 
-
-//void  __attribute__ ((noreturn)) pthread_exit(void *retval);
-
-void load_original_pthread_exit() {
+//! Get pointer to original pthread_exit
+void LoadOrigPThreadExit() {
     original_pthread_exit = dlsym(RTLD_NEXT, "pthread_exit");
     if (!original_pthread_exit)
             abort();
@@ -402,10 +396,10 @@ void __attribute__ ((noreturn)) _exit(int status) {
 	orig_exit(status);
 }
 
-
+//! Overloaded pthread_exit
 void  __attribute__ ((noreturn))  pthread_exit(void *retval) {
     if (!original_pthread_exit) {
-		load_original_pthread_exit();
+		LoadOrigPThreadExit();
     }
 
 	int ThreadPID = syscall(SYS_gettid);
@@ -414,8 +408,8 @@ void  __attribute__ ((noreturn))  pthread_exit(void *retval) {
     original_pthread_exit(retval);
 }
 
-
-void load_orig_functions() {
+// Load pointers to several original functions such as send, sendto, recv etc
+void LoadOrigFunctions() {
 	void *libc_handle;
 	libc_handle = dlopen("libc.so.6", RTLD_NOLOAD | RTLD_NOW);
 	if (!libc_handle) {
@@ -481,7 +475,7 @@ void load_orig_functions() {
 	}
 }
 
-
+//! OVerloaded fork function
 pid_t fork() {
 	int ParentPID = syscall(SYS_getpid);
 	int ParentTID = syscall(SYS_gettid);
@@ -504,6 +498,7 @@ pid_t fork() {
 
 /*** Timerfd functions ***/
 
+//! Overloaded timerfd_create function
 int timerfd_create(int clockid, int flags) {
 	int ThreadID = syscall(SYS_gettid);
 	int alottedFd = vtGetNxtTimerFdNumber(ThreadID);
@@ -519,6 +514,7 @@ int timerfd_create(int clockid, int flags) {
 
 }
 
+//! Overloaded timerfd_settime function
 int timerfd_settime(int fd, int flags,
                     const struct itimerspec *new_value,
                     struct itimerspec *old_value) {
@@ -538,20 +534,21 @@ int timerfd_settime(int fd, int flags,
 		currAbsExpiryTime = (s64)new_value->it_value.tv_sec*NSEC_PER_SEC 
 			+ new_value->it_value.tv_nsec;
 	} else {
-		currAbsExpiryTime = vtGetCurrentTime() + (s64)new_value->it_value.tv_sec*NSEC_PER_SEC
-			+ new_value->it_value.tv_nsec;
+		currAbsExpiryTime =
+			vtGetCurrentTime() + (s64)new_value->it_value.tv_sec*NSEC_PER_SEC
+				+ new_value->it_value.tv_nsec;
 	}
 
 	relExpDuration = currAbsExpiryTime - vtGetCurrentTime();
 
 	if (relExpDuration <= 0)
 		relExpDuration = 0;
-	currIntervalNS = (s64)new_value->it_interval.tv_sec*NSEC_PER_SEC;
-			+ (s64)new_value->it_interval.tv_nsec;
+	currIntervalNS = (s64)new_value->it_interval.tv_sec*NSEC_PER_SEC
+					 + (s64)new_value->it_interval.tv_nsec;
 
 	if (old_value) {
 		vtGetTimerFdParams(ThreadID, fd, &currAbsExpiryTime, &currIntervalNS,
-							&relExpDuration);
+						   &relExpDuration);
 
 		vt_ns_2_timespec(relExpDuration, &old_value->it_value);
 		vt_ns_2_timespec(currIntervalNS, &old_value->it_interval);
@@ -564,6 +561,7 @@ int timerfd_settime(int fd, int flags,
 
 }
 
+//! Overloaded timerfd_gettime function
 int timerfd_gettime(int fd, struct itimerspec *curr_value) {
 
 	int ThreadID = syscall(SYS_gettid);
@@ -589,6 +587,7 @@ int timerfd_gettime(int fd, struct itimerspec *curr_value) {
 
 /***** Socket Functions ****/
 
+//! Overloaded accept function/syscall
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 
 	int ThreadID = syscall(SYS_gettid);
@@ -601,6 +600,7 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 	return ret;
 } 
 
+//! Overloaded accept4 function/syscall
 int accept4(int sockfd, struct sockaddr *addr,
                    socklen_t *addrlen, int flags) {
 	int ThreadID = syscall(SYS_gettid);
@@ -615,11 +615,12 @@ int accept4(int sockfd, struct sockaddr *addr,
 
 }
 
+//! Overloaded send syscall
 ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
 	int payload_hash;
 	ssize_t ret = orig_send(sockfd, buf, len, flags);
 	if (len > 0 && ret > 0) {
-		payload_hash = get_payload_hash(buf, ret);
+		payload_hash = GetPayloadHash(buf, ret);
 		if (payload_hash) {
 			vtSetPktSendTime(payload_hash, ret, vtGetCurrentTime());
 		}
@@ -628,13 +629,14 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
 }
 
 
+//! Overloaded sendto syscall
 ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
                const struct sockaddr *dest_addr, socklen_t addrlen) {
 
 	int payload_hash;
 	ssize_t ret = orig_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
 	if (len > 0 && ret > 0) {
-		payload_hash = get_payload_hash(buf, ret);
+		payload_hash = GetPayloadHash(buf, ret);
 		if (payload_hash) {
 			vtSetPktSendTime(payload_hash, ret, vtGetCurrentTime());
 		}
@@ -643,6 +645,7 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 
 }
 
+//! Overloaded socket() syscall
 int socket(int domain, int type, int protocol) {
 	int retFD = orig_socket(domain, type, protocol);
 
@@ -658,10 +661,8 @@ int socket(int domain, int type, int protocol) {
 	return retFD;
 }
 
+//! Overloaded close() syscall
 int close(int fd) {
-
-	
-
 	if(!vtInitialized || *vtInitialized != 1)
 		return orig_close(fd);
 
@@ -679,20 +680,21 @@ int close(int fd) {
 
 /***** Time related functions ****/
 
+//! Overloaded gettimeofday syscall
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
 	int ThreadPID =  syscall(SYS_gettid);
 	vtGetCurrentTimeval(tv);
 	return 0;
 }
 
-
+//! Overloaded clock_gettime syscall
 int clock_gettime(clockid_t clk_id, struct timespec *tp) {
 	int ThreadPID =  syscall(SYS_gettid);
 	vtGetCurrentTimespec(tp);
 	return 0;
 }
 
-
+//! Overloaded sleep syscall
 unsigned int sleep(unsigned int seconds) {
 	int ThreadPID = syscall(SYS_gettid);
 	if (seconds) {
@@ -703,6 +705,7 @@ unsigned int sleep(unsigned int seconds) {
 	return 0;
 }
 
+//! Overloaded usleep syscall
 int usleep(useconds_t usec) {
 	int ThreadPID = syscall(SYS_gettid);
 	if (usec) {
@@ -714,7 +717,7 @@ int usleep(useconds_t usec) {
 	return 0;
 }
 
-
+//! Overloaded poll syscall
 int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
 	
 	int ret, ThreadPID;
@@ -740,7 +743,7 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
 	
 
 	timeoutNS = (s64)timeout_ms * NSEC_PER_MS;
-	printf("In my poll: %d, timeoutNS: %llu\n", ThreadPID, timeoutNS);
+	printf("In overloaded poll: %d, timeoutNS: %llu\n", ThreadPID, timeoutNS);
 	FD_ZERO(&tfd_store);
 	memset(tfd_to_idx, 0, sizeof(int)*MAX_NUM_FDS_PER_PROCESS + 1);
 
@@ -891,6 +894,8 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
 	return ret;
 }
 
+
+//! Overloaded select syscall
 int select(int nfds, fd_set *readfds, fd_set *writefds,
            fd_set *exceptfds, struct timeval *timeout) {
 
@@ -912,7 +917,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 
 	ThreadPID = syscall(SYS_gettid);
 
-	printf("In my select: %d\n", ThreadPID);
+	printf("In overloaded select: %d\n", ThreadPID);
 	fflush(stdout);
 
 	if (readfds) {
@@ -1001,9 +1006,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 
 	} else {
 		// there are no timers
-
 		relevantTimer = 0;
-
 		if  (!timeout)
 			minNxtTimerExpiry = -1;
 		else
@@ -1099,7 +1102,6 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 				memcpy(writefds, &writefds_copy, sizeof(fd_set));
 			if (isExceptInc)
 				memcpy(exceptfds, &exceptfds_copy, sizeof(fd_set));
-			//printf("Elapsed time: %lld\n", vtGetCurrentTime() - start_time);
 		} while (elapsed_time < max_duration);
 		vtTriggerSyscallFinish(ThreadPID);
 		
@@ -1125,8 +1127,10 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 	return ret;
 }
 
-static void handle_vt_read_syscall(int ThreadPID, int fd, void * buf,
-				   size_t count, long * result) {
+//! Generic function to handle filedescriptor reads. Depending on the type of
+//  filedescriptor i.e, file, socket, timerfd the action is different.
+static void HandleVtReadSyscall(int ThreadPID, int fd, void * buf,
+								size_t count, long * result) {
 	int goingToBlock = 1;
 	if (vtInitialized && *vtInitialized == 1) {
 		if (vtIsSocketFd(ThreadPID, fd)) {
@@ -1202,7 +1206,10 @@ static void handle_vt_read_syscall(int ThreadPID, int fd, void * buf,
 		vtForceCompleteBurst(ThreadPID, 0, SYS_read);
 }
 
-static void handle_vt_packet_receive_syscalls(long syscall_number, long arg0,
+
+//! Common operations to handle packet receive syscalls. Behavior is different
+//  based on whether the socket file descriptor is blocking or non-blocking
+static void HandleVtPacketReceiveSyscalls(long syscall_number, long arg0,
 	long arg1, long arg2, long arg3, long arg4, long arg5, long *result,
 	int ThreadPID) {
 
@@ -1217,7 +1224,6 @@ static void handle_vt_packet_receive_syscalls(long syscall_number, long arg0,
 	int goingToBlock = 1;
 
 	if (!vtIsSocketFd(ThreadPID, sockfd)) {
-		// this is erroneous. we just let the syscall return the appropriate error
 		*result = syscall_no_intercept(syscall_number, arg0, arg1, arg2, arg3,
 									   arg4, arg5);
 		return;
@@ -1225,7 +1231,6 @@ static void handle_vt_packet_receive_syscalls(long syscall_number, long arg0,
 	if(!vtIsSocketFdNonBlocking(ThreadPID, sockfd)) {
 		// get eat and set lookahead here after polling if there's 
 		// nothing to read right away.
-
 		struct pollfd poll_fd;
 		poll_fd.events = POLLIN;
 		poll_fd.fd = sockfd;
@@ -1251,7 +1256,9 @@ static void handle_vt_packet_receive_syscalls(long syscall_number, long arg0,
 		vtForceCompleteBurst(ThreadPID, 0, SYS_read);
 }
 
-static void execute_cpu_yielding_syscall(long syscall_number, long arg0,
+
+//! Called before each syscall which may voluntariliy yield the cpu. Eg: futex
+static void ExecuteCpuYieldingSyscall(long syscall_number, long arg0,
 	long arg1, long arg2, long arg3, long arg4, long arg5, long *result,
 	int ThreadPID) {
 
@@ -1262,25 +1269,25 @@ static void execute_cpu_yielding_syscall(long syscall_number, long arg0,
 		case SYS_accept4:
 		case SYS_recvmsg:
 		case SYS_recvfrom:
-		case SYS_recvmmsg:  	handle_vt_packet_receive_syscalls(syscall_number,
-								arg0, arg1, arg2, arg3, arg4, arg5, result,
-								ThreadPID);
+		case SYS_recvmmsg:  	
+					HandleVtPacketReceiveSyscalls(syscall_number,
+						arg0, arg1, arg2, arg3, arg4, arg5, result, ThreadPID);
 					break;
-		case SYS_read:		handle_vt_read_syscall(ThreadPID, (int)arg0,
-						   (void *)arg1, (size_t)arg2,
-						   result);
+		case SYS_read:
+					HandleVtReadSyscall(ThreadPID, (int)arg0, (void *)arg1,
+						(size_t)arg2, result);
 					break;
-		default:		if (vtInitialized && *vtInitialized == 1)
+		default:	
+					if (vtInitialized && *vtInitialized == 1)
 						vtYieldVTBurst(ThreadPID, 1, syscall_number);
-
 
 					*result = syscall_no_intercept(
 						syscall_number, arg0, arg1, arg2, arg3, 
 						arg4, arg5);
 
-					if (vtInitialized && *vtInitialized == 1) {
+					if (vtInitialized && *vtInitialized == 1)
 						vtForceCompleteBurst(ThreadPID, 0, syscall_number);
-					}
+
 					break;
 	}
 
@@ -1291,7 +1298,6 @@ static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
 
 	int ThreadPID = 0;
 	
-
 	if (syscall_number == SYS_futex
 		|| syscall_number == SYS_connect
 		|| syscall_number == SYS_accept
@@ -1310,7 +1316,7 @@ static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
 
 		ThreadPID = syscall_no_intercept(SYS_gettid);
 		// Before cpu yielding syscall
-		execute_cpu_yielding_syscall(syscall_number, arg0, arg1, arg2, arg3,
+		ExecuteCpuYieldingSyscall(syscall_number, arg0, arg1, arg2, arg3,
 					    arg4, arg5, result, ThreadPID);
 		// After cpu yielding syscall
 		return 0;

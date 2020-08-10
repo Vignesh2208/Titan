@@ -1,17 +1,6 @@
+#include "VirtualTimeManagementIncludes.h"
+#include "VirtualTimeManagementUtils.h"
 #include "VirtualTimeManager.h"
-#include "llvm/CodeGen/MachineInstrBuilder.h"
-#include "llvm/Target/TargetMachine.h"
-#include "llvm/CodeGen/TargetInstrInfo.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/CodeGen/Passes.h"
-#include "llvm/CodeGen/TargetSubtargetInfo.h"
-#include "llvm/Pass.h"
-#include "llvm/Support/JSON.h"
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/raw_ostream.h"
-
-
-
 
 
 
@@ -29,6 +18,11 @@ static cl::opt<bool>
 DisableVtInsertion("no-vt-insertion",
         cl::init(false), cl::Hidden,
         cl::desc("Disable virtual time specific instructions"));
+
+static cl::opt<bool>
+IgnoreVtCache("ignore-vt-cache",
+		cl::init(true), cl::Hidden,
+		cl::desc("Ignores the presence of any existing initialization params/lock file"));
 
 char VirtualTimeManager::ID = 0;
 
@@ -178,6 +172,12 @@ void VirtualTimeManager::createExternDefinitions(Module &M, bool ContainsMain) {
    gVar->setLinkage(GlobalValue::ExternalLinkage);
    gVar->setAlignment(8);
 
+   // VT_LOOP_ID_VAR
+   M.getOrInsertGlobal(VT_CURR_LOOP_ID_VAR, Type::getInt64Ty(Ctx));
+   gVar = M.getNamedGlobal(VT_CURR_LOOP_ID_VAR);
+   gVar->setLinkage(GlobalValue::ExternalLinkage);
+   gVar->setAlignment(8);
+
    // VT_FORCE_INVOKE_CALLBACK_VAR
    M.getOrInsertGlobal(VT_FORCE_INVOKE_CALLBACK_VAR, Type::getInt32Ty(Ctx));
    gVar = M.getNamedGlobal(VT_FORCE_INVOKE_CALLBACK_VAR);
@@ -200,67 +200,80 @@ void VirtualTimeManager::createExternDefinitions(Module &M, bool ContainsMain) {
 }
 
 void VirtualTimeManager::__acquireFlock() {
-	lockFd = open("/tmp/llvm.lock", O_RDWR | O_CREAT, 0666);
+
+	if (IgnoreVtCache)
+		return;
+	outs() << "INFO: Acquiring CLANG Lock ... \n";
+	lockFd = open(CLANG_FILE_LOCK, O_RDWR | O_CREAT, 0666);
 	int rc = 0;
 	do {
 		 rc = flock(lockFd, LOCK_EX | LOCK_NB);
 		 if (rc != 0)
-			usleep(100000);
+			usleep(10000);
 	} while (rc != 0);
-	outs() << "Acquired File Lock \n";
+	outs() << "INFO: Acquired CLANG Lock ... \n";
 
 	// create file if it does not exist !
 	std::fstream fs;
-  	fs.open("/tmp/llvm_init_params.json", std::ios::out | std::ios::app);
+  	fs.open(CLANG_INIT_PARAMS, std::ios::out | std::ios::app);
   	fs.close();
 }
 
 void VirtualTimeManager::__releaseFlock() {
+	if (IgnoreVtCache)
+		return;
 	flock(lockFd, LOCK_UN);
 	close(lockFd);
-	outs() << "Released File Lock \n";
+	outs() << "INFO: Released CLANG Lock ... \n";
 }
 
 bool VirtualTimeManager::doInitialization(Module& M) {
 
+	if (DisableVtInsertion)
+		return false;
+
 	__acquireFlock();
-	auto Text = llvm::MemoryBuffer::getFileAsStream(
-		"/tmp/llvm_init_params.json");
-		
-	StringRef Content = Text ? Text->get()->getBuffer() : "";
+	
 
 	int64_t lastUsedBBL = 0;
 	int64_t lastUsedLoop = 0;
 
-	outs() << "Read Json Content: " << Content << "\n";
-	if (!Content.empty()) {
-		auto E = llvm::json::parse(Content);
-		if (E) {
-			llvm:json::Object * O = E->getAsObject();
+	if (!IgnoreVtCache) {
+		auto Text = llvm::MemoryBuffer::getFileAsStream(
+			CLANG_INIT_PARAMS);
 			
-			auto lastUsedBBLCounter = O->getInteger("BBL_Counter");
-			auto lastUsedLoopCounter = O->getInteger("Loop_Counter");
-			if (lastUsedBBLCounter.hasValue()) {
-				lastUsedBBL = *(lastUsedBBLCounter.getPointer());
+		StringRef Content = Text ? Text->get()->getBuffer() : "";
+		outs() << "Parsing initial parameters ...\n";
+		if (!Content.empty()) {
+			auto E = llvm::json::parse(Content);
+			if (E) {
+				llvm::json::Object * O = E->getAsObject();
+				
+				auto lastUsedBBLCounter = O->getInteger("BBL_Counter");
+				auto lastUsedLoopCounter = O->getInteger("Loop_Counter");
+				if (lastUsedBBLCounter.hasValue()) {
+					lastUsedBBL = *(lastUsedBBLCounter.getPointer());
+				}
+				if (lastUsedLoopCounter.hasValue()) {
+					lastUsedLoop = *(lastUsedLoopCounter.getPointer());
+				}
+			} else {
+				outs() << "WARN: Parse ERROR: Ignoring initial parameters ... \n";
 			}
-			if (lastUsedLoopCounter.hasValue()) {
-				lastUsedLoop = *(lastUsedLoopCounter.getPointer());
-			}
-			outs() << "Last Used BBL = " << lastUsedBBL << " Last Used Loop = " << lastUsedLoop << "\n";
-		} else {
-			outs() << "JSON parse error \n";
 		}
 	}
-
 	globalBBCounter = (long )lastUsedBBL;
+	globalLoopCounter = (long )lastUsedLoop;
 
-	if (!DisableVtInsertion) {
-		outs() << "~~~~ Inserting Virtual time specific code ~~~~~" << "\n";
-    }
+	outs() << "INFO: Inserting Virtual time specific code ...\n";
 	return false;
 }
 
 bool VirtualTimeManager::doFinalization(Module& M) {
+
+	if (DisableVtInsertion)
+		return false;
+
 	__releaseFlock();
 
 	// writing json output
@@ -268,11 +281,11 @@ bool VirtualTimeManager::doFinalization(Module& M) {
 	std::string OutputFile = M.getSourceFileName() + ".artifacts.json";
 	llvm::raw_fd_ostream OS(OutputFile, EC, llvm::sys::fs::OF_Text);
 	if (EC) {
-		llvm::errs() << "warning: could not create file: " << OutputFile 
+		llvm::errs() << "WARN: Could not create artifacts file: " << OutputFile 
 		<< " " << EC.message() << '\n';
 		return false;
    	}
-	outs() << "Writing json output to:  " << OutputFile << "\n";
+	outs() << "INFO: Writing artifacts to:  " << OutputFile << "\n";
    	llvm::json::Object Sarif = perModuleObj;
 	OS << llvm::formatv("{0:2}\n", json::Value(std::move(Sarif)));
 	perModuleObj.clear();
@@ -396,11 +409,12 @@ void VirtualTimeManager::__insertVtStubFn(MachineFunction &MF) {
 }
 
 void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
-	MachineBasicBlock* origMBB, long blockNumber, int bbTimeConsumed) {
+	MachineBasicBlock* origMBB, long blockNumber, int bbTimeConsumed,
+	long LoopID) {
 
 	const llvm::TargetInstrInfo &TII = *MF.getSubtarget().getInstrInfo();
 	llvm::Module &M = const_cast<Module &>(*MMI->getModule());
-
+	bool skipAddingLoopID = LoopID > 0 ? false: true;
 	long currBBID = blockNumber;
 	// origMBB:
 
@@ -449,6 +463,21 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
 			.addGlobalAddress(
 				M.getNamedValue(VT_FORCE_INVOKE_CALLBACK_VAR), 0, MO_GOTPCREL)
 				.addReg(0);
+
+	if (!skipAddingLoopID) {
+		// movq LoopID (%rcx)
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+			TII.get(X86::MOV64mi32)).addReg(X86::RCX).addImm(1).addReg(0)
+			.addImm(0).addReg(0).addImm(LoopID);
+
+		// movq VT_CURR_LOOP_ID_VAR@GOTPCREL(%rip) %rcx
+		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+			TII.get(X86::MOV64rm))
+				.addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0)
+				.addGlobalAddress(
+					M.getNamedValue(VT_CURR_LOOP_ID_VAR), 0,
+						MO_GOTPCREL).addReg(0);
+	}
 
 	// movq BasicBlockID (%rcx)
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
@@ -526,45 +555,7 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
 
 }
 
-llvm::json::Array VirtualTimeManager::getAllEdgesFromBBL(long bblNumber,
-	std::unordered_map<long, std::vector<long>>& edges) {
-	llvm::json::Array bblEdges;
 
-	if (edges.find(bblNumber) == edges.end())
-		return bblEdges;
-
-	for (auto successor : edges.find(bblNumber)->second) {
-		bblEdges.push_back(llvm::json::Value(successor));	
-	}
-	return bblEdges;
-}
-
-llvm::json::Array VirtualTimeManager::getAllCalledFnsFromBBL(long bblNumber,
-	std::unordered_map<long, std::vector<std::string>>& calledFunctions) {
-	llvm::json::Array calledFuncs;
-
-	if (calledFunctions.find(bblNumber) == calledFunctions.end())
-		return calledFuncs;
-
-	for(auto calledFn: calledFunctions.find(bblNumber)->second) {
-		calledFuncs.push_back(calledFn);
-	}
-	return calledFuncs;
-}
-
-llvm::json::Object VirtualTimeManager::composeBBLObject(long bblNumber,
-	std::unordered_map<long, std::vector<std::string>>& calledFunctions,
-	std::unordered_map<long, std::vector<long>>& edges, long bblWeight) {
-
-	llvm::json::Object bblObj;
-
-	bblObj.insert(llvm::json::Object::KV{"edges", getAllEdgesFromBBL(bblNumber, edges)});
-	bblObj.insert(llvm::json::Object::KV{"called_fns", getAllCalledFnsFromBBL(bblNumber,
-		calledFunctions)});
-	bblObj.insert(llvm::json::Object::KV{"weight", llvm::json::Value(bblWeight)});
-
-	return bblObj;
-}
 
 bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 
@@ -575,23 +566,16 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
     llvm::Module &M = const_cast<Module &>(*MMI->getModule());
 
     bool ret = false;
-    int blockNumber = 0;
     bool ContainsMain = (M.getFunction(MAIN_FUNC) != nullptr);
-    int InstrCount;
-    std::string sourceFileName = M.getSourceFileName();
-
-    std::unordered_map<long, std::vector<std::string>> calledFunctions;
-	std::unordered_map<long, std::vector<long>> edges;
-	std::unordered_map<long, long> bblWeights;
-	std::vector<long> returningBlocks;
-	std::unordered_map<int, long> localToGlobalBBL;
+    
 
     if (DisableVtInsertion) {
 		return false;
     }
 
 
-	if (MF.getName().equals(VT_CALLBACK_FUNC))
+	if (MF.getName().equals(VT_CALLBACK_FUNC) ||
+		MF.getName().equals(VT_LOOP_LOOKAHEAD_FUNC))
 		return false;
 
     if (!MF.getName().equals(VT_STUB_FUNC) && !CreatedExternDefinitions) {
@@ -602,112 +586,46 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 
     if (!MF.getName().equals(VT_STUB_FUNC)) {
 		// Already created stub function. Do other inserts here and call StubFunction
+		// Get MachineLoopInfo or compute it on the fly if it's unavailable
+		MLI = getAnalysisIfAvailable<MachineLoopInfo>();
+		if (!MLI) {
+			// Get MachineDominatorTree or compute it on the fly if it's unavailable
+			MDT = getAnalysisIfAvailable<MachineDominatorTree>();
+			if (!MDT) {
+				OwnedMDT = std::unique_ptr<MachineDominatorTree>(
+					new MachineDominatorTree());
+				OwnedMDT->getBase().recalculate(MF);
+				MDT = OwnedMDT.get();
+			}
+			OwnedMLI = std::unique_ptr<MachineLoopInfo>(new MachineLoopInfo());
+			OwnedMLI->getBase().analyze(MDT->getBase());
+			MLI = OwnedMLI.get();
+		}
+		if (!MLI)
+			outs() << "WARN: Machine Loop info analysis not available ...\n";
+
+		//if (MLI)
+		//	MLI->runOnMachineFunction(MF);
+		
+		MachineFunctionCFGHolder mCFGHolder(&MF, globalBBCounter,
+			globalLoopCounter);
 		ret = true;
-
+		mCFGHolder.runOnThisMachineFunction(MLI);
+		globalBBCounter = mCFGHolder.getFinalGlobalBBLCounter();
+		globalLoopCounter = mCFGHolder.getFinalGlobalLoopCounter();
 		for (auto &MBB : MF) {
-			globalBBCounter ++;
-			blockNumber ++;
-
 			MachineBasicBlock* origMBB = &MBB;
-			localToGlobalBBL.insert(std::make_pair(origMBB->getNumber(),
-								globalBBCounter));
-
-			if (origMBB->isReturnBlock()) {
-				// block ends in a return instruction
-				returningBlocks.push_back(globalBBCounter);
-			}
-
-			InstrCount = 0;
-			for (MachineBasicBlock::instr_iterator Iter = MBB.instr_begin(),
-				E = MBB.instr_end(); Iter != E; Iter++) {
-					MachineInstr &Inst = *Iter;
-				if (!Inst.isCFIInstruction()) {
-					InstrCount ++;	    
-				} 
-
-				
-				if (Inst.isCall()) {
-					std::string fnName;
-					for (unsigned OpIdx = 0; OpIdx  != Inst.getNumOperands();
-						++OpIdx) {
-						const MachineOperand &MO = Inst.getOperand(OpIdx);
-						if (!MO.isGlobal()) continue;
-						const Function * F = dyn_cast<Function>(MO.getGlobal());
-						if (!F) continue;
-
-						if (F->hasName()) {
-							fnName = F->getName();
-						} else {
-							fnName = "__unknown__";
-						}
-					}
-
-					if (calledFunctions.count(globalBBCounter)) {
-						// key already exists
-						calledFunctions.at(globalBBCounter).push_back(fnName);
-					} else {
-						calledFunctions.insert(std::make_pair(
-							globalBBCounter, std::vector<std::string>()));
-						calledFunctions.at(globalBBCounter).push_back(fnName);
-					}
-				}
-			}
-
-			bblWeights.insert(std::make_pair(globalBBCounter, InstrCount));
-
-			// check the impact of this later ...
-			//if (blockNumber <= 1)
-			//	continue;
-
-			__insertVtlLogic(MF, origMBB, globalBBCounter, InstrCount);			
+			__insertVtlLogic(MF, origMBB,
+				mCFGHolder.getGlobalMBBNumber(origMBB),
+				mCFGHolder.getBBLWeight(origMBB),
+				mCFGHolder.getAssociatedLoopNumber(origMBB));		
 		}
 
-
-		// add edges ...
-		for (auto &MBB : MF) {
-			MachineBasicBlock* currMBB = &MBB;
-			long currMBBGlobalNumber = localToGlobalBBL.find(
-				currMBB->getNumber())->second;
-			
-			for (MachineBasicBlock * successorBlock : MBB.successors()) {
-				long successorBlockGlobalNumber = localToGlobalBBL.find(
-					successorBlock->getNumber())->second;
-
-				if (edges.count(currMBBGlobalNumber)) {
-					// key already exists
-					edges.at(currMBBGlobalNumber).push_back(
-						successorBlockGlobalNumber);
-				} else {
-					edges.insert(std::make_pair(
-						currMBBGlobalNumber, std::vector<long>()));
-					edges.at(currMBBGlobalNumber).push_back(
-						successorBlockGlobalNumber);
-				}
-   			}
-		}
-
-		llvm::json::Array returning_blocks;
-		llvm::json::Object all_bbls;
-		llvm::json::Object mf_obj;
-
-		for (auto element : bblWeights) {
-			all_bbls.insert(
-				llvm::json::Object::KV{
-					std::to_string(element.first),
-					composeBBLObject(
-						element.first, calledFunctions, edges,
-						element.second)
-				});
-		}
-		for (int i = 0; i < returningBlocks.size(); i++) {
-			returning_blocks.push_back(returningBlocks[i]);
-		}
-
-		mf_obj.insert(llvm::json::Object::KV{"bbls", llvm::json::Value(std::move(all_bbls))});
-		mf_obj.insert(llvm::json::Object::KV{"returning_blocks", llvm::json::Value(std::move(returning_blocks))});
-		// Iterate over an unordered_map using range based for loop
-
-		perModuleObj.insert(llvm::json::Object::KV{MF.getName(), llvm::json::Value(std::move(mf_obj)) });		 
+		perModuleObj.insert(
+			llvm::json::Object::KV{
+				MF.getName(),
+				llvm::json::Value(std::move(mCFGHolder.getComposedMFJsonObj()))
+			});		 
 
 	} else if  (MF.getName().equals(VT_STUB_FUNC) and ContainsMain) {
 		// Inside stub function. Add comparison instructions. 

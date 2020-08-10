@@ -36,9 +36,12 @@ namespace llvm {
         public:
         static char ID; // Pass identification, replacement for typeid
         int createdExternFunctionDefinition;
+        int numIgnoredLoops;
+        int numProcessedLoops;
 
         VirtualTimeLoopIRPass() : LoopPass(ID) {
             createdExternFunctionDefinition = 0;
+            numIgnoredLoops = 0, numProcessedLoops = 0;
         }
 
         bool runOnLoop(Loop * L,  LPPassManager &LPM) override;
@@ -49,10 +52,12 @@ namespace llvm {
         void analyseLoop(Loop * l, ScalarEvolution &SE, Function * Flookahead);
 
         void getAnalysisUsage(AnalysisUsage &AU) const override {
-	    AU.addRequired<LoopInfoWrapperPass>();
-	    AU.addRequiredID(LoopSimplifyID);
-	    AU.addRequired<ScalarEvolutionWrapperPass>();     
+            AU.addRequired<LoopInfoWrapperPass>();
+            AU.addRequiredID(LoopSimplifyID);
+            AU.addRequired<ScalarEvolutionWrapperPass>();     
         }
+
+        bool doFinalization() override;
 
   };
 }

@@ -34,7 +34,7 @@ ssize_t handle_write_results_cmd(struct dilated_task_struct * dilation_task,
 
 	dilation_task->ready = 1; 
 	dilation_task->syscall_waiting = 0;
-	handle_tracer_results(curr_tracer, &api_args[0], num_args);
+	HandleTracerResults(curr_tracer, &api_args[0], num_args);
 
 	wait_event_interruptible(
 		dilation_task->d_task_wqueue,
@@ -67,7 +67,7 @@ ssize_t handle_write_results_cmd(struct dilated_task_struct * dilation_task,
 	return (ssize_t) dilation_task->burst_target;
 }
 
-int handle_vt_update_tracer_clock(unsigned long arg, struct dilated_task_struct * dilated_task)  {
+int HandleVtUpdateTracerClock(unsigned long arg, struct dilated_task_struct * dilated_task)  {
 
 	
 	invoked_api *api_info;
@@ -97,7 +97,7 @@ int handle_vt_update_tracer_clock(unsigned long arg, struct dilated_task_struct 
 		return -EFAULT;
 	}
 
-	num_integer_args = convert_string_to_array(
+	num_integer_args = ConvertStringToArray(
 	  api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
 	if (num_integer_args != 1) {
@@ -117,14 +117,14 @@ int handle_vt_update_tracer_clock(unsigned long arg, struct dilated_task_struct 
 	}
 
 	curr_tracer->curr_virtual_time += api_info_tmp.return_value;
-	set_children_time(curr_tracer, curr_tracer->curr_virtual_time, 0);
+	SetChildrenTime(curr_tracer, curr_tracer->curr_virtual_time, 0);
 
 	return 0;
 
 }
 
 
-int handle_vt_write_results(unsigned long arg, struct dilated_task_struct * dilated_task)  {
+int HandleVtWriteResults(unsigned long arg, struct dilated_task_struct * dilated_task)  {
 
 	
 	invoked_api *api_info;
@@ -137,38 +137,38 @@ int handle_vt_write_results(unsigned long arg, struct dilated_task_struct * dila
 	memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
   	memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
 
-      	// A registered tracer process or one of the processes in a tracer's
-      	// schedule queue can invoke this ioctl For INSVT tracer type, only the
-      	// tracer process can invoke this ioctl
+	// A registered tracer process or one of the processes in a tracer's
+	// schedule queue can invoke this ioctl For INSVT tracer type, only the
+	// tracer process can invoke this ioctl
 
-      
+	
 
-      	if (initialization_status != INITIALIZED) {
-        	PDEBUG_I("VT_WRITE_RESULTS: Operation cannot be performed when "
-        	         "experiment is not initialized !\n");
-        	return -EFAULT;
-      	}
-
-
-
-      	if (!dilated_task || dilated_task->associated_tracer_id <= 0) {
-        	PDEBUG_I("VT_WRITE_RESULTS: Process is not associated with "
-                 	"any tracer !\n");
-        	return -EFAULT;
-      	}
-
-      	tracer_id = dilated_task->associated_tracer_id;
-      	PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d Entering !\n",
-          	tracer_id, current->pid);
-
-      	api_info = (invoked_api *)arg;
-      	if (!api_info) return -EFAULT;
-      	if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+	if (initialization_status != INITIALIZED) {
+		PDEBUG_I("VT_WRITE_RESULTS: Operation cannot be performed when "
+					"experiment is not initialized !\n");
 		return -EFAULT;
-      	}
+	}
 
 
-	num_integer_args = convert_string_to_array(
+
+	if (!dilated_task || dilated_task->associated_tracer_id <= 0) {
+		PDEBUG_I("VT_WRITE_RESULTS: Process is not associated with "
+				"any tracer !\n");
+		return -EFAULT;
+	}
+
+	tracer_id = dilated_task->associated_tracer_id;
+	PDEBUG_V("VT_WRITE_RESULTS: Tracer: %d, Process: %d Entering !\n",
+		tracer_id, current->pid);
+
+	api_info = (invoked_api *)arg;
+	if (!api_info) return -EFAULT;
+	if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+		return -EFAULT;
+	}
+
+
+	num_integer_args = ConvertStringToArray(
 	  api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
 	tracer_id = dilated_task->associated_tracer_id;
@@ -213,7 +213,7 @@ int handle_vt_write_results(unsigned long arg, struct dilated_task_struct * dila
 
 }
 
-int handle_vt_register_tracer(unsigned long arg, struct dilated_task_struct * dilated_task)  {
+int HandleVtRegisterTracer(unsigned long arg, struct dilated_task_struct * dilated_task)  {
 
 	
 	invoked_api *api_info;
@@ -250,7 +250,7 @@ int handle_vt_register_tracer(unsigned long arg, struct dilated_task_struct * di
 		return -EFAULT;
 	}
 
-	retval = register_tracer_process(api_info_tmp.api_argument);
+	retval = RegisterTracerProcess(api_info_tmp.api_argument);
 	if (retval == FAIL) {
 		PDEBUG_I("VT_REGISTER_TRACER: Tracer Registration failed for \n");
 		return -EFAULT;
@@ -268,7 +268,8 @@ int handle_vt_register_tracer(unsigned long arg, struct dilated_task_struct * di
 }
 
 
-int handle_vt_add_processes_to_sq(unsigned long arg, struct dilated_task_struct * dilated_task)  {
+int HandleVtAddProcessesToSchQueue(
+	unsigned long arg, struct dilated_task_struct * dilated_task)  {
 
 	
 	invoked_api *api_info;
@@ -298,7 +299,7 @@ int handle_vt_add_processes_to_sq(unsigned long arg, struct dilated_task_struct 
 	if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 		return -EFAULT;
 	}
-	num_integer_args = convert_string_to_array(
+	num_integer_args = ConvertStringToArray(
 		api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
 	if (num_integer_args <= 1) {
@@ -314,17 +315,17 @@ int handle_vt_add_processes_to_sq(unsigned long arg, struct dilated_task_struct 
 		return -EFAULT;
 	}
 
-	get_tracer_struct_write(curr_tracer);
+	GetTracerStructWrite(curr_tracer);
 	for (i = 1; i < num_integer_args; i++) {
-		//add_to_tracer_schedule_queue(curr_tracer, get_task_ns(api_integer_args[i], curr_tracer));
+		//AddToTracerScheduleQueue(curr_tracer, GetTaskNs(api_integer_args[i], curr_tracer));
 	}
-	put_tracer_struct_write(curr_tracer);
+	PutTracerStructWrite(curr_tracer);
 
 	PDEBUG_V("VT_ADD_PROCESSES_TO_SQ: Finished Successfully !\n");
 	return 0;
 }
 
-int handle_vt_initialize_exp(unsigned long arg)  {
+int HandleVtInitializeExp(unsigned long arg)  {
 
 	
 	invoked_api *api_info;
@@ -357,7 +358,7 @@ int handle_vt_initialize_exp(unsigned long arg)  {
 	if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 		return -EFAULT;
 	}
-	num_integer_args = convert_string_to_array(
+	num_integer_args = ConvertStringToArray(
 	  api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
 	if (num_integer_args != 3) {
@@ -365,11 +366,11 @@ int handle_vt_initialize_exp(unsigned long arg)  {
 		return -EFAULT;
 	}
 
-	return handle_initialize_exp_cmd(api_integer_args[0],
+	return HandleInitializeExpCmd(api_integer_args[0],
 					api_integer_args[1], api_integer_args[2]);
 }
 
-int handle_vt_sync_freeze() {
+int HandleVtSyncFreeze() {
       // Any process can invoke this call.
       if (initialization_status != INITIALIZED) {
         PDEBUG_E(
@@ -385,10 +386,10 @@ int handle_vt_sync_freeze() {
         return -EFAULT;
       }
 
-      return sync_and_freeze();
+      return SyncAndFreeze();
 }
 
-int handle_vt_gettimepid(unsigned long arg) {
+int HandleVtGettimePid(unsigned long arg) {
 
 	
       invoked_api *api_info;
@@ -417,7 +418,7 @@ int handle_vt_gettimepid(unsigned long arg) {
       if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 		return -EFAULT;
       }
-      api_info_tmp.return_value = handle_gettimepid(api_info_tmp.api_argument);
+      api_info_tmp.return_value = HandleGettimepid(api_info_tmp.api_argument);
       if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
         PDEBUG_I("VT_GETTIME_PID: Error copying to user buf\n");
         return -EFAULT;
@@ -425,7 +426,7 @@ int handle_vt_gettimepid(unsigned long arg) {
       return 0;
 }
 
-int handle_vt_gettime_tracer(unsigned long arg, struct dilated_task_struct * dilated_task) {
+int HandleVtGettimeTracer(unsigned long arg, struct dilated_task_struct * dilated_task) {
 
 
       invoked_api *api_info;
@@ -460,7 +461,7 @@ int handle_vt_gettime_tracer(unsigned long arg, struct dilated_task_struct * dil
 		return -EFAULT;
       }
 
-      num_integer_args = convert_string_to_array(
+      num_integer_args = ConvertStringToArray(
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args < 1) {
@@ -483,7 +484,7 @@ int handle_vt_gettime_tracer(unsigned long arg, struct dilated_task_struct * dil
       return 0;
 }
 
-int handle_vt_stop_exp() {
+int HandleVtStopExp() {
 
       // Any process can invoke this call.
       if (initialization_status != INITIALIZED) {
@@ -500,11 +501,11 @@ int handle_vt_stop_exp() {
         return -EFAULT;
       }
 
-      return handle_stop_exp_cmd();
+      return HandleStopExpCmd();
 }
 
 
-int handle_vt_progress_by(unsigned long arg) {
+int HandleVtProgressBy(unsigned long arg) {
 
 
       invoked_api *api_info;
@@ -542,7 +543,7 @@ int handle_vt_progress_by(unsigned long arg) {
         return -EFAULT;
       }
 
-      num_integer_args = convert_string_to_array(
+      num_integer_args = ConvertStringToArray(
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args < 1) {
@@ -550,10 +551,10 @@ int handle_vt_progress_by(unsigned long arg) {
         return -EFAULT;
       }
 
-      return progress_by(api_info_tmp.return_value, api_integer_args[0]);
+      return ProgressBy(api_info_tmp.return_value, api_integer_args[0]);
 }
 
-int handle_vt_progress_timeline_by(unsigned long arg) {
+int HandleVtProgressTimelineBy(unsigned long arg) {
 
 
       invoked_api *api_info;
@@ -596,7 +597,7 @@ int handle_vt_progress_timeline_by(unsigned long arg) {
         return -EFAULT;
       }
 
-      num_integer_args = convert_string_to_array(
+      num_integer_args = ConvertStringToArray(
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args < 1) {
@@ -605,10 +606,10 @@ int handle_vt_progress_timeline_by(unsigned long arg) {
       }
 
       timeline_id = api_integer_args[0];
-      return progress_timeline_by(timeline_id, api_info_tmp.return_value);
+      return ProgressTimelineBy(timeline_id, api_info_tmp.return_value);
 }
 
-int handle_vt_wait_for_exit(unsigned long arg, struct dilated_task_struct * dilated_task) {
+int HandleVtWaitForExit(unsigned long arg, struct dilated_task_struct * dilated_task) {
 
       invoked_api *api_info;
       invoked_api api_info_tmp;
@@ -639,7 +640,7 @@ int handle_vt_wait_for_exit(unsigned long arg, struct dilated_task_struct * dila
         return -EFAULT;
       }
 
-      num_integer_args = convert_string_to_array(
+      num_integer_args = ConvertStringToArray(
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args < 1) {
@@ -660,7 +661,7 @@ int handle_vt_wait_for_exit(unsigned long arg, struct dilated_task_struct * dila
 
 }
 
-int handle_vt_sleep_for(unsigned long arg, struct dilated_task_struct * dilated_task) {
+int HandleVtSleepFor(unsigned long arg, struct dilated_task_struct * dilated_task) {
 
       invoked_api *api_info;
       invoked_api api_info_tmp;
@@ -699,11 +700,11 @@ int handle_vt_sleep_for(unsigned long arg, struct dilated_task_struct * dilated_
       PDEBUG_V(
         "VT_SLEEP_FOR: Process: %d, duration: %llu\n", current->pid, duration);
              
-      return dilated_hrtimer_sleep(duration, dilated_task);
+      return DilatedHrtimerSleep(duration, dilated_task);
 
 }
 
-int handle_vt_release_worker(unsigned long arg, struct dilated_task_struct * dilated_task) {
+int HandleVtReleaseWorker(unsigned long arg, struct dilated_task_struct * dilated_task) {
       
       tracer * curr_tracer;
 
@@ -740,7 +741,7 @@ int handle_vt_release_worker(unsigned long arg, struct dilated_task_struct * dil
 
 }
 
-int handle_vt_set_runnable(unsigned long arg, struct dilated_task_struct * dilated_task) {
+int HandleVtSetRunnable(unsigned long arg, struct dilated_task_struct * dilated_task) {
 
       invoked_api *api_info;
       invoked_api api_info_tmp;
@@ -843,7 +844,7 @@ int handle_vt_set_runnable(unsigned long arg, struct dilated_task_struct * dilat
 
 }
 
-int handle_vt_gettime_my_pid(unsigned long arg) {
+int HandleVtGettimeMyPid(unsigned long arg) {
 
       invoked_api *api_info;
       invoked_api api_info_tmp;
@@ -877,7 +878,7 @@ int handle_vt_gettime_my_pid(unsigned long arg) {
 
       PDEBUG_V(
         "VT_GETTIME_MY_PID: Process: %d\n", current->pid);
-      api_info_tmp.return_value = get_dilated_time(current);
+      api_info_tmp.return_value = GetCurrentVirtualTime(current);
       if (copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api))) {
         PDEBUG_I("VT_GETTIME_MY_PID: Error copying to user buf \n");
         return -EFAULT;
@@ -886,7 +887,7 @@ int handle_vt_gettime_my_pid(unsigned long arg) {
 
 }
 
-int handle_vt_add_to_sq(unsigned long arg) {
+int HandleVtAddToSchQueue(unsigned long arg) {
 
       invoked_api *api_info;
       invoked_api api_info_tmp;
@@ -916,7 +917,7 @@ int handle_vt_add_to_sq(unsigned long arg) {
       if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
         return -EFAULT;
       }
-      num_integer_args = convert_string_to_array(
+      num_integer_args = ConvertStringToArray(
           api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
       if (num_integer_args <= 0) {
@@ -930,16 +931,16 @@ int handle_vt_add_to_sq(unsigned long arg) {
         PDEBUG_I("VT_ADD_TO_SQ: Tracer : %d, not registered\n", tracer_id);
         return -EFAULT;
       }
-      get_tracer_struct_write(curr_tracer);
-      add_to_tracer_schedule_queue(curr_tracer, current);
-      put_tracer_struct_write(curr_tracer);
+      GetTracerStructWrite(curr_tracer);
+      AddToTracerScheduleQueue(curr_tracer, current);
+      PutTracerStructWrite(curr_tracer);
 
       PDEBUG_V("VT_ADD_TO_SQ: Finished Successfully !\n");
       return 0;
 }
 
 
-int handle_vt_syscall_wait(unsigned long arg, struct dilated_task_struct * dilated_task) {
+int HandleVtSyscallWait(unsigned long arg, struct dilated_task_struct * dilated_task) {
 
       invoked_api *api_info;
       invoked_api api_info_tmp;
@@ -1043,16 +1044,16 @@ int handle_vt_syscall_wait(unsigned long arg, struct dilated_task_struct * dilat
 }
 
 
-int handle_vt_set_packet_send_time(unsigned long arg, struct dilated_task_struct * dilated_task) {
+int HandleVtSetPacketSendTime(unsigned long arg, struct dilated_task_struct * dilated_task) {
 
-        invoked_api *api_info;
-        invoked_api api_info_tmp;
-        int num_integer_args;
-        int api_integer_args[MAX_API_ARGUMENT_SIZE];
+	invoked_api *api_info;
+	invoked_api api_info_tmp;
+	int num_integer_args;
+	int api_integer_args[MAX_API_ARGUMENT_SIZE];
 	int payload_hash, payload_len;
 
-        memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
-        memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
+	memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
+	memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
 
 
 	if (initialization_status != INITIALIZED
@@ -1078,7 +1079,7 @@ int handle_vt_set_packet_send_time(unsigned long arg, struct dilated_task_struct
 	if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 		return -EFAULT;
 	}
-	num_integer_args = convert_string_to_array(
+	num_integer_args = ConvertStringToArray(
 	  api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
 	if (num_integer_args <= 1) {
@@ -1091,25 +1092,25 @@ int handle_vt_set_packet_send_time(unsigned long arg, struct dilated_task_struct
 	payload_len = api_integer_args[1];
 	PDEBUG_I("VT_SET_PACKET_SEND_TIME: Entered for payload_hash: %d, payload_len = %d, at time: %llu\n",
 		payload_hash, payload_len, dilated_task->associated_tracer->curr_virtual_time);
-	add_to_pkt_info_queue(dilated_task->associated_tracer, payload_hash, payload_len, api_info_tmp.return_value);
+	AddToPktInfoQueue(dilated_task->associated_tracer, payload_hash, payload_len, api_info_tmp.return_value);
 	
 	return 0;
 
 }
 
 
-int handle_vt_get_packet_send_time(unsigned long arg) {
+int HandleVtGetPacketSendTime(unsigned long arg) {
 
-        invoked_api *api_info;
-        invoked_api api_info_tmp;
-        int num_integer_args;
-        int api_integer_args[MAX_API_ARGUMENT_SIZE];
+	invoked_api *api_info;
+	invoked_api api_info_tmp;
+	int num_integer_args;
+	int api_integer_args[MAX_API_ARGUMENT_SIZE];
 	int payload_hash;
 	int tracer_id;
 	tracer * curr_tracer;
 
-        memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
-        memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
+	memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
+	memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
 
 
 	if (initialization_status != INITIALIZED
@@ -1130,7 +1131,7 @@ int handle_vt_get_packet_send_time(unsigned long arg) {
 	if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 		return -EFAULT;
 	}
-	num_integer_args = convert_string_to_array(
+	num_integer_args = ConvertStringToArray(
 	  api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
 	if (num_integer_args <= 1) {
@@ -1148,25 +1149,25 @@ int handle_vt_get_packet_send_time(unsigned long arg) {
       	}
 	PDEBUG_I("VT_GET_PACKET_SEND_TIME: Attempting for packets sent by Tracer : %d, "
 		"payload_hash: %d, at time: %llu\n", tracer_id, payload_hash, curr_tracer->curr_virtual_time);
-	api_info_tmp.return_value = get_pkt_send_tstamp(curr_tracer, payload_hash);
+	api_info_tmp.return_value = GetPktSendTstamp(curr_tracer, payload_hash);
 	
 	BUG_ON(copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api)));
 	return 0;
 
 }
 
-int handle_vt_get_num_queued_bytes(unsigned long arg) {
+int HandleVtGetNumQueuedBytes(unsigned long arg) {
 
-        invoked_api *api_info;
-        invoked_api api_info_tmp;
-        int num_integer_args;
-        int api_integer_args[MAX_API_ARGUMENT_SIZE];
+	invoked_api *api_info;
+	invoked_api api_info_tmp;
+	int num_integer_args;
+	int api_integer_args[MAX_API_ARGUMENT_SIZE];
 	int payload_hash;
 	int tracer_id;
 	tracer * curr_tracer;
 
-        memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
-        memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
+	memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
+	memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
 
 	if (initialization_status != INITIALIZED
 	    || experiment_status == STOPPING) {
@@ -1186,7 +1187,7 @@ int handle_vt_get_num_queued_bytes(unsigned long arg) {
 	if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 		return -EFAULT;
 	}
-	num_integer_args = convert_string_to_array(
+	num_integer_args = ConvertStringToArray(
 	  api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
 	if (num_integer_args <= 0) {
@@ -1201,7 +1202,7 @@ int handle_vt_get_num_queued_bytes(unsigned long arg) {
         	return -EFAULT;
       	}
 
-	api_info_tmp.return_value = get_num_enqueued_bytes(curr_tracer);
+	api_info_tmp.return_value = GetNumEnqueuedBytes(curr_tracer);
 	if (api_info_tmp.return_value > 0) {
 		PDEBUG_I("VT_GET_NUM_ENQUEUED_BYTES: %llu, for Tracer: %d\n",
 			api_info_tmp.return_value, tracer_id);
@@ -1211,17 +1212,17 @@ int handle_vt_get_num_queued_bytes(unsigned long arg) {
 }
 
 
-int handle_vt_set_eat(unsigned long arg) {
+int HandleVtSetEat(unsigned long arg) {
 
-        invoked_api *api_info;
-        invoked_api api_info_tmp;
-        int num_integer_args;
-        int api_integer_args[MAX_API_ARGUMENT_SIZE];
+	invoked_api *api_info;
+	invoked_api api_info_tmp;
+	int num_integer_args;
+	int api_integer_args[MAX_API_ARGUMENT_SIZE];
 	int tracer_id;
 	tracer * curr_tracer;
 
-        memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
-        memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
+	memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
+	memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
 
 
 	if (initialization_status != INITIALIZED
@@ -1242,7 +1243,7 @@ int handle_vt_set_eat(unsigned long arg) {
 	if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 		return -EFAULT;
 	}
-	num_integer_args = convert_string_to_array(
+	num_integer_args = ConvertStringToArray(
 	  api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
 	if (num_integer_args <= 0) {
@@ -1252,10 +1253,10 @@ int handle_vt_set_eat(unsigned long arg) {
 	
 	tracer_id = api_integer_args[0];
 	curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
-        if (!curr_tracer) {
-        	PDEBUG_I("VT_SET_EAT: Tracer : %d, not registered\n", tracer_id);
-        	return -EFAULT;
-      	}
+	if (!curr_tracer) {
+		PDEBUG_I("VT_SET_EAT: Tracer : %d, not registered\n", tracer_id);
+		return -EFAULT;
+	}
 
 	curr_tracer->earliest_arrival_time = api_info_tmp.return_value;
 	return 0;
@@ -1263,13 +1264,13 @@ int handle_vt_set_eat(unsigned long arg) {
 }
 
 
-int handle_vt_get_eat(unsigned long arg, struct dilated_task_struct * dilated_task) {
+int HandleVtGetEat(unsigned long arg, struct dilated_task_struct * dilated_task) {
 
 	invoked_api *api_info;
-        invoked_api api_info_tmp;
-	
+	invoked_api api_info_tmp;
 
-        memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
+
+	memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
         
 	if (initialization_status != INITIALIZED
 	    || experiment_status == STOPPING) {
@@ -1317,17 +1318,17 @@ s64 get_process_curr_lookahead(struct dilated_task_struct * dilated_task) {
 	return curr_process_lookahead;
 }
 
-int handle_vt_set_process_lookahead(unsigned long arg, struct dilated_task_struct * dilated_task) {
+int HandleVtSetProcessLookahead(unsigned long arg, struct dilated_task_struct * dilated_task) {
 
-        invoked_api *api_info;
-        invoked_api api_info_tmp;
+	invoked_api *api_info;
+	invoked_api api_info_tmp;
 	long sp_lookahead_duration;
-	
+
 	s64 curr_process_lookahead, new_process_lookahead, bulk_lookahead_expiry_time; 
 	char * ptr;
 
 
-        memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
+	memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
 
 	if (initialization_status != INITIALIZED
 	    || experiment_status == STOPPING) {
@@ -1381,12 +1382,12 @@ int handle_vt_set_process_lookahead(unsigned long arg, struct dilated_task_struc
 
 
 
-int handle_vt_get_tracer_lookahead(unsigned long arg) {
+int HandleVtGetTracerLookahead(unsigned long arg) {
 
-        invoked_api *api_info;
-        invoked_api api_info_tmp;
-        int num_integer_args;
-        int api_integer_args[MAX_API_ARGUMENT_SIZE];
+	invoked_api *api_info;
+	invoked_api api_info_tmp;
+	int num_integer_args;
+	int api_integer_args[MAX_API_ARGUMENT_SIZE];
 	int tracer_id;
 	tracer * curr_tracer;
 	s64 min_tracer_lookahead = 0;
@@ -1395,8 +1396,8 @@ int handle_vt_get_tracer_lookahead(unsigned long arg) {
 	llist* schedule_queue;
 	llist_elem* head;
 
-        memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
-        memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
+	memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
+	memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
 
 
 	if (initialization_status != INITIALIZED
@@ -1414,7 +1415,7 @@ int handle_vt_get_tracer_lookahead(unsigned long arg) {
 	if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
 		return -EFAULT;
 	}
-	num_integer_args = convert_string_to_array(
+	num_integer_args = ConvertStringToArray(
 	  api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
 	if (num_integer_args <= 0) {

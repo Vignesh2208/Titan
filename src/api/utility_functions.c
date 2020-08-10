@@ -15,7 +15,7 @@ Sends a specific command to the VT Kernel Module.
 To communicate with the TLKM, you send messages to the location
 specified by FILENAME
 */
-s64 send_to_vt_module(unsigned int cmd, ioctl_args *arg) {
+s64 SendToVtModule(unsigned int cmd, ioctl_args *arg) {
   int fp = open(FILENAME, O_RDWR);
   s64 ret = 10000;
  
@@ -52,14 +52,14 @@ s64 send_to_vt_module(unsigned int cmd, ioctl_args *arg) {
   return ret;
 }
 
-void init_ioctl_arg(ioctl_args *arg) {
+void InitIoctlArg(ioctl_args *arg) {
   if (arg) {
-    flush_buffer(arg->cmd_buf, BUF_MAX_SIZE);
+    FlushBuffer(arg->cmd_buf, BUF_MAX_SIZE);
     arg->cmd_value = 0;
   }
 }
 
-int num_characters(int n) {
+int NumDigits(int n) {
   int count = 0;
   if (n < 0) {
     count = 1;
@@ -73,11 +73,11 @@ int num_characters(int n) {
 }
 
 
-int append_to_ioctl_arg(ioctl_args *arg, int *append_values, int num_values) {
+int AppendToIoctlArg(ioctl_args *arg, int *append_values, int num_values) {
   if (!arg) return -1;
 
   for (int i = 0; i < num_values; i++) {
-    if (strlen(arg->cmd_buf) + num_characters(append_values[i]) + 1 >=
+    if (strlen(arg->cmd_buf) + NumDigits(append_values[i]) + 1 >=
         BUF_MAX_SIZE)
       return -1;
 
@@ -97,7 +97,7 @@ int gettid() { return syscall(SYS_gettid); }
 /*
 Checks if it is being ran as root or not.
 */
-int is_root() {
+int IsRoot() {
   if (geteuid() == 0) return 1;
   return 0;
 }
@@ -105,7 +105,7 @@ int is_root() {
 /*
 Returns 1 if module is loaded, 0 otherwise
 */
-int isModuleLoaded() {
+int IsModuleLoaded() {
   if (access(FILENAME, F_OK) != -1) {
     return 1;
   } else {
@@ -114,7 +114,7 @@ int isModuleLoaded() {
   }
 }
 
-void flush_buffer(char *buf, int size) {
+void FlushBuffer(char *buf, int size) {
   if (size) memset(buf, 0, size * sizeof(char));
 }
 

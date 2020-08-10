@@ -72,7 +72,7 @@ def main():
         for i in xrange(0, num_tracers) ]
 
     print "Initializing VT Module !"     
-    if kf.initializeVTExp(args.exp_type, num_timelines, num_tracers) < 0 :
+    if kf.InitializeVTExp(args.exp_type, num_timelines, num_tracers) < 0 :
         print "VT module initialization failed ! Make sure you are running\
                the dilated kernel and kronos module is loaded !"
         sys.exit(0)
@@ -88,7 +88,7 @@ def main():
     raw_input('Press any key to continue !')
     
     print "Synchronizing anf freezing tracers ..."
-    while kf.synchronizeAndFreeze() <= 0:
+    while kf.SynchronizeAndFreeze() <= 0:
         print "VT Module >> Synchronize and Freeze failed. Retrying in 1 sec"
         time.sleep(1)
 
@@ -105,7 +105,7 @@ def main():
         while num_finished_rounds < args.num_progress_rounds:
 
             if args.exp_type == EXP_CBE:
-                kf.progressBy(args.progress_ns_per_round, step_size)
+                kf.ProgressBy(args.progress_ns_per_round, step_size)
 
             num_finished_rounds += step_size
             #print "Ran %d rounds ..." %(num_finished_rounds), " elapsed time ...", float(time.time()) - start_time
@@ -115,7 +115,7 @@ def main():
     print "Total time elapsed (secs) = ", elapsed_time
     raw_input("Press Enter to continue...")
     print "Stopping Synchronized Experiment !"
-    kf.stopExp()
+    kf.StopExp()
 
     for fd in log_fds:
         os.close(fd)

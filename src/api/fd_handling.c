@@ -5,7 +5,7 @@
 
 extern hashmap thread_info_map;
 
-void addFd(int ThreadID, int fd, int fdType, int isNonBlocking) {
+void AddFd(int ThreadID, int fd, int fdType, int isNonBlocking) {
     if (fd <= 0)
         return;
 
@@ -35,7 +35,7 @@ void addFd(int ThreadID, int fd, int fdType, int isNonBlocking) {
     llist_append(&currThreadInfo->special_fds, currFdInfo);
 }
 
-int isFdTypeMatch(int ThreadID, int fd, int fdType) {
+int IsFdTypeMatch(int ThreadID, int fd, int fdType) {
     if (fd <= 0)
         return FALSE;
 
@@ -68,12 +68,10 @@ int isFdTypeMatch(int ThreadID, int fd, int fdType) {
     return FALSE;
 }
 
-
-int getNxtTimerFdNumber(int ThreadID) {
+int GetNxtTimerFdNumber(int ThreadID) {
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
     assert(currThreadInfo != NULL);
-
     assert(!currThreadInfo->in_callback);
 
     if (currThreadInfo->processPID != ThreadID) {
@@ -102,7 +100,7 @@ int getNxtTimerFdNumber(int ThreadID) {
 }
 
 
-int isFdNonBlocking(int ThreadID, int fd) {
+int IsFdNonBlocking(int ThreadID, int fd) {
     if (fd <= 0)
         return FALSE;
 
@@ -135,7 +133,7 @@ int isFdNonBlocking(int ThreadID, int fd) {
 }
 
 
-void setFdBlockingMode(int ThreadID, int fd, int isNonBlocking) {
+void SetFdBlockingMode(int ThreadID, int fd, int isNonBlocking) {
     if (fd <= 0)
         return;
 
@@ -167,7 +165,7 @@ void setFdBlockingMode(int ThreadID, int fd, int isNonBlocking) {
 }
 
 
-void setTimerFdParams(int ThreadID, int fd, s64 absExpiryTime, s64 intervalNS,
+void SetTimerFdParams(int ThreadID, int fd, s64 absExpiryTime, s64 intervalNS,
                     s64 relExpiryDuration) {
     if (fd <= 0 || absExpiryTime < 0 || intervalNS < 0)
         return;
@@ -207,7 +205,7 @@ void setTimerFdParams(int ThreadID, int fd, s64 absExpiryTime, s64 intervalNS,
 	}
 }
 
-void getTimerFdParams(int ThreadID, int fd, s64* absExpiryTime,
+void GetTimerFdParams(int ThreadID, int fd, s64* absExpiryTime,
                      s64* intervalNS, s64* relExpiryDuration) {
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
@@ -297,8 +295,8 @@ int __getNumNewTimerFdExpires(fdInfo * currFdInfo, s64 * nxtExpiryDurationNS) {
 
 }
 
-int getNumNewTimerFdExpiries(int ThreadID, int fd, s64 * nxtExpiryDurationNS) {
-    assert(isFdTypeMatch(ThreadID, fd, FD_TYPE_TIMERFD) == TRUE);
+int GetNumNewTimerFdExpiries(int ThreadID, int fd, s64 * nxtExpiryDurationNS) {
+    assert(IsFdTypeMatch(ThreadID, fd, FD_TYPE_TIMERFD) == TRUE);
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
     assert(currThreadInfo != NULL);
@@ -336,7 +334,7 @@ int getNumNewTimerFdExpiries(int ThreadID, int fd, s64 * nxtExpiryDurationNS) {
 
 }
 
-int computeClosestTimerExpiryForSelect(int ThreadID, fd_set * readfs, int nfds,
+int ComputeClosestTimerExpiryForSelect(int ThreadID, fd_set * readfs, int nfds,
                                       s64 * closestTimerExpiryDurationNS) {
     if (!nfds || !readfs || !closestTimerExpiryDurationNS)
         return FALSE;
@@ -393,7 +391,7 @@ int computeClosestTimerExpiryForSelect(int ThreadID, fd_set * readfs, int nfds,
     return FALSE;
 }
 
-int computeClosestTimerExpiryForPoll(
+int ComputeClosestTimerExpiryForPoll(
     int ThreadID, struct pollfd * fds, int nfds,
     s64 * closestTimerExpiryDurationNS) {
     
@@ -418,11 +416,11 @@ int computeClosestTimerExpiryForPoll(
     if (!atleast_one_read)
         return FALSE;
 
-    return computeClosestTimerExpiryForSelect(ThreadID, &equivalentFDSet,
+    return ComputeClosestTimerExpiryForSelect(ThreadID, &equivalentFDSet,
                             equivalentNfds, closestTimerExpiryDurationNS);
 }
 
-void closeFd(int ThreadID, int fd) {
+void CloseFd(int ThreadID, int fd) {
     if (fd <= 0)
         return;
 

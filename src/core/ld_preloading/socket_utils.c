@@ -17,7 +17,7 @@
 #define ETHER_TYPE_IPV6  (0x86DD)
 
 
-int get_payload_hash(const void * buf, int total_len) {
+int GetPayloadHash(const void * buf, int total_len) {
 
     int hash = 0;
     char * payload;
@@ -29,7 +29,7 @@ int get_payload_hash(const void * buf, int total_len) {
     int tcphdrlen, iphdrlen;
 
     
-    if (is_raw_packet(buf, total_len)) {
+    if (IsRawPacket(buf, total_len)) {
 	    ip_header = (struct iphdr*)(buf + ether_offset);
 	    if (ip_header->protocol == 0x11) {
 		// UDP
@@ -72,7 +72,7 @@ int get_payload_hash(const void * buf, int total_len) {
 
 
 
-int is_raw_packet(const void *buf, size_t len) {
+int IsRawPacket(const void *buf, size_t len) {
 
 	int ether_offset = 14;
 	if (len <= ether_offset + sizeof (struct iphdr))
@@ -84,7 +84,5 @@ int is_raw_packet(const void *buf, size_t len) {
 	if (eth->ether_type == ETHER_TYPE_IP
 	    && ip_header->version == 0x4)
 		return SUCCESS;
-
 	return FAIL;
-
 }

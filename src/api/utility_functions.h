@@ -7,25 +7,16 @@
 #define EXP_CBE 1
 #define EXP_CS 2
 
+#define SUCCESS 1
+#define FAILURE 0
+
 #define MAX_API_ARGUMENT_SIZE 100
 #define BUF_MAX_SIZE MAX_API_ARGUMENT_SIZE
-
-#define MAX_PAYLOAD BUF_MAX_SIZE
-#define NETLINK_USER 31
-#define IFNAMESIZ 16
-
-#define TRACER_TYPE_INS_VT 1
-#define TRACER_TYPE_APP_VT 2
-
-#define SIMPLE_REGISTRATION 0
-#define REGISTRATION_W_SPINNER 1
-#define REGISTRATION_W_CONTROL_THREAD 2
 
 #define NSEC_PER_SEC 1000000000
 #define NSEC_PER_MS 1000000
 #define NSEC_PER_US 1000
 
-#define SMALLEST_PROCESS_QUANTA_INSNS 100000
 
 typedef long long s64;
 
@@ -63,15 +54,32 @@ typedef struct ioctl_args_struct {
 #define VT_SET_PROCESS_LOOKAHEAD _IOW(VT_IOC_MAGIC, 25, int)
 #define VT_GET_TRACER_LOOKAHEAD _IOW(VT_IOC_MAGIC, 26, int)
 
-s64 send_to_vt_module(unsigned int cmd, ioctl_args* arg);
+//! Sends the command to the virtual time module as an ioctl call
+s64 SendToVtModule(unsigned int cmd, ioctl_args* arg);
+
+//! Returns the threadID of the invoking process
 int gettid(void);
-int get_next_value (char *write_buffer);
-int is_root(void);
-int isModuleLoaded(void);
-void init_ioctl_arg(ioctl_args* arg);
-void flush_buffer(char* buf, int size);
-void init_ioctl_arg(ioctl_args* arg);
-int num_characters(int n);
-int append_to_ioctl_arg(ioctl_args* arg, int* append_values, int num_values);
+
+//! Returns the next first integer value found in a string
+int GetNextValue (char *write_buffer);
+
+//! Returns 1 if run with root permissions
+int IsRoot(void);
+
+//! Checks if the virtual time manager module is loaded
+int IsModuleLoaded(void);
+
+//! Initializes/zeros out an ioct_args structure 
+void InitIoctlArg(ioctl_args* arg);
+
+//! Zeros out a string buffer of the specified size
+void FlushBuffer(char* buf, int size);
+
+//! Returns number of digits in the integer b
+int NumDigits(int n);
+
+//! Converts an integer list of values into a comma separated string and adds
+//  them to an ioctl_args structure
+int AppendToIoctlArg(ioctl_args* arg, int* append_values, int num_values);
 
 #endif

@@ -30,7 +30,7 @@ print_elapsed_time(i)
        secs--;
        nsecs += 1000000000;
    }
-   printf("%d.%03d: %d", secs, (nsecs + 500000) / 1000000, i);
+   printf("%d.%03d: %d\n", secs, (nsecs + 500000) / 1000000, i);
 }
 
 int
@@ -50,16 +50,28 @@ main(int argc, char *argv[])
    int counter = 0;
 
    print_elapsed_time(0);
-
+   for(i = init; i >= max; i-=1) {
+        //if (counter < 100)
+        //    continue;
+        counter ++;
+        fprintf(stderr, "Hello %d\n", counter);
+   }
    
-   for(i= init; i < max; i++) {
-	for(int j = 0; j < 1000; j++) {
+   for(i= init-1; i >= max; i-=2) {
+	for(int j = init-2; j >= max; j-=3) {
+		for (int k = 3; k < max; k++) {
+			if (counter < 100)
+				continue;
+			printf("Hello %d, %d, %d\n", i, j, k);
+			
+		}
 		counter ++;
-		printf("Hello %d\n", j);
+		printf("Hello %d, %d\n", i, j);
 	}
 	counter ++;
 	print_elapsed_time(i);
-   };
+	
+   }
 
  
    print_elapsed_time(0);

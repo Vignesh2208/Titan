@@ -1,56 +1,24 @@
 #include "utils.h"
 
-
 extern int experiment_status;
 extern s64 virt_exp_start_time;
 extern int tracer_num;
-extern int schedule_list_size(tracer * tracer_entry);
+extern int ScheduleListSize(tracer * tracer_entry);
 extern hashmap get_tracer_by_id;
 extern hashmap get_dilated_task_struct_by_pid;
 extern struct mutex exp_lock;
 
 
-void bind_to_cpu(struct task_struct * task, int target_cpu) {
+void BindToCpu(struct task_struct * task, int target_cpu) {
 	if (target_cpu != -1)
 		set_cpus_allowed_ptr(task, cpumask_of(target_cpu));
 }
 
-
-char * alloc_mmap_pages(int npages)
-{
-    int i;
-    char *mem = kmalloc(PAGE_SIZE * npages, GFP_KERNEL);
-
-    if (!mem)
-        return mem;
-
-    memset(mem, 0, PAGE_SIZE * npages);
-    for(i = 0; i < npages * PAGE_SIZE; i += PAGE_SIZE) {
-        SetPageReserved(virt_to_page(((unsigned long)mem) + i));
-    }
-
-    return mem;
-}
-
-void free_mmap_pages(void *mem, int npages)
-{
-    int i;
-    if (!mem)
-        return;
-
-    for(i = 0; i < npages * PAGE_SIZE; i += PAGE_SIZE) {
-        ClearPageReserved(virt_to_page(((unsigned long)mem) + i));
-    }
-
-    kfree(mem);
-}
-
-
-/***
-Used when reading the input from a userland process.
-Will basically return the next number in a string
-***/
-int get_next_value (char *write_buffer) {
+/**
+ * Used when reading the input from a userland process.
+ * Will basically return the next number in a string
+**/
+int GetNextValue (char *write_buffer) {
 	int i;
 	for (i = 1; * (write_buffer + i) >= '0'
 	        && *(write_buffer + i) <= '9'; i++) {
@@ -59,9 +27,6 @@ int get_next_value (char *write_buffer) {
 	return (i + 1);
 }
 
-/***
- Convert string to integer
-***/
 int atoi(char *s) {
 	int i, n;
 	n = 0;
@@ -70,11 +35,7 @@ int atoi(char *s) {
 	return n;
 }
 
-
-/***
-Given a pid, returns a pointer to the associated task_struct
-***/
-struct task_struct* find_task_by_pid(unsigned int nr) {
+struct task_struct* FindTaskByPid(unsigned int nr) {
 	struct task_struct* task;
 	rcu_read_lock();
 	task = pid_task(find_vpid(nr), PIDTYPE_PID);
@@ -82,12 +43,10 @@ struct task_struct* find_task_by_pid(unsigned int nr) {
 	return task;
 }
 
-void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id) {
+void InitializeTracerEntry(tracer * new_tracer, uint32_t tracer_id) {
 
 	if (!new_tracer)
 		return;
-
-
 
 	new_tracer->timeline_assignment = 0;
 	new_tracer->cpu_assignment = 0;
@@ -101,8 +60,7 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id) {
 	new_tracer->running_task_lookahead = 0;
 	new_tracer->last_run = NULL;
 	new_tracer->main_task = NULL;
-	//new_tracer->main_task = main_task;
-
+	
 	llist_destroy(&new_tracer->schedule_queue);
 	llist_destroy(&new_tracer->run_queue);
 	llist_destroy(&new_tracer->pkt_info_queue);
@@ -114,7 +72,7 @@ void initialize_tracer_entry(tracer * new_tracer, uint32_t tracer_id) {
 	rwlock_init(&new_tracer->tracer_lock);
 }
 
-tracer * alloc_tracer_entry(uint32_t tracer_id) {
+tracer * AllocTracerEntry(uint32_t tracer_id) {
 
 	tracer * new_tracer = NULL;
 
@@ -124,11 +82,11 @@ tracer * alloc_tracer_entry(uint32_t tracer_id) {
 
 	memset(new_tracer, 0, sizeof(tracer));
 
-	initialize_tracer_entry(new_tracer, tracer_id);
+	InitializeTracerEntry(new_tracer, tracer_id);
 	return new_tracer;
 }
 
-void free_tracer_entry(tracer * tracer_entry) {
+void FreeTracerEntry(tracer * tracer_entry) {
 
 	llist_destroy(&tracer_entry->schedule_queue);
     llist_destroy(&tracer_entry->run_queue);
@@ -137,10 +95,10 @@ void free_tracer_entry(tracer * tracer_entry) {
 }
 
 
-/***
-Set the time dilation variables to be consistent with all children
-***/
-void set_children_cpu(struct task_struct *aTask, int cpu) {
+/**
+ * Set the time dilation variables to be consistent with all children
+**/
+void SetChildrenCpu(struct task_struct *aTask, int cpu) {
 	struct list_head *list;
 	struct task_struct *taskRecurse;
 	struct task_struct *me;
@@ -161,7 +119,7 @@ void set_children_cpu(struct task_struct *aTask, int cpu) {
 	do {
 		if (t->pid != aTask->pid) {
 			if (cpu != -1) {
-				bind_to_cpu(t, cpu);
+				BindToCpu(t, cpu);
 			}
 		}
 	} while_each_thread(me, t);
@@ -172,18 +130,17 @@ void set_children_cpu(struct task_struct *aTask, int cpu) {
 			return;
 		}
 		if (cpu == -1) {
-			bind_to_cpu(taskRecurse, cpu);
+			BindToCpu(taskRecurse, cpu);
 		}
-		set_children_cpu(taskRecurse, cpu);
+		SetChildrenCpu(taskRecurse, cpu);
 	}
 }
 
 
-/***
-Set the time variables to be consistent with all children.
-Assumes tracer write lock is acquired prior to call
-***/
-void set_children_time(tracer * tracer_entry, s64 time, int increment) {
+/**
+ * Assumes tracer write lock is acquired prior to call
+**/
+void SetChildrenTime(tracer * tracer_entry, s64 time, int increment) {
 
 
 	unsigned long flags;
@@ -212,14 +169,14 @@ void set_children_time(tracer * tracer_entry, s64 time, int increment) {
 	}
 }
 
-/*
-Assumes tracer read lock is acquired prior to call.
-*/
-void print_schedule_list(tracer* tracer_entry) {
+/**
+ *Assumes tracer read lock is acquired prior to call.
+**/
+void PrintScheduleList(tracer* tracer_entry) {
 	int i = 0;
 	lxc_schedule_elem * curr;
 	if (tracer_entry != NULL) {
-		for (i = 0; i < schedule_list_size(tracer_entry); i++) {
+		for (i = 0; i < ScheduleListSize(tracer_entry); i++) {
 			curr = llist_get(&tracer_entry->schedule_queue, i);
 			if (curr != NULL) {
 				PDEBUG_V("Schedule List Item No: %d, TRACER PID: %d, "
@@ -227,18 +184,13 @@ void print_schedule_list(tracer* tracer_entry) {
 				         "Size OF SCHEDULE QUEUE: %d\n", i,
 				         tracer_entry->main_task->pid, curr->pid,
 				         curr->quanta_curr_round,
-				         schedule_list_size(tracer_entry));
+				         ScheduleListSize(tracer_entry));
 			}
 		}
 	}
 }
 
-
-/***
-My implementation of the kill system call. Will send a signal to a container.
-Used for freezing/unfreezing containers
-***/
-int kill_p(struct task_struct *killTask, int sig) {
+int SendSignalToProcess(struct task_struct *killTask, int sig) {
 	struct siginfo info;
 	int returnVal;
 	info.si_signo = sig;
@@ -253,58 +205,32 @@ int kill_p(struct task_struct *killTask, int sig) {
 	return returnVal;
 }
 
-
-/*tracer * get_tracer_for_task(struct task_struct * aTask) {
-
-	if (!aTask || experiment_status != RUNNING)
-		return NULL;
-	struct dilated_task_struct * dilated_task 
-		= hmap_get_abs(&get_dilated_task_struct_by_pid, aTask->pid);
-	
-	if (dilated_task)
-		return (tracer *)dilated_task->associated_tracer;
-	return NULL;
-}*/
-
-
-void get_tracer_struct_read(tracer* tracer_entry) {
+void GetTracerStructRead(tracer* tracer_entry) {
 	if (tracer_entry) {
 		read_lock(&tracer_entry->tracer_lock);
 	}
 }
 
-void put_tracer_struct_read(tracer* tracer_entry) {
+void PutTracerStructRead(tracer* tracer_entry) {
 	if (tracer_entry) {
 		read_unlock(&tracer_entry->tracer_lock);
 	}
 }
 
-void get_tracer_struct_write(tracer* tracer_entry) {
+void GetTracerStructWrite(tracer* tracer_entry) {
 	if (tracer_entry) {
 		write_lock(&tracer_entry->tracer_lock);
 	}
 }
 
-void put_tracer_struct_write(tracer* tracer_entry) {
+void PutTracerStructWrite(tracer* tracer_entry) {
 	if (tracer_entry) {
 		write_unlock(&tracer_entry->tracer_lock);
 	}
 }
 
-/*struct dilated_task_struct * get_dilated_task_struct(
-	struct task_struct * task) {
-	if (!task)
-		return NULL;
-	return (struct dilated_task_struct * )hmap_get_abs(&get_dilated_task_struct_by_pid, task->pid);
-}
 
-
-struct dilated_task_struct * find_dilated_task_by_pid(int pid) {
-	return (struct dilated_task_struct *) hmap_get_abs(&get_dilated_task_struct_by_pid, pid);
-}
-*/
-
-int convert_string_to_array(char * str, int * arr, int arr_size) 
+int ConvertStringToArray(char * str, int * arr, int arr_size) 
 { 
     // get length of string str 
     int str_length = strlen(str); 
