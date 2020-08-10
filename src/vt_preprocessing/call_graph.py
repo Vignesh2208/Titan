@@ -1,3 +1,5 @@
+"""Computing local CFGs, call graphs of each function and global call graphs."""
+
 import networkx as nx
 import constants as c
 from typing import Dict, Any
@@ -5,6 +7,7 @@ import logging
 
 
 class FunctionCFG(object):
+    """Represents the control flow graph of a resolvable function."""
     def __init__(self, fn_name: str, variant_number: int,
                  global_call_graph: object,
                  function_cfg_json: Dict[str, str]):
@@ -23,34 +26,42 @@ class FunctionCFG(object):
 
     @property
     def fn_name(self):
+        """Returns function name."""
         return self._fn_name
 
     @property
     def fully_qualified_fn_name(self):
+        """Retruns fully qualified function name i.e function name + variant number."""
         return self._fully_qualified_fn_name
 
     @property
     def packet_send_call_sites(self):
+        """Returns all call sites where packet send events happen."""
         return self._packet_send_call_sites
 
     @property
     def called_functions(self):
+        """Returns all functions called from this function."""
         return self._called_functions
 
     @property
     def fn_cfg_graph(self):
+        """Returns the function's CFG."""
         return self._fn_cfg
 
     @property
     def global_call_graph(self):
+        """Returns the global call graph."""
         return self._global_call_graph
 
     @property
     def call_sites_by_fn(self):
+        """Returns all call sites grouped by function they call."""
         return self._call_sites_by_fn
 
     @property
     def call_sites(self):
+        """Yields an iterator to all call sites."""
         all_call_sites = []
         for called_fn in self._call_sites_by_fn:
             all_call_sites.extend(self._call_sites_by_fn[called_fn])
@@ -59,15 +70,18 @@ class FunctionCFG(object):
 
     @property
     def bbl_entry_nodes(self):
+        """Yields an iterator to entry nodes to the function."""
         for bbl_entry in self._bbl_entry_nodes:
             yield bbl_entry
 
     @property
     def packet_send_entry_nodes(self):
+        """Yields an iterator to basic blocks where packet send calls are made."""
         for bbl_entry in self._packet_send_entry_nodes:
             yield bbl_entry
 
     def InitializeCallGraph(self):
+        """Computes a local call graph."""
         bbls = self._function_cfg_json.get(c.FN_BBLS_JSON_KEY)
         for bbl in bbls:
             for called_fn in bbls[bbl].get(c.BBL_CALLED_FNS_JSON_KEY):
@@ -79,12 +93,15 @@ class FunctionCFG(object):
         logging.info('Called functions: %s', self._called_functions)
 
     def GetFnEntryNode(self):
+        """Returns the basic block at which the function is entered."""
         return c.FN_ENTRY_NODE.format(func_name=self._fully_qualified_fn_name)
 
     def GetFnExitNode(self):
+        """Returns the hypothetical node at which the function is exited."""
         return c.FN_EXIT_NODE.format(func_name=self._fully_qualified_fn_name)
 
     def InitializeCFG(self):
+        """Computes local CFG for the function."""
         assert self._global_call_graph.is_composed
         fn_entry_node = c.FN_ENTRY_NODE.format(
             func_name=self._fully_qualified_fn_name)
@@ -137,6 +154,7 @@ class FunctionCFG(object):
 
 
 class InterProceduralCallGraph(object):
+    """Represents an inter-procedural call graph computed by merging local callgraphs from all functions."""
     def __init__(self):
         self._call_graph = nx.DiGraph()
         self._resolvable_functions = {}
@@ -147,20 +165,25 @@ class InterProceduralCallGraph(object):
 
     @property
     def resolvable_functions(self):
+        """A function is resolvable if the body is defined in the source i.e it is not in some external library."""
         return self._resolvable_functions
 
     @property
     def function_reachability(self):
+        """Returns a dictionary which represents functions reachable from a given function."""
         return self._function_reachability
 
     @property
     def packet_sent_sites(self):
+        """Returns all call sites where packets are sent."""
         return self._packet_send_sites
 
     def SetBBLWeight(self, bbl_node, weight):
+        """Sets the weight of the basic block to represent time consumed in executing the basic block."""
         self._bbl_weights[bbl_node] = weight
 
     def GetBBLWeight(self, bbl_node):
+        """Returns the weight of a basic block."""
         return self._bbl_weights.get(bbl_node)
 
     @property
@@ -169,14 +192,17 @@ class InterProceduralCallGraph(object):
 
     @property
     def function_cfgs(self):
+        """Yields a local cfg for each resolvable funciton."""
         for function_name in self._resolvable_functions:
             for function_cfg in self._resolvable_functions[function_name]:
                 yield function_cfg
 
     def IsFunctionResolvable(self, fn_name: str) -> bool:
+        """Returns true if a given function name is resolvable."""
         return True if fn_name in self._resolvable_functions else False
 
     def IsPktSendReachableFromFunction(self, fn_name: str) -> bool:
+        """Returns true if a packet send call site is reachable from a function."""
         if (not self.IsFunctionResolvable(fn_name) and
                 not fn_name in c.PKT_SEND_CALL_SITES):
             return False
@@ -186,7 +212,7 @@ class InterProceduralCallGraph(object):
 
     def UpdateCallGraph(self, function_name: str,
                         function_cfg_json: Dict[str, Any]):
-
+        """Merging local callgraphs of a resolvable function into a global callgraph."""
         logging.info('Function cfg json: %s', function_cfg_json)
         if function_name not in self._resolvable_functions:
             self._resolvable_functions[function_name] = []
@@ -204,7 +230,7 @@ class InterProceduralCallGraph(object):
                 function_cfg.packet_send_call_sites)
 
     def ComposeFullCallGraph(self):
-
+        """Compute the final global call graph across all resolvable functions."""
         if self._is_composed:
             return
 

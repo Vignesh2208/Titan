@@ -1,3 +1,5 @@
+"""Constants used in lookahead artifact processing."""
+
 FN_ENTRY_BBL_JSON_KEY = 'entry_block'
 FN_RETURN_BBLS_JSON_KEY = 'returning_blocks'
 FN_BBLS_JSON_KEY = 'bbls'

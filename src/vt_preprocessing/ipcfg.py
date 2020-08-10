@@ -1,3 +1,5 @@
+"""Loop lookahead and BBL lookahead computation utils."""
+
 import re
 import pprint
 import networkx as nx
@@ -10,7 +12,7 @@ from typing import Dict, Any
 from collections import OrderedDict
 
 class LoopCFG(object):
-
+    """Represents the control flow graph of a Loop."""
     def __init__(self, loop_number: int, loop_cfg_json: Dict[str, Any],
                  ipcfg: object):
         self._loop_number = loop_number
@@ -18,6 +20,7 @@ class LoopCFG(object):
         self._ipcfg = ipcfg
 
     def GetLoopLookahead(self):
+        """Returns the shortest iteration in a loop."""
         called_functions = self._loop_cfg_json.get(c.LOOP_CALLED_FNS_JSON_KEY)
         for called_fn in called_functions:
             if (self._ipcfg.interprocedural_call_graph
@@ -44,7 +47,7 @@ class LoopCFG(object):
 
 
 class InterProceduralCFG(object):
-
+    """Represents an inter-procedural control flow graph."""
     def __init__(self, source_storage_dir: str):
         self._source_storage_dir = source_storage_dir
         self._ipcfg = nx.DiGraph()
@@ -59,9 +62,11 @@ class InterProceduralCFG(object):
 
     @property
     def interprocedural_call_graph(self):
+        """Returns the ipcfg object."""
         return self._interprocedural_call_graph
 
     def Initialize(self):
+        """Computes an interprocedural call graph."""
         assert not self._initialization_complete
         for path in pathlib.Path(self._source_storage_dir).rglob(
                 '*.{}'.format(c.CLANG_ARTIFACTS_EXTENSION)):
@@ -90,6 +95,7 @@ class InterProceduralCFG(object):
         self._initialization_complete = True
 
     def _ComposeInterProceduralCFG(self):
+        """For computing an inter-procedural control flow graph."""
         assert self._initialization_complete
 
         if self._ipcfg_computed:
@@ -135,12 +141,15 @@ class InterProceduralCFG(object):
         self._ipcfg_computed = True
 
     def GetBBLWeight(self, bbl_node):
+        """Returns the weight of a basic block."""
         return self._interprocedural_call_graph.GetBBLWeight(bbl_node)
 
     def GetShortestPathLength(self, node_1, node_2):
+        """Returns the shortest path between two nodes in the inter-procedural control flow graph."""
         return nx.shortest_path_length(self._ipcfg, node_1, node_2, 'weight')
 
     def ComputeLookahead(self):
+        """Computes a basic block lookahead map for all bbls."""
         self._ComposeInterProceduralCFG()
         logging.info('Reversing computed Interprocedural CFG ...')
         ipcfg_reverse = self._ipcfg.reverse(copy=True)
@@ -160,6 +169,7 @@ class InterProceduralCFG(object):
                      len(self._bbl_lookahead))
 
     def DumpBBLLookahead(self, output_file: str):
+        """Writes the basic block lookahead information to STDOUT or to a Json file."""
         logging.info('Dumping BBL lookahead information ...')
         bbl_lookahead_dump = OrderedDict()
         bbl_lookahead_dump['lookaheads'] = OrderedDict()
@@ -192,6 +202,7 @@ class InterProceduralCFG(object):
         logging.info('BBL Lookahead information dumped ...')
 
     def DumpLoopLookahead(self, output_file: str):
+        """Dumps lookahead information for each loop to STDOUT or to a Json file."""
         logging.info('Dumping Loop lookahead information ...')
         loop_lookahead_dump = OrderedDict()
         loop_lookahead_dump['lookaheads'] = OrderedDict()

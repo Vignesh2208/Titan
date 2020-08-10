@@ -1,3 +1,5 @@
+"""Preprocesses a directory containing llvm artifacts and generates BBL + Loop lookahead maps."""
+
 #!/usr/bin/python
 
 import argparse
