@@ -416,6 +416,7 @@ void initializeWriteThinLTOBitcodePass(PassRegistry&);
 void initializeXRayInstrumentationPass(PassRegistry&);
 
 void initializeVirtualTimeLoopIRPassPass(PassRegistry&);
+void initializeCacheSimPassPass(PassRegistry&);
 void initializeVirtualTimeManagerPass(PassRegistry&);
 
 

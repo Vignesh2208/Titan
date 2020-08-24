@@ -33,12 +33,17 @@ print_elapsed_time(i)
    printf("%d.%03d: %d\n", secs, (nsecs + 500000) / 1000000, i);
 }
 
+struct temp_struct {
+	int x;
+	int y;
+};
 int
 main(int argc, char *argv[])
 {
    int i;
    i = 0;
-   if (argc != 4) {
+   struct temp_struct a[100];
+   /*if (argc != 4) {
        fprintf(stderr, "%s init max step\n",
                argv[0]);
        exit(-1);
@@ -47,8 +52,14 @@ main(int argc, char *argv[])
    int init = atoi(argv[1]);
    int max = atoi(argv[2]);
    int step = atoi(argv[3]);
-   int counter = 0;
-
+   int counter = 0;*/
+	for(i = 0; i < 99; i++) {
+		a[i].x = i;
+		printf("a[i].x = %c, &a[i].x = %p\n", a[i].x, (unsigned long long)&a[i].x);
+		printf("a[i+1].x = %c, &a[i+1].x = %p\n", a[i+1].x, (unsigned long long)&a[i+1].x);
+	}
+   //printf("&a[1] = %d, &a[2] = %d, &a[3] = %d\n", a[1], a[2], a[3]);
+   /*
    print_elapsed_time(0);
    for(i = init; i >= max; i-=1) {
         //if (counter < 100)
@@ -75,6 +86,6 @@ main(int argc, char *argv[])
 
  
    print_elapsed_time(0);
-   printf("Counter = %d\n", counter);
+   printf("Counter = %d\n", counter);*/
    return 0;
 }

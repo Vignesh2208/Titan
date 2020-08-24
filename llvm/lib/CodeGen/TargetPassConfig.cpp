@@ -677,7 +677,8 @@ void TargetPassConfig::addIRPasses() {
   addPass(createExpandReductionsPass());
 
   addPass(&VirtualTimeLoopIRPassID, false);
-  //addPass(createVirtualTimeLoopIRPass());
+
+  addPass(&CacheSimPassID, false);
 }
 
 /// Turn exception handling constructs into something the code generators can

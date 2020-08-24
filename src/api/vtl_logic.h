@@ -65,4 +65,13 @@ int IsTimerArmed(int ThreadID, int fd);
 /*** For setting lookaheads ***/
 int SetLookahead(s64 bulkLookaheadValue, long spLookaheadValue);
 
+/*** InsnCache callback ***/
+void insCacheCallback();
+
+/*** Invoked before read accesses to memory ***/
+void dataReadCacheCallback(unsigned long long address, int size_bytes);
+
+/*** Invoked before write accesses to memory ***/
+void dataWriteCacheCallback(unsigned long long address, int size_bytes);
+
 #endif

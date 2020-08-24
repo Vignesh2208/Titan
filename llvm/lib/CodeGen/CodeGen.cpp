@@ -111,6 +111,7 @@ void llvm::initializeCodeGen(PassRegistry &Registry) {
   initializeXRayInstrumentationPass(Registry);
   initializeVirtualTimeManagerPass(Registry);
   initializeVirtualTimeLoopIRPassPass(Registry);
+  initializeCacheSimPassPass(Registry);
 }
 
 void LLVMInitializeCodeGen(LLVMPassRegistryRef R) {

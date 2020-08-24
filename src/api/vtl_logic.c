@@ -14,9 +14,11 @@ s64 currBurstLength = 0;
 s64 specifiedBurstLength = 0;
 s64 currBBID = 0;
 s64 currBBSize = 0;
+s64 currBBCacheMissPenalty = 0;
 s64 currLoopID = 0;
+
+
 int expStopping = 0;
-int interesting = 0;
 int vtInitializationComplete = 0;
 int alwaysOn = 1;
 int globalTracerID = -1;
@@ -66,6 +68,32 @@ void SetLoopLookahead(int initValue, int finalValue, int stepValue) {
         numIterations = (finalValue - initValue)/stepValue;
     s64 loop_lookahead = GetLoopLookAhead((int)currLoopID)*numIterations;
     SetLookahead(loop_lookahead, 0);
+}
+
+//! Instruction Cache Callback function
+void insCacheCallback() {
+    // currBBCacheMissPenalty would be set by the compiler.
+    // if there is a cache miss, currBurstLength would be decremented by this
+    // penalty value.
+
+}
+
+//! Invoked before read accesses to memory. The read memory address is passed
+// as argument. The size of read memory in bytes is also provided. This
+// function is invoked before instructions which read bytes, words, or
+// double words from memory
+void dataReadCacheCallback(unsigned long long address, int size_bytes) {
+    printf("DataReadCacheCallback: address: %p, size: %d\n", address,
+        size_bytes);
+}
+
+//! Invoked before write accesses to memory. The write memory address is passed
+// as argument. The size of written memory in bytes is also provided. This
+// function is invoked before instructions which write to bytes, words, or
+// double words to memory
+void dataWriteCacheCallback(unsigned long long address, int size_bytes) {
+    printf("DataWriteCacheCallback: address: %p, size: %d\n", address,
+        size_bytes);
 }
 
 //! Sets the lookahead at a specific basic block

@@ -27,9 +27,10 @@ char &llvm::VirtualTimeLoopIRPassID = VirtualTimeLoopIRPass::ID;
 INITIALIZE_PASS(VirtualTimeLoopIRPass, "vt-loop-ir-pass",
                 "Insert loop lookahead function calls", false, false)
 
+/*
 LoopPass *llvm::createVirtualTimeLoopIRPass() {
   return new VirtualTimeLoopIRPass();
-}
+}*/
 
 void VirtualTimeLoopIRPass::analyseLoop(Loop * l, ScalarEvolution &SE,
                                         Function * Flookahead) {

@@ -48,4 +48,8 @@
 #define CLANG_FILE_LOCK  "/tmp/llvm.lock"
 #define CLANG_INIT_PARAMS "/tmp/llvm_init_params.json"
 
+#define INS_CACHE_CALLBACK_FN "insCacheCallback"
+#define DATA_READ_CACHE_CALLBACK_FN "dataReadCacheCallback"
+#define DATA_WRITE_CACHE_CALLBACK_FN "dataWriteCacheCallback"
+
 #endif
