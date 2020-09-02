@@ -7,11 +7,13 @@ SUBDIR= $(shell pwd)
 GCC:=gcc
 RM:=rm
 
-	
+.PHONY: build_tracer
 build_tracer:
 	@gcc ${tracer_dir}/tracer.c -o tracer -lpthread -lvtapi
 	@mv tracer /usr/bin
 	@chmod 777 /usr/bin/tracer
+
+.PHONY: clean
 clean: 
 	@rm -f *.o > /dev/null
 	@rm -f /usr/bin/tracer > /dev/null

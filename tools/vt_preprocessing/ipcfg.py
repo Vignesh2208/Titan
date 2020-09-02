@@ -4,12 +4,14 @@ import re
 import pprint
 import networkx as nx
 import pathlib
-import constants as c
-import call_graph as cg
+import tools.vt_preprocessing.constants as c
+import tools.vt_preprocessing.call_graph as cg
 import logging
 import json
 from typing import Dict, Any
 from collections import OrderedDict
+
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.NOTSET)
 
 class LoopCFG(object):
     """Represents the control flow graph of a Loop."""

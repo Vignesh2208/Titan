@@ -4,31 +4,34 @@
 #include <assert.h>
 #include "VT_functions.h"
 #include "utility_functions.h"
-#include "lookahead_parsing.h"
 #include "vtl_logic.h"
 #include "fd_handling.h"
-
+#ifndef DISABLE_LOOKAHEAD
+#include "lookahead_parsing.h"
+#endif
 
 
 s64 currBurstLength = 0;
 s64 specifiedBurstLength = 0;
-s64 currBBID = 0;
-s64 currBBSize = 0;
-s64 currBBCacheMissPenalty = 0;
-s64 currLoopID = 0;
 
+#ifndef DISABLE_LOOKAHEAD
+s64 currBBID = 0;
+s64 currLoopID = 0;
+struct lookahead_map * bblLookAheadMap = NULL;
+struct lookahead_map * loopLookAheadMap = NULL;
+#endif
+
+#ifndef DISABLE_INSN_CACHE_SIM
+s64 currBBInsCacheMissPenalty = 0;
+#endif
 
 int expStopping = 0;
 int vtInitializationComplete = 0;
-int alwaysOn = 1;
 int globalTracerID = -1;
 int globalTimelineID = -1;
 int globalThreadID = 0;
 hashmap thread_info_map;
 llist thread_info_list;
-
-struct lookahead_map * bblLookAheadMap = NULL;
-struct lookahead_map * loopLookAheadMap = NULL;
 
 #define FLIP_ALWAYS_ON_THRESHOLD 100000000
 
@@ -36,8 +39,9 @@ struct lookahead_map * loopLookAheadMap = NULL;
 extern void ns_2_timespec(s64 nsec, struct timespec * ts);
 extern void ns_2_timeval(s64 nsec, struct timeval * tv);
 
+#ifndef DISABLE_LOOKAHEAD
 //! Returns loop lookahead for a specific loop number
-s64 GetLoopLookAhead(int loopNumber) {
+s64 GetLoopLookAhead(long loopNumber) {
     if (!loopLookAheadMap ||
         (loopNumber < loopLookAheadMap->start_offset) ||
         (loopNumber > loopLookAheadMap->finish_offset))
@@ -46,7 +50,7 @@ s64 GetLoopLookAhead(int loopNumber) {
 }
 
 //! Returns lookahead from a specific basic block
-s64 GetBBLLookAhead(int bblNumber) {
+s64 GetBBLLookAhead(long bblNumber) {
     if (!bblLookAheadMap ||
         (bblNumber < bblLookAheadMap->start_offset) ||
         (bblNumber > bblLookAheadMap->finish_offset))
@@ -66,24 +70,36 @@ void SetLoopLookahead(int initValue, int finalValue, int stepValue) {
     if ((finalValue > initValue && stepValue > 0) ||
         (finalValue < initValue && stepValue < 0))
         numIterations = (finalValue - initValue)/stepValue;
-    s64 loop_lookahead = GetLoopLookAhead((int)currLoopID)*numIterations;
+    s64 loop_lookahead = GetLoopLookAhead((long)currLoopID)*numIterations;
     SetLookahead(loop_lookahead, 0);
 }
 
+//! Sets the lookahead at a specific basic block
+void SetBBLLookAhead(long bblNumber) {
+    if (!vtInitializationComplete)
+        return;
+    SetLookahead(0, GetBBLLookAhead(bblNumber));
+}
+#endif
+
+#ifndef DISABLE_INSN_CACHE_SIM
 //! Instruction Cache Callback function
 void insCacheCallback() {
     // currBBCacheMissPenalty would be set by the compiler.
-    // if there is a cache miss, currBurstLength would be decremented by this
-    // penalty value.
+    // if there is a cache miss, currBBCacheMissPenalty would indicate the
+    // size in bytes of the basic block. This is converted to number of cache
+    // lines to fill
 
 }
+#endif 
 
+#ifndef DISABLE_DATA_CACHE_SIM
 //! Invoked before read accesses to memory. The read memory address is passed
 // as argument. The size of read memory in bytes is also provided. This
 // function is invoked before instructions which read bytes, words, or
 // double words from memory
-void dataReadCacheCallback(unsigned long long address, int size_bytes) {
-    printf("DataReadCacheCallback: address: %p, size: %d\n", address,
+void dataReadCacheCallback(u64 address, int size_bytes) {
+    printf("DataReadCacheCallback: address: %p, size: %d\n", (void *)address,
         size_bytes);
 }
 
@@ -91,22 +107,11 @@ void dataReadCacheCallback(unsigned long long address, int size_bytes) {
 // as argument. The size of written memory in bytes is also provided. This
 // function is invoked before instructions which write to bytes, words, or
 // double words to memory
-void dataWriteCacheCallback(unsigned long long address, int size_bytes) {
-    printf("DataWriteCacheCallback: address: %p, size: %d\n", address,
+void dataWriteCacheCallback(u64 address, int size_bytes) {
+    printf("DataWriteCacheCallback: address: %p, size: %d\n", (void *)address,
         size_bytes);
 }
-
-//! Sets the lookahead at a specific basic block
-void SetBBLLookAhead(int bblNumber) {
-    if (!vtInitializationComplete)
-        return;
-    SetLookahead(0, GetBBLLookAhead(bblNumber));
-}
-
-//! Sets packet send time for a specific packet
-void SetPktSendTime(int payloadHash, int payloadLen, s64 pktSendTimeStamp) {
-	SetPktSendTimeAPI(payloadHash, payloadLen, pktSendTimeStamp);
-}
+#endif
 
 
 void CopyAllSpecialFds(int FromProcessID, int ToProcessID) {
@@ -142,37 +147,32 @@ void SleepForNS(int ThreadID, int64_t duration) {
 	
     int ret;
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    if (!currThreadInfo)
-	return;
+    if (!currThreadInfo) return;
 
-    if (currThreadInfo->in_callback)
-	return;
+    if (currThreadInfo->in_callback) return;
 
 
     currThreadInfo->in_callback = TRUE;
+
+    #ifndef DISABLE_LOOKAHEAD
     currThreadInfo->stack.currBBID = currBBID;
-    currThreadInfo->stack.currBBSize = currBBSize;
-    currThreadInfo->stack.alwaysOn = alwaysOn;
+    #endif
 
     ret = VtSleepFor(duration);
 
-    if (ret < 0)
-	    HandleVTExpEnd(ThreadID);
+    if (ret < 0) HandleVTExpEnd(ThreadID);
 
     currBurstLength = MarkBurstComplete(1);
     specifiedBurstLength = currBurstLength;
-    if (currBurstLength <= 0)
-        HandleVTExpEnd(ThreadID);
+    if (currBurstLength <= 0) HandleVTExpEnd(ThreadID);
 
     currThreadInfo->stack.totalBurstLength += currBurstLength;
 
     // restore globals
-    alwaysOn = currThreadInfo->stack.alwaysOn;
+    #ifndef DISABLE_LOOKAHEAD
     currBBID = currThreadInfo->stack.currBBID;
-    currBBSize = currThreadInfo->stack.currBBSize;
+    #endif
     currThreadInfo->in_callback = FALSE;
-
-	
 }
 
 //! Returns current virtual time as timespec
@@ -183,6 +183,21 @@ void GetCurrentTimespec(struct timespec *ts) {
 //! Returns current virtual time as timeval
 void GetCurrentTimeval(struct timeval * tv) {
     ns_2_timeval(GetCurrentVtTime(), tv);
+}
+
+//! Returns current virtual time as nanoseconds
+s64 GetCurrentTime() {
+    if (currBurstLength > 0 && specifiedBurstLength > 0)
+    	return GetCurrentVtTime() + specifiedBurstLength - currBurstLength;
+    else
+	    return GetCurrentVtTime();
+}
+
+#ifndef DISABLE_LOOKAHEAD
+//! Sets packet send time for a specific packet
+void SetPktSendTime(int payloadHash, int payloadLen, s64 pktSendTimeStamp) {
+	SetPktSendTimeAPI(payloadHash, payloadLen, pktSendTimeStamp);
+ 
 }
 
 //! Returns earliest arrival time of any packet intended for this node 
@@ -196,19 +211,15 @@ int SetLookahead(s64 bulkLookaheadValue, long spLookaheadValue) {
         return SetProcessLookahead(bulkLookaheadValue, spLookaheadValue);
     return 0;
 }
+#endif
 
-//! Returns current virtual time as nanoseconds
-s64 GetCurrentTime() {
-    if (currBurstLength > 0 && specifiedBurstLength > 0)
-    	return GetCurrentVtTime() + specifiedBurstLength - currBurstLength;
-    else
-	    return GetCurrentVtTime();
-}
 
 //! Called when the virtual time experiment is about to end
 void HandleVTExpEnd(int ThreadID) {
     printf("Process: %d exiting VT experiment !\n", ThreadID);
     expStopping = 1;
+
+    #ifndef DISABLE_LOOKAHEAD
     if (loopLookAheadMap) {
         free(loopLookAheadMap->lookaheads);
         free(loopLookAheadMap);
@@ -220,6 +231,8 @@ void HandleVTExpEnd(int ThreadID) {
         free(bblLookAheadMap);
         bblLookAheadMap = NULL;
     }
+    #endif
+
     exit(0);
 }
 
@@ -252,9 +265,11 @@ ThreadInfo * AllotThreadInfo(int ThreadID, int processPID) {
         currThreadInfo->in_force_completed = 0;
         currThreadInfo->in_callback = 0;
         currThreadInfo->stack.totalBurstLength = 0;
+
+        #ifndef DISABLE_LOOKAHEAD
         currThreadInfo->stack.currBBID = 0;
-        currThreadInfo->stack.currBBSize = 0;
-        currThreadInfo->stack.alwaysOn = 1;
+        #endif
+
         llist_init(&currThreadInfo->special_fds);
         hmap_put_abs(&thread_info_map, ThreadID, currThreadInfo);
         llist_append(&thread_info_list, currThreadInfo);
@@ -270,25 +285,22 @@ void YieldVTBurst(int ThreadID, int save, long syscall_number) {
 
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    if (!currThreadInfo) 
-	    return;
+    if (!currThreadInfo)  return;
 
-    if (currThreadInfo->in_callback)
-	    return;
+    if (currThreadInfo->in_callback) return;
 
 
-    if (currThreadInfo->in_force_completed)
-	    return;
+    if (currThreadInfo->in_force_completed) return;
     
     currThreadInfo->in_callback = TRUE;
 
     if (currThreadInfo->yielded == 0) {
 	    currThreadInfo->yielded = TRUE;
-	    if (save) {
+
+        #ifndef DISABLE_LOOKAHEAD
+	    if (save)
             currThreadInfo->stack.currBBID = currBBID;
-            currThreadInfo->stack.currBBSize = currBBSize;
-            currThreadInfo->stack.alwaysOn = alwaysOn;
-	    }
+        #endif
 
 	    ReleaseWorker();
             
@@ -300,24 +312,18 @@ void YieldVTBurst(int ThreadID, int save, long syscall_number) {
 //! Called by a thread to indicate that it has completed its previous execution burst
 void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    if (!currThreadInfo)
-	return;
+    if (!currThreadInfo) return;
 
-    if (currThreadInfo->in_callback)
-	return;
+    if (currThreadInfo->in_callback) return;
 
-    if (currThreadInfo->in_force_completed)
-	return;
+    if (currThreadInfo->in_force_completed) return;
 
     currThreadInfo->in_force_completed = TRUE;
 
-    if (save && currThreadInfo) {
-        currThreadInfo->stack.currBBID = currBBID;
-        currThreadInfo->stack.currBBSize = currBBSize;
-        currThreadInfo->stack.alwaysOn = alwaysOn;
-    }
-
-    
+    #ifndef DISABLE_LOOKAHEAD
+    if (save && currThreadInfo)
+        currThreadInfo->stack.currBBID = currBBID; 
+    #endif
 
     currBurstLength = MarkBurstComplete(0);
     specifiedBurstLength = currBurstLength;
@@ -329,10 +335,10 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
 
     	currThreadInfo->stack.totalBurstLength += currBurstLength;
 
+        #ifndef DISABLE_LOOKAHEAD
     	// restore globals
-    	alwaysOn = currThreadInfo->stack.alwaysOn;
     	currBBID = currThreadInfo->stack.currBBID;
-    	currBBSize = currThreadInfo->stack.currBBSize;
+        #endif
     }
 
     if (currThreadInfo->yielded == TRUE)
@@ -347,24 +353,22 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
 void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
 
     
+    #ifndef DISABLE_LOOKAHEAD
     // save globals
-    if (save) {  
-        currThreadInfo->stack.currBBID = currBBID;
-        currThreadInfo->stack.currBBSize = currBBSize;
-        currThreadInfo->stack.alwaysOn = alwaysOn;  
-    }
+    if (save) currThreadInfo->stack.currBBID = currBBID;
+    #endif
 
     currBurstLength = FinishBurst();
     specifiedBurstLength = currBurstLength;
-    if (currBurstLength <= 0)
-        HandleVTExpEnd(currThreadInfo->pid);
+
+    if (currBurstLength <= 0) HandleVTExpEnd(currThreadInfo->pid);
 
     currThreadInfo->stack.totalBurstLength += currBurstLength;
 
+    #ifndef DISABLE_LOOKAHEAD
     // restore globals
-    alwaysOn = currThreadInfo->stack.alwaysOn;
     currBBID = currThreadInfo->stack.currBBID;
-    currBBSize = currThreadInfo->stack.currBBSize;
+    #endif
 }
 
 
@@ -379,9 +383,11 @@ void AfterForkInChild(int ThreadID, int ParentProcessID) {
     currThreadInfo = AllotThreadInfo(ThreadID, ThreadID);     
     assert(currThreadInfo != NULL);
     currBurstLength = 0;
+
+    #ifndef DISABLE_LOOKAHEAD
     currBBID = 0;
-    currBBSize = 0;
-    alwaysOn = 1;
+    #endif
+
     specifiedBurstLength = currBurstLength;
 
     currThreadInfo->in_callback = TRUE; 
@@ -418,11 +424,9 @@ void ThreadStart(int ThreadID) {
     ThreadInfo * currThreadInfo;
     int processPID = syscall(SYS_getpid);
     currThreadInfo = AllotThreadInfo(ThreadID, processPID);
-    if (!currThreadInfo)
-	return;
+    if (!currThreadInfo) return;
 
-    if (currThreadInfo->in_callback)
-	return;
+    if (currThreadInfo->in_callback) return;
 
     currThreadInfo->in_callback = TRUE;
     printf("Adding new Thread: %d\n", ThreadID);
@@ -438,11 +442,9 @@ void ThreadStart(int ThreadID) {
 void ThreadFini(int ThreadID) {
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    if (!currThreadInfo)
-	return;
+    if (!currThreadInfo) return;
 
-    if (currThreadInfo->in_callback)
-	return;
+    if (currThreadInfo->in_callback) return;
 
     currThreadInfo->in_callback = TRUE;
 
@@ -453,29 +455,24 @@ void ThreadFini(int ThreadID) {
     CleanupThreadInfo(currThreadInfo);
     hmap_remove_abs(&thread_info_map, ThreadID);
     
-    if (!expStopping)
-    	FinishBurstAndDiscard(); 
+    if (!expStopping) FinishBurstAndDiscard(); 
     currThreadInfo->in_callback = FALSE;
     free(currThreadInfo);  
-	 
 }
 
 //! Called when the whole application is about to finish
 void AppFini(int ThreadID) {
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    if (!currThreadInfo)
-	return;
+    if (!currThreadInfo) return;
 
-    if (currThreadInfo->in_callback)
-	return;
+    if (currThreadInfo->in_callback) return;
 
     currThreadInfo->in_callback = TRUE;
     printf("Finishing Process: %d\n", ThreadID);
     fflush(stdout);
 
-    if (!expStopping)
-	FinishBurstAndDiscard();  
+    if (!expStopping) FinishBurstAndDiscard();  
 
     while(llist_size(&thread_info_list)) {
        currThreadInfo = llist_pop(&thread_info_list);
@@ -483,10 +480,9 @@ void AppFini(int ThreadID) {
            CleanupThreadInfo(currThreadInfo);
            hmap_remove_abs(&thread_info_map, currThreadInfo->pid);
 	   if (currThreadInfo->pid == ThreadID)
-		currThreadInfo->in_callback = FALSE;
-           free(currThreadInfo);
+		    currThreadInfo->in_callback = FALSE;
+            free(currThreadInfo);
        }
-    
     }
 
     llist_destroy(&thread_info_list);
@@ -496,22 +492,17 @@ void AppFini(int ThreadID) {
 //! Called before a syscall which may involve some sleeping/timed wait like select, poll etc
 void TriggerSyscallWait(int ThreadID, int save) {
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    if (!currThreadInfo)
-	return;
+    if (!currThreadInfo) return;
 
-    if (currThreadInfo->in_callback)
-	return;
+    if (currThreadInfo->in_callback) return;
     
     currThreadInfo->in_callback = TRUE;
 
-    if  (save) {
-        currThreadInfo->stack.currBBID = currBBID;
-        currThreadInfo->stack.currBBSize = currBBSize;
-        currThreadInfo->stack.alwaysOn = alwaysOn;
-    }
+    #ifndef DISABLE_LOOKAHEAD
+    if  (save) currThreadInfo->stack.currBBID = currBBID;
+    #endif
 
-    if (TriggerSyscallWaitAPI() <= 0)
-        HandleVTExpEnd(ThreadID);
+    if (TriggerSyscallWaitAPI() <= 0) HandleVTExpEnd(ThreadID);
 
     currThreadInfo->in_callback = FALSE;
 }
@@ -520,25 +511,24 @@ void TriggerSyscallWait(int ThreadID, int save) {
 void TriggerSyscallFinish(int ThreadID) {
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-    if(!currThreadInfo)
-	    return;
+    if(!currThreadInfo) return;
 
-    if (currThreadInfo->in_callback)
-	    return;
+    if (currThreadInfo->in_callback) return;
  
     currThreadInfo->in_callback = TRUE;
 	
     currBurstLength = MarkBurstComplete(1);
     specifiedBurstLength = currBurstLength;
 
-    if (currBurstLength <= 0)
-        HandleVTExpEnd(ThreadID);
+    if (currBurstLength <= 0) HandleVTExpEnd(ThreadID);
 
     currThreadInfo->stack.totalBurstLength += currBurstLength;
+
+    #ifndef DISABLE_LOOKAHEAD
     // restore globals
-    alwaysOn = currThreadInfo->stack.alwaysOn;
     currBBID = currThreadInfo->stack.currBBID;
-    currBBSize = currThreadInfo->stack.currBBSize;
+    #endif
+
     currThreadInfo->in_callback = FALSE;
 }
 
@@ -549,15 +539,12 @@ void vtCallbackFn() {
     ThreadInfo * currThreadInfo;
 
     if (!vtInitializationComplete) {
-	    alwaysOn = 0;
         if (currBurstLength <= 0) {	
             currBurstLength = 1000000;
             specifiedBurstLength = currBurstLength;
         }
         return;
     }	
-     
-    alwaysOn = 0;
     
     if (currBurstLength <= 0) {
 
@@ -566,7 +553,11 @@ void vtCallbackFn() {
 
         if (currThreadInfo != NULL) {
             currThreadInfo->in_callback = TRUE;
-            SetBBLLookAhead((int)currBBID);
+
+            #ifndef DISABLE_LOOKAHEAD
+            SetBBLLookAhead((long)currBBID);
+            #endif
+
             SignalBurstCompletion(currThreadInfo, 1);
             currThreadInfo->in_callback = FALSE;
         }
@@ -652,8 +643,12 @@ void InitializeVtManagement() {
     char * tracer_id_str = getenv("VT_TRACER_ID");
     char * timeline_id_str = getenv("VT_TIMELINE_ID");
     char * exp_type_str = getenv("VT_EXP_TYPE");
+
+    #ifndef DISABLE_LOOKAHEAD
     char * bbl_lookahead_file = getenv("VT_BBL_LOOKAHEAD_FILE");
     char * loop_lookahead_file = getenv("VT_LOOP_LOOKAHEAD_FILE");
+    #endif
+
     int tracer_id;
     int timeline_id;
     int exp_type, ret;
@@ -724,23 +719,27 @@ void InitializeVtManagement() {
     }
 
     globalTracerID = tracer_id;
+
+    #ifndef DISABLE_LOOKAHEAD
     printf("Parsing any provided lookahead information ...\n");
     if (bbl_lookahead_file && !ParseLookaheadJsonFile(
         bbl_lookahead_file, &bblLookAheadMap)) {
         printf("Failed to parse BBL Lookaheads. Ignoring ...\n");
         bblLookAheadMap = NULL;
     } else {
-        printf("Loaded lookaheads for %d basic blocks ...\n",
-            (int)bblLookAheadMap->num_entries);
+        printf("Loaded lookaheads for %lu basic blocks ...\n",
+            bblLookAheadMap->num_entries);
     }
     if (loop_lookahead_file && !ParseLookaheadJsonFile(
         loop_lookahead_file, &loopLookAheadMap)) {
         printf("Failed to parse Loop Lookaheads. Ignoring ...\n");
         loopLookAheadMap = NULL;
     } else {
-        printf("Loaded lookaheads for %d loops ...\n",
-            (int)loopLookAheadMap->num_entries);
+        printf("Loaded lookaheads for %lu loops ...\n",
+            loopLookAheadMap->num_entries);
     }
+    #endif
+
     printf("VT initialization successfull !\n");
     fflush(stdout);
 

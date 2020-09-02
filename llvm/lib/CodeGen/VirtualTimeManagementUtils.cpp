@@ -1,8 +1,71 @@
-#include "VirtualTimeManagementIncludes.h"
 #include "VirtualTimeManagementUtils.h"
-
+#include "llvm/CodeGen/TargetInstrInfo.h"
 
 using namespace llvm;
+
+
+void MachineSpecificConfig::Initialize() {}
+
+long MachineSpecificConfig::GetInsnCompletionTime(long Opcode) {
+	return cpuCycleNs;
+}
+
+  
+std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBCompletionTime(
+	MachineBasicBlock * mbb) {
+	if (!mbb)
+		return std::make_pair(0, 0);
+	unsigned long mbbCompletionTime = 0, InstrCount = 0;
+	bool skip = false;
+	for (MachineBasicBlock::instr_iterator Iter = mbb->instr_begin(),
+		E = mbb->instr_end(); Iter != E; Iter++) {
+		skip = false;
+		MachineInstr &MI = *Iter;
+		     
+			
+		if (MI.isCall()) {
+			std::string fnName;
+			for (unsigned OpIdx = 0; OpIdx  != MI.getNumOperands(); ++OpIdx) {
+				const MachineOperand &MO = MI.getOperand(OpIdx);
+				if (!MO.isGlobal()) continue;
+				const Function * F = dyn_cast<Function>(MO.getGlobal());
+				if (!F) continue;
+
+				if (F->hasName()) {
+					fnName = F->getName();
+				} else {
+					fnName = "__unknown__";
+				}
+			}
+
+			#ifndef DISABLE_INSN_CACHE_SIM
+			if (fnName == INS_CACHE_CALLBACK_FN)
+				skip = true;
+			#endif
+
+			#ifndef DISABLE_DATA_CACHE_SIM
+			if ((fnName == DATA_READ_CACHE_CALLBACK_FN ||
+				fnName == DATA_WRITE_CACHE_CALLBACK_FN))
+				skip = true;
+			#endif
+			
+			#ifndef DISABLE_LOOKAHEAD
+			if (fnName == VT_LOOP_LOOKAHEAD_FUNC)
+				skip = true;
+			#endif
+		}
+
+		if (!MI.isCFIInstruction() && !skip) {
+			mbbCompletionTime += machineConfig->GetInsnCompletionTime(
+				MI.getOpcode()); 
+			InstrCount ++;
+		}
+	}
+	return std::make_pair(mbbCompletionTime, InstrCount);
+}
+
+
+#ifndef DISABLE_LOOKAHEAD
 
 MachineLoop * MachineLoopHolder::getMachineLoopContainingPreheader(
             MachineLoop * Parent, MachineBasicBlock * preHeader) {
@@ -135,9 +198,7 @@ void MachineLoopHolder::processAllLoops() {
 	for (auto &MBB : *associatedMF) {
 		MachineBasicBlock* origMBB = &MBB;
 		foundLoop = 0, foundStructuredLoop = 0, numSuccessors = 0;
-		for (MachineBasicBlock *S : origMBB->successors()) {
-			numSuccessors ++;
-		}
+		numSuccessors = origMBB->succ_size();
 		for (MachineBasicBlock::instr_iterator Iter = MBB.instr_begin(),
 			E = MBB.instr_end(); Iter != E; Iter++) {
 			
@@ -368,8 +429,8 @@ void MachineFunctionCFGHolder::runOnThisMachineFunction(MachineLoopInfo * MLI) {
 			}
 		}
 
-		setBBLWeight(globalBBLCounter, InstrCount);	
-				
+		setBBLWeight(globalBBLCounter,
+			targetMachineSpecificInfo->GetMBBCompletionTime(origMBB).first);					
 	}
 
 
@@ -454,7 +515,7 @@ void MachineFunctionCFGHolder::setBBLWeight(long bblNumber, long weight) {
 }
 
 long MachineFunctionCFGHolder::getBBLWeight(MachineBasicBlock * mbb) {
-	return getBBLWeight(mbb->getNumber());
+	return getBBLWeight(this->getGlobalMBBNumber(mbb));
 }
 
 long MachineFunctionCFGHolder::getBBLWeight(long bblNumber) {
@@ -480,7 +541,7 @@ llvm::json::Object MachineFunctionCFGHolder::getComposedMFJsonObj() {
 				composeBBLObject(element.first)
 			});
 	}
-	for (int i = 0; i < returningBlocks.size(); i++) {
+	for (unsigned int i = 0; i < returningBlocks.size(); i++) {
 		returning_blocks.push_back(returningBlocks[i]);
 	}
 
@@ -505,3 +566,4 @@ llvm::json::Object MachineFunctionCFGHolder::getComposedMFJsonObj() {
 	return mf_obj;
 }
 
+#endif

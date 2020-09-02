@@ -1,10 +1,11 @@
 """Computing local CFGs, call graphs of each function and global call graphs."""
 
 import networkx as nx
-import constants as c
+import tools.vt_preprocessing.constants as c
 from typing import Dict, Any
 import logging
 
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.NOTSET)
 
 class FunctionCFG(object):
     """Represents the control flow graph of a resolvable function."""

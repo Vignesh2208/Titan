@@ -17,6 +17,7 @@
 #define MAX_ASSIGNABLE_FD 1024
 
 typedef long long s64;
+typedef unsigned long long u64;
 
 typedef struct fdInfoStruct {
     int fd;
@@ -32,10 +33,10 @@ typedef struct fdInfoStruct {
 } fdInfo;
 
 typedef struct ThreadStackStruct {
-    long long currBBID;
-    int currBBSize;
-    long long totalBurstLength;
-    int alwaysOn;
+    #ifndef DISABLE_LOOKAHEAD
+    s64 currBBID;
+    #endif
+    s64 totalBurstLength;
 } ThreadStack;
 
 typedef struct ThreadInfoStruct {
@@ -62,16 +63,22 @@ int IsTimerFd(int ThreadID, int fd);
 int IsTimerFdNonBlocking(int ThreadID, int fd);
 int IsTimerArmed(int ThreadID, int fd);
 
+#ifndef DISABLE_LOOKAHEAD
 /*** For setting lookaheads ***/
 int SetLookahead(s64 bulkLookaheadValue, long spLookaheadValue);
+#endif
 
+#ifndef DISABLE_INSN_CACHE_SIM
 /*** InsnCache callback ***/
 void insCacheCallback();
+#endif
 
+#ifndef DISABLE_DATA_CACHE_SIM
 /*** Invoked before read accesses to memory ***/
-void dataReadCacheCallback(unsigned long long address, int size_bytes);
+void dataReadCacheCallback(u64 address, int size_bytes);
 
 /*** Invoked before write accesses to memory ***/
-void dataWriteCacheCallback(unsigned long long address, int size_bytes);
+void dataWriteCacheCallback(u64 address, int size_bytes);
+#endif
 
 #endif

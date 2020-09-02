@@ -2,13 +2,14 @@
 #include "vt_management.h"
 
 s64 * globalCurrBurstLength;
+
+#ifndef DISABLE_LOOKAHEAD
 s64 * globalCurrBBID;
-s64 * globalCurrBBSize;
-int * vtAlwaysOn;
+#endif
+
 int * vtGlobalTracerID;
 int * vtGlobalTimelineID;
 int * vtInitialized;
-
 
 
 void (*vtAfterForkInChild)(int ThreadID, int ParentProcessPID) = NULL;
@@ -25,7 +26,6 @@ void (*vtGetCurrentTimespec)(struct timespec *tp) = NULL;
 void (*vtGetCurrentTimeval)(struct timeval * tv) = NULL;
 void (*vt_ns_2_timespec)(s64 nsec, struct timespec * ts) = NULL;
 s64 (*vtGetCurrentTime)() = NULL;
-void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp) = NULL;
 
 /*** For Socket Handling ***/
 void  (*vtAddSocket)(int ThreadID, int sockFD, int isNonBlocking) = NULL;
@@ -59,11 +59,13 @@ int (*vtComputeClosestTimerExpiryForPoll)(
 /*** For Sockets and TimerFD ***/
 void (*vtCloseFd)(int ThreadID, int fd) = NULL;
 
+#ifndef DISABLE_LOOKAHEAD
 /*** For lookahead handling ***/
 s64 (*vtGetPacketEAT)() = NULL;
 long (*vtGetBBLLookahead)() = NULL; 
 int (*vtSetLookahead)(s64 bulkLookaheadValue, long spLookaheadValue) = NULL;
-
+void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp) = NULL;
+#endif
 
 
 void LoadAllVtlFunctions(void * lib_vt_lib_handle) {
@@ -157,11 +159,6 @@ void LoadAllVtlFunctions(void * lib_vt_lib_handle) {
         fflush(stdout); abort();
     }
 
-    vtSetPktSendTime = dlsym(lib_vt_lib_handle, "SetPktSendTime");
-    if (!vtSetPktSendTime) {
-        printf("SetPktSendTime not found !\n");
-        fflush(stdout); abort();
-    }
 
     /*** For Socket Handling **/
     vtAddSocket = dlsym(lib_vt_lib_handle, "AddSocket");
@@ -263,7 +260,14 @@ void LoadAllVtlFunctions(void * lib_vt_lib_handle) {
         fflush(stdout); abort();
     }
 
+    #ifndef DISABLE_LOOKAHEAD
     /*** For lookahead handling ***/
+    vtSetPktSendTime = dlsym(lib_vt_lib_handle, "SetPktSendTime");
+    if (!vtSetPktSendTime) {
+        printf("SetPktSendTime not found !\n");
+        fflush(stdout); abort();
+    }
+
     vtGetPacketEAT = dlsym(lib_vt_lib_handle, "GetPacketEAT");
     if (!vtGetPacketEAT) {
         printf("GetPacketEAT not found !\n");
@@ -280,6 +284,7 @@ void LoadAllVtlFunctions(void * lib_vt_lib_handle) {
         printf("SetLookahead not found !\n");
         fflush(stdout); abort();
     }
+    #endif
 }
 
 void InitializeVtlLogic() {
@@ -296,24 +301,13 @@ void InitializeVtlLogic() {
             fflush(stdout); abort();
         }
 
+        #ifndef DISABLE_LOOKAHEAD
         globalCurrBBID = dlsym(lib_vt_lib_handle, "currBBID");
         if (!globalCurrBBID) {
             printf("globalCurrBBID not found !\n");
             fflush(stdout); abort();
         }
-
-        globalCurrBBSize = dlsym(lib_vt_lib_handle, "currBBSize");
-        if (!globalCurrBBSize) {
-            printf("globalCurrBBSize not found !\n");
-            fflush(stdout); abort();
-        }
-
-        vtAlwaysOn = dlsym(lib_vt_lib_handle, "alwaysOn");
-        if (!vtAlwaysOn) {
-            printf("vtAlwaysOn not found !\n");
-            fflush(stdout); abort();
-        }
-
+        #endif
 
         vtGlobalTracerID = dlsym(lib_vt_lib_handle, "globalTracerID");
         if (!vtGlobalTracerID) {

@@ -155,50 +155,49 @@ void VirtualTimeManager::createExternDefinitions(Module &M, bool ContainsMain) {
 
   
    // VT_INSN_COUNTER_VAR
-   M.getOrInsertGlobal(VT_INSN_COUNTER_VAR, Type::getInt64Ty(Ctx));
-   auto *gVar = M.getNamedGlobal(VT_INSN_COUNTER_VAR);
-   gVar->setLinkage(GlobalValue::ExternalLinkage);
-   gVar->setAlignment(8);
+	M.getOrInsertGlobal(VT_INSN_COUNTER_VAR, Type::getInt64Ty(Ctx));
+	auto *gVar = M.getNamedGlobal(VT_INSN_COUNTER_VAR);
+	gVar->setLinkage(GlobalValue::ExternalLinkage);
+	gVar->setAlignment(8);
 
-   // VT_CURR_BBL_SIZE_VAR
-   M.getOrInsertGlobal(VT_CURR_BBL_SIZE_VAR, Type::getInt64Ty(Ctx));
-   gVar = M.getNamedGlobal(VT_CURR_BBL_SIZE_VAR);
-   gVar->setLinkage(GlobalValue::ExternalLinkage);
-   gVar->setAlignment(8);
+	#ifndef DISABLE_INSN_CACHE_SIM
+	// VT_CURR_BBL_INSN_CACHE_MISS_PENALTY
+	M.getOrInsertGlobal(VT_CURR_BBL_INSN_CACHE_MISS_PENALTY, Type::getInt64Ty(Ctx));
+	gVar = M.getNamedGlobal(VT_CURR_BBL_INSN_CACHE_MISS_PENALTY);
+	gVar->setLinkage(GlobalValue::ExternalLinkage);
+	gVar->setAlignment(8);
+	#endif
 
-   // VT_CURR_BBID_VAR
-   M.getOrInsertGlobal(VT_CURR_BBID_VAR, Type::getInt64Ty(Ctx));
-   gVar = M.getNamedGlobal(VT_CURR_BBID_VAR);
-   gVar->setLinkage(GlobalValue::ExternalLinkage);
-   gVar->setAlignment(8);
+	#ifndef DISABLE_LOOKAHEAD
+	// VT_CURR_BBID_VAR
+	M.getOrInsertGlobal(VT_CURR_BBID_VAR, Type::getInt64Ty(Ctx));
+	gVar = M.getNamedGlobal(VT_CURR_BBID_VAR);
+	gVar->setLinkage(GlobalValue::ExternalLinkage);
+	gVar->setAlignment(8);
 
-   // VT_LOOP_ID_VAR
-   M.getOrInsertGlobal(VT_CURR_LOOP_ID_VAR, Type::getInt64Ty(Ctx));
-   gVar = M.getNamedGlobal(VT_CURR_LOOP_ID_VAR);
-   gVar->setLinkage(GlobalValue::ExternalLinkage);
-   gVar->setAlignment(8);
+	// VT_LOOP_ID_VAR
+	M.getOrInsertGlobal(VT_CURR_LOOP_ID_VAR, Type::getInt64Ty(Ctx));
+	gVar = M.getNamedGlobal(VT_CURR_LOOP_ID_VAR);
+	gVar->setLinkage(GlobalValue::ExternalLinkage);
+	gVar->setAlignment(8);
+	#endif
 
-   // VT_FORCE_INVOKE_CALLBACK_VAR
-   M.getOrInsertGlobal(VT_FORCE_INVOKE_CALLBACK_VAR, Type::getInt32Ty(Ctx));
-   gVar = M.getNamedGlobal(VT_FORCE_INVOKE_CALLBACK_VAR);
-   gVar->setLinkage(GlobalValue::ExternalLinkage);
-   gVar->setAlignment(4);
+	// VT_CALLBACK_FUNC
+	auto Type = FunctionType::get(Type::getVoidTy(Ctx), false);
+	Function::Create(Type, GlobalValue::ExternalLinkage, VT_CALLBACK_FUNC, &M);  
 
-   // VT_CALLBACK_FUNC
-   auto Type = FunctionType::get(Type::getVoidTy(Ctx), false);
-   Function::Create(Type, GlobalValue::ExternalLinkage, VT_CALLBACK_FUNC, &M);  
+	if (ContainsMain) {
+			outs() << "Contains Main: Creating __VT_Stub function body" << "\n";
+			createStubFunction(M);
+	} else {
 
-   if (ContainsMain) {
-        outs() << "Contains Main: Creating __VT_Stub function body" << "\n";
-		createStubFunction(M);
-   } else {
-
-		Function::Create(FunctionType::get(Type::getVoidTy(Ctx), false),
-			GlobalValue::ExternalLinkage, VT_STUB_FUNC, &M); 
-   }
+			Function::Create(FunctionType::get(Type::getVoidTy(Ctx), false),
+				GlobalValue::ExternalLinkage, VT_STUB_FUNC, &M); 
+	}
 	 
 }
 
+#ifndef DISABLE_LOOKAHEAD
 void VirtualTimeManager::__acquireFlock() {
 
 	if (IgnoreVtCache)
@@ -226,12 +225,14 @@ void VirtualTimeManager::__releaseFlock() {
 	close(lockFd);
 	outs() << "INFO: Released CLANG Lock ... \n";
 }
+#endif
 
 bool VirtualTimeManager::doInitialization(Module& M) {
 
 	if (DisableVtInsertion)
 		return false;
 
+	#ifndef DISABLE_LOOKAHEAD
 	__acquireFlock();
 	
 
@@ -266,6 +267,11 @@ bool VirtualTimeManager::doInitialization(Module& M) {
 	globalLoopCounter = (long )lastUsedLoop;
 
 	outs() << "INFO: Inserting Virtual time specific code ...\n";
+	#endif
+
+	targetMachineSpecificInfo = new TargetMachineSpecificInfo(
+		CLANG_INIT_PARAMS, 1);
+
 	return false;
 }
 
@@ -274,6 +280,7 @@ bool VirtualTimeManager::doFinalization(Module& M) {
 	if (DisableVtInsertion)
 		return false;
 
+	#ifndef DISABLE_LOOKAHEAD
 	__releaseFlock();
 
 	// writing json output
@@ -289,8 +296,14 @@ bool VirtualTimeManager::doFinalization(Module& M) {
    	llvm::json::Object Sarif = perModuleObj;
 	OS << llvm::formatv("{0:2}\n", json::Value(std::move(Sarif)));
 	perModuleObj.clear();
+	#endif
+
+	if (targetMachineSpecificInfo)
+		delete targetMachineSpecificInfo;
+
 	return false;
 }
+
 
 void VirtualTimeManager::__insertVtStubFn(MachineFunction &MF) {
 
@@ -305,31 +318,22 @@ void VirtualTimeManager::__insertVtStubFn(MachineFunction &MF) {
 	
 	MachineBasicBlock* InitMBB = MF.CreateMachineBasicBlock();
 	MachineBasicBlock* FunctionCallMBB = MF.CreateMachineBasicBlock();
-	MachineBasicBlock* InitFalseMBB = MF.CreateMachineBasicBlock();
 	InitMBB->addSuccessor(FunctionCallMBB);
-	InitMBB->addSuccessor(InitFalseMBB);		
-	InitFalseMBB->addSuccessor(origMBB);
-	InitFalseMBB->addSuccessor(FunctionCallMBB);
+	InitMBB->addSuccessor(origMBB);		
 	FunctionCallMBB->addSuccessor(origMBB);
 
 	MF.push_front(FunctionCallMBB);
-	MF.push_front(InitFalseMBB);
 	MF.push_front(InitMBB);
 	
-	// test %rbx, %rbx
-	llvm::BuildMI(*InitMBB, InitMBB->end(), DebugLoc(), TII.get(X86::TEST32rr))
-			.addReg(X86::EBX).addReg(X86::EBX);
-
-	// jne FunctionCallMBB - jmp to FunctionCall if ebx != 0
-	llvm::BuildMI(*InitMBB, InitMBB->end(), DebugLoc(),
-		TII.get(X86::JCC_1)).addMBB(FunctionCallMBB).addImm(5);
-
+	// %rdx contains the current virtual time burst length. If less than or
+	// equal to zero it implies, the current execution burst has been
+	// completed.
 	// test %rdx, %rdx
-	llvm::BuildMI(*InitFalseMBB, InitFalseMBB->end(), DebugLoc(),
+	llvm::BuildMI(*InitMBB, InitMBB->end(), DebugLoc(),
 		TII.get(X86::TEST64rr)).addReg(X86::RDX).addReg(X86::RDX);
 
 	// jns origMBB - jmp to exit if rdx > 0
-	llvm::BuildMI(*InitFalseMBB, InitFalseMBB->end(), DebugLoc(),
+	llvm::BuildMI(*InitMBB, InitMBB->end(), DebugLoc(),
 		TII.get(X86::JCC_1)).addMBB(origMBB).addImm(9);
 	
 
@@ -341,6 +345,10 @@ void VirtualTimeManager::__insertVtStubFn(MachineFunction &MF) {
 	// push %rax
 	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
 		TII.get(X86::PUSH64r)).addReg(X86::RAX);
+
+	// push %rbx
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::PUSH64r)).addReg(X86::RBX);
 
 	// push %rsi
 	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
@@ -397,6 +405,10 @@ void VirtualTimeManager::__insertVtStubFn(MachineFunction &MF) {
 	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
 		TII.get(X86::POP64r)).addReg(X86::RSI);
 
+	// pop %rbx
+	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+		TII.get(X86::POP64r)).addReg(X86::RBX);
+
 	// pop %rax
 	llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
 		TII.get(X86::POP64r)).addReg(X86::RAX);
@@ -408,27 +420,40 @@ void VirtualTimeManager::__insertVtStubFn(MachineFunction &MF) {
 	llvm::BuildMI(*origMBB, origMBB->end(), DebugLoc(), TII.get(X86::RETQ));
 }
 
+#ifndef DISABLE_LOOKAHEAD
 void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
-	MachineBasicBlock* origMBB, long blockNumber, int bbTimeConsumed,
-	long LoopID) {
+	MachineBasicBlock* origMBB, long blockNumber, long LoopID) {
+#else
+void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
+	MachineBasicBlock* origMBB) {
+#endif
 
 	const llvm::TargetInstrInfo &TII = *MF.getSubtarget().getInstrInfo();
 	llvm::Module &M = const_cast<Module &>(*MMI->getModule());
+	auto ret = targetMachineSpecificInfo->GetMBBCompletionTime(origMBB);
+	long bbTimeConsumed = (long)ret.first;
+
+	#ifndef DISABLE_LOOKAHEAD
 	bool skipAddingLoopID = LoopID > 0 ? false: true;
 	long currBBID = blockNumber;
-	// origMBB:
+	#endif
 
+	// origMBB:
+	// restore rax register
 	// pop %rax
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::POP64r)).addReg(X86::RAX);
 
+	// restore eflags register
 	// popf 
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POPF64));
 
+	// push eflags to stack so that it could be loaded with a popf
 	// push %rax
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::PUSH64r)).addReg(X86::RAX);
 
+	// This would contain eflags value
 	// pop %rax
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::POP64r)).addReg(X86::RAX);
@@ -442,28 +467,14 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::POP64r)).addReg(X86::RCX);
 
-	// pop %rbx
-	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-		TII.get(X86::POP64r)).addReg(X86::RBX);
 
 	// callq VT_STUB_FUNC
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::CALL64pcrel32)).addGlobalAddress(
 			M.getNamedValue(VT_STUB_FUNC));
 
-			
-	// movq (%rcx) %rbx
-	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-		TII.get(X86::MOV64rm)).addDef(X86::RBX)
-			.addReg(X86::RCX).addImm(1).addReg(0).addImm(0).addReg(0);
-	
-	// movq VT_FORCE_INVOKE_CALLBACK_VAR@GOTPCREL(%rip) %rcx
-	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
-			.addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0)
-			.addGlobalAddress(
-				M.getNamedValue(VT_FORCE_INVOKE_CALLBACK_VAR), 0, MO_GOTPCREL)
-				.addReg(0);
 
+	#ifndef DISABLE_LOOKAHEAD
 	if (!skipAddingLoopID) {
 		// movq LoopID (%rcx)
 		llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
@@ -478,6 +489,7 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
 					M.getNamedValue(VT_CURR_LOOP_ID_VAR), 0,
 						MO_GOTPCREL).addReg(0);
 	}
+	
 
 	// movq BasicBlockID (%rcx)
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
@@ -489,17 +501,21 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
 			.addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0)
 			.addGlobalAddress(
 				M.getNamedValue(VT_CURR_BBID_VAR), 0, MO_GOTPCREL).addReg(0);
+	#endif
 
+	#ifndef DISABLE_INSN_CACHE_SIM
 	// movq bbTimeConsumed (%rcx)
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::MOV64mi32)).addReg(X86::RCX).addImm(1).addReg(0)
-			.addImm(0).addReg(0).addImm(bbTimeConsumed);
+			.addImm(0).addReg(0).addImm(
+				(long)ret.second);
 
-	// movq VT_CURR_BBL_SIZE_VAR@GOTPCREL(%rip) %rcx
+	// movq VT_CURR_BBL_INSN_CACHE_MISS_PENALTY@GOTPCREL(%rip) %rcx
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
 		.addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0)
 		.addGlobalAddress(
-			M.getNamedValue(VT_CURR_BBL_SIZE_VAR), 0, MO_GOTPCREL).addReg(0);
+			M.getNamedValue(VT_CURR_BBL_INSN_CACHE_MISS_PENALTY), 0, MO_GOTPCREL).addReg(0);
+	#endif
 
 	// movq %rdx %(rcx)
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64mr))
@@ -523,10 +539,6 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
 			.addReg(0).addGlobalAddress(
 				M.getNamedValue(VT_INSN_COUNTER_VAR), 0, MO_GOTPCREL).addReg(0);
 
-		
-	// push %rbx
-	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-		TII.get(X86::PUSH64r)).addReg(X86::RBX);
 
 	// push %rcx
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
@@ -536,19 +548,24 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::PUSH64r)).addReg(X86::RDX);
 
+	// We again save the pushf value here
 	// push %rax
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::PUSH64r)).addReg(X86::RAX);
 
+	// We need to immediately pop the pushf value and store it in a register
+	// to avoid interrupt exceptions
 	// pop %rax
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), 
 		TII.get(X86::POP64r)).addReg(X86::RAX);
 
+	// save eflags register
 	// pushf
 	MachineInstr *Push = BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::PUSHF64));
 	Push->getOperand(2).setIsUndef();
 
+	// save rax
 	// push %rax
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::PUSH64r)).addReg(X86::RAX);
@@ -574,9 +591,14 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
     }
 
 
+	#ifndef DISABLE_LOOKAHEAD
 	if (MF.getName().equals(VT_CALLBACK_FUNC) ||
 		MF.getName().equals(VT_LOOP_LOOKAHEAD_FUNC))
 		return false;
+	#else
+	if (MF.getName().equals(VT_CALLBACK_FUNC))
+		return false;
+	#endif
 
     if (!MF.getName().equals(VT_STUB_FUNC) && !CreatedExternDefinitions) {
 		createExternDefinitions(M, ContainsMain);
@@ -585,6 +607,8 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
     }
 
     if (!MF.getName().equals(VT_STUB_FUNC)) {
+
+		#ifndef DISABLE_LOOKAHEAD
 		// Already created stub function. Do other inserts here and call StubFunction
 		// Get MachineLoopInfo or compute it on the fly if it's unavailable
 		MLI = getAnalysisIfAvailable<MachineLoopInfo>();
@@ -608,8 +632,7 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 		//	MLI->runOnMachineFunction(MF);
 		
 		MachineFunctionCFGHolder mCFGHolder(&MF, globalBBCounter,
-			globalLoopCounter);
-		ret = true;
+			targetMachineSpecificInfo, globalLoopCounter);
 		mCFGHolder.runOnThisMachineFunction(MLI);
 		globalBBCounter = mCFGHolder.getFinalGlobalBBLCounter();
 		globalLoopCounter = mCFGHolder.getFinalGlobalLoopCounter();
@@ -617,7 +640,6 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 			MachineBasicBlock* origMBB = &MBB;
 			__insertVtlLogic(MF, origMBB,
 				mCFGHolder.getGlobalMBBNumber(origMBB),
-				mCFGHolder.getBBLWeight(origMBB),
 				mCFGHolder.getAssociatedLoopNumber(origMBB));		
 		}
 
@@ -625,12 +647,19 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
 			llvm::json::Object::KV{
 				MF.getName(),
 				llvm::json::Value(std::move(mCFGHolder.getComposedMFJsonObj()))
-			});		 
+			});	
+		#else
+		for (auto &MBB : MF) {
+			MachineBasicBlock* origMBB = &MBB;
+			__insertVtlLogic(MF, origMBB);		
+		}
+		#endif
+		ret = true;	 
 
 	} else if  (MF.getName().equals(VT_STUB_FUNC) and ContainsMain) {
 		// Inside stub function. Add comparison instructions. 
-		ret = true;
 		__insertVtStubFn(MF);
+		ret = true;
     }
 
     return ret;

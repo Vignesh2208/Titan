@@ -27,10 +27,6 @@ char &llvm::VirtualTimeLoopIRPassID = VirtualTimeLoopIRPass::ID;
 INITIALIZE_PASS(VirtualTimeLoopIRPass, "vt-loop-ir-pass",
                 "Insert loop lookahead function calls", false, false)
 
-/*
-LoopPass *llvm::createVirtualTimeLoopIRPass() {
-  return new VirtualTimeLoopIRPass();
-}*/
 
 void VirtualTimeLoopIRPass::analyseLoop(Loop * l, ScalarEvolution &SE,
                                         Function * Flookahead) {
@@ -112,11 +108,16 @@ bool VirtualTimeLoopIRPass::doFinalization() {
 bool VirtualTimeLoopIRPass::runOnLoop(Loop * L, LPPassManager &LPM) {
 
 
+    #ifdef DISABLE_LOOKAHEAD
+    return false;
+    #else
+
     if (skipLoop(L)) {
         //outs() << "LOOPIR <INFO>: Skipping loop due to optimization flags ...\n";
         numIgnoredLoops ++;
         return false;
     }
+
 
     // only consider loops with a single exiting and exit block
     if (!L->getExitingBlock() || !L->getUniqueExitBlock()) {
@@ -132,7 +133,6 @@ bool VirtualTimeLoopIRPass::runOnLoop(Loop * L, LPPassManager &LPM) {
    }
 
    // Get Analysis information.
-   LoopInfo &LI = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
    ScalarEvolution &SE = getAnalysis<ScalarEvolutionWrapperPass>().getSE();
    
    Function * F = preHeader->getParent();
@@ -156,18 +156,6 @@ bool VirtualTimeLoopIRPass::runOnLoop(Loop * L, LPPassManager &LPM) {
 
    analyseLoop(L, SE, Fnew);
    numProcessedLoops ++;
-//    outs() << "LOOPIR<INFO> Processing loop ...\n";
-//    outs() << "{\n";
-//    for (auto *Block : L->getBlocks()) {
-//      if (LI.getLoopFor(Block) == L) { // Ignore blocks in subloop.
-//                 		       // Incorporate the specified basic block
-// 	for(BasicBlock::iterator i = Block->begin() , ie = Block->end(); i!=ie; ++i){
-//             if( isa<CallInst>(&(*i)) || isa<InvokeInst>(&(*i))){
-//                 outs() << cast<CallInst>(&(*i))->getCalledFunction()->getName() << "\n";
-//             }
-//         }
-//      }
-//    }
-//    outs() << "}\n";
    return true;
+   #endif
 } 

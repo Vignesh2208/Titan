@@ -5,13 +5,52 @@
 #include <set>
 #include "llvm/Support/JSON.h"
 #include "llvm/ADT/SCCIterator.h"
+#include "VirtualTimeManagementIncludes.h"
+
+
 
 namespace llvm {
 
-  class MachineDominatorTree;
+  class MachineBasicBlock;
+
+  class TargetInstrInfo;
+  class MachineSpecificConfig {
+    private:
+      std::string MachineTimingInfoFile;
+      long cpuCycleNs;
+      std::unordered_map<long, long> OpcodeToCyclesMap;
+      
+    public:
+      MachineSpecificConfig(
+        std::string MachineTimingInfoFile, long cpuCycleNs=1)
+      : MachineTimingInfoFile(MachineTimingInfoFile),
+        cpuCycleNs(cpuCycleNs) {};
+
+      void Initialize();
+      long GetInsnCompletionTime(long Opcode);
+  };
+
+  class TargetMachineSpecificInfo {
+    private:
+      MachineSpecificConfig * machineConfig;
+
+    public:
+      TargetMachineSpecificInfo(std::string MachineTimingInfoFile="",
+        long cpuCycleNs=1) {
+          machineConfig = new MachineSpecificConfig(
+            MachineTimingInfoFile, cpuCycleNs);
+          machineConfig->Initialize();
+      };
+
+      std::pair<unsigned long, unsigned long> GetMBBCompletionTime(
+        MachineBasicBlock * mbb);
+      ~TargetMachineSpecificInfo() { delete machineConfig; };
+  };
+
+  #ifndef DISABLE_LOOKAHEAD
+  class MachineDominatorTree;  
   class MachineLoopInfo;
   class MachineLoop;
-  class MachineBasicBlock;
   class MachineFunction;
   class MachineFunctionCFGHolder;
 
@@ -52,36 +91,35 @@ namespace llvm {
       
   };
 
+
+
   class MachineFunctionCFGHolder {
     private:
       
       std::unordered_map<long, std::vector<long>> outEdges;
       std::unordered_map<long, std::vector<long>> inEdges;
-      std::unordered_map<long, long> bblWeights;
       std::vector<long> returningBlocks;
-      std::unordered_map<long, long> localToGlobalBBL;
-      
-      MachineFunction * associatedMF = nullptr;
       MachineLoopHolder * mloopHolder = nullptr;
-      
-
-      long globalBBLCounter;
-      long entryBBLNumber;
-      
       llvm::json::Array getAllEdgesFromBBL(long bblNumber); 
       llvm::json::Array getAllEdgesToBBL(long bblNumber);
       llvm::json::Array getAllCalledFnsFromBBL(long bblNumber);
       llvm::json::Object composeBBLObject(long bblNumber);
-      
-
+      std::unordered_map<long, long> bblWeights;
+      std::unordered_map<long, long> localToGlobalBBL;
+      MachineFunction * associatedMF = nullptr;
+      long globalBBLCounter;
+      TargetMachineSpecificInfo * targetMachineSpecificInfo = nullptr;
+      long entryBBLNumber;
     public:
       std::unordered_map<long, std::vector<std::string>> calledFunctions;
       MachineLoopInfo * mLoopInfo = nullptr;
 
       MachineFunctionCFGHolder(
         MachineFunction * associatedMF, long globalBBLCounter,
+        TargetMachineSpecificInfo * targetMachineSpecificInfo,
         long globalLoopCounter)
-        : associatedMF(associatedMF), globalBBLCounter(globalBBLCounter) {
+        : associatedMF(associatedMF), globalBBLCounter(globalBBLCounter),
+          targetMachineSpecificInfo(targetMachineSpecificInfo) {
               mloopHolder = new MachineLoopHolder(associatedMF, this,
                 globalLoopCounter);
                 entryBBLNumber = 0;
@@ -102,4 +140,6 @@ namespace llvm {
       llvm::json::Object getComposedMFJsonObj();
       ~MachineFunctionCFGHolder() { delete mloopHolder; };
   };
+
+  #endif
 }

@@ -58,12 +58,15 @@ void __attribute__ ((noreturn)) (*orig_exit)(int status);
 
 // externs
 extern s64 * globalCurrBurstLength;
+
+#ifndef DISABLE_LOOKAHEAD
 extern s64 * globalCurrBBID;
-extern s64 * globalCurrBBSize;
+#endif
+
 extern int * vtInitialized;
-extern int * vtAlwaysOn;
 extern int * vtGlobalTracerID;
 extern int * vtGlobalTimelineID;
+
 extern void (*vtAfterForkInChild)(int ThreadID, int ParendProcessPID);
 extern void (*vtThreadStart)(int ThreadID);
 extern void (*vtThreadFini)(int ThreadID);
@@ -77,7 +80,6 @@ extern void (*vtTriggerSyscallFinish)(int ThreadID);
 extern void (*vtSleepForNS)(int ThreadID, s64 duration);
 extern void (*vtGetCurrentTimespec)(struct timespec *ts);
 extern void (*vtGetCurrentTimeval)(struct timeval * tv);
-extern void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp);
 extern s64 (*vtGetCurrentTime)();
 extern void (*vt_ns_2_timespec)(s64 nsec, struct timespec * ts);
 
@@ -110,9 +112,12 @@ extern int (*vtComputeClosestTimerExpiryForPoll)(int ThreadID,
 extern void (*vtCloseFd)(int ThreadID, int fd);
 
 /*** For lookahead handling ***/
+#ifndef DISABLE_LOOKAHEAD
 extern s64 (*vtGetPacketEAT)();
 extern long (*vtGetBBLLookahead)();
-extern int (*vtSetLookahead)(s64 bulkLookaheadValue, long spLookaheadValue); 
+extern int (*vtSetLookahead)(s64 bulkLookaheadValue, long spLookaheadValue);
+extern void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp);
+#endif 
 
 void LoadOrigFunctions();
 
@@ -619,12 +624,14 @@ int accept4(int sockfd, struct sockaddr *addr,
 ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
 	int payload_hash;
 	ssize_t ret = orig_send(sockfd, buf, len, flags);
+	#ifndef DISABLE_LOOKAHEAD
 	if (len > 0 && ret > 0) {
 		payload_hash = GetPayloadHash(buf, ret);
 		if (payload_hash) {
 			vtSetPktSendTime(payload_hash, ret, vtGetCurrentTime());
 		}
 	}
+	#endif
 	return ret;
 }
 
@@ -635,12 +642,14 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 
 	int payload_hash;
 	ssize_t ret = orig_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
+	#ifndef DISABLE_LOOKAHEAD
 	if (len > 0 && ret > 0) {
 		payload_hash = GetPayloadHash(buf, ret);
 		if (payload_hash) {
 			vtSetPktSendTime(payload_hash, ret, vtGetCurrentTime());
 		}
 	}
+	#endif
 	return ret;
 
 }
@@ -698,8 +707,10 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp) {
 unsigned int sleep(unsigned int seconds) {
 	int ThreadPID = syscall(SYS_gettid);
 	if (seconds) {
+		#ifndef DISABLE_LOOKAHEAD
 		vtSetLookahead(seconds*NSEC_PER_SEC + vtGetCurrentTime(),
 						vtGetBBLLookahead());
+		#endif
 		vtSleepForNS(ThreadPID, seconds*NSEC_PER_SEC);
 	}
 	return 0;
@@ -709,8 +720,10 @@ unsigned int sleep(unsigned int seconds) {
 int usleep(useconds_t usec) {
 	int ThreadPID = syscall(SYS_gettid);
 	if (usec) {
+		#ifndef DISABLE_LOOKAHEAD
 		vtSetLookahead(usec*NSEC_PER_US + vtGetCurrentTime(),
 						vtGetBBLLookahead());
+		#endif
 		vtSleepForNS(ThreadPID, usec*NSEC_PER_US);
 	}
 	
@@ -845,7 +858,10 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
 	} else {
 		
 		start_time = vtGetCurrentTime();
+
+		#ifndef DISABLE_LOOKAHEAD
 		long bblLA = vtGetBBLLookahead();
+		#endif
 	
 		vtTriggerSyscallWait(ThreadPID, 1);
 		do {
@@ -856,13 +872,15 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms){
  
 			elapsed_time = vtGetCurrentTime() - start_time;
 
+			
 			if (elapsed_time < max_duration && allSpecialFDS) {
+				#ifndef DISABLE_LOOKAHEAD
 				s64 minBulkLA = start_time + max_duration;
 				s64 pktEAT = vtGetPacketEAT();
 				if (minBulkLA > pktEAT)
 					minBulkLA = pktEAT;
-
 				vtSetLookahead(minBulkLA, bblLA);
+				#endif
 				allSpecialFDS = 0;
 			}
 
@@ -1072,7 +1090,10 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 			orig_max_duration = max_duration;
 		}
 
+		#ifndef DISABLE_LOOKAHEAD
 		long bblLA = vtGetBBLLookahead();
+		#endif
+
 		vtTriggerSyscallWait(ThreadPID, 1);
 		timeout_cpy.tv_sec = 0, timeout_cpy.tv_usec = 0;
 		do {
@@ -1084,12 +1105,14 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 			elapsed_time = vtGetCurrentTime() - start_time;
 
 			if (elapsed_time < max_duration && allSpecialFDS) {
+				#ifndef DISABLE_LOOKAHEAD
 				s64 minBulkLA = start_time + max_duration;
 				s64 pktEAT = vtGetPacketEAT();
 				if (minBulkLA > pktEAT)
 					minBulkLA = pktEAT;
-
 				vtSetLookahead(minBulkLA, bblLA);
+				#endif
+
 				allSpecialFDS = 0;
 			} 
 
@@ -1135,6 +1158,7 @@ static void HandleVtReadSyscall(int ThreadPID, int fd, void * buf,
 	if (vtInitialized && *vtInitialized == 1) {
 		if (vtIsSocketFd(ThreadPID, fd)) {
 			if(!vtIsSocketFdNonBlocking(ThreadPID, fd)) {
+
 				// get eat and set lookahead here after polling if there's 
 				// nothing to read right away.
 
@@ -1142,10 +1166,14 @@ static void HandleVtReadSyscall(int ThreadPID, int fd, void * buf,
 				poll_fd.events = POLLIN;
 				poll_fd.fd = fd;
 				if (syscall_no_intercept(SYS_poll, &poll_fd, 1, 0) <= 0) {
+
+					#ifndef DISABLE_LOOKAHEAD
 					// nothing to read as of now. set lookahead here.
 					s64 bulkLA = vtGetPacketEAT();
 					long bblLA = vtGetBBLLookahead();
 					vtSetLookahead(bulkLA, bblLA);
+					#endif
+
 					goingToBlock = 1;
 					
 				} else{
@@ -1170,10 +1198,13 @@ static void HandleVtReadSyscall(int ThreadPID, int fd, void * buf,
 
 			if(!vtIsTimerFdNonBlocking(ThreadPID, fd)) {
 				if (!numNewExpiries && nxtExpiryDuration > 0) {
+
+					#ifndef DISABLE_LOOKAHEAD
 					// its going to block. set lookahead.
 					long bblLA = vtGetBBLLookahead();
 					vtSetLookahead(nxtExpiryDuration + vtGetCurrentTime(),
 								   bblLA);
+					#endif
 					vtSleepForNS(ThreadPID, nxtExpiryDuration);
 					numNewExpiries = (uint64_t) vtGetNumNewTimerFdExpiries(
 							ThreadPID, fd, &nxtExpiryDuration);
@@ -1235,10 +1266,14 @@ static void HandleVtPacketReceiveSyscalls(long syscall_number, long arg0,
 		poll_fd.events = POLLIN;
 		poll_fd.fd = sockfd;
 		if (syscall_no_intercept(SYS_poll, &poll_fd, 1, 0) <= 0) {
+
+			#ifndef DISABLE_LOOKAHEAD
 			// nothing to read as of now. set lookahead here.
 			s64 bulkLA = vtGetPacketEAT();
 			long bblLA = vtGetBBLLookahead();
 			vtSetLookahead(bulkLA, bblLA);
+			#endif
+
 		}
 		goingToBlock = 1;
 	} else {

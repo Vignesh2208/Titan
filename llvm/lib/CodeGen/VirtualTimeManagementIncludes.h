@@ -35,21 +35,33 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
 
+#undef DISABLE_LOOKAHEAD
+#undef DISABLE_INSN_CACHE_SIM
+#undef DISABLE_DATA_CACHE_SIM
+
 #define MAIN_FUNC "main"
 #define VT_STUB_FUNC "__Vt_Stub"
 #define VT_CALLBACK_FUNC "vtCallbackFn"
 #define VT_INSN_COUNTER_VAR "currBurstLength"
 #define VT_CURR_BBID_VAR "currBBID"
-#define VT_CURR_BBL_SIZE_VAR  "currBBSize"
+
+#ifndef DISABLE_LOOKAHEAD
 #define VT_CURR_LOOP_ID_VAR "currLoopID"
-#define VT_FORCE_INVOKE_CALLBACK_VAR "alwaysOn"
 #define VT_LOOP_LOOKAHEAD_FUNC "SetLoopLookahead"
+#endif
+
+#ifndef DISABLE_INSN_CACHE_SIM
+#define VT_CURR_BBL_INSN_CACHE_MISS_PENALTY  "currBBInsCacheMissPenalty"
+#define INS_CACHE_CALLBACK_FN "insCacheCallback"
+#endif
+
+#ifndef DISABLE_DATA_CACHE_SIM
+#define DATA_READ_CACHE_CALLBACK_FN "dataReadCacheCallback"
+#define DATA_WRITE_CACHE_CALLBACK_FN "dataWriteCacheCallback"
+#endif
 
 #define CLANG_FILE_LOCK  "/tmp/llvm.lock"
 #define CLANG_INIT_PARAMS "/tmp/llvm_init_params.json"
 
-#define INS_CACHE_CALLBACK_FN "insCacheCallback"
-#define DATA_READ_CACHE_CALLBACK_FN "dataReadCacheCallback"
-#define DATA_WRITE_CACHE_CALLBACK_FN "dataWriteCacheCallback"
 
 #endif

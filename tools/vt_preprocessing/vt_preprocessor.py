@@ -1,14 +1,13 @@
+#!/usr/bin/env python
 """Preprocesses a directory containing llvm artifacts and generates BBL + Loop lookahead maps."""
 
-#!/usr/bin/python
-
 import argparse
-import ipcfg
-import constants as c
+import tools.vt_preprocessing.ipcfg as ipcfg
+import tools.vt_preprocessing.constants as c
 import logging
 import os
 
-logging.basicConfig(level=logging.NOTSET)
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.NOTSET)
 
 parser = argparse.ArgumentParser(description='Generates basic block and loop '
                                              'lookahead information')
@@ -26,6 +25,7 @@ def main():
     if not os.path.isdir(args.source_dir):
         logging.error('Specified source directory: %s does not exist !',
             args.source_dir)
+        return
 
     logging.info('Starting virtual time lookahead computation over: %s',
                  args.source_dir)

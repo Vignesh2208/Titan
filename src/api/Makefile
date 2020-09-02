@@ -1,8 +1,8 @@
 home_dir=$(HOME)
 api_dir=${home_dir}/Titan/src/api
 
+.PHONY: build_api
 build_api:
-
 	 @echo "Building VT-API shared library ..."
 	 @gcc -w -c -Wall -Werror -fpic ${api_dir}/VT_functions.c \
 	 ${api_dir}/utility_functions.c 
@@ -15,12 +15,13 @@ build_api:
 	 @cp ${api_dir}/utility_functions.h /usr/local/include
 
 
+	$(info "VTL Logic: BUILD_CONFIG_FLAGS=$(BUILD_CONFIG_FLAGS))
 	 @echo "Building VTL-Logic shared library ..."
 	 @gcc -w -c -Wall -Werror -fpic ${api_dir}/VT_functions.c \
 	 ${api_dir}/utility_functions.c ${api_dir}/vtl_logic.c \
 	 ${api_dir}/fd_handling.c ${api_dir}/lookahead_parsing.c \
 	 ${api_dir}/cJSON/cJSON.c ${api_dir}/utils/linkedlist.c \
-	 ${api_dir}/utils/hashmap.c
+	 ${api_dir}/utils/hashmap.c $(BUILD_CONFIG_FLAGS)
 
 	 @gcc -w -shared -o libvtllogic.so ${api_dir}/VT_functions.o \
 	 ${api_dir}/utility_functions.o ${api_dir}/vtl_logic.o \
@@ -30,10 +31,9 @@ build_api:
 
 	 @mv libvtllogic.so /usr/lib
 	 @chmod 777 /usr/lib/libvtllogic.so
-
 	 @python setup.py install
 
-
+.PHONY: clean
 clean:
 
 	@rm -rf build/
