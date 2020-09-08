@@ -26,7 +26,7 @@ def createOrResetTTNProject(project_name: str, project_src_dir: str,
             c.PROJECT_NAME_KEY: project_name,
             c.PROJECT_ARCH_NAME: params[c.PROJECT_ARCH_NAME],
             c.PROJECT_ARCH_TIMINGS_PATH_KEY: getInsnTimingsPath(
-                c.PROJECT_ARCH_NAME),
+                params[c.PROJECT_ARCH_NAME]),
             c.INS_CACHE_SIZE_KEY: params[c.INS_CACHE_SIZE_KEY],
             c.INS_CACHE_LINES_KEY: params[c.INS_CACHE_LINES_KEY],
             c.INS_CACHE_TYPE_KEY: params[c.INS_CACHE_TYPE_KEY],
@@ -34,7 +34,8 @@ def createOrResetTTNProject(project_name: str, project_src_dir: str,
             c.DATA_CACHE_SIZE_KEY: params[c.DATA_CACHE_SIZE_KEY],
             c.DATA_CACHE_LINES_KEY: params[c.DATA_CACHE_LINES_KEY],
             c.DATA_CACHE_TYPE_KEY: params[c.DATA_CACHE_TYPE_KEY],
-            c.DATA_CACHE_MISS_CYCLES_KEY: params[c.DATA_CACHE_MISS_CYCLES_KEY]
+            c.DATA_CACHE_MISS_CYCLES_KEY: params[c.DATA_CACHE_MISS_CYCLES_KEY],
+            c.CPU_CYCLE_NS_KEY: params[c.CPU_CYCLE_NS_KEY]
         }
 
     if (reset or
@@ -51,7 +52,8 @@ def createOrResetTTNProject(project_name: str, project_src_dir: str,
             json.dump(project_params, f)
 
     # Remove any locks
-    os.remove(f'{project_src_dir}/{c.TTN_FOLDER_NAME}/clang_flock')
+    if os.path.exists(f'{project_src_dir}/{c.TTN_FOLDER_NAME}/clang_flock'):
+        os.remove(f'{project_src_dir}/{c.TTN_FOLDER_NAME}/clang_flock')
 
 
 def activateProject(project_name: str, project_src_dir: str,
@@ -69,7 +71,7 @@ def activateProject(project_name: str, project_src_dir: str,
         c.PROJECT_CLANG_INIT_PARAMS_KEY: f'{project_src_dir}/clang_init_params.json',
         c.PROJECT_CLANG_LOCK_KEY: f'{project_src_dir}/clang_lock',
         c.PROJECT_ARCH_NAME: params[c.PROJECT_ARCH_NAME],
-        c.PROJECT_ARCH_TIMINGS_PATH_KEY: getInsnTimingsPath(c.PROJECT_ARCH_NAME),
+        c.PROJECT_ARCH_TIMINGS_PATH_KEY: getInsnTimingsPath(params[c.PROJECT_ARCH_NAME]),
         c.INS_CACHE_SIZE_KEY: params[c.INS_CACHE_SIZE_KEY],
         c.INS_CACHE_LINES_KEY: params[c.INS_CACHE_LINES_KEY],
         c.INS_CACHE_TYPE_KEY: params[c.INS_CACHE_TYPE_KEY],
@@ -77,10 +79,11 @@ def activateProject(project_name: str, project_src_dir: str,
         c.DATA_CACHE_SIZE_KEY: params[c.DATA_CACHE_SIZE_KEY],
         c.DATA_CACHE_LINES_KEY: params[c.DATA_CACHE_LINES_KEY],
         c.DATA_CACHE_TYPE_KEY: params[c.DATA_CACHE_TYPE_KEY],
-        c.DATA_CACHE_MISS_CYCLES_KEY: params[c.DATA_CACHE_MISS_CYCLES_KEY]
+        c.DATA_CACHE_MISS_CYCLES_KEY: params[c.DATA_CACHE_MISS_CYCLES_KEY],
+        c.CPU_CYCLE_NS_KEY: params[c.CPU_CYCLE_NS_KEY]
     }
     currDB['active'] = project_params.copy()
-    currDB['projects'][c.PROJECT_NAME_KEY] = project_params.copy()
+    currDB['projects'][project_name] = project_params.copy()
 
     with open(f'{c.TTN_CONFIG_DIR}/projects.db', 'w') as f:
         json.dump(currDB, f)
@@ -110,7 +113,8 @@ def getDefaultProjectParams() -> Dict[str, str]:
         c.DATA_CACHE_SIZE_KEY: c.DEFAULT_DATA_CACHE_SIZE_KB,
         c.DATA_CACHE_LINES_KEY: c.DEFAULT_DATA_CACHE_LINES,
         c.DATA_CACHE_TYPE_KEY: c.DEFAULT_DATA_CACHE_TYPE,
-        c.DATA_CACHE_MISS_CYCLES_KEY: c.DEFAULT_DATA_CACHE_MISS_CYCLES
+        c.DATA_CACHE_MISS_CYCLES_KEY: c.DEFAULT_DATA_CACHE_MISS_CYCLES,
+        c.CPU_CYCLE_NS_KEY: 1.0
     }
     return project_params
 
@@ -161,6 +165,7 @@ def resetProject(project_name: str) -> None:
     project_src_dir = project_params[c.PROJECT_SRC_DIR_KEY]
     createOrResetTTNProject(project_name=project_name,
                             project_src_dir=project_src_dir,
+                            params=None,
                             reset=True)
 
 def deleteProject(project_name: str) -> None:
@@ -171,7 +176,7 @@ def deleteProject(project_name: str) -> None:
 
     with open(f'{c.TTN_CONFIG_DIR}/projects.db', 'r') as f:
         currDB = json.load(f)
-        if currDB['projects'][c.PROJECT_NAME_KEY] != project_name:
+        if project_name not in currDB['projects']:
             logging.info(f'Project {project_name} is not initialized !')
             return
     project_params = currDB['projects'][project_name]
@@ -182,9 +187,15 @@ def deleteProject(project_name: str) -> None:
         return
     # remove ttn folder inside project source directory
     if os.path.exists(f'{project_src_dir}/{c.TTN_FOLDER_NAME}'):
-        os.remove(f'{project_src_dir}/{c.TTN_FOLDER_NAME}')
+        import shutil
+        shutil.rmtree(f'{project_src_dir}/{c.TTN_FOLDER_NAME}')
     del currDB['projects'][project_name]
-    currDB['active'] = getDefaultProjectParams()
+
+    if currDB['active'][c.PROJECT_NAME_KEY] == project_name:
+        currDB['active'] = getDefaultProjectParams()
+
+    with open(f'{c.TTN_CONFIG_DIR}/projects.db', 'w') as f:
+        json.dump(currDB, f)
     logging.info(f'Removed {project_name} from db. '
                  f'Current active project is: DEFAULT')
 
@@ -247,6 +258,8 @@ def displayProject(project_name: str, print_active=False) -> None:
         f'data cache miss cycles   : {project_params[c.DATA_CACHE_MISS_CYCLES_KEY]}')
     logging.info(
         f'data cache type          : {project_params[c.DATA_CACHE_TYPE_KEY]}')
+    logging.info(
+        f'cpu cycle per ns         : {project_params[c.CPU_CYCLE_NS_KEY]}')
 
     project_src_dir = project_params[c.PROJECT_SRC_DIR_KEY]
     if not os.path.exists(
@@ -280,13 +293,12 @@ def handleLookaheadExtraction(project_name: str) -> None:
         logging.info(f'No recognized project with name: {project_name} found !')
         return
 
-    project_params = currDB['projects']
-    project_src_dir = currDB[c.PROJECT_SRC_DIR_KEY]
+    project_src_dir = currDB['projects'][project_name][c.PROJECT_SRC_DIR_KEY]
     lookahead_output_dir = f'{project_src_dir}/.ttn/lookahead'
     import subprocess
+
     vtpp_path = f'{os.path.expanduser("~")}/Titan/tools/vt_preprocessing/vtpp.sh'
-    result = subprocess.run([vtpp_path, '--source_dir', project_src_dir,
-                             '--output_dir', lookahead_output_dir],
-                            stdout=subprocess.PIPE)
-    print(result.stdout)
+    _ = subprocess.run([vtpp_path, '--source_dir', project_src_dir,
+                        '--output_dir', lookahead_output_dir],
+                        stdout=subprocess.PIPE, env=os.environ.copy())
     logging.info('Lookahead extraction complete.')

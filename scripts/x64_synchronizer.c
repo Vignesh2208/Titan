@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-//extern long long currBurstLength;
+//extern long long currBurstCyclesLeft;
 
 
 int main(int argc, char *argv[])

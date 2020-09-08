@@ -1,7 +1,7 @@
 #include "includes.h"
 #include "vt_management.h"
 
-s64 * globalCurrBurstLength;
+s64 * globalCurrBurstCyclesLeft;
 
 #ifndef DISABLE_LOOKAHEAD
 s64 * globalCurrBBID;
@@ -295,8 +295,8 @@ void InitializeVtlLogic() {
     fflush(stdout);
 
     if (lib_vt_lib_handle) {
-        globalCurrBurstLength = dlsym(lib_vt_lib_handle, "currBurstLength");
-        if (!globalCurrBurstLength) {
+        globalCurrBurstCyclesLeft = dlsym(lib_vt_lib_handle, "currBurstCyclesLeft");
+        if (!globalCurrBurstCyclesLeft) {
             printf("GLOBAL insn counter not found !\n");
             fflush(stdout); abort();
         }

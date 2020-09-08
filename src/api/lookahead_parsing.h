@@ -1,21 +1,22 @@
 #ifndef __LOOKAHEAD_PARSING_H
 #define __LOOKAHEAD_PARSING_H
 
+#ifndef DISABLE_LOOKAHEAD
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "cJSON/cJSON.h"
+#include <sys/stat.h>
+#include <sys/mman.h> 
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "utility_functions.h"
 
-#define MAX_OFFSET_DIGITS 10
-struct lookahead_map {
-    s64 * lookaheads;
-    long start_offset;
-    long finish_offset;
-    long num_entries;
-};
+//! Parses a Lookahead file at the specified path and populates a lookahead map
+int LoadLookahead(const char * file_path, struct lookahead_info * linfo);
 
-//! Parses a Lookahead json file at the specified path and populates a lookahead map
-int ParseLookaheadJsonFile(const char * file_path, struct lookahead_map ** lmap);
+//! Clean's up a loaded lookahead map. Called before a process exits.
+void CleanLookaheadInfo(struct lookahead_info * linfo);
 
+#endif
 #endif

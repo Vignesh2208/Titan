@@ -28,5 +28,5 @@ NS_IN_US = 1000
 NS_IN_MS = 1000000
 MAX_BBL_LOOKAHEAD_NS = 10*NS_IN_MS
 
-BBL_LOOKAHEAD_FILE_NAME = 'bbl_lookahead.json'
-LOOP_LOOKAHEAD_FILE_NAME = 'loop_lookahead.json'
+BBL_LOOKAHEAD_FILE_NAME = 'bbl_lookahead.info'
+LOOP_LOOKAHEAD_FILE_NAME = 'loop_lookahead.info'

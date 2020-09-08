@@ -2,6 +2,11 @@
 #include "VirtualTimeManagementUtils.h"
 #include "VirtualTimeManager.h"
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+
+
 
 
 #define GET_INSTRINFO_ENUM
@@ -154,9 +159,9 @@ void VirtualTimeManager::createExternDefinitions(Module &M, bool ContainsMain) {
    LLVMContext &Ctx = M.getContext();
 
   
-   // VT_INSN_COUNTER_VAR
-	M.getOrInsertGlobal(VT_INSN_COUNTER_VAR, Type::getInt64Ty(Ctx));
-	auto *gVar = M.getNamedGlobal(VT_INSN_COUNTER_VAR);
+   // VT_CYCLES_COUNTER_VAR
+	M.getOrInsertGlobal(VT_CYCLES_COUNTER_VAR, Type::getInt64Ty(Ctx));
+	auto *gVar = M.getNamedGlobal(VT_CYCLES_COUNTER_VAR);
 	gVar->setLinkage(GlobalValue::ExternalLinkage);
 	gVar->setAlignment(8);
 
@@ -198,12 +203,13 @@ void VirtualTimeManager::createExternDefinitions(Module &M, bool ContainsMain) {
 }
 
 #ifndef DISABLE_LOOKAHEAD
-void VirtualTimeManager::__acquireFlock() {
+void VirtualTimeManager::__acquireFlock(
+	std::string lockFilePath, std::string clangInitParamsPath) {
 
 	if (IgnoreVtCache)
 		return;
 	outs() << "INFO: Acquiring CLANG Lock ... \n";
-	lockFd = open(CLANG_FILE_LOCK, O_RDWR | O_CREAT, 0666);
+	lockFd = open(lockFilePath.c_str(), O_RDWR | O_CREAT, 0666);
 	int rc = 0;
 	do {
 		 rc = flock(lockFd, LOCK_EX | LOCK_NB);
@@ -214,7 +220,7 @@ void VirtualTimeManager::__acquireFlock() {
 
 	// create file if it does not exist !
 	std::fstream fs;
-  	fs.open(CLANG_INIT_PARAMS, std::ios::out | std::ios::app);
+  	fs.open(clangInitParamsPath, std::ios::out | std::ios::app);
   	fs.close();
 }
 
@@ -233,15 +239,49 @@ bool VirtualTimeManager::doInitialization(Module& M) {
 		return false;
 
 	#ifndef DISABLE_LOOKAHEAD
-	__acquireFlock();
 	
+	const char *homedir;
+	if ((homedir = getenv("HOME")) == NULL) {
+		homedir = getpwuid(getuid())->pw_dir;
+	}
+	std::string home(homedir);
+	std::string ttnProjectsDBPath = home + "/.ttn/projects.db";
+	if (access( ttnProjectsDBPath.c_str(), F_OK ) != -1) {
+		auto Text = llvm::MemoryBuffer::getFileAsStream(
+			ttnProjectsDBPath);
+			
+		StringRef Content = Text ? Text->get()->getBuffer() : "";
+		outs() << "Parsing initial parameters ...\n";
+		if (!Content.empty()) {
+			auto E = llvm::json::parse(Content);
+			if (E) {
+				llvm::json::Object * O = E->getAsObject()->getObject(
+					TTN_PROJECTS_ACTIVE_KEY);
+				projectArchName = O->getString(
+					TTN_PROJECTS_PROJECT_ARCH_NAME_KEY).getValue();
+				projectArchTimingsPath = O->getString(
+					TTN_PROJECTS_PROJECT_ARCH_TIMINGS_PATH_KEY).getValue();
+				clangLockFilePath = O->getString(
+					TTN_PROJECTS_PROJECT_SRC_DIR_KEY).getValue();
+				clangLockFilePath +=  "/.ttn/clang_lock";
+				clangInitParamsPath = O->getString(
+					TTN_PROJECTS_PROJECT_SRC_DIR_KEY).getValue();
+				clangInitParamsPath += "/.ttn/clang_init_params.json";
+
+			} else {
+				outs() << "WARN: Parse ERROR: Ignoring ttnProjectsDB ... \n";
+			}
+		}
+	}
+
+	__acquireFlock(clangLockFilePath, clangInitParamsPath);
 
 	int64_t lastUsedBBL = 0;
 	int64_t lastUsedLoop = 0;
 
 	if (!IgnoreVtCache) {
 		auto Text = llvm::MemoryBuffer::getFileAsStream(
-			CLANG_INIT_PARAMS);
+			clangInitParamsPath);
 			
 		StringRef Content = Text ? Text->get()->getBuffer() : "";
 		outs() << "Parsing initial parameters ...\n";
@@ -265,13 +305,17 @@ bool VirtualTimeManager::doInitialization(Module& M) {
 	}
 	globalBBCounter = (long )lastUsedBBL;
 	globalLoopCounter = (long )lastUsedLoop;
-
-	outs() << "INFO: Inserting Virtual time specific code ...\n";
+	outs() << "Clang File Lock Path: " << clangLockFilePath << "\n";
+	outs() << "Clang Init Params Path: " << clangInitParamsPath << "\n";
 	#endif
 
-	targetMachineSpecificInfo = new TargetMachineSpecificInfo(
-		CLANG_INIT_PARAMS, 1);
+	outs() << "Project Arch Name: " << projectArchName << "\n";
+	outs() << "Project Arch Timings Path: " << projectArchTimingsPath << "\n";
 
+	outs() << "Initializing target machine timing information ... " << "\n";
+	targetMachineSpecificInfo = new TargetMachineSpecificInfo(
+		projectArchName, projectArchTimingsPath);
+	outs() << "INFO: Inserting Virtual time specific code ...\n";
 	return false;
 }
 
@@ -285,17 +329,40 @@ bool VirtualTimeManager::doFinalization(Module& M) {
 
 	// writing json output
 	std::error_code EC;
+	llvm::json::Object clangParamsObj;
+
+	outs() << "Updating clang init params ..." << "\n";
+	clangParamsObj.insert(
+	llvm::json::Object::KV{"BBL_Counter",
+		llvm::json::Value(globalBBCounter)});
+	clangParamsObj.insert(
+	llvm::json::Object::KV{"Loop_Counter",
+		llvm::json::Value(globalLoopCounter)});
+
+	llvm::raw_fd_ostream osClangParams(clangInitParamsPath, EC,
+		llvm::sys::fs::OF_Text);
+	if (EC) {
+		llvm::errs() << "WARN: Could not update clang init params file: " <<
+		clangInitParamsPath << " " << EC.message() << '\n';
+   	} else {
+		osClangParams << llvm::formatv("{0:2}\n",
+			json::Value(std::move(clangParamsObj)));
+		clangParamsObj.clear();
+	}
+
 	std::string OutputFile = M.getSourceFileName() + ".artifacts.json";
 	llvm::raw_fd_ostream OS(OutputFile, EC, llvm::sys::fs::OF_Text);
 	if (EC) {
 		llvm::errs() << "WARN: Could not create artifacts file: " << OutputFile 
 		<< " " << EC.message() << '\n';
+		if (targetMachineSpecificInfo)
+			delete targetMachineSpecificInfo;
 		return false;
    	}
 	outs() << "INFO: Writing artifacts to:  " << OutputFile << "\n";
    	llvm::json::Object Sarif = perModuleObj;
 	OS << llvm::formatv("{0:2}\n", json::Value(std::move(Sarif)));
-	perModuleObj.clear();
+	perModuleObj.clear();	
 	#endif
 
 	if (targetMachineSpecificInfo)
@@ -430,8 +497,8 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
 
 	const llvm::TargetInstrInfo &TII = *MF.getSubtarget().getInstrInfo();
 	llvm::Module &M = const_cast<Module &>(*MMI->getModule());
-	auto ret = targetMachineSpecificInfo->GetMBBCompletionTime(origMBB);
-	long bbTimeConsumed = (long)ret.first;
+	auto ret = targetMachineSpecificInfo->GetMBBCompletionCycles(origMBB, TII);
+	long bblCyclesConsumed = (long)ret.first;
 
 	#ifndef DISABLE_LOOKAHEAD
 	bool skipAddingLoopID = LoopID > 0 ? false: true;
@@ -504,7 +571,7 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
 	#endif
 
 	#ifndef DISABLE_INSN_CACHE_SIM
-	// movq bbTimeConsumed (%rcx)
+	// movq bblCyclesConsumed (%rcx)
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::MOV64mi32)).addReg(X86::RCX).addImm(1).addReg(0)
 			.addImm(0).addReg(0).addImm(
@@ -522,10 +589,10 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
 			.addReg(X86::RCX).addImm(1).addReg(0).addImm(0).addReg(0)
 			.addReg(X86::RDX);
 
-	// subq	bbTimeConsumed, %rdx
+	// subq	bblCyclesConsumed, %rdx
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::SUB64ri8)).addDef(X86::RDX).addReg(X86::RDX)
-			.addImm(bbTimeConsumed);
+			.addImm(bblCyclesConsumed);
 
 
 	// movq (%rcx) %rdx
@@ -533,11 +600,11 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
 		TII.get(X86::MOV64rm)).addDef(X86::RDX).addReg(X86::RCX)
 			.addImm(1).addReg(0).addImm(0).addReg(0);
 
-	// movq VT_INSN_COUNTER_VAR@GOTPCREL(%rip) %rcx
+	// movq VT_CYCLES_COUNTER_VAR@GOTPCREL(%rip) %rcx
 	llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
 		TII.get(X86::MOV64rm)).addReg(X86::RCX).addReg(X86::RIP).addImm(1)
 			.addReg(0).addGlobalAddress(
-				M.getNamedValue(VT_INSN_COUNTER_VAR), 0, MO_GOTPCREL).addReg(0);
+				M.getNamedValue(VT_CYCLES_COUNTER_VAR), 0, MO_GOTPCREL).addReg(0);
 
 
 	// push %rcx

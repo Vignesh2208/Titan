@@ -57,7 +57,7 @@ int (*orig_timerfd_gettime)(int fd, struct itimerspec *curr_value);
 void __attribute__ ((noreturn)) (*orig_exit)(int status);
 
 // externs
-extern s64 * globalCurrBurstLength;
+extern s64 * globalCurrBurstCyclesLeft;
 
 #ifndef DISABLE_LOOKAHEAD
 extern s64 * globalCurrBBID;

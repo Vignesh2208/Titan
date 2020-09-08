@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include "utility_functions.h"
 
-typedef unsigned long u64_t;
+
 
 // These functions can only be called from inside a tracer process or its
 // children
@@ -68,7 +68,7 @@ s64 GetCurrentTimePid(int pid);
 s64 GetCurrentTimeTracer(int tracer_id);
 
 //! Returns the current virtual time of a tracer with id = 1
-s64 GetCurrentVtTime();
+s64 GetCurrentVtTime(void);
 
 //! Initializes a virtual time managed experiment
 /*!
@@ -106,16 +106,16 @@ int WaitForExit(int tracer_id);
 int VtSleepFor(s64 duration);
 
 //! Invoked by a tracee if it is about to enter a syscall which may yield the cpu
-int ReleaseWorker();
+int ReleaseWorker(void);
 
 //! Invoked by a tracee to signal to the virtual time module that it finished its
 //  previous execution burst and is now available to be run again
-s64 FinishBurst();
+s64 FinishBurst(void);
 
 //! Invoked by a tracee to signal to the virtual time module that it finished its
 //  previous execution burst and can be ignored and removed from its tracer
 //  schedule queue
-s64 FinishBurstAndDiscard();
+s64 FinishBurstAndDiscard(void);
 
 //! Invoked by a tracee to signal to the virtual time module to signal that it
 //  is now available to be run again
@@ -123,7 +123,7 @@ s64 MarkBurstComplete(int signal_syscall_finish);
 
 //! Invoked by a tracee to signal a virtual time accorded wait for syscalls such
 //  as select, poll etc
-s64 TriggerSyscallWaitAPI();
+s64 TriggerSyscallWaitAPI(void);
 
 //! Sets the packet send time before the packet is sent out
 int SetPktSendTimeAPI(int payload_hash, int payload_len, s64 send_tstamp);
@@ -143,7 +143,7 @@ int SetEarliestArrivalTime(int tracer_id, s64 eat_tstamp);
 
 //! Invoked by a tracee to get the earliest time at which a packet may arrive
 //  at this node. This may be used to compute lookahead by the tracee
-s64 GetEarliestArrivalTime();
+s64 GetEarliestArrivalTime(void);
 
 //! Invoked by a tracee to set its lookahead. The lookahead of a node is
 //  computed as the min of lookaheads of all its tracees

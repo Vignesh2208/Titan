@@ -55,7 +55,7 @@ fi
 
 ARG_BUILDER+=" --output_dir=$OUTPUT_DIR"
 
-if [ -n "LIST" ]
+if [ -n "$LIST" ]
 then
   $TITAN_DIR/tools/instructions/instruction_latency_preprocessor.py --list $ARG_BUILDER
   exit 0

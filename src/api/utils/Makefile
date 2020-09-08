@@ -1,19 +1,30 @@
-home_dir=$(HOME)
-utils_dir=${home_dir}/Titan/src/api/utils
+API_UTILS_DIR=$(HOME)/Titan/src/api/utils
 
-build:	
-	@gcc -w -c -Wall -Werror -fpic ${utils_dir}/linkedlist.c \
-	 ${utils_dir}/hashmap.c
-	 @gcc -w -shared -o libvtutils.so ${utils_dir}/linkedlist.o \
-	 ${utils_dir}/hashmap.o
-	 @mv libvtutils.so /usr/lib
-	 @chmod 0777 /usr/lib/libvtutils.so
+GCC:=gcc
+RM:=rm
+CP:=cp
+MKDIR:=mkdir
+CHMOD:=chmod
 
-	 @cp ${utils_dir}/linkedlist.h /usr/local/include
-	 @cp ${utils_dir}/hashmap.h /usr/local/include
+.PHONY: build
+build:
+	@$(MKDIR) -p ${API_UTILS_DIR}/build/lib
+	@$(CC) -w -c -Wall -Werror -fpic ${API_UTILS_DIR}/linkedlist.c \
+	 ${API_UTILS_DIR}/hashmap.c
+	@$(CC) -w -shared -o ${API_UTILS_DIR}/build/lib/libvtutils.so ${API_UTILS_DIR}/linkedlist.o \
+	 ${API_UTILS_DIR}/hashmap.o
+	@$(CHMOD) 777 ${API_UTILS_DIR}/build/lib/libvtutils.so
 
+.PHONY: install
+install:
+	@$(CP) ${API_UTILS_DIR}/build/lib/libvtutils.so /usr/lib > /dev/null
+	@$(CP) ${API_UTILS_DIR}/linkedlist.h /usr/local/include
+	@$(CP) ${API_UTILS_DIR}/hashmap.h /usr/local/include
+
+.PHONY: clean
 clean:
-	@rm -f *.o
-	@rm -f /usr/lib/libvtutils.so > /dev/null
-	@rm -f /usr/local/include/linkedlist.h > /dev/null
-	@rm -f /usr/local/include/hashmap.h > /dev/null
+	@$(RM) -rf ${API_UTILS_DIR}/build > /dev/null
+	@$(RM) -f *.o > /dev/null
+	@$(RM) -f /usr/lib/libvtutils.so > /dev/null
+	@$(RM) -f /usr/local/include/linkedlist.h > /dev/null
+	@$(RM) -f /usr/local/include/hashmap.h > /dev/null

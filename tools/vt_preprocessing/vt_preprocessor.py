@@ -6,6 +6,7 @@ import tools.vt_preprocessing.ipcfg as ipcfg
 import tools.vt_preprocessing.constants as c
 import logging
 import os
+import sys
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.NOTSET)
 

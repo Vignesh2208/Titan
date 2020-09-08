@@ -15,29 +15,356 @@
 #include <sys/syscall.h>
 #include <sys/ptrace.h>
 #include <signal.h>
+#include <stdio.h>
+#include <pwd.h>
+#include "cJSON/cJSON.h"
 
 #define MAX_COMMAND_LENGTH 1000
-#define MAX_FILE_PATH_LENGTH 1000
+#define MAX_FILE_PATH_LENGTH 5000
 #define MAX_STRING_SIZE 100
+#define MAX_CONFIG_PARAM_VALUE_STRING_SIZE 100
 #define FAIL -1
 
 #define EXP_CBE 1
 #define EXP_CS 2
+
+#ifndef DISBABLE_LOOKAHEAD
+#define PROJECT_SRC_DIR_KEY "PROJECT_SRC_DIR"
+#endif
+
+#define CPU_CYCLE_NS_KEY "CPU_CYCLES_NS"
+#define DEFAULT_CPU_CYCLES_NS 1.0
+
+
+#ifndef DISABLE_INSN_CACHE_SIM
+#define INS_CACHE_SIZE_KEY "INS_CACHE_SIZE_KB"
+#define INS_CACHE_LINES_KEY "INS_CACHE_LINES"
+#define INS_CACHE_TYPE_KEY "INS_CACHE_TYPE"
+#define INS_CACHE_MISS_CYCLES_KEY "INS_CACHE_MISS_CYCLES"
+#define DEFAULT_INS_CACHE_SIZE_KB 32
+#define DEFAULT_INS_CACHE_LINES 32
+#define DEFAULT_INS_CACHE_TYPE "DMA"
+#define DEFAULT_INS_CACHE_MISS_CYCLES 100
+#endif
+
+#ifndef DISABLE_DATA_CACHE_SIM
+#define DATA_CACHE_SIZE_KEY "DATA_CACHE_SIZE_KB"
+#define DATA_CACHE_LINES_KEY "DATA_CACHE_LINES"
+#define DATA_CACHE_TYPE_KEY "DATA_CACHE_TYPE"
+#define DATA_CACHE_MISS_CYCLES_KEY "DATA_CACHE_MISS_CYCLES"
+#define DEFAULT_DATA_CACHE_SIZE_KB 32
+#define DEFAULT_DATA_CACHE_LINES 32
+#define DEFAULT_DATA_CACHE_TYPE "DMA"
+#define DEFAULT_DATA_CACHE_MISS_CYCLES 100
+#endif
+
 
 #include <VT_functions.h>
 
 extern char** environ;
 
 
-int RunCommandUnderVtManagement(
-    char *orig_command_str, pid_t *child_pid,
-    int tracer_id, int timeline_id, int exp_type,
-    char *optional_lookahead_dir) {
-  char **args;
-  char full_command_str[MAX_COMMAND_LENGTH];
+void SetParamConfigString (char * param_config_name,
+  char * param_config_value, const cJSON * json_obj, char * default_value) {
+
+  if (cJSON_IsString(json_obj))
+    snprintf(param_config_value,
+      MAX_CONFIG_PARAM_VALUE_STRING_SIZE, "%s",
+      cJSON_GetStringValue(json_obj));
+  else
+    snprintf(param_config_value,
+      MAX_CONFIG_PARAM_VALUE_STRING_SIZE, "%s", default_value);
+
+  if (setenv(param_config_name, param_config_value, 1) < 0)
+    perror("Failed to set string environment variable\n");
+  else
+    printf ("Setting %s to: %s\n", param_config_name, param_config_value);
+
+}
+
+void SetParamConfigFloat (char * param_config_name,
+  char * param_config_value, const cJSON * json_obj, float default_value) {
+  if (cJSON_IsNumber(json_obj))
+    snprintf(param_config_value,
+      MAX_CONFIG_PARAM_VALUE_STRING_SIZE, "%f",
+      cJSON_GetNumberValue(json_obj));
+  else
+    snprintf(param_config_value,
+      MAX_CONFIG_PARAM_VALUE_STRING_SIZE, "%f", default_value);    
+
+  if (setenv(param_config_name, param_config_value, 1) < 0)
+    perror("Failed to set float environment variable\n");
+  else
+    printf ("Setting %s to: %s\n", param_config_name, param_config_value);
+
+}
+
+void SetParamConfigInt (char * param_config_name,
+  char * param_config_value, const cJSON * json_obj, int default_value) {
+  if (cJSON_IsNumber(json_obj))
+    snprintf(param_config_value,
+      MAX_CONFIG_PARAM_VALUE_STRING_SIZE, "%d",
+      (int)cJSON_GetNumberValue(json_obj));
+  else
+    snprintf(param_config_value,
+      MAX_CONFIG_PARAM_VALUE_STRING_SIZE, "%d", default_value);  
+
+  if (setenv(param_config_name, param_config_value, 1) < 0)
+    perror("Failed to set int environment variable\n");  
+  else
+    printf ("Setting %s to: %s\n", param_config_name, param_config_value);
+}
+
+int ParseTTNProject(char * project_name) {
+
+    struct passwd *pw = getpwuid(getuid());
+    const char *homedir = pw->pw_dir;
+    char ttn_config_file[MAX_FILE_PATH_LENGTH];
+    cJSON * ttn_config_json;
+    cJSON * ttn_config_projects_json;
+    cJSON * ttn_project_params_json;
+    cJSON * ttn_project_cpu_cycles_ns;
+    char ttn_project_cpu_cycles_ns_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+
+    #ifndef DISABLE_LOOKAHEAD
+    cJSON * ttn_project_src_dir_json;
+    char ttn_project_bbl_lookahead_path[MAX_FILE_PATH_LENGTH];
+    char ttn_project_loop_lookahead_path[MAX_FILE_PATH_LENGTH];
+    #endif
+
+    #ifndef DISABLE_INSN_CACHE_SIM
+    cJSON * ttn_project_ins_cache_type;
+    cJSON * ttn_project_ins_cache_miss_cycles;
+    cJSON * ttn_project_ins_cache_lines;
+    cJSON * ttn_project_ins_cache_size_kb;
+    char ttn_project_ins_cache_type_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+    char ttn_project_ins_cache_miss_cycles_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+    char ttn_project_ins_cache_lines_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+    char ttn_project_ins_cache_size_kb_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+    #endif
+
+    #ifndef DISABLE_DATA_CACHE_SIM
+    cJSON * ttn_project_data_cache_type;
+    cJSON * ttn_project_data_cache_miss_cycles;
+    cJSON * ttn_project_data_cache_lines;
+    cJSON * ttn_project_data_cache_size_kb;
+    char ttn_project_data_cache_type_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+    char ttn_project_data_cache_miss_cycles_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+    char ttn_project_data_cache_lines_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+    char ttn_project_data_cache_size_kb_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+    #endif
+
+    int status = 0;
+    char * file_content = 0;
+    long length;
+
+
+    memset(ttn_config_file, 0, MAX_FILE_PATH_LENGTH);
+    memset(ttn_project_cpu_cycles_ns_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+
+    #ifndef DISABLE_INSN_CACHE_SIM
+    memset(ttn_project_ins_cache_type_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+    memset(ttn_project_ins_cache_miss_cycles_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+    memset(ttn_project_ins_cache_lines_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+    memset(ttn_project_ins_cache_size_kb_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+    #endif
+
+    #ifndef DISABLE_DATA_CACHE_SIM
+    memset(ttn_project_data_cache_type_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+    memset(ttn_project_data_cache_miss_cycles_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+    memset(ttn_project_data_cache_lines_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+    memset(ttn_project_data_cache_size_kb_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+    #endif
+
+    #ifndef DISABLE_LOOKAHEAD
+    memset(ttn_project_bbl_lookahead_path, 0, MAX_FILE_PATH_LENGTH);
+    memset(ttn_project_loop_lookahead_path, 0, MAX_FILE_PATH_LENGTH);
+    #endif
+
+    snprintf(ttn_config_file, MAX_FILE_PATH_LENGTH, "%s/.ttn/projects.db",
+      homedir);
+
+    
+    FILE * f = fopen (ttn_config_file, "rb");
+    printf("Parsing TTN config file: %s\n", ttn_config_file);
+    if (f) {
+      fseek (f, 0, SEEK_END);
+      length = ftell (f);
+      fseek (f, 0, SEEK_SET);
+      file_content = malloc (length);
+      if (file_content) fread (file_content, 1, length, f);
+      fclose (f);
+    }
+
+    if (!length || !file_content) {
+      printf("TTN config file empty! Ignoring ...\n");
+      return 0;
+    }
+
+    ttn_config_json = cJSON_Parse(file_content);
+    if (!ttn_config_json) {
+      const char *error_ptr = cJSON_GetErrorPtr();
+      if (error_ptr != NULL)
+        fprintf(stderr, "TTN config file parse error: %s. Ignoring ...\n", error_ptr);
+      status = 0;
+      goto end;
+    }
+
+    ttn_config_projects_json = cJSON_GetObjectItemCaseSensitive(
+        ttn_config_json, "projects");
+    if (!ttn_config_projects_json) {
+      fprintf(stderr, "TTN config missing projects. Ignoring ...\n");
+      status = 0;
+      goto end;
+    }
+
+    ttn_project_params_json = cJSON_GetObjectItemCaseSensitive(
+      ttn_config_projects_json, project_name);
+
+    if (!ttn_project_params_json) {
+      fprintf(stderr, "TTN project: %s not recognized. Ignoring ...",
+        project_name);
+      status = 0;
+      goto end;
+    }
+    
+    #ifndef DISABLE_LOOKAHEAD
+    ttn_project_src_dir_json = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, PROJECT_SRC_DIR_KEY);
+    #endif
+    ttn_project_cpu_cycles_ns = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, CPU_CYCLE_NS_KEY);
+    
+    #ifndef DISABLE_INSN_CACHE_SIM
+    ttn_project_ins_cache_type = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, INS_CACHE_SIZE_KEY);
+    ttn_project_ins_cache_miss_cycles = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, INS_CACHE_MISS_CYCLES_KEY);
+    ttn_project_ins_cache_lines = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, INS_CACHE_LINES_KEY);
+    ttn_project_ins_cache_size_kb = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, INS_CACHE_SIZE_KEY);
+    SetParamConfigInt("VT_INS_CACHE_MISS_CYCLES",
+      ttn_project_ins_cache_miss_cycles_string,
+      ttn_project_ins_cache_miss_cycles, DEFAULT_INS_CACHE_MISS_CYCLES);
+    SetParamConfigInt("VT_INS_CACHE_LINES", ttn_project_ins_cache_lines_string,
+      ttn_project_ins_cache_lines, DEFAULT_INS_CACHE_LINES);
+    SetParamConfigInt("VT_INS_CACHE_SIZE_KB",
+      ttn_project_ins_cache_size_kb_string,
+      ttn_project_ins_cache_size_kb, DEFAULT_INS_CACHE_SIZE_KB);
+    SetParamConfigString("VT_INS_CACHE_TYPE",
+      ttn_project_ins_cache_type_string,
+      ttn_project_ins_cache_type, DEFAULT_INS_CACHE_TYPE);
+    #endif
+
+    #ifndef DISABLE_DATA_CACHE_SIM
+    ttn_project_data_cache_type = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, DATA_CACHE_TYPE_KEY);
+    ttn_project_data_cache_miss_cycles = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, DATA_CACHE_MISS_CYCLES_KEY);
+    ttn_project_data_cache_lines = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, DATA_CACHE_LINES_KEY);
+    ttn_project_data_cache_size_kb = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, DATA_CACHE_SIZE_KEY);
+    SetParamConfigInt("VT_DATA_CACHE_MISS_CYCLES",
+      ttn_project_data_cache_miss_cycles_string,
+      ttn_project_data_cache_miss_cycles, DEFAULT_DATA_CACHE_MISS_CYCLES);
+    SetParamConfigInt("VT_DATA_CACHE_LINES",
+      ttn_project_data_cache_lines_string,
+      ttn_project_data_cache_lines, DEFAULT_DATA_CACHE_LINES);
+    SetParamConfigInt("VT_DATA_CACHE_SIZE_KB",
+      ttn_project_data_cache_size_kb_string,
+      ttn_project_data_cache_size_kb, DEFAULT_DATA_CACHE_SIZE_KB);    
+    SetParamConfigString("VT_DATA_CACHE_TYPE",
+      ttn_project_data_cache_type_string,
+      ttn_project_data_cache_type, DEFAULT_DATA_CACHE_TYPE);
+    #endif
+
+    SetParamConfigFloat("VT_CPU_CYLES_NS", ttn_project_cpu_cycles_ns_string,
+      ttn_project_cpu_cycles_ns, DEFAULT_CPU_CYCLES_NS);
+    
+    #ifndef DISABLE_LOOKAHEAD
+    if (cJSON_IsString(ttn_project_src_dir_json)) {
+      snprintf(ttn_project_bbl_lookahead_path,
+        MAX_FILE_PATH_LENGTH, "%s/.ttn/lookahead/bbl_lookahead.info",
+        cJSON_GetStringValue(ttn_project_src_dir_json));
+      snprintf(ttn_project_loop_lookahead_path,
+        MAX_FILE_PATH_LENGTH, "%s/.ttn/lookahead/loop_lookahead.info",
+        cJSON_GetStringValue(ttn_project_src_dir_json));
+      if (setenv("VT_BBL_LOOKAHEAD_FILE", ttn_project_bbl_lookahead_path, 1) < 0 )
+	      perror("Failed to set env VT_BBL_LOOKAHEAD_FILE\n");
+      else
+        printf ("Setting VT_BBL_LOOKAHEAD_FILE to: %s\n",
+          ttn_project_bbl_lookahead_path);
+
+      if (setenv("VT_LOOP_LOOKAHEAD_FILE", ttn_project_loop_lookahead_path, 1) < 0)
+        perror("Failed to set env VT_LOOP_LOOKAHEAD_FILE\n");
+      else
+        printf ("Setting VT_LOOP_LOOKAHEAD_FILE to: %s\n",
+          ttn_project_loop_lookahead_path);
+    }
+    #endif
+
+    status = 1;
+end:
+    cJSON_Delete(ttn_config_json);
+    free(file_content);
+    return status;
+}
+
+void SetEnvVariables(int tracer_id, int timeline_id, int exp_type,
+  char * ttn_project_name) {
+
   char tracer_id_env_variable[MAX_STRING_SIZE];
   char timeline_id_env_variable[MAX_STRING_SIZE];
   char exp_type_env_variable[MAX_STRING_SIZE];
+
+
+  memset(tracer_id_env_variable, 0,  sizeof(char) * MAX_STRING_SIZE);
+  memset(timeline_id_env_variable, 0, sizeof(char) * MAX_STRING_SIZE);
+  memset(exp_type_env_variable, 0, sizeof(char) * MAX_STRING_SIZE);
+  
+  if (snprintf(tracer_id_env_variable,
+               MAX_STRING_SIZE, "%d", tracer_id) >= MAX_STRING_SIZE) {
+    printf ("Tracer-id: %d has too many digits. Max allowed digits: %d\n",
+      tracer_id, MAX_STRING_SIZE);
+    exit(FAIL);
+  }
+  
+  if (snprintf(timeline_id_env_variable,
+      MAX_STRING_SIZE, "%d", timeline_id) >= MAX_STRING_SIZE) {
+    printf ("Timeline-id: %d has too many digits. Max allowed digits: %d\n",
+      timeline_id, MAX_STRING_SIZE);
+    exit(FAIL);
+  }
+
+  if (snprintf(exp_type_env_variable,
+      MAX_STRING_SIZE, "%d", exp_type) >= MAX_STRING_SIZE) {
+    printf ("Exp-type: %d has too many digits. Max allowed digits: %d\n",
+      timeline_id, MAX_STRING_SIZE);
+    exit(FAIL);
+  }
+
+  if (setenv("VT_TRACER_ID", tracer_id_env_variable, 1) < 0 )
+	    perror("Failed to set env VT_TRACER_ID\n");
+
+  if (setenv("VT_TIMELINE_ID", timeline_id_env_variable, 1) < 0)
+    perror("Failed to set env VT_TIMELINE_ID\n");
+  
+  if (setenv("VT_EXP_TYPE", exp_type_env_variable, 1) < 0)
+    perror("Failed to set env VT_EXP_TYPE\n");
+
+  if (!ParseTTNProject(ttn_project_name))
+    perror("Failure to parse and set ttn project env variables \n");
+
+  setenv("LD_PRELOAD", "/usr/lib/libvtintercept.so", 1);
+}
+
+int RunCommandUnderVtManagement(
+    char *orig_command_str, pid_t *child_pid, int tracer_id, int timeline_id,
+    int exp_type, char *ttn_project_name) {
+  char **args;
+  char full_command_str[MAX_COMMAND_LENGTH];
   char *iter = full_command_str;
 
   int i = 0;
@@ -49,15 +376,7 @@ int RunCommandUnderVtManagement(
   int matched_quotes = 1;
   pid_t child;
 
-  memset(tracer_id_env_variable, 0,  sizeof(char) * MAX_STRING_SIZE);
-  memset(timeline_id_env_variable, 0, sizeof(char) * MAX_STRING_SIZE);
-  memset(exp_type_env_variable, 0, sizeof(char) * MAX_STRING_SIZE);
-  memset(full_command_str, 0, sizeof(char) * MAX_COMMAND_LENGTH);
-
-  sprintf(tracer_id_env_variable, "%d", tracer_id);
-  sprintf(timeline_id_env_variable, "%d", timeline_id);
-  sprintf(exp_type_env_variable, "%d", exp_type);
-  
+  memset(full_command_str, 0, sizeof(char) * MAX_COMMAND_LENGTH);  
   memcpy(full_command_str, orig_command_str, MAX_COMMAND_LENGTH);
 
   while (full_command_str[i] != '\0' && full_command_str[i] != '\n') {
@@ -133,31 +452,12 @@ int RunCommandUnderVtManagement(
       i++;
     }
     
-    if (setenv("VT_TRACER_ID", tracer_id_env_variable, 1) < 0 )
-	    perror("Failed to set env VT_TRACER_ID\n");
-
-    if (setenv("VT_TIMELINE_ID", timeline_id_env_variable, 1) < 0)
-	    perror("Failed to set env VT_TIMELINE_ID\n");
-    
-    if (setenv("VT_EXP_TYPE", exp_type_env_variable, 1) < 0)
-	    perror("Failed to set env VT_EXP_TYPE\n");
-
-    if (strlen(optional_lookahead_dir)) {
-      char bbl_lookahead_file[MAX_FILE_PATH_LENGTH];
-      char loop_lookahead_file[MAX_FILE_PATH_LENGTH];
-      memset(bbl_lookahead_file, 0, MAX_FILE_PATH_LENGTH);
-      memset(loop_lookahead_file, 0, MAX_FILE_PATH_LENGTH);
-      sprintf("%s/bbl_lookahead.json", optional_lookahead_dir);
-      sprintf("%s/loop_lookahead.json", optional_lookahead_dir);
-      if (setenv("VT_EXP_TYPE", exp_type_env_variable, 1) < 0)
-        perror("Failed to set env VT_EXP_TYPE\n");
-    }
-    setenv("LD_PRELOAD", "/usr/lib/libvtintercept.so", 1);
-    printf("Starting Command: %s\n", args[0]);
+    printf("Setting appropriate environment variables ...\n");
+    SetEnvVariables(tracer_id, timeline_id, exp_type, ttn_project_name);
+    printf("Starting command: %s\n", args[0]);
     fflush(stdout);
     fflush(stderr);
-
-    execve(args[0], &args[0], environ);
+    //execve(args[0], &args[0], environ);
     free(args);
     exit(0);
   }
@@ -168,14 +468,17 @@ int RunCommandUnderVtManagement(
 
 void PrintUsage(int argc, char* argv[]) {
 	fprintf(stderr, "\n");
-	fprintf(stderr, "Usage: %s [ -h | --help ]\n", argv[0]);
+	fprintf(stderr, "For displaying this message: %s [ -h | --help ]\n", argv[0]);
+  fprintf(stderr, "\n");
+  fprintf(stderr, "General usage: \n");
+  fprintf(stderr, "\n");
 	fprintf(stderr,
-          "%s -i TRACER_ID -t TIMELINE_ID -e EXP_TYPE"
-	        " -c \"CMD with args\" -l lookahead directory (optional)\n", argv[0]);
+          "%s -i <TRACER_ID> -t <TIMELINE_ID> -e <EXP_TYPE>"
+	        " -c \"CMD with args\" -p <TTN PROJECT NAME>\n", argv[0]);
 	fprintf(stderr, "\n");
 	fprintf(stderr,
           "This program executes the specified CMD with arguments "
-          "in trace mode under the control of VT-Module\n");
+          "in trace mode under the control of Titan virtual time module\n");
 	fprintf(stderr, "\n");
 }
 
@@ -185,12 +488,14 @@ int main(int argc, char * argv[]) {
 	size_t len = 0;
 	int tracer_id = 0, timeline_id, exp_type;
 	char command[MAX_COMMAND_LENGTH];
-  char lookahead_directory[MAX_FILE_PATH_LENGTH];
+  char project[MAX_COMMAND_LENGTH];
 	int option = 0;
 	int i, status;
   pid_t controlled_pid;
 
 
+  memset(command, 0, sizeof(char)*MAX_COMMAND_LENGTH);
+  memset(project, 0, sizeof(char)*MAX_COMMAND_LENGTH);
 	timeline_id = 0;
 
 	if (argc < 4 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
@@ -198,67 +503,76 @@ int main(int argc, char * argv[]) {
 		exit(FAIL);
 	}
 
-  memset(lookahead_directory, 0, sizeof(char)*MAX_FILE_PATH_LENGTH);
 
-	while ((option = getopt(argc, argv, "i:e:t:n:c:h")) != -1) {
+	while ((option = getopt(argc, argv, "i:e:t:n:c:p:h")) != -1) {
 		switch (option) {
-		case 'i' : tracer_id = atoi(optarg);
-			break;
-		case 't' : timeline_id = atoi(optarg);
-			break;
-		case 'e' : exp_type = atoi(optarg);
-			break;
-		case 'c' : memset(command, 0, sizeof(char)*MAX_COMMAND_LENGTH);
-			sprintf(command, "%s", optarg);
-			break;
-    case 'l' : sprintf(lookahead_directory, "%s", optarg);
+		case 'i' :  tracer_id = atoi(optarg);
+                if (tracer_id < 0) {
+                  printf("Tracer-id must be positive \n"); exit(FAIL);
+                }
+			          break;
+		case 't' :  timeline_id = atoi(optarg);
+                if (timeline_id < 0) {
+                  printf("Timeline-id must be positive \n"); exit(FAIL);
+                }
+			          break;
+		case 'e' :  exp_type = atoi(optarg);
+                if (exp_type != EXP_CBE && exp_type != EXP_CS) {
+                  printf (
+                    "Only experiment types EXP_CBE (<=> 1) or EXP_CS (<=> 2) "
+                    "are currently supported\n");
+                  exit(FAIL);
+                }
+			          break;
+		case 'c' :  if (strlen(optarg) > MAX_COMMAND_LENGTH) {
+                  printf ("Command: %s too long. Max allowed characters: %d\n",
+                  optarg, MAX_COMMAND_LENGTH);
+                  exit(FAIL);
+                }
+                snprintf(command, MAX_COMMAND_LENGTH, "%s", optarg);
+                break;
+    case 'p' :  if (strlen(optarg) > MAX_COMMAND_LENGTH) {
+                  printf ("TTN Project Name: %s too long. Max allowed characters: %d\n",
+                  optarg, MAX_COMMAND_LENGTH);
+                  exit(FAIL);
+                }
+                snprintf(project, MAX_COMMAND_LENGTH, "%s", optarg);
+                break;
 		case 'h' :
-		default: PrintUsage(argc, argv);
-			       exit(FAIL);
+		default  :  PrintUsage(argc, argv);
+			          exit(FAIL);
 		}
 	}
 
 	
-	printf("CMD TO RUN: %s\n", command);		
-
-  if (tracer_id <= 0) {
-    printf("Tracer ID must be positive !\n");
-    exit(FAIL);
-  }
-
-  if (exp_type != EXP_CS && exp_type != EXP_CBE) {
-    printf("exp_type must be either EXP_CBE or EXP_CS\n");
-    exit(FAIL);
-  }
-
-  if (exp_type == EXP_CS && timeline_id < 0) {
-    printf("Timeline ID must be >= 0\n");
-    exit(FAIL);
-  }
+	printf("Tracer: %d >> CMD TO RUN: %s\n", tracer_id, command);		
 
   RunCommandUnderVtManagement(
-    command, &controlled_pid, tracer_id, timeline_id, exp_type,
-    lookahead_directory);
-  printf("TracerID: %d, Started Command: %s, PID = %d. Timeline-id = %d\n",
+    command, &controlled_pid, tracer_id, timeline_id, exp_type, project);
+  printf("Tracer: %d >> Started Command: %s, PID: %d. Timeline-id: %d\n",
     tracer_id, command, controlled_pid, timeline_id);
 
   // Block here with a call to VT-Module
-  printf("TracerID: %d Waiting for virtual time experiment to finish !\n",
+  printf("Tracer: %d >> Waiting for virtual time experiment to finish ...\n",
     tracer_id);
   fflush(stdout);
-  if (WaitForExit(tracer_id) < 0)
-    printf("ERROR: IN Wait for exit. Thats not good !\n");
+
+  /*
+  if (WaitForExit(tracer_id) < 0) // TODO: Better error handling here 
+    printf("Tracer: %d >> ERROR: in wait for exit. Thats not good !\n",
+      tracer_id);
 
   // Resume from Block. Send KILL Signal to each child.
   // TODO: Think of a more gracefull way to do this.
-  printf("Resumed from Wait for Exit! Waiting for processes to finish !\n");
+  printf("Tracer: %d >> Resumed. Waiting for processes to finish ...\n", tracer_id);
   fflush(stdout);
 
-  kill(controlled_pid, SIGKILL);
-  printf("Waiting to read child status !\n");
+  kill(controlled_pid, SIGKILL); */
+  
+  printf("Tracer: %d >> Waiting to read child status ...\n", tracer_id);
   fflush(stdout);
   waitpid(controlled_pid, &status, 0);
  
-  printf("Exiting Tracer: %d\n", tracer_id);
+  printf("Tracer: %d >> Exiting ...\n", tracer_id);
   return 0;
 }

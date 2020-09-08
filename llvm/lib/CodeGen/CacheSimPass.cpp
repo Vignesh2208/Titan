@@ -132,6 +132,10 @@ bool CacheSimPass::runOnFunction(Function &F) {
     #ifndef DISABLE_INSN_CACHE_SIM
     for (BasicBlock &BB : F) {
         Instruction* fi = BB.getFirstNonPHI();
+
+        if (!fi)
+            continue;
+
         IRBuilder<> builder(&BB);
         builder.CreateCall(FInsnCacheCallback);
     
@@ -139,9 +143,11 @@ bool CacheSimPass::runOnFunction(Function &F) {
         for(BasicBlock::iterator BI = b->begin(), BE = b->end(); BI != BE; ++BI) {
             if(isa<CallInst>(&(*BI))) {  
             
+                if (!cast<CallInst>(&(*BI))->getCalledFunction())
+                    continue;
                 StringRef calledFnName = 
                     cast<CallInst>(&(*BI))->getCalledFunction()->getName();
-                if (calledFnName == INS_CACHE_CALLBACK_FN){
+                if (calledFnName.equals(INS_CACHE_CALLBACK_FN)){
                     Instruction *newInst = (Instruction *)&(*BI);
                     newInst->moveBefore(fi);
                     break;

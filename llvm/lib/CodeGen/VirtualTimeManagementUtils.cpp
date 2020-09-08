@@ -4,18 +4,113 @@
 using namespace llvm;
 
 
-void MachineSpecificConfig::Initialize() {}
+void MachineInsPrefixTree::addMachineInsn(std::string insnName,
+	float avgCpuCycles) {
+	struct MachineInsPrefixTreeNode * curr_node = root.get();
+	std::unique_ptr<struct MachineInsPrefixTreeNode> tmp;
+	for (unsigned i=0; i< insnName.length(); ++i) {
+    	auto got = curr_node->children.find(insnName.at(i));
+		if (got == curr_node->children.end()) {
 
-long MachineSpecificConfig::GetInsnCompletionTime(long Opcode) {
-	return cpuCycleNs;
+
+			tmp = std::unique_ptr<struct MachineInsPrefixTreeNode>(
+				new struct MachineInsPrefixTreeNode);
+			tmp->component = insnName.at(i);
+			tmp->avgCpuCycles = -1;
+
+			if (i == insnName.length() - 1)
+				tmp->avgCpuCycles = avgCpuCycles;
+			curr_node->children.insert(std::make_pair(tmp->component,
+				std::move(tmp)));
+			curr_node = curr_node->children.find(insnName.at(i))->second.get();
+		} else {
+			curr_node = 
+					(struct MachineInsPrefixTreeNode *)got->second.get();
+			if ((i == insnName.length() - 1))
+				curr_node->avgCpuCycles = avgCpuCycles;
+		}
+	}
+}
+float MachineInsPrefixTree::getAvgCpuCycles(std::string insnName) {
+	struct MachineInsPrefixTreeNode * curr_node = root.get();
+	for (unsigned i=0; i< insnName.length(); ++i) {
+    	auto got = curr_node->children.find(insnName.at(i));
+		if (got == curr_node->children.end())
+			return curr_node->avgCpuCycles; // longest-prefix match
+		curr_node = 
+			(struct MachineInsPrefixTreeNode *)got->second.get();
+		if ((i == insnName.length() - 1))
+			return curr_node->avgCpuCycles;
+	}
+	return -1;
+}
+
+void MachineSpecificConfig::Initialize() {
+	if (MachineArchName == DEFAULT_PROJECT_ARCH_NAME)
+		return;
+
+	int count = 0;
+	if (access( MachineTimingInfoFile.c_str(), F_OK ) != -1) {
+		auto Text = llvm::MemoryBuffer::getFileAsStream(
+			MachineTimingInfoFile);
+			
+		StringRef Content = Text ? Text->get()->getBuffer() : "";
+		outs() << "Parsing machine architecture timing information ...\n";
+		if (!Content.empty()) {
+			auto E = llvm::json::parse(Content);
+			if (E) {
+				llvm::json::Object * insnNames = E->getAsObject()->getObject(
+					"insn_name");
+				llvm::json::Object * latencyCycles = E->getAsObject()->getObject(
+					"avg_latency");
+				for (auto it = insnNames->begin(); it != insnNames->end(); it++){
+					std::string key = it->getFirst().str();
+
+					if (it->getSecond().getAsString().hasValue()) {
+						std::string insnName = 
+							it->getSecond().getAsString().getValue();
+						float avgCpuCycles = -1;
+						if (latencyCycles->getNumber(key).hasValue())
+							avgCpuCycles = latencyCycles->getNumber(key).getValue();
+						if (!count && avgCpuCycles > 0) {
+							outs() << "Instruction name: " << insnName
+								<< "avgCpuCycles: " << avgCpuCycles << "\n";
+						}
+
+						machineInsPrefixTree->addMachineInsn(insnName,
+							avgCpuCycles);
+						count ++;	
+					}				
+				}
+
+			} else {
+				outs() << "WARN: Parse ERROR: Ignoring Machine arch timings ... \n";
+			}
+		}
+	}
+
+}
+
+float MachineSpecificConfig::GetInsnCompletionCycles(std::string insnName) {
+
+	if (MachineArchName == DEFAULT_PROJECT_ARCH_NAME)
+		return 1.0;
+	float avgCpuCycles = machineInsPrefixTree->getAvgCpuCycles(insnName);
+	if (avgCpuCycles < 0)
+		return 1.0;
+
+	outs () << "Requested insnName: " << insnName << " avg cpu cycles: "
+			<< avgCpuCycles << "\n";
+	return avgCpuCycles;
 }
 
   
-std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBCompletionTime(
-	MachineBasicBlock * mbb) {
+std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBCompletionCycles(
+	MachineBasicBlock * mbb, const llvm::TargetInstrInfo &TII) {
 	if (!mbb)
 		return std::make_pair(0, 0);
-	unsigned long mbbCompletionTime = 0, InstrCount = 0;
+	float mbbCompletionCycles = 0;
+	unsigned long InstrCount = 0;
 	bool skip = false;
 	for (MachineBasicBlock::instr_iterator Iter = mbb->instr_begin(),
 		E = mbb->instr_end(); Iter != E; Iter++) {
@@ -56,12 +151,20 @@ std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBComplet
 		}
 
 		if (!MI.isCFIInstruction() && !skip) {
-			mbbCompletionTime += machineConfig->GetInsnCompletionTime(
-				MI.getOpcode()); 
+			mbbCompletionCycles += machineConfig->GetInsnCompletionCycles(
+				TII.getName(MI.getOpcode())); 
 			InstrCount ++;
 		}
 	}
-	return std::make_pair(mbbCompletionTime, InstrCount);
+
+	// since we are dealing with integers, we cap it to atleast 1.
+	// otherwise there might be a case where a basic block is looped infinitely
+	// with zero time elapse.
+	// TODO: fix this so that burst completion cycles are tracked as floats
+	// instead of long
+	if (mbbCompletionCycles < 1)
+		mbbCompletionCycles = 1;
+	return std::make_pair((long)mbbCompletionCycles, InstrCount);
 }
 
 
@@ -385,6 +488,7 @@ void MachineFunctionCFGHolder::runOnThisMachineFunction(MachineLoopInfo * MLI) {
 		associatedMF->getName().equals(VT_LOOP_LOOKAHEAD_FUNC))
 		return;
 	mLoopInfo = MLI;
+	const llvm::TargetInstrInfo &TII = *(associatedMF->getSubtarget().getInstrInfo());
 	// Already created stub function. Do other inserts here and
 	// call StubFunction
 	for (auto &MBB : *associatedMF) {
@@ -430,7 +534,7 @@ void MachineFunctionCFGHolder::runOnThisMachineFunction(MachineLoopInfo * MLI) {
 		}
 
 		setBBLWeight(globalBBLCounter,
-			targetMachineSpecificInfo->GetMBBCompletionTime(origMBB).first);					
+			targetMachineSpecificInfo->GetMBBCompletionCycles(origMBB, TII).first);					
 	}
 
 

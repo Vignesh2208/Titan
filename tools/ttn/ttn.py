@@ -48,6 +48,10 @@ parser.add_argument('--data_cache_type', type=str,
 parser.add_argument('--data_cache_miss_cycles', type=int,
                     default=c.DEFAULT_DATA_CACHE_MISS_CYCLES,
                     help='Number of cycles spent in the event of a cache miss')
+
+parser.add_argument('--cpu_cycle_ns', type=float, default=1.0,
+                    help='Number of cpu clock cycles per ns')
+
 parser.add_argument(
     '--init', help='Initializes ttn. This is run automatically during '
                    'installation. It needs to be normally run only once.',
@@ -83,7 +87,7 @@ def main():
         c.DATA_CACHE_LINES_KEY: args.data_cache_lines,
         c.DATA_CACHE_TYPE_KEY: args.data_cache_type,
         c.DATA_CACHE_MISS_CYCLES_KEY: args.data_cache_miss_cycles,
-
+        c.CPU_CYCLE_NS_KEY: args.cpu_cycle_ns
     }
     if args.list:
         ops.listAllProjects()

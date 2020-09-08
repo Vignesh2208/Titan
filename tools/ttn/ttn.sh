@@ -48,7 +48,7 @@ case $key in
     shift
     shift
     ;;
-    -o|--project_src_dir)
+    -s|--project_src_dir)
     PROJECT_SOURCE_DIR="$2"
     shift
     shift

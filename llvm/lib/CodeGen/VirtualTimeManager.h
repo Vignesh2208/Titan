@@ -2,7 +2,6 @@
 #include <memory>
 
 #include "llvm/CodeGen/MachineFunctionPass.h"
-#include "llvm/Support/JSON.h"
 #include "VirtualTimeManagementIncludes.h"
 
 #define X86_VIRTUAL_TIME_MANAGER_PASS_NAME "virtual time manager pass"
@@ -21,7 +20,8 @@ namespace llvm {
     private:
 
         #ifndef DISABLE_LOOKAHEAD
-        void __acquireFlock();
+        void __acquireFlock(std::string lockFilePath,
+          std::string clangParamsFilePath);
         void __releaseFlock();
         void __insertVtlLogic(MachineFunction &MF, MachineBasicBlock* origMBB,
                               long blockNumber, long LoopID);
@@ -33,6 +33,8 @@ namespace llvm {
         
     public:
     static char ID;
+    std::string projectArchName;
+    std::string projectArchTimingsPath;
     bool CreatedExternDefinitions;
     TargetMachineSpecificInfo * targetMachineSpecificInfo = nullptr;
 
@@ -40,6 +42,8 @@ namespace llvm {
     long globalBBCounter;
     long globalLoopCounter;
     int lockFd;
+    std::string clangLockFilePath;
+	  std::string clangInitParamsPath;
     llvm::json::Object perModuleObj;
     MachineLoopInfo * MLI;
     MachineDominatorTree * MDT;
@@ -51,8 +55,11 @@ namespace llvm {
 
     VirtualTimeManager() : MachineFunctionPass(ID) {
 	      CreatedExternDefinitions = false;
-
+        projectArchName = DEFAULT_PROJECT_ARCH_NAME;
+        projectArchTimingsPath = DEFAULT_PROJECT_ARCH_NAME;
         #ifndef DISABLE_LOOKAHEAD
+        clangLockFilePath = CLANG_FILE_LOCK;
+	      clangInitParamsPath = CLANG_INIT_PARAMS;
         globalBBCounter = -1;
         lockFd = -1;
         #endif

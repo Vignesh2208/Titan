@@ -4,6 +4,7 @@
 #include "utils/linkedlist.h"
 #include "utils/hashmap.h"
 #include "utility_functions.h"
+#include "cache_simulation.h"
 
 
 #define EXIT_FAILURE -1
@@ -68,17 +69,6 @@ int IsTimerArmed(int ThreadID, int fd);
 int SetLookahead(s64 bulkLookaheadValue, long spLookaheadValue);
 #endif
 
-#ifndef DISABLE_INSN_CACHE_SIM
-/*** InsnCache callback ***/
-void insCacheCallback();
-#endif
 
-#ifndef DISABLE_DATA_CACHE_SIM
-/*** Invoked before read accesses to memory ***/
-void dataReadCacheCallback(u64 address, int size_bytes);
-
-/*** Invoked before write accesses to memory ***/
-void dataWriteCacheCallback(u64 address, int size_bytes);
-#endif
 
 #endif

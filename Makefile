@@ -1,8 +1,19 @@
 EXTRA_CFLAGS += 
 KERNEL_SRC:= /lib/modules/$(shell uname -r)/build
-SUBDIR= $(shell pwd)
+
+TITAN_BUILD_DIR=$(HOME)/Titan/build
+TRACER_DIR=$(HOME)/Titan/src/tracer
+SCRIPTS_DIR=$(HOME)/Titan/scripts
+CORE_DIR=$(HOME)/Titan/src/core
+UTILS_DIR=$(HOME)/Titan/src/utils
+INTERCEPT_LIB_DIR=$(HOME)/Titan/src/core/intercept_lib
+API_DIR=$(HOME)/Titan/src/api
+API_UTILS_DIR=$(HOME)/Titan/src/api/utils
+
 GCC:=gcc
 RM:=rm
+CD:=cd
+ECHO:=echo
 nCpus=$(shell nproc --all)
 
 BUILD_CONFIG_FLAGS  = 
@@ -38,73 +49,99 @@ PHONY += clean
 clean: clean_core clean_utils clean_api clean_tracer clean_scripts
 
 PHONY += build
-build: build_llvm build_api build_intercept build_core build_tracer build_scripts
+build: build_api build_intercept build_core
+
+PHONY += install
+install: install_api install_intercept install_core install_tracer install_scripts
 
 PHONY += build_intercept
-build_intercept:
-	@cd src/core/ld_preloading; $(MAKE) build
+build_intercept: build_api
+	@$(CD) ${INTERCEPT_LIB_DIR}; $(MAKE) build
 
 PHONY += build_core
 build_core: build_intercept
-	$(MAKE) -C $(KERNEL_SRC) M=$(SUBDIR)/build modules
+	$(MAKE) -C $(KERNEL_SRC) M=$(TITAN_BUILD_DIR) modules
 
 PHONY += build_api_utils
 build_api_utils:
-	@cd src/api/utils; $(MAKE) build;
+	@$(CD) ${API_UTILS_DIR}; $(MAKE) build;
 
 PHONY += build_api
 build_api: build_api_utils
-	@cd src/api; $(MAKE) build_api;
+	@$(CD) ${API_DIR}; $(MAKE) build_api;
 
-PHONY += build_tracer
-build_tracer: build_api
-	@cd src/tracer; $(MAKE) build;
 
-PHONY += build_scripts
-build_scripts:
-	@cd scripts; $(MAKE) build;
+PHONY += build_intercept
+install_intercept:
+	@$(CD) ${INTERCEPT_LIB_DIR}; sudo $(MAKE) install
 
-PHONY += build_llvm
-build_llvm:
-	$(shell ./clang_install.sh)
+PHONY += build_core
+install_core:
+	$(ECHO) "Loading Titan virtual time module ..."
+	#sudo insmod ${TITAN_BUILD_DIR}/vt_module.ko
+
+PHONY += install_api_utils
+install_api_utils:
+	@$(CD) ${API_UTILS_DIR}; sudo $(MAKE) install;
+
+PHONY += install_api
+install_api:
+	@$(CD) ${API_DIR}; sudo $(MAKE) install;
+
+PHONY += install_tracer
+install_tracer:
+	@$(CD) ${TRACER_DIR}; sudo $(MAKE) install;
+
+PHONY += install_scripts
+install_scripts:
+	@$(CD) ${SCRIPTS_DIR}; sudo $(MAKE) install;
+
+
 
 PHONY += load
 load:
-	sudo insmod build/vt_module.ko
+	sudo insmod ${TITAN_BUILD_DIR}/vt_module.ko
 
 PHONY += unload
 unload:
-	sudo rmmod build/vt_module.ko
+	sudo rmmod ${TITAN_BUILD_DIR}/vt_module.ko
 
 PHONY += clean_scripts
 clean_scripts:
-	@echo "Cleaning scripts ..."
-	@cd scripts && $(MAKE) clean
+	@$(ECHO) "Cleaning scripts ..."
+	@$(CD) ${SCRIPTS_DIR} && $(MAKE) clean
 	
 PHONY += clean_core
 clean_core:
-	@echo "Cleaning old build files ..."
-	@cd src/core/ld_preloading && $(MAKE) clean;
-	@$(RM) -f build/*.ko build/*.o build/*.mod.c build/Module.symvers build/modules.order build/.*.cmd build/.cache.mk;
-	@$(RM) -rf build/.tmp_versions;
-	@$(RM) -f src/core/.*.cmd src/core/*.o;
+	@$(ECHO) "Cleaning old build files ..."
+	@$(ECHO) "Cleaning intercept lib ..."
+	@$(CD) ${INTERCEPT_LIB_DIR} && $(MAKE) clean;
+	@$(RM) -f ${TITAN_BUILD_DIR}/*.ko
+	@$(RM) -f ${TITAN_BUILD_DIR}/*.o
+	@$(RM) -f ${TITAN_BUILD_DIR}/*.mod.c
+	@$(RM) -f ${TITAN_BUILD_DIR}/Module.symvers
+	@$(RM) -f ${TITAN_BUILD_DIR}/modules.order
+	@$(RM) -f ${TITAN_BUILD_DIR}/.*.cmd 
+	@$(RM) -f ${TITAN_BUILD_DIR}/.cache.mk;
+	@$(RM) -rf ${TITAN_BUILD_DIR}/.tmp_versions;
+	@$(RM) -f ${CORE_DIR}/.*.cmd ${CORE_DIR}/*.o;
 
 PHONY += clean_utils
 clean_utils:
-	@echo "Cleaning old utils files ..."
-	@$(RM) -f src/utils/*.o  src/utils/.*.cmd;	
+	@$(ECHO) "Cleaning old utils files ..."
+	@$(RM) -f ${UTILS_DIR}/*.o  ${UTILS_DIR}/.*.cmd;	
 
 PHONY += clean_api
 clean_api:
-	@echo "Cleaning old api files ..."
-	@cd src/api/utils && $(MAKE) clean;
-	@$(RM) -f src/api/*.o 	
-	@cd src/api && $(MAKE) clean
+	@$(ECHO) "Cleaning old api files ..."
+	@$(CD) ${API_UTILS_DIR} && $(MAKE) clean;
+	@$(RM) -f ${API_DIR}/*.o 	
+	@$(CD) ${API_DIR} && $(MAKE) clean
 
 PHONY += clean_tracer
 clean_tracer:
-	@echo "Cleaning Tracer files ..."
-	@$(RM) -f src/tracer/*.o src/tracer/utils/*.o src/tracer/tests/*.o
-	@cd src/tracer && $(MAKE) clean
+	@$(ECHO) "Cleaning Tracer files ..."
+	@$(RM) -f ${TRACER_DIR}/*.o
+	@$(CD) ${TRACER_DIR} && $(MAKE) clean
 
 .PHONY: $(PHONY)

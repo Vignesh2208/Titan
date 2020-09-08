@@ -1,108 +1,89 @@
+#ifndef DISABLE_LOOKAHEAD
+#include <stdarg.h>
 #include "lookahead_parsing.h"
 
-int ParseLookaheadJsonFile(const char * file_path,
-    struct lookahead_map ** lmap) {
-    const cJSON * start_offset;
-    const cJSON * finish_offset;
-    const cJSON * lookaheads;
-    const cJSON * lookahead;
-    int status = 0;
-    char * file_content = 0;
-    long length;
-    char offset_string[MAX_OFFSET_DIGITS];
-    FILE * f = fopen (file_path, "rb");
-
-    printf("Parsing lookahead file: %s...\n", file_path);
-    if (f) {
-        fseek (f, 0, SEEK_END);
-        length = ftell (f);
-        fseek (f, 0, SEEK_SET);
-        file_content = malloc (length);
-        if (file_content)
-        {
-            fread (file_content, 1, length, f);
-        }
-        fclose (f);
+static int check (int test, const char * message, ...) {
+    if (test) {
+        va_list args;
+        va_start (args, message);
+        vfprintf (stderr, message, args);
+        va_end (args);
+        fprintf (stderr, "\n");
+        return FAILURE;
     }
-
-    if (!length || !file_content) {
-        printf("Lookahead file empty! Ignoring ...\n");
-        return 0;
-    }
-
-    cJSON *lookahead_json = cJSON_Parse(file_content);
-    if (lookahead_json == NULL) {
-        const char *error_ptr = cJSON_GetErrorPtr();
-        if (error_ptr != NULL)
-        {
-            fprintf(stderr, "Json parse error before: %s\n", error_ptr);
-        }
-        status = 0;
-        goto end;
-    }
-
-    start_offset = cJSON_GetObjectItemCaseSensitive(
-        lookahead_json, "start_offset");
-    finish_offset = cJSON_GetObjectItemCaseSensitive(
-        lookahead_json, "finish_offset");
-    if (!cJSON_IsNumber(start_offset) || !cJSON_IsNumber(finish_offset)) {
-       printf("Json Error: Lookahead offset values must be integers !\n");
-       status = 0;
-       goto end;
-    }
-    printf("Start Offset: %lu, Finish Offset: %lu\n",
-        (long)cJSON_GetNumberValue(start_offset),
-        (long)cJSON_GetNumberValue(finish_offset));
-
-    if (cJSON_GetNumberValue(start_offset) < 0 ||
-        cJSON_GetNumberValue(finish_offset) < 0) {
-        printf("Json Error: Start/finish offsets must be positive !\n");
-        status = 0;
-        goto end;
-    }
-    int number_of_lookahead_values = 
-        cJSON_GetNumberValue(finish_offset) - cJSON_GetNumberValue(start_offset) + 1;
-    if (number_of_lookahead_values < 0) {
-       printf("Json Error: finish offset cannot be less than start offset !\n");
-       status = 0;
-       goto end; 
-    }
-
-    *lmap = (struct lookahead_map *)malloc(sizeof(struct lookahead_map));
-    if (!lmap) {
-        printf("Failed to allot storage for lookahead map !\n");
-        free(file_content);
-        return 0;
-    }
-    (*lmap)->lookaheads = (s64 *)malloc(sizeof(s64)*number_of_lookahead_values);
-    if (!(*lmap)->lookaheads) {
-        printf("Failed to allot storage for lookaheads !\n");
-        free(*lmap);
-        *lmap = NULL;
-        free(file_content);
-        return 0;
-    }
-    (*lmap)->start_offset = (long)cJSON_GetNumberValue(start_offset);
-    (*lmap)->finish_offset = (long)cJSON_GetNumberValue(finish_offset);
-    (*lmap)->num_entries = (long) number_of_lookahead_values;
-
-    lookaheads = cJSON_GetObjectItemCaseSensitive(lookahead_json,
-        "lookaheads");
-    for (long i = (*lmap)->start_offset;  i <= (*lmap)->finish_offset; i++) {
-        memset(offset_string, 0, MAX_OFFSET_DIGITS);
-        sprintf(offset_string, "%lu", i);
-        lookahead = cJSON_GetObjectItemCaseSensitive(lookaheads,
-            offset_string);
-        if (!cJSON_IsNull(lookahead) && cJSON_IsNumber(lookahead)) {
-            (*lmap)->lookaheads[i - (*lmap)->start_offset] = 
-                (long)cJSON_GetNumberValue(lookahead);
-        } else {
-            (*lmap)->lookaheads[i - (*lmap)->start_offset] = 0;
-        }
-    }
-    status = 1;
-end:
-    cJSON_Delete(lookahead_json);
-    free(file_content);
-    return status;
+    return SUCCESS;
 }
+
+int LoadLookahead(const char * file_path, struct lookahead_info * linfo) {
+    int fd;
+    struct stat s;
+    int status;
+    size_t size;
+    int i;
+
+    if (!linfo)
+        return FAILURE;
+
+    
+    linfo->mapped_memblock = NULL;
+    linfo->mapped_memblock_length = 0;
+    linfo->lmap.start_offset=0;
+    linfo->lmap.finish_offset=0;
+    linfo->lmap.number_of_values=0;
+    linfo->lmap.lookahead_values=NULL;
+
+    if (!file_path)
+        return FAILURE;
+
+    printf ("Opening file: %s\n", file_path);
+    /* Open the file for reading. */
+    fd = open (file_path, O_RDONLY);
+    if (!check (fd < 0, "open lookahead file %s failed: %s", file_path, strerror (errno)))
+        return FAILURE;
+
+    /* Get the size of the file. */
+    status = fstat (fd, & s);
+    if (!check (status < 0, "stat %s failed: %s", file_path, strerror (errno)))
+        return FAILURE;
+    size = s.st_size;
+
+    printf ("File size: %lu\n", size);
+
+    /* Memory-map the file. */
+    linfo->mapped_memblock = mmap (0, size, PROT_READ, MAP_SHARED, fd, 0);
+    if (!check (linfo->mapped_memblock == MAP_FAILED, "mmap %s failed: %s",
+           file_path, strerror (errno))) {
+               linfo->mapped_memblock = NULL;
+               return FAILURE;
+    }
+    linfo->mapped_memblock_length = size;
+    close(fd);
+
+    printf ("mapped memblock size: %ld\n", linfo->mapped_memblock_length);
+
+    memcpy(&linfo->lmap,(struct lookahead_map *)linfo->mapped_memblock,
+            sizeof(struct lookahead_map));
+
+    printf ("Finish offset: %ld, Number of values: %ld\n", linfo->lmap.finish_offset, linfo->lmap.number_of_values);
+    linfo->lmap.lookahead_values = (long *)(linfo->mapped_memblock + sizeof(struct lookahead_map));
+
+    printf ("Returning success !\n");
+    return SUCCESS;
+
+}
+
+void CleanLookaheadInfo(struct lookahead_info * linfo) {
+    if (!linfo) return;
+
+    if (linfo->mapped_memblock_length && linfo->mapped_memblock)
+        munmap((void *)linfo->mapped_memblock, linfo->mapped_memblock_length);
+    
+    linfo->mapped_memblock = NULL;
+    linfo->mapped_memblock_length = 0;
+    linfo->lmap.start_offset=0;
+    linfo->lmap.finish_offset=0;
+    linfo->lmap.number_of_values=0;
+    linfo->lmap.lookahead_values=NULL;
+    
+}
+#endif

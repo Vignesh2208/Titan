@@ -1,44 +1,59 @@
-home_dir=$(HOME)
-api_dir=${home_dir}/Titan/src/api
+API_DIR=$(HOME)/Titan/src/api
+
+CC:=gcc
+RM:=rm
+CP:=cp
+ECHO:=echo
+CHMOD:=chmod
+MKDIR:=mkdir
 
 .PHONY: build_api
 build_api:
-	 @echo "Building VT-API shared library ..."
-	 @gcc -w -c -Wall -Werror -fpic ${api_dir}/VT_functions.c \
-	 ${api_dir}/utility_functions.c 
-	 @gcc -w -shared -o libvtapi.so ${api_dir}/VT_functions.o \
-	 ${api_dir}/utility_functions.o 
-	 @mv libvtapi.so /usr/lib
-	 @chmod 777 /usr/lib/libvtapi.so
+	@$(ECHO) "Building VT-API shared library ..."
+	@$(MKDIR) -p ${API_DIR}/build/include
+	@$(MKDIR) -p ${API_DIR}/build/lib
 
-	 @cp ${api_dir}/VT_functions.h /usr/local/include
-	 @cp ${api_dir}/utility_functions.h /usr/local/include
+	@$(CC) -w -c -Wall -Werror -fpic ${API_DIR}/VT_functions.c \
+	${API_DIR}/utility_functions.c 
+	@$(CC) -w -shared -o ${API_DIR}/build/lib/libvtapi.so \
+	${API_DIR}/VT_functions.o ${API_DIR}/utility_functions.o 
+	@$(CHMOD) 777 ${API_DIR}/build/lib/libvtapi.so
+
+	@$(CP) ${API_DIR}/VT_functions.h ${API_DIR}/build/include
+	@$(CP) ${API_DIR}/utility_functions.h ${API_DIR}/build/include
 
 
 	$(info "VTL Logic: BUILD_CONFIG_FLAGS=$(BUILD_CONFIG_FLAGS))
-	 @echo "Building VTL-Logic shared library ..."
-	 @gcc -w -c -Wall -Werror -fpic ${api_dir}/VT_functions.c \
-	 ${api_dir}/utility_functions.c ${api_dir}/vtl_logic.c \
-	 ${api_dir}/fd_handling.c ${api_dir}/lookahead_parsing.c \
-	 ${api_dir}/cJSON/cJSON.c ${api_dir}/utils/linkedlist.c \
-	 ${api_dir}/utils/hashmap.c $(BUILD_CONFIG_FLAGS)
+	@$(ECHO) "Building VTL-Logic shared library ..."
 
-	 @gcc -w -shared -o libvtllogic.so ${api_dir}/VT_functions.o \
-	 ${api_dir}/utility_functions.o ${api_dir}/vtl_logic.o \
-	 ${api_dir}/fd_handling.o  ${api_dir}/lookahead_parsing.o \
-	 ${api_dir}/cJSON.o ${api_dir}/utils/linkedlist.o \
-	 ${api_dir}/utils/hashmap.o
+	@$(CC) -w -c -Wall -Werror -fpic ${API_DIR}/VT_functions.c \
+	${API_DIR}/utility_functions.c ${API_DIR}/vtl_logic.c \
+	${API_DIR}/fd_handling.c ${API_DIR}/lookahead_parsing.c \
+	${API_DIR}/utils/linkedlist.c ${API_DIR}/cache_simulation.c \
+	${API_DIR}/utils/hashmap.c $(BUILD_CONFIG_FLAGS)
 
-	 @mv libvtllogic.so /usr/lib
-	 @chmod 777 /usr/lib/libvtllogic.so
-	 @python setup.py install
+	@$(CC) -w -shared -o ${API_DIR}/build/lib/libvtllogic.so \
+	${API_DIR}/VT_functions.o ${API_DIR}/utility_functions.o \
+	${API_DIR}/vtl_logic.o ${API_DIR}/fd_handling.o  \
+	${API_DIR}/lookahead_parsing.o ${API_DIR}/cache_simulation.o \
+	${API_DIR}/utils/linkedlist.o ${API_DIR}/utils/hashmap.o
+
+	@$(CHMOD) 777 ${API_DIR}/build/lib/libvtllogic.so
+	@$(CHMOD) +x setup.py
+
+.PHONY: install
+install:
+	./setup.py install
+	@$(CP) ${API_DIR}/build/lib/libvtllogic.so /usr/lib > /dev/null
+	@$(CP) ${API_DIR}/build/lib/libvtapi.so /usr/lib > /dev/null
+	@$(CP) ${API_DIR}/VT_functions.h /usr/local/include > /dev/null
+	@$(CP) ${API_DIR}/utility_functions.h /usr/local/include > /dev/null
 
 .PHONY: clean
 clean:
-
-	@rm -rf build/
-	@rm -f *.o
-	@rm -f /usr/lib/libvtapi.so > /dev/null
-	@rm -f /usr/lib/libvtllogic.so > /dev/null
-	@rm -f /usr/local/include/VT_functions.h > /dev/null
-	@rm -f /usr/local/include/utility_functions.h > /dev/null
+	@$(RM) -f ${API_DIR}/build/lib/libvtllogic.so > /dev/null
+	@$(RM) -f ${API_DIR}/build/lib/libvtapi.so > /dev/null
+	@$(RM) -f /usr/local/include/VT_functions.h > /dev/null
+	@$(RM) -f /usr/local/include/utility_functions.h > /dev/null
+	@$(RM) -rf ${API_DIR}/build
+	@$(RM) -f *.o

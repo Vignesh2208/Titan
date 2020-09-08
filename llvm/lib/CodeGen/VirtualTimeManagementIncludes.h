@@ -42,7 +42,7 @@
 #define MAIN_FUNC "main"
 #define VT_STUB_FUNC "__Vt_Stub"
 #define VT_CALLBACK_FUNC "vtCallbackFn"
-#define VT_INSN_COUNTER_VAR "currBurstLength"
+#define VT_CYCLES_COUNTER_VAR "currBurstCyclesLeft"
 #define VT_CURR_BBID_VAR "currBBID"
 
 #ifndef DISABLE_LOOKAHEAD
@@ -60,8 +60,15 @@
 #define DATA_WRITE_CACHE_CALLBACK_FN "dataWriteCacheCallback"
 #endif
 
-#define CLANG_FILE_LOCK  "/tmp/llvm.lock"
-#define CLANG_INIT_PARAMS "/tmp/llvm_init_params.json"
+#define CLANG_FILE_LOCK  "/tmp/clang_lock"
+#define CLANG_INIT_PARAMS "/tmp/clang_init_params.json"
+
+#define TTN_PROJECTS_ACTIVE_KEY "active"
+#define TTN_PROJECTS_PROJECT_SRC_DIR_KEY "PROJECT_SRC_DIR"
+#define TTN_PROJECTS_PROJECT_ARCH_NAME_KEY "PROJECT_ARCH_NAME"
+#define TTN_PROJECTS_PROJECT_ARCH_TIMINGS_PATH_KEY "PROJECT_ARCH_TIMINGS_PATH"
+
+#define DEFAULT_PROJECT_ARCH_NAME "NONE"
 
 
 #endif

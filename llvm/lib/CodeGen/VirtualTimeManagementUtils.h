@@ -12,22 +12,46 @@
 namespace llvm {
 
   class MachineBasicBlock;
-
   class TargetInstrInfo;
+  
+  struct MachineInsPrefixTreeNode {
+      char component;    
+      float avgCpuCycles;
+      std::unordered_map<char,
+        std::unique_ptr<struct MachineInsPrefixTreeNode>> children;
+  };
+
+  class MachineInsPrefixTree {
+    private:
+      std::unique_ptr<struct MachineInsPrefixTreeNode> root;
+    public:
+      MachineInsPrefixTree() {
+        root = std::unique_ptr<struct MachineInsPrefixTreeNode>(
+          new struct MachineInsPrefixTreeNode);
+        root->component = '\0';
+        root->avgCpuCycles = -1;
+      };
+
+      void addMachineInsn(std::string insnName, float avgCpuCycles);
+      float getAvgCpuCycles(std::string insnName);
+  };
+  
   class MachineSpecificConfig {
     private:
+      std::string MachineArchName;
       std::string MachineTimingInfoFile;
-      long cpuCycleNs;
-      std::unordered_map<long, long> OpcodeToCyclesMap;
+      std::unique_ptr<MachineInsPrefixTree> machineInsPrefixTree;
       
     public:
       MachineSpecificConfig(
-        std::string MachineTimingInfoFile, long cpuCycleNs=1)
-      : MachineTimingInfoFile(MachineTimingInfoFile),
-        cpuCycleNs(cpuCycleNs) {};
+        std::string MachineArchName, std::string MachineTimingInfoFile)
+      : MachineTimingInfoFile(MachineTimingInfoFile) {
+          machineInsPrefixTree = std::unique_ptr<MachineInsPrefixTree>(
+            new MachineInsPrefixTree());
+        };
 
       void Initialize();
-      long GetInsnCompletionTime(long Opcode);
+      float GetInsnCompletionCycles(std::string insnName);
   };
 
   class TargetMachineSpecificInfo {
@@ -35,15 +59,16 @@ namespace llvm {
       MachineSpecificConfig * machineConfig;
 
     public:
-      TargetMachineSpecificInfo(std::string MachineTimingInfoFile="",
-        long cpuCycleNs=1) {
+      TargetMachineSpecificInfo(
+        std::string MachineArchName="",
+        std::string MachineTimingInfoFile="") {
           machineConfig = new MachineSpecificConfig(
-            MachineTimingInfoFile, cpuCycleNs);
+            MachineArchName, MachineTimingInfoFile);
           machineConfig->Initialize();
       };
 
-      std::pair<unsigned long, unsigned long> GetMBBCompletionTime(
-        MachineBasicBlock * mbb);
+      std::pair<unsigned long, unsigned long> GetMBBCompletionCycles(
+        MachineBasicBlock * mbb, const llvm::TargetInstrInfo &TII);
       ~TargetMachineSpecificInfo() { delete machineConfig; };
   };
 

@@ -17,7 +17,7 @@
 #define NSEC_PER_MS 1000000
 #define NSEC_PER_US 1000
 
-
+typedef unsigned long long u64_t;
 typedef long long s64;
 
 typedef struct ioctl_args_struct {
@@ -54,6 +54,21 @@ typedef struct ioctl_args_struct {
 #define VT_SET_PROCESS_LOOKAHEAD _IOW(VT_IOC_MAGIC, 25, int)
 #define VT_GET_TRACER_LOOKAHEAD _IOW(VT_IOC_MAGIC, 26, int)
 
+#ifndef DISABLE_LOOKAHEAD
+struct lookahead_map {
+  long start_offset;
+  long finish_offset;
+  long number_of_values;
+  long * lookahead_values;
+};
+
+struct lookahead_info {
+    const char * mapped_memblock;
+    int mapped_memblock_length;
+    struct lookahead_map lmap;
+};
+#endif
+
 //! Sends the command to the virtual time module as an ioctl call
 s64 SendToVtModule(unsigned int cmd, ioctl_args* arg);
 
@@ -81,5 +96,13 @@ int NumDigits(int n);
 //! Converts an integer list of values into a comma separated string and adds
 //  them to an ioctl_args structure
 int AppendToIoctlArg(ioctl_args* arg, int* append_values, int num_values);
+
+//! Parses an environment variable which is supposed to be a float and sets
+//  the return value appropriately. If there is an error, it returns FAILURE
+int GetFloatEnvVariable(char * env_variable_name, float * return_value);
+
+//! Parses an environment variable which is supposed to be a integer and sets
+//  the return value appropriately. If there is an error, it returns FAILURE
+int GetIntEnvVariable(char * env_variable_name, int * return_value);
 
 #endif

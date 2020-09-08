@@ -6,6 +6,8 @@ import networkx as nx
 import pathlib
 import tools.vt_preprocessing.constants as c
 import tools.vt_preprocessing.call_graph as cg
+import vt_functions
+import numpy as np
 import logging
 import json
 from typing import Dict, Any
@@ -173,55 +175,53 @@ class InterProceduralCFG(object):
     def DumpBBLLookahead(self, output_file: str):
         """Writes the basic block lookahead information to STDOUT or to a Json file."""
         logging.info('Dumping BBL lookahead information ...')
-        bbl_lookahead_dump = OrderedDict()
-        bbl_lookahead_dump['lookaheads'] = OrderedDict()
-        min_bbl_number = None
-        max_bbl_number = None
+
+        bbl_numbers = [int(re.match('__BBL_([0-9]+)_ENTRY', x).group(1))
+                       for x in self._bbl_lookahead]
+        min_bbl_number = min(bbl_numbers)
+        max_bbl_number = max(bbl_numbers)
+
+        bbl_lookahead_dump = np.array([0]*(max_bbl_number - min_bbl_number + 1),
+            dtype="long")
         for bbl_entry_node in self._bbl_lookahead:
             match = re.match('__BBL_([0-9]+)_ENTRY', bbl_entry_node)
             assert match
             bbl_number = int(match.group(1))
-            bbl_lookahead_dump['lookaheads'][bbl_number] = \
+            bbl_lookahead_dump[bbl_number - min_bbl_number] = \
                 self._bbl_lookahead[bbl_entry_node]
-            if not min_bbl_number:
-                min_bbl_number = bbl_number
-            elif bbl_number < min_bbl_number:
-                min_bbl_number = bbl_number
-            if not max_bbl_number:
-                max_bbl_number = bbl_number
-            elif bbl_number > max_bbl_number:
-                max_bbl_number = bbl_number
-        bbl_lookahead_dump['start_offset'] = min_bbl_number
-        bbl_lookahead_dump['finish_offset'] = max_bbl_number
+
         if not output_file:
             logging.info('No output directory specified. Dumping to STDOUT ...')
-            pprint.pprint(bbl_lookahead_dump)
+            for i in range(min_bbl_number, max_bbl_number + 1, 1):
+                logging.info(f'BBL-{i}: {bbl_lookahead_dump[i - min_bbl_number]}')
         else:
             logging.info('Dumping BBL lookahead information to: %s ...',
                          output_file)
-            with open (output_file, 'w') as f:
-                json.dump(bbl_lookahead_dump, f)
+            _ = vt_functions.DumpLookahead(
+                bbl_lookahead_dump, output_file, min_bbl_number,
+                max_bbl_number - min_bbl_number + 1)
         logging.info('BBL Lookahead information dumped ...')
 
     def DumpLoopLookahead(self, output_file: str):
         """Dumps lookahead information for each loop to STDOUT or to a Json file."""
         logging.info('Dumping Loop lookahead information ...')
-        loop_lookahead_dump = OrderedDict()
-        loop_lookahead_dump['lookaheads'] = OrderedDict()
-        loop_lookahead_dump['start_offset'] = min(self._loop_cfgs.keys())
-        loop_lookahead_dump['finish_offset'] = max(self._loop_cfgs.keys())
-        for loop_number in self._loop_cfgs:
-            loop_lookahead_dump['lookaheads'][loop_number] = \
-                self._loop_cfgs[loop_number].GetLoopLookahead()
+        min_loop_number = min(self._loop_cfgs.keys())
+        max_loop_number = max(self._loop_cfgs.keys())
+        loop_lookahead_dump = np.array([0]*(max_loop_number - min_loop_number + 1),
+            dtype="long")
+        for i in range(min_loop_number, max_loop_number + 1):
+            if i not in self._loop_cfgs:
+                continue
+            loop_lookahead_dump[i - min_loop_number] = \
+                self._loop_cfgs[i].GetLoopLookahead()
         if not output_file:
             logging.info('No output directory specified. Dumping to STDOUT ...')
-            pprint.pprint(loop_lookahead_dump)
+            for i in range(min_loop_number, max_loop_number + 1, 1):
+                logging.info(f'Loop-{i}: {loop_lookahead_dump[i - min_loop_number]}')
         else:
             logging.info('Dumping Loop lookahead information to: %s ...',
                          output_file)
-            with open(output_file, 'w') as f:
-                json.dump(loop_lookahead_dump, f)
+            _ = vt_functions.DumpLookahead(
+                loop_lookahead_dump, output_file, min_loop_number,
+                max_loop_number - min_loop_number + 1)
         logging.info('Loop lookahead information dumped ...')
-
-
-    

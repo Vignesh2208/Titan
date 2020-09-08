@@ -114,6 +114,35 @@ int IsModuleLoaded() {
   }
 }
 
+//! Parses an environment variable which is supposed to be a float and sets
+//  the return value appropriately. If there is an error, it returns FAILURE
+int GetFloatEnvVariable(char * env_variable_name, float * return_value) {
+  char * value_string = getenv(env_variable_name);
+  if (!value_string)
+    return FAILURE;
+  
+  if (!return_value)
+    return FAILURE;
+
+  *return_value = strtof(value_string, NULL);
+  return SUCCESS; 
+
+}
+
+//! Parses an environment variable which is supposed to be a integer and sets
+//  the return value appropriately. If there is an error, it returns FAILURE
+int GetIntEnvVariable(char * env_variable_name, int * return_value) {
+  char * value_string = getenv(env_variable_name);
+  if (!value_string)
+    return FAILURE;
+  
+  if (!return_value)
+    return FAILURE;
+
+  *return_value = atoi(value_string);
+  return SUCCESS; 
+}
+
 void FlushBuffer(char *buf, int size) {
   if (size) memset(buf, 0, size * sizeof(char));
 }
