@@ -43,7 +43,7 @@ namespace llvm {
     long globalLoopCounter;
     int lockFd;
     std::string clangLockFilePath;
-	  std::string clangInitParamsPath;
+    std::string clangInitParamsPath;
     llvm::json::Object perModuleObj;
     MachineLoopInfo * MLI;
     MachineDominatorTree * MDT;
@@ -54,12 +54,12 @@ namespace llvm {
     MachineModuleInfo * MMI;
 
     VirtualTimeManager() : MachineFunctionPass(ID) {
-	      CreatedExternDefinitions = false;
+        CreatedExternDefinitions = false;
         projectArchName = DEFAULT_PROJECT_ARCH_NAME;
         projectArchTimingsPath = DEFAULT_PROJECT_ARCH_NAME;
         #ifndef DISABLE_LOOKAHEAD
         clangLockFilePath = CLANG_FILE_LOCK;
-	      clangInitParamsPath = CLANG_INIT_PARAMS;
+        clangInitParamsPath = CLANG_INIT_PARAMS;
         globalBBCounter = -1;
         lockFd = -1;
         #endif

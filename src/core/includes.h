@@ -43,6 +43,7 @@
 #include <linux/uaccess.h>
 #include <linux/debugfs.h>
 #include <linux/mm.h>
+#include <linux/version.h>
 
 /* user defined headers */
 #include "../utils/linkedlist.h"
@@ -54,7 +55,7 @@
 
 #define SIGNAL_SYSCALL_FINISH 1
 
-#define PROCESS_MIN_QUANTA_NS 1000000
+#define PROCESS_MIN_QUANTA_NS 10000
 
 
 #define DEBUG_LEVEL_NONE 0
@@ -80,18 +81,22 @@
 #define EXP_CS 2
 #define NOT_SET 0
 
+#define LOOKAHEAD_ANCHOR_NONE 0
+#define LOOKAHEAD_ANCHOR_CURR_TIME 1
+#define LOOKAHEAD_ANCHOR_EAT 2
+
 #define KRONOS_DEBUG_INFO
 //#define KRONOS_DEBUG_VERBOSE
 
 
 #ifdef KRONOS_DEBUG_INFO
 #define PDEBUG_I(fmt, args...) \
- 	do {                                \
+     do {                                \
         printk(KERN_DEBUG "Titan: <INFO> [Process: %d] (%s:%d): %s: ",    \
                current->pid, __FILE__, __LINE__, __func__);          \
         printk(KERN_INFO fmt, ## args);	\
     } while (0)
-	
+    
 #else
 #define PDEBUG_I(fmt,args...)
 #endif
@@ -100,7 +105,7 @@
 
 #ifdef KRONOS_DEBUG_VERBOSE
 #define PDEBUG_V(fmt, args...) \
- 	do {                                \
+     do {                                \
         printk(KERN_DEBUG "Titan: <VERBOSE> [Process: %d] (%s:%d): %s: ",    \
                current->pid, __FILE__, __LINE__, __func__);          \
         printk(KERN_INFO fmt, ## args);	\
@@ -111,7 +116,7 @@
 
 
 #define PDEBUG_A(fmt, args...) \
- 	do {                                \
+     do {                                \
         printk(KERN_DEBUG "Titan: <NOTICE> [Process: %d] (%s:%d): %s: ",    \
                current->pid, __FILE__, __LINE__, __func__);          \
         printk(KERN_INFO fmt, ## args);	\
@@ -119,52 +124,52 @@
 
 
 #define PDEBUG_E(fmt, args...) \
- 	do {                                \
+     do {                                \
         printk(KERN_DEBUG "Titan: <ERROR> [Process: %d] (%s:%d): %s: ",    \
                current->pid, __FILE__, __LINE__, __func__);          \
         printk(KERN_INFO fmt, ## args);	\
-		BUG_ON(true); \
+        BUG_ON(true); \
     } while (0)
 
 
 #ifdef ENABLE_IRQ_LOCKING
 
 #define acquire_irq_lock(lock,flags) \
-	do {															 \
-		spin_lock_irqsave(lock,flags);								 \
-	} while(0)
+    do {															 \
+        spin_lock_irqsave(lock,flags);								 \
+    } while(0)
 
 
 #define release_irq_lock(lock, flags) \
-	do {															 \
-		spin_unlock_irqrestore(lock,flags);								 \
-	} while(0)
+    do {															 \
+        spin_unlock_irqrestore(lock,flags);								 \
+    } while(0)
 
 #else
 
 #ifdef ENABLE_LOCKING
 
 #define acquire_irq_lock(lock,flags) \
-		do {							\
-			spin_lock(lock);				\
-		} while(0)
+        do {							\
+            spin_lock(lock);				\
+        } while(0)
 
 
 #define release_irq_lock(lock, flags) \
-		do {															 \
-		spin_unlock(lock);				\
-		} while(0)
+        do {															 \
+        spin_unlock(lock);				\
+        } while(0)
 
 #else
 
 #define acquire_irq_lock(lock,flags) \
-		do {							\
-		} while(0)
+        do {							\
+        } while(0)
 
 
 #define release_irq_lock(lock, flags) \
-		do {															 \
-		} while(0)
+        do {															 \
+        } while(0)
 
 
 #endif

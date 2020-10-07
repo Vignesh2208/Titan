@@ -62,8 +62,8 @@ void (*vtCloseFd)(int ThreadID, int fd) = NULL;
 #ifndef DISABLE_LOOKAHEAD
 /*** For lookahead handling ***/
 s64 (*vtGetPacketEAT)() = NULL;
-long (*vtGetBBLLookahead)() = NULL; 
-int (*vtSetLookahead)(s64 bulkLookaheadValue, long spLookaheadValue) = NULL;
+long (*vtGetBBLLookahead)(long bblNumber) = NULL; 
+int (*vtSetLookahead)(s64 bulkLookaheadValue, int lookahead_anchor_type) = NULL;
 void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp) = NULL;
 #endif
 
@@ -274,9 +274,9 @@ void LoadAllVtlFunctions(void * lib_vt_lib_handle) {
         fflush(stdout); abort();
     }
 
-    vtGetBBLLookahead = dlsym(lib_vt_lib_handle, "getBBLLookahead");
+    vtGetBBLLookahead = dlsym(lib_vt_lib_handle, "GetBBLLookAhead");
     if (!vtGetBBLLookahead) {
-        printf("getBBLLookahead not found !\n");
+        printf("GetBBLLookAhead not found !\n");
         fflush(stdout); abort();
     } 
     vtSetLookahead = dlsym(lib_vt_lib_handle, "SetLookahead");

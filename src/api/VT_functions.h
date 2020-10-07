@@ -147,9 +147,15 @@ s64 GetEarliestArrivalTime(void);
 
 //! Invoked by a tracee to set its lookahead. The lookahead of a node is
 //  computed as the min of lookaheads of all its tracees
-int SetProcessLookahead(s64 bulk_lookahead_expiry_time, long sp_lookahead_duration);
+int SetProcessLookahead(s64 bulk_lookahead_expiry_time, int lookahead_anchor_type);
 
 //! Returns the lookahead of a node. This API could be used by a network simulator
+//  Returns absolute timestamp.
 s64 GetTracerLookahead(int tracer_id);
+
+//! Returns the lookahead of a node while excluding any tasks/threads which are
+//  blocked on a packet receive syscall. Returns 0 if all threads are blocked
+//  on packet receive.
+s64 GetTracerNEATLookahead(int tracer_id);
 
 #endif

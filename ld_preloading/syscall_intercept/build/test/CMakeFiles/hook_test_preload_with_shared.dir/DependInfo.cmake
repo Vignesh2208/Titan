@@ -5,7 +5,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
-  "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_shared.dir/DependInfo.cmake"
+  "/home/kronos/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_shared.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

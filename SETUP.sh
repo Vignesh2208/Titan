@@ -133,20 +133,24 @@ build_llvm_project () {
     echo 'Downloading llvm-project if necessary ...'
     download_llvm_project
 
-    echo 'Patching llvm-project with locally modified files ...'
-    patch_llvm_project
-
-
     LLVM_BUILD_DIR=$LLVM_INSTALL_DIR/build
     nCpus=$(nproc --all)
     if [ -d $LLVM_BUILD_DIR ]; then  # This is not the first installation attempt
+ 	
+
         echo 'llvm-project: Updating installed clang compiler ...'
     else # This is the first installation attempt
         echo 'llvm-project: Creating a fresh virtual time integrated clang compiler install ...'
-        mkdir -p LLVM_BUILD_DIR
+        mkdir -p $LLVM_BUILD_DIR
         cd $LLVM_BUILD_DIR && cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS='clang' -DCMAKE_BUILD_TYPE=Release ../llvm
+	cd $LLVM_BUILD_DIR && make -j$nCpus
     fi
+
+    echo 'Patching llvm-project with locally modified files ...'
+    patch_llvm_project
+
     cd $LLVM_BUILD_DIR && make -j$nCpus
+    
 }
 
 build_syscall_intercept_lib () {
@@ -247,7 +251,7 @@ if [ $CMD == "install_deps" ]; then
     echo "--------------------------------------------"
     echo "Building and installing all dependencies ..."
     echo "--------------------------------------------"
-    #install_deps
+    install_deps
     build_llvm_project
     install_llvm_project
     #build_syscall_intercept_lib

@@ -16,8 +16,8 @@ FN_ENTRY_NODE = '__FN_{func_name}_ENTRY'
 FN_EXIT_NODE = '__FN_{func_name}_EXIT'
 BBL_ENTRY_NODE = '__BBL_{bbl_number}_ENTRY'
 BBL_EXIT_NODE = '__BBL_{bbl_number}_EXIT'
-BBL_CALLSITE_ENTRY_NODE = '__BBL_{bbl_number}_CALLSITE_ENTRY_{call_site_number}'
-BBL_CALLSITE_RETURN_NODE = '__BBL_{bbl_number}_CALLSITE_RETURN_{call_site_number}'
+BBL_CALLSITE_ENTRY_NODE = '__BBL_{bbl_number}_CALLSITE_ENTRY_{call_site_number}_CALLED_FN_{called_fn}'
+BBL_CALLSITE_RETURN_NODE = '__BBL_{bbl_number}_CALLSITE_RETURN_{call_site_number}_CALLED_FN_{called_fn}'
 
 PKT_SEND_CALL_SITES = ['send', 'sendto', 'sendmsg', 'write', '__unknown__']
 
@@ -26,7 +26,9 @@ MAIN_FUNCTION_NAME = 'main'
 
 NS_IN_US = 1000
 NS_IN_MS = 1000000
-MAX_BBL_LOOKAHEAD_NS = 10*NS_IN_MS
+MAX_BBL_LOOKAHEAD_NS = 1000*NS_IN_MS
 
 BBL_LOOKAHEAD_FILE_NAME = 'bbl_lookahead.info'
 LOOP_LOOKAHEAD_FILE_NAME = 'loop_lookahead.info'
+
+IGNORED_CALLED_FUNCTIONS = ['insCacheCallback', 'dataWriteCacheCallback', 'dataReadCacheCallback']

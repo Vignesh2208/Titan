@@ -48,3 +48,4 @@ fi
 
 chmod +x $TITAN_DIR/tools/vt_preprocessing/vt_preprocessor.py
 $TITAN_DIR/tools/vt_preprocessing/vt_preprocessor.py --source_dir=$SOURCE_DIR --output_dir=$OUTPUT_DIR
+#$TITAN_DIR/tools/vt_preprocessing/vt_preprocessor.py --source_dir=$SOURCE_DIR

@@ -53,6 +53,8 @@ install:
 clean:
 	@$(RM) -f ${API_DIR}/build/lib/libvtllogic.so > /dev/null
 	@$(RM) -f ${API_DIR}/build/lib/libvtapi.so > /dev/null
+	@$(RM) -f /usr/lib/libvtapi.so > /dev/null
+	@$(RM) -f /usr/lib/libvtllogic.so > /dev/null
 	@$(RM) -f /usr/local/include/VT_functions.h > /dev/null
 	@$(RM) -f /usr/local/include/utility_functions.h > /dev/null
 	@$(RM) -rf ${API_DIR}/build

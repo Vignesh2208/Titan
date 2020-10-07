@@ -25,8 +25,11 @@
 #include <linux/futex.h>
 #include <sys/types.h>          
 #include <sys/socket.h>
- #include <sys/timerfd.h>
+#include <sys/timerfd.h>
 
+#define LOOKAHEAD_ANCHOR_NONE 0
+#define LOOKAHEAD_ANCHOR_CURR_TIME 1
+#define LOOKAHEAD_ANCHOR_EAT 2
 
 typedef long long s64;
 typedef unsigned long long u64;

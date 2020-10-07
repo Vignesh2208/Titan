@@ -32,8 +32,8 @@ static void print_elapsed_time(i) {
 }
 
 struct temp_struct {
-	int x;
-	int y;
+    int x;
+    int y;
 };
 
 int main(int argc, char *argv[]) {
@@ -50,11 +50,11 @@ int main(int argc, char *argv[]) {
     int max = atoi(argv[2]);
     int step = atoi(argv[3]);
     int counter = 0;
-	for(i = 0; i < 99; i++) {
-		a[i].x = i;
-		printf("a[i].x = %c, &a[i].x = %p\n", a[i].x, (void *)&a[i].x);
-		printf("a[i+1].x = %c, &a[i+1].x = %p\n", a[i+1].x, (void *)&a[i+1].x);
-	}
+    for(i = 0; i < 99; i++) {
+        a[i].x = i;
+        printf("a[i].x = %c, &a[i].x = %p\n", a[i].x, (void *)&a[i].x);
+        printf("a[i+1].x = %c, &a[i+1].x = %p\n", a[i+1].x, (void *)&a[i+1].x);
+    }
    
    
     print_elapsed_time(0);
@@ -71,6 +71,8 @@ int main(int argc, char *argv[]) {
                 if (counter < 100)
                     continue;
                 printf("Hello %d, %d, %d\n", i, j, k);
+		print_elapsed_time(k);
+		print_elapsed_time(k);
                 
             }
             counter ++;

@@ -35,7 +35,7 @@ int LoadLookahead(const char * file_path, struct lookahead_info * linfo) {
     if (!file_path)
         return FAILURE;
 
-    printf ("Opening file: %s\n", file_path);
+    //printf ("Opening file: %s\n", file_path);
     /* Open the file for reading. */
     fd = open (file_path, O_RDONLY);
     if (!check (fd < 0, "open lookahead file %s failed: %s", file_path, strerror (errno)))
@@ -47,7 +47,7 @@ int LoadLookahead(const char * file_path, struct lookahead_info * linfo) {
         return FAILURE;
     size = s.st_size;
 
-    printf ("File size: %lu\n", size);
+    //printf ("File size: %lu\n", size);
 
     /* Memory-map the file. */
     linfo->mapped_memblock = mmap (0, size, PROT_READ, MAP_SHARED, fd, 0);
@@ -59,15 +59,15 @@ int LoadLookahead(const char * file_path, struct lookahead_info * linfo) {
     linfo->mapped_memblock_length = size;
     close(fd);
 
-    printf ("mapped memblock size: %ld\n", linfo->mapped_memblock_length);
+    //printf ("mapped memblock size: %ld\n", linfo->mapped_memblock_length);
 
     memcpy(&linfo->lmap,(struct lookahead_map *)linfo->mapped_memblock,
             sizeof(struct lookahead_map));
 
-    printf ("Finish offset: %ld, Number of values: %ld\n", linfo->lmap.finish_offset, linfo->lmap.number_of_values);
+    //printf ("Finish offset: %ld, Number of values: %ld\n", linfo->lmap.finish_offset, linfo->lmap.number_of_values);
     linfo->lmap.lookahead_values = (long *)(linfo->mapped_memblock + sizeof(struct lookahead_map));
 
-    printf ("Returning success !\n");
+    //printf ("Returning success !\n");
     return SUCCESS;
 
 }

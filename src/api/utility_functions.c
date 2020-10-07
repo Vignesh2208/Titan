@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 
-const char *FILENAME = "/proc/status";
+const char *FILENAME = "/proc/titan";
 /*
 Sends a specific command to the VT Kernel Module.
 To communicate with the TLKM, you send messages to the location
@@ -20,7 +20,7 @@ s64 SendToVtModule(unsigned int cmd, ioctl_args *arg) {
   s64 ret = 10000;
  
   if (fp < 0) {
-    printf("ERROR communicating with VT module: Could not open proc file\n");
+    printf("ERROR communicating with VT module: Could not open proc file: %s\n", FILENAME);
     return -1;
   }
 
@@ -36,7 +36,7 @@ s64 SendToVtModule(unsigned int cmd, ioctl_args *arg) {
   }
   ret = ioctl(fp, cmd, arg);
   if (ret < 0) {
-    printf("Error executing cmd: %d\n", cmd);
+    //printf("Error executing cmd: %d\n", cmd);
     close(fp);
     return ret;
   }
@@ -47,7 +47,8 @@ s64 SendToVtModule(unsigned int cmd, ioctl_args *arg) {
     || cmd == VT_GETTIME_PID || cmd == VT_GETTIME_TRACER 
     || cmd == VT_GET_PACKET_SEND_TIME || cmd == VT_SYSCALL_WAIT
     || cmd == VT_GET_NUM_ENQUEUED_BYTES || cmd == VT_GET_EAT
-    || cmd == VT_GET_TRACER_LOOKAHEAD)
+    || cmd == VT_GET_TRACER_LOOKAHEAD
+    || cmd == VT_GET_TRACER_NEAT_LOOKAHEAD)
     return arg->cmd_value;
   return ret;
 }
@@ -150,25 +151,25 @@ void FlushBuffer(char *buf, int size) {
 
 void ns_2_timespec(s64 nsec, struct timespec * ts) {
 
-	int32_t rem;
+  int32_t rem;
 
-	if (!nsec) {
-		ts->tv_sec = 0, ts->tv_nsec = 0;
+  if (!nsec) {
+    ts->tv_sec = 0, ts->tv_nsec = 0;
     return;
   }
 
-	ts->tv_sec = nsec / NSEC_PER_SEC;
+  ts->tv_sec = nsec / NSEC_PER_SEC;
   rem = nsec - ts->tv_sec * NSEC_PER_SEC;
-	ts->tv_nsec = rem;
+  ts->tv_nsec = rem;
 }
 
 
 void ns_2_timeval(s64 nsec, struct timeval * tv) {
-	struct timespec ts;
-	
+  struct timespec ts;
+  
   ns_2_timespec(nsec, &ts);
-	tv->tv_sec = ts.tv_sec;
-	tv->tv_usec = ts.tv_nsec / 1000;
+  tv->tv_sec = ts.tv_sec;
+  tv->tv_usec = ts.tv_nsec / 1000;
 
-	return;
+  return;
 }

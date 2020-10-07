@@ -8,7 +8,7 @@
 
 ../include/libsyscall_intercept_hook_point.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/examples/icap.c
+/home/kronos/Titan/ld_preloading/syscall_intercept/examples/icap.c
 stddef.h
 -
 string.h
@@ -16,5 +16,5 @@ string.h
 syscall.h
 -
 libsyscall_intercept_hook_point.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/examples/libsyscall_intercept_hook_point.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/examples/libsyscall_intercept_hook_point.h
 

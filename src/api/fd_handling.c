@@ -43,7 +43,7 @@ int IsFdTypeMatch(int ThreadID, int fd, int fdType) {
     assert(currThreadInfo != NULL);
 
     if (currThreadInfo->in_callback)
-	    return FALSE;
+        return FALSE;
 
     if (currThreadInfo->processPID != ThreadID) {
         // need to get processPID's threadInfo
@@ -54,16 +54,16 @@ int IsFdTypeMatch(int ThreadID, int fd, int fdType) {
 
     llist_elem * head;
     fdInfo * currFdInfo;
-	head = currThreadInfo->special_fds.head;
-	while (head != NULL) {
+    head = currThreadInfo->special_fds.head;
+    while (head != NULL) {
         currFdInfo = (fdInfo *)head->item;
 
         if (currFdInfo && currFdInfo->fd == fd
             && currFdInfo->fdType == fdType) {
             return TRUE;
         }
-		head = head->next;
-	}
+        head = head->next;
+    }
 
     return FALSE;
 }
@@ -84,16 +84,16 @@ int GetNxtTimerFdNumber(int ThreadID) {
     llist_elem * head;
     fdInfo * currFdInfo;
     int maxAvailableTimerFD = MAX_ASSIGNABLE_FD;
-	head = currThreadInfo->special_fds.head;
-	while (head != NULL) {
+    head = currThreadInfo->special_fds.head;
+    while (head != NULL) {
         currFdInfo = (fdInfo *)head->item;
 
         if (currFdInfo && currFdInfo->fdType == FD_TYPE_TIMERFD
             && maxAvailableTimerFD >= currFdInfo->fd) {
                 maxAvailableTimerFD = currFdInfo->fd - 1;
         }
-		head = head->next;
-	}
+        head = head->next;
+    }
 
     return maxAvailableTimerFD;
 
@@ -108,7 +108,7 @@ int IsFdNonBlocking(int ThreadID, int fd) {
     assert(currThreadInfo != NULL);
 
     if (currThreadInfo->in_callback)
-	    return FALSE;
+        return FALSE;
 
     if (currThreadInfo->processPID != ThreadID) {
         // need to get processPID's threadInfo
@@ -119,15 +119,15 @@ int IsFdNonBlocking(int ThreadID, int fd) {
 
     llist_elem * head;
     fdInfo * currFdInfo;
-	head = currThreadInfo->special_fds.head;
-	while (head != NULL) {
+    head = currThreadInfo->special_fds.head;
+    while (head != NULL) {
         currFdInfo = (fdInfo *)head->item;
 
         if (currFdInfo && currFdInfo->fd == fd) {
             return currFdInfo->isNonBlocking;
         }
-		head = head->next;
-	}
+        head = head->next;
+    }
 
     return FALSE;
 }
@@ -141,7 +141,7 @@ void SetFdBlockingMode(int ThreadID, int fd, int isNonBlocking) {
     assert(currThreadInfo != NULL);
 
     if (currThreadInfo->in_callback)
-	    return;
+        return;
 
     if (currThreadInfo->processPID != ThreadID) {
         // need to get processPID's threadInfo
@@ -152,16 +152,16 @@ void SetFdBlockingMode(int ThreadID, int fd, int isNonBlocking) {
 
     llist_elem * head;
     fdInfo * currFdInfo;
-	head = currThreadInfo->special_fds.head;
-	while (head != NULL) {
+    head = currThreadInfo->special_fds.head;
+    while (head != NULL) {
         currFdInfo = (fdInfo *)head->item;
 
         if (currFdInfo && currFdInfo->fd == fd) {
             currFdInfo->isNonBlocking = isNonBlocking;
             return;
         }
-		head = head->next;
-	}
+        head = head->next;
+    }
 }
 
 
@@ -174,7 +174,7 @@ void SetTimerFdParams(int ThreadID, int fd, s64 absExpiryTime, s64 intervalNS,
     assert(currThreadInfo != NULL);
 
     if (currThreadInfo->in_callback)
-	    return;
+        return;
 
     if (currThreadInfo->processPID != ThreadID) {
         // need to get processPID's threadInfo
@@ -185,8 +185,8 @@ void SetTimerFdParams(int ThreadID, int fd, s64 absExpiryTime, s64 intervalNS,
 
     llist_elem * head;
     fdInfo * currFdInfo;
-	head = currThreadInfo->special_fds.head;
-	while (head != NULL) {
+    head = currThreadInfo->special_fds.head;
+    while (head != NULL) {
         currFdInfo = (fdInfo *)head->item;
 
         if (currFdInfo && currFdInfo->fd == fd
@@ -201,8 +201,8 @@ void SetTimerFdParams(int ThreadID, int fd, s64 absExpiryTime, s64 intervalNS,
             currFdInfo->numExpiriesProcessed = 0;
             return;
         }
-		head = head->next;
-	}
+        head = head->next;
+    }
 }
 
 void GetTimerFdParams(int ThreadID, int fd, s64* absExpiryTime,
@@ -212,7 +212,7 @@ void GetTimerFdParams(int ThreadID, int fd, s64* absExpiryTime,
     assert(currThreadInfo != NULL);
 
     if (currThreadInfo->in_callback)
-	    return;
+        return;
 
     if (currThreadInfo->processPID != ThreadID) {
         // need to get processPID's threadInfo
@@ -231,8 +231,8 @@ void GetTimerFdParams(int ThreadID, int fd, s64* absExpiryTime,
 
     llist_elem * head;
     fdInfo * currFdInfo;
-	head = currThreadInfo->special_fds.head;
-	while (head != NULL) {
+    head = currThreadInfo->special_fds.head;
+    while (head != NULL) {
         currFdInfo = (fdInfo *)head->item;
 
         if (currFdInfo && currFdInfo->fd == fd
@@ -246,8 +246,8 @@ void GetTimerFdParams(int ThreadID, int fd, s64* absExpiryTime,
                 *relExpiryDuration = currFdInfo->relativeExpiryDuration;
             return;
         }
-		head = head->next;
-	}
+        head = head->next;
+    }
 
 
 }
@@ -276,9 +276,9 @@ int __getNumNewTimerFdExpires(fdInfo * currFdInfo, s64 * nxtExpiryDurationNS) {
     }
 
     if(numNewExpiries < currFdInfo->numExpiriesProcessed) {
-	printf("WARN: NumNewExpiries less!\n");
-	fflush(stdout);
-	assert(FALSE);
+    printf("WARN: NumNewExpiries less!\n");
+    fflush(stdout);
+    assert(FALSE);
     }
     numNewExpiries -= currFdInfo->numExpiriesProcessed; 
     currFdInfo->numExpiriesProcessed += numNewExpiries;
@@ -315,9 +315,9 @@ int GetNumNewTimerFdExpiries(int ThreadID, int fd, s64 * nxtExpiryDurationNS) {
 
     llist_elem * head;
     fdInfo * currFdInfo;
-	head = currThreadInfo->special_fds.head;
+    head = currThreadInfo->special_fds.head;
     
-	while (head != NULL) {
+    while (head != NULL) {
         currFdInfo = (fdInfo *)head->item;
 
         if (currFdInfo && currFdInfo->fd == fd
@@ -326,8 +326,8 @@ int GetNumNewTimerFdExpiries(int ThreadID, int fd, s64 * nxtExpiryDurationNS) {
                         nxtExpiryDurationNS);
             
         }
-		head = head->next;
-	}
+        head = head->next;
+    }
 
     assert(FALSE);
     return 0;
@@ -356,35 +356,35 @@ int ComputeClosestTimerExpiryForSelect(int ThreadID, fd_set * readfs, int nfds,
     fdInfo * currFdInfo;
     s64 currTimerFDExpiryDurationNS;
     *closestTimerExpiryDurationNS = -1;
-	head = currThreadInfo->special_fds.head;
+    head = currThreadInfo->special_fds.head;
 
     
-	while (head != NULL) {
-		currFdInfo = (fdInfo *)head->item;
+    while (head != NULL) {
+        currFdInfo = (fdInfo *)head->item;
 
-		if (currFdInfo && currFdInfo->fdType == FD_TYPE_TIMERFD
-		    && currFdInfo->fd < nfds
-		    && FD_ISSET(currFdInfo->fd, readfs)) {
+        if (currFdInfo && currFdInfo->fdType == FD_TYPE_TIMERFD
+            && currFdInfo->fd < nfds
+            && FD_ISSET(currFdInfo->fd, readfs)) {
 
-		    
-		    if (__getNumNewTimerFdExpires(currFdInfo,
-		                        &currTimerFDExpiryDurationNS)) {
-		        *closestTimerExpiryDurationNS = 0;
-		        return currFdInfo->fd;
-		    } else {
+            
+            if (__getNumNewTimerFdExpires(currFdInfo,
+                                &currTimerFDExpiryDurationNS)) {
+                *closestTimerExpiryDurationNS = 0;
+                return currFdInfo->fd;
+            } else {
 
-		        if (*closestTimerExpiryDurationNS < 0) {
-		            *closestTimerExpiryDurationNS = currTimerFDExpiryDurationNS;
-		            TimerOfInterest = currFdInfo->fd;
-		        } else if (currTimerFDExpiryDurationNS 
-		                    < *closestTimerExpiryDurationNS) {
-		            *closestTimerExpiryDurationNS = currTimerFDExpiryDurationNS;
-		            TimerOfInterest = currFdInfo->fd;
-		        }
-		    }
-		}
-		head = head->next;
-	}
+                if (*closestTimerExpiryDurationNS < 0) {
+                    *closestTimerExpiryDurationNS = currTimerFDExpiryDurationNS;
+                    TimerOfInterest = currFdInfo->fd;
+                } else if (currTimerFDExpiryDurationNS 
+                            < *closestTimerExpiryDurationNS) {
+                    *closestTimerExpiryDurationNS = currTimerFDExpiryDurationNS;
+                    TimerOfInterest = currFdInfo->fd;
+                }
+            }
+        }
+        head = head->next;
+    }
 
     if (*closestTimerExpiryDurationNS > 0)
         return TimerOfInterest;
@@ -426,10 +426,10 @@ void CloseFd(int ThreadID, int fd) {
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
     if (!currThreadInfo)
-	    return;
+        return;
 
     if (currThreadInfo->in_callback)
-	    return;
+        return;
 
     
     if (currThreadInfo->processPID != ThreadID) {
@@ -442,17 +442,17 @@ void CloseFd(int ThreadID, int fd) {
     llist_elem * head;
     fdInfo * currFdInfo;
     int pos = 0;
-	head = currThreadInfo->special_fds.head;
-	while (head != NULL) {
+    head = currThreadInfo->special_fds.head;
+    while (head != NULL) {
         currFdInfo = (fdInfo *)head->item;
 
         if (currFdInfo && currFdInfo->fd == fd) {
             llist_remove_at(&currThreadInfo->special_fds, pos);
             return;
         }
-		head = head->next;
+        head = head->next;
         pos ++;
-	}
+    }
 }
 
 

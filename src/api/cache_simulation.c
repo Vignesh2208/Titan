@@ -27,11 +27,8 @@ void loadInsnCacheParams() {
 
 //! Instruction Cache Callback function
 void insCacheCallback() {
-    // currBBCacheMissPenalty would be set by the compiler.
-    // if there is a cache miss, currBBCacheMissPenalty would indicate the
-    // size in bytes of the basic block. This is converted to number of cache
-    // lines to fill
-
+    // use the return address to find out if this block is in the cache
+    //printf("Return address: %p\n", __builtin_return_address(0));
 }
 #endif 
 
@@ -62,8 +59,8 @@ void loadDataCacheParams() {
 // function is invoked before instructions which read bytes, words, or
 // double words from memory
 void dataReadCacheCallback(u64_t address, int size_bytes) {
-    printf("DataReadCacheCallback: address: %p, size: %d\n", (void *)address,
-        size_bytes);
+    //printf("DataReadCacheCallback: address: %p, size: %d\n", (void *)address,
+    //       size_bytes);
 }
 
 //! Invoked before write accesses to memory. The write memory address is passed
@@ -71,7 +68,7 @@ void dataReadCacheCallback(u64_t address, int size_bytes) {
 // function is invoked before instructions which write to bytes, words, or
 // double words to memory
 void dataWriteCacheCallback(u64_t address, int size_bytes) {
-    printf("DataWriteCacheCallback: address: %p, size: %d\n", (void *)address,
-        size_bytes);
+    //printf("DataWriteCacheCallback: address: %p, size: %d\n", (void *)address,
+    //    size_bytes);
 }
 #endif

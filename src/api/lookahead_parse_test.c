@@ -14,13 +14,13 @@ void printLookaheadInfo(struct lookahead_info * linfo) {
 }
 int main() {
     struct lookahead_info bbl_linfo, loop_linfo;
-    if (LoadLookahead("/home/vignesh/Titan/scripts/.ttn/lookahead/bbl_lookahead.info",
+    if (LoadLookahead("/home/vignesh/VT-S3FNet/csudp/udp_server/.ttn/lookahead/bbl_lookahead.info",
         &bbl_linfo)) {
         printf ("BBL Lookahead loaded successfully \n");
         printLookaheadInfo(&bbl_linfo);
     }
 
-    if (LoadLookahead("/home/vignesh/Titan/scripts/.ttn/lookahead/loop_lookahead.info",
+    if (LoadLookahead("/home/vignesh/VT-S3FNet/csudp/ping/.ttn/lookahead/loop_lookahead.info",
         &loop_linfo)) {
         printf ("Loop Lookahead loaded successfully \n");
         printLookaheadInfo(&loop_linfo);

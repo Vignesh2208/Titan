@@ -126,8 +126,8 @@ int AddToTracerSchQueue(int tracer_id) {
 
 int SetPktSendTimeAPI(int payload_hash, int payload_len, s64 send_tstamp) {
   if (payload_hash < 0 || send_tstamp <= 0) {
-	printf("SetPktSendTimeAPI: incorrect parameters\n");
-	return -1;
+  printf("SetPktSendTimeAPI: incorrect parameters\n");
+  return -1;
   }
   ioctl_args arg;
   InitIoctlArg(&arg);
@@ -290,10 +290,10 @@ s64 GetEarliestArrivalTime() {
   return SendToVtModule(VT_GET_EAT, &arg);
 }
 
-int SetProcessLookahead(s64 bulk_lookahead_expiry_time, long sp_lookahead_duration) {
+int SetProcessLookahead(s64 bulk_lookahead_expiry_time, int lookahead_anchor_type) {
   ioctl_args arg;
   InitIoctlArg(&arg);
-  sprintf(arg.cmd_buf, "%ld", sp_lookahead_duration);
+  sprintf(arg.cmd_buf, "%d", lookahead_anchor_type);
   if (bulk_lookahead_expiry_time < 0)
      bulk_lookahead_expiry_time = 0;
   arg.cmd_value = bulk_lookahead_expiry_time;
@@ -311,4 +311,17 @@ s64 GetTracerLookahead(int tracer_id) {
   sprintf(arg.cmd_buf, "%d", tracer_id);
 
   return SendToVtModule(VT_GET_TRACER_LOOKAHEAD, &arg);
+}
+
+
+s64 GetTracerNEATLookahead(int tracer_id) {
+
+  if (tracer_id <= 0) {
+    printf("GetTracerNEATLookahead: incorrect tracer-id\n");
+    return -1;
+  }
+  ioctl_args arg;
+  InitIoctlArg(&arg);
+  sprintf(arg.cmd_buf, "%d", tracer_id);
+  return SendToVtModule(VT_GET_TRACER_NEAT_LOOKAHEAD, &arg);
 }

@@ -15,7 +15,7 @@ def start_new_dilated_process(tracer_id, timeline_id, cmd_to_run, log_file_fd,
     if newpid == 0:
         os.dup2(log_file_fd, sys.stdout.fileno())
         os.dup2(log_file_fd, sys.stderr.fileno())
-        args = ["tracer", "-t", str(timeline_id), "-i", str(tracer_id),
+        args = ["ttn_tracer", "-t", str(timeline_id), "-i", str(tracer_id),
                 "-c", cmd_to_run, "-e", str(exp_type)]
         os.execvp(args[0], args)
     else:

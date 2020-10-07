@@ -116,9 +116,11 @@ void SetParamConfigInt (char * param_config_name,
 }
 
 int ParseTTNProject(char * project_name) {
-
-    struct passwd *pw = getpwuid(getuid());
-    const char *homedir = pw->pw_dir;
+    const char *homedir;
+    if ((homedir = getenv("HOME")) == NULL) {
+    	homedir = getpwuid(getuid())->pw_dir;
+    }
+    printf("HOME DIRECTORY : %s\n", getenv("HOME"));
     char ttn_config_file[MAX_FILE_PATH_LENGTH];
     cJSON * ttn_config_json;
     cJSON * ttn_config_projects_json;
@@ -292,7 +294,7 @@ int ParseTTNProject(char * project_name) {
         MAX_FILE_PATH_LENGTH, "%s/.ttn/lookahead/loop_lookahead.info",
         cJSON_GetStringValue(ttn_project_src_dir_json));
       if (setenv("VT_BBL_LOOKAHEAD_FILE", ttn_project_bbl_lookahead_path, 1) < 0 )
-	      perror("Failed to set env VT_BBL_LOOKAHEAD_FILE\n");
+        perror("Failed to set env VT_BBL_LOOKAHEAD_FILE\n");
       else
         printf ("Setting VT_BBL_LOOKAHEAD_FILE to: %s\n",
           ttn_project_bbl_lookahead_path);
@@ -346,7 +348,7 @@ void SetEnvVariables(int tracer_id, int timeline_id, int exp_type,
   }
 
   if (setenv("VT_TRACER_ID", tracer_id_env_variable, 1) < 0 )
-	    perror("Failed to set env VT_TRACER_ID\n");
+      perror("Failed to set env VT_TRACER_ID\n");
 
   if (setenv("VT_TIMELINE_ID", timeline_id_env_variable, 1) < 0)
     perror("Failed to set env VT_TIMELINE_ID\n");
@@ -432,7 +434,7 @@ int RunCommandUnderVtManagement(
           if ((fd = open(args[i + 1], O_RDWR | O_CREAT, 0666)) == -1)
             perror("open");
             
-	        ftruncate(fd, 0);
+          ftruncate(fd, 0);
           dup2(fd, STDOUT_FILENO);
           close(fd);
         }
@@ -457,7 +459,7 @@ int RunCommandUnderVtManagement(
     printf("Starting command: %s\n", args[0]);
     fflush(stdout);
     fflush(stderr);
-    //execve(args[0], &args[0], environ);
+    execve(args[0], &args[0], environ);
     free(args);
     exit(0);
   }
@@ -467,64 +469,64 @@ int RunCommandUnderVtManagement(
 }
 
 void PrintUsage(int argc, char* argv[]) {
-	fprintf(stderr, "\n");
-	fprintf(stderr, "For displaying this message: %s [ -h | --help ]\n", argv[0]);
+  fprintf(stderr, "\n");
+  fprintf(stderr, "For displaying this message: %s [ -h | --help ]\n", argv[0]);
   fprintf(stderr, "\n");
   fprintf(stderr, "General usage: \n");
   fprintf(stderr, "\n");
-	fprintf(stderr,
+  fprintf(stderr,
           "%s -i <TRACER_ID> -t <TIMELINE_ID> -e <EXP_TYPE>"
-	        " -c \"CMD with args\" -p <TTN PROJECT NAME>\n", argv[0]);
-	fprintf(stderr, "\n");
-	fprintf(stderr,
+          " -c \"CMD with args\" -p <TTN PROJECT NAME>\n", argv[0]);
+  fprintf(stderr, "\n");
+  fprintf(stderr,
           "This program executes the specified CMD with arguments "
           "in trace mode under the control of Titan virtual time module\n");
-	fprintf(stderr, "\n");
+  fprintf(stderr, "\n");
 }
 
 
 int main(int argc, char * argv[]) {
 
-	size_t len = 0;
-	int tracer_id = 0, timeline_id, exp_type;
-	char command[MAX_COMMAND_LENGTH];
+  size_t len = 0;
+  int tracer_id = 0, timeline_id, exp_type;
+  char command[MAX_COMMAND_LENGTH];
   char project[MAX_COMMAND_LENGTH];
-	int option = 0;
-	int i, status;
+  int option = 0;
+  int i, status;
   pid_t controlled_pid;
 
 
   memset(command, 0, sizeof(char)*MAX_COMMAND_LENGTH);
   memset(project, 0, sizeof(char)*MAX_COMMAND_LENGTH);
-	timeline_id = 0;
+  timeline_id = 0;
 
-	if (argc < 4 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
-		PrintUsage(argc, argv);
-		exit(FAIL);
-	}
+  if (argc < 4 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
+    PrintUsage(argc, argv);
+    exit(FAIL);
+  }
 
 
-	while ((option = getopt(argc, argv, "i:e:t:n:c:p:h")) != -1) {
-		switch (option) {
-		case 'i' :  tracer_id = atoi(optarg);
+  while ((option = getopt(argc, argv, "i:e:t:n:c:p:h")) != -1) {
+    switch (option) {
+    case 'i' :  tracer_id = atoi(optarg);
                 if (tracer_id < 0) {
                   printf("Tracer-id must be positive \n"); exit(FAIL);
                 }
-			          break;
-		case 't' :  timeline_id = atoi(optarg);
+                break;
+    case 't' :  timeline_id = atoi(optarg);
                 if (timeline_id < 0) {
                   printf("Timeline-id must be positive \n"); exit(FAIL);
                 }
-			          break;
-		case 'e' :  exp_type = atoi(optarg);
+                break;
+    case 'e' :  exp_type = atoi(optarg);
                 if (exp_type != EXP_CBE && exp_type != EXP_CS) {
                   printf (
                     "Only experiment types EXP_CBE (<=> 1) or EXP_CS (<=> 2) "
                     "are currently supported\n");
                   exit(FAIL);
                 }
-			          break;
-		case 'c' :  if (strlen(optarg) > MAX_COMMAND_LENGTH) {
+                break;
+    case 'c' :  if (strlen(optarg) > MAX_COMMAND_LENGTH) {
                   printf ("Command: %s too long. Max allowed characters: %d\n",
                   optarg, MAX_COMMAND_LENGTH);
                   exit(FAIL);
@@ -538,14 +540,29 @@ int main(int argc, char * argv[]) {
                 }
                 snprintf(project, MAX_COMMAND_LENGTH, "%s", optarg);
                 break;
-		case 'h' :
-		default  :  PrintUsage(argc, argv);
-			          exit(FAIL);
-		}
-	}
+    case 'h' :
+    default  :  PrintUsage(argc, argv);
+                exit(FAIL);
+    }
+  }
 
-	
-	printf("Tracer: %d >> CMD TO RUN: %s\n", tracer_id, command);		
+  FILE *fp;
+  char path[1035];
+
+  /* Open the command for reading. */
+  fp = popen("/usr/sbin/arp -f /tmp/arp_entries.txt", "r");
+  if (fp == NULL) {
+    printf("Failed to run arp command\n" );
+  } else {
+     /* Read the output a line at a time - output it. */
+     while (fgets(path, sizeof(path), fp) != NULL) {
+	printf("%s", path);
+        fflush(stdout);
+     }
+     /* close */
+     pclose(fp);
+  }
+  printf("Tracer: %d >> CMD TO RUN: %s\n", tracer_id, command);		
 
   RunCommandUnderVtManagement(
     command, &controlled_pid, tracer_id, timeline_id, exp_type, project);
@@ -557,7 +574,7 @@ int main(int argc, char * argv[]) {
     tracer_id);
   fflush(stdout);
 
-  /*
+  
   if (WaitForExit(tracer_id) < 0) // TODO: Better error handling here 
     printf("Tracer: %d >> ERROR: in wait for exit. Thats not good !\n",
       tracer_id);
@@ -567,7 +584,7 @@ int main(int argc, char * argv[]) {
   printf("Tracer: %d >> Resumed. Waiting for processes to finish ...\n", tracer_id);
   fflush(stdout);
 
-  kill(controlled_pid, SIGKILL); */
+  kill(controlled_pid, SIGKILL);
   
   printf("Tracer: %d >> Waiting to read child status ...\n", tracer_id);
   fflush(stdout);

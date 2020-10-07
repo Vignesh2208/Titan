@@ -17,6 +17,10 @@
 #define NSEC_PER_MS 1000000
 #define NSEC_PER_US 1000
 
+#define LOOKAHEAD_ANCHOR_NONE 0
+#define LOOKAHEAD_ANCHOR_CURR_TIME 1
+#define LOOKAHEAD_ANCHOR_EAT 2
+
 typedef unsigned long long u64_t;
 typedef long long s64;
 
@@ -34,7 +38,7 @@ typedef struct ioctl_args_struct {
 #define VT_ADD_PROCESSES_TO_SQ _IOW(VT_IOC_MAGIC, 5, int)
 #define VT_SYNC_AND_FREEZE _IOW(VT_IOC_MAGIC, 6, int)
 #define VT_INITIALIZE_EXP _IOW(VT_IOC_MAGIC, 7, int)
-#define VT_GETTIME_PID _IOW(VT_IOC_MAGIC, 8, int)
+#define VT_GETTIME_TRACER _IOW(VT_IOC_MAGIC, 8, int)
 #define VT_STOP_EXP _IOW(VT_IOC_MAGIC, 9, int)
 #define VT_PROGRESS_BY _IOW(VT_IOC_MAGIC, 10, int)
 #define VT_PROGRESS_TIMELINE_BY _IOW(VT_IOC_MAGIC, 11, int)
@@ -45,7 +49,7 @@ typedef struct ioctl_args_struct {
 #define VT_GETTIME_MY_PID _IOW(VT_IOC_MAGIC, 16, int)
 #define VT_ADD_TO_SQ _IOW(VT_IOC_MAGIC, 17, int)
 #define VT_SYSCALL_WAIT _IOW(VT_IOC_MAGIC, 18, int)
-#define VT_GETTIME_TRACER _IOW(VT_IOC_MAGIC, 19, int)
+#define VT_GETTIME_PID _IOW(VT_IOC_MAGIC, 19, int)
 #define VT_SET_PACKET_SEND_TIME _IOW(VT_IOC_MAGIC, 20, int)
 #define VT_GET_PACKET_SEND_TIME _IOW(VT_IOC_MAGIC, 21, int)
 #define VT_GET_NUM_ENQUEUED_BYTES _IOW(VT_IOC_MAGIC, 22, int)
@@ -53,6 +57,7 @@ typedef struct ioctl_args_struct {
 #define VT_GET_EAT _IOW(VT_IOC_MAGIC, 24, int)
 #define VT_SET_PROCESS_LOOKAHEAD _IOW(VT_IOC_MAGIC, 25, int)
 #define VT_GET_TRACER_LOOKAHEAD _IOW(VT_IOC_MAGIC, 26, int)
+#define VT_GET_TRACER_NEAT_LOOKAHEAD _IOW(VT_IOC_MAGIC, 27, int)
 
 #ifndef DISABLE_LOOKAHEAD
 struct lookahead_map {

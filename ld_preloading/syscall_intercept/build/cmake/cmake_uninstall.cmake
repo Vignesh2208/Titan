@@ -1,15 +1,15 @@
 # From: https://cmake.org/Wiki/CMake_FAQ
 
-if(NOT EXISTS "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt")
-	message(FATAL_ERROR "Cannot find install manifest: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt")
-endif(NOT EXISTS "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt")
+if(NOT EXISTS "/home/kronos/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt")
+	message(FATAL_ERROR "Cannot find install manifest: /home/kronos/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt")
+endif(NOT EXISTS "/home/kronos/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt")
 
-file(READ "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt" files)
+file(READ "/home/kronos/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt" files)
 string(REGEX REPLACE "\n" ";" files "${files}")
 foreach(file ${files})
 	message(STATUS "Uninstalling $ENV{DESTDIR}${file}")
 	if(IS_SYMLINK "$ENV{DESTDIR}${file}" OR EXISTS "$ENV{DESTDIR}${file}")
-		exec_program("/usr/local/bin/cmake" ARGS "-E remove \"$ENV{DESTDIR}${file}\""
+		exec_program("/usr/local/lib/python3.7/dist-packages/cmake/data/bin/cmake" ARGS "-E remove \"$ENV{DESTDIR}${file}\""
 			OUTPUT_VARIABLE rm_out
 			RETURN_VALUE rm_retval
 		)

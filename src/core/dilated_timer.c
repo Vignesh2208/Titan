@@ -27,15 +27,15 @@
 #include "dilated_timer.h"
 
 
-extern struct dilated_timer_timeline_base ** global_dilated_timer_timeline_bases;
+extern struct DilatedTimerTimelineBase ** globalDilatedTimerTimelineBases;
 extern hashmap get_dilated_task_struct_by_pid;
 extern int experiment_status;
 
-struct dilated_timer_timeline_base * __alloc_global_dilated_timer_timeline_base(
+struct DilatedTimerTimelineBase * __alloc_global_DilatedTimerTimelineBase(
     int timeline_id, int total_num_timelines) {
-  struct dilated_timer_timeline_base * timeline_base;
-  timeline_base = (struct dilated_timer_timeline_base *)kmalloc(
-      sizeof(struct dilated_timer_timeline_base), GFP_KERNEL);
+  struct DilatedTimerTimelineBase * timeline_base;
+  timeline_base = (struct DilatedTimerTimelineBase *)kmalloc(
+      sizeof(struct DilatedTimerTimelineBase), GFP_KERNEL);
   if (!timeline_base) {
     PDEBUG_E(" Failed to Allot Timeline Base for timeline : %d\n", timeline_id);
     return NULL;
@@ -47,7 +47,11 @@ struct dilated_timer_timeline_base * __alloc_global_dilated_timer_timeline_base(
   timeline_base->dilated_clock_base.clock_active = 1;
   timeline_base->dilated_clock_base.timeline_base = timeline_base;
   timerqueue_init_head(&timeline_base->dilated_clock_base.active);
+  #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+  timeline_base->nxt_dilated_expiry.tv64 = 0;
+  #else
   timeline_base->nxt_dilated_expiry = 0;
+  #endif
   timeline_base->running_dilated_timer = NULL;
   spin_lock_init(&timeline_base->lock);
   PDEBUG_I("Succesfully Initialized Timeline: %d Timer Base\n", timeline_id);
@@ -63,18 +67,18 @@ void InitGlobalDilatedTimerTimelineBases(int total_num_timelines) {
       return;
 
     }
-    global_dilated_timer_timeline_bases = (
-      struct dilated_timer_timeline_base **)kmalloc(
+    globalDilatedTimerTimelineBases = (
+      struct DilatedTimerTimelineBase **)kmalloc(
         sizeof(struct dilated_timer_base *)*total_num_timelines, GFP_KERNEL);
-    if (!global_dilated_timer_timeline_bases) {
+    if (!globalDilatedTimerTimelineBases) {
       PDEBUG_E("Failed to Allot Memory for Global Dilated Timer "
                "Timeline Bases\n");
       return;
     }
 
     for (i = 0; i < total_num_timelines; i++) {
-      global_dilated_timer_timeline_bases[i] = 
-        __alloc_global_dilated_timer_timeline_base(i, total_num_timelines);
+      globalDilatedTimerTimelineBases[i] = 
+        __alloc_global_DilatedTimerTimelineBase(i, total_num_timelines);
     }
     PDEBUG_I("Successfully Initialized All Timer Timeline Bases\n");
 }
@@ -87,66 +91,84 @@ void FreeGlobalDilatedTimerTimelineBases(int total_num_timelines) {
   }
 
   for (i = 0; i < total_num_timelines; i++) {
-    kfree(global_dilated_timer_timeline_bases[i]);
+    kfree(globalDilatedTimerTimelineBases[i]);
   }
-  kfree(global_dilated_timer_timeline_bases);
+  kfree(globalDilatedTimerTimelineBases);
   PDEBUG_I("Successfully Cleaned up all Timer Timeline Bases\n");
 }
 
-int DilatedHrtimerForward(struct hrtimer_dilated *timer, ktime_t interval) {
+int DilatedHrtimerForward(struct HrtimerDilated *timer, ktime_t interval) {
+  #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+  if (!timer || (timer->state & HRTIMER_STATE_ENQUEUED) || interval.tv64 < 0)
+    return -1;
+  timer->_softexpires.tv64 = timer->_softexpires.tv64 + interval.tv64;
+  #else
   if (!timer || (timer->state & HRTIMER_STATE_ENQUEUED) || interval < 0)
     return -1;
-
   timer->_softexpires = timer->_softexpires + interval;
+  #endif
+  
   timer->node.expires = timer->_softexpires;
   return 1;
 }
 
-struct dilated_timer_timeline_base *get_timeline_base(int timeline_id) {
+struct DilatedTimerTimelineBase *get_timeline_base(int timeline_id) {
   if (timeline_id < 0)
     return NULL;
   if (timeline_id > 
-    global_dilated_timer_timeline_bases[0]->total_num_timelines) {
+    globalDilatedTimerTimelineBases[0]->total_num_timelines) {
     PDEBUG_E("Specified Timeline does not exist !\n");
     return NULL;
   }
-  return global_dilated_timer_timeline_bases[timeline_id];
+  return globalDilatedTimerTimelineBases[timeline_id];
 }
 
 ktime_t __dilated_hrtimer_get_next_event(
-    struct dilated_timer_timeline_base *timeline_base) {
+    struct DilatedTimerTimelineBase *timeline_base) {
 
-  struct hrtimer_dilated_clock_base *base = &timeline_base->dilated_clock_base;
+  struct HrtimerDilatedClockBase *base = &timeline_base->dilated_clock_base;
+
+  #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+  ktime_t expires_next = {.tv64 = KTIME_MAX};
+  #else
   ktime_t expires_next = KTIME_MAX;
+  #endif
   unsigned int active = base->clock_active;
   struct timerqueue_node *next;
-  struct hrtimer_dilated *timer;
+  struct HrtimerDilated *timer;
 
   if (!active) return expires_next;
 
   next = timerqueue_getnext(&base->active);
 
   if (!next) {
+    #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+    expires_next.tv64 = 0;
+    #else
     expires_next = 0;
+    #endif
     return expires_next;
   }
 
-  timer = container_of(next, struct hrtimer_dilated, node);
+  timer = container_of(next, struct HrtimerDilated, node);
   expires_next = timer->_softexpires;
-
-  if (expires_next < 0) expires_next = 0;
+  #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+  if (expires_next.tv64 < 0) expires_next.tv64 = 0;
+  #else
+  if (expires_next < 0) return expires_next;
+  #endif
   return expires_next;
 }
 
-int __DilatedHrtimerInit(struct hrtimer_dilated *timer, int timeline_id,
+int __DilatedHrtimerInit(struct HrtimerDilated *timer, int timeline_id,
                            enum hrtimer_mode mode) {
-  struct dilated_timer_timeline_base *timeline_base 
+  struct DilatedTimerTimelineBase *timeline_base 
     = get_timeline_base(timeline_id);
   int base;
   if (!timeline_base || timeline_base->dilated_clock_base.clock_active == 0)
     return -1;
 
-  memset(timer, 0, sizeof(struct hrtimer_dilated));
+  memset(timer, 0, sizeof(struct HrtimerDilated));
   timer->base = &timeline_base->dilated_clock_base;
   timerqueue_init(&timer->node);
   timer->state = HRTIMER_STATE_INACTIVE;
@@ -160,7 +182,7 @@ int __DilatedHrtimerInit(struct hrtimer_dilated *timer, int timeline_id,
  * @mode:	timer mode abs/rel
  *
  */
-int DilatedHrtimerInit(struct hrtimer_dilated *timer, int timeline_id,
+int DilatedHrtimerInit(struct HrtimerDilated *timer, int timeline_id,
                          enum hrtimer_mode mode) {
   return __DilatedHrtimerInit(timer, timeline_id, mode);
 }
@@ -173,8 +195,8 @@ int DilatedHrtimerInit(struct hrtimer_dilated *timer, int timeline_id,
  *
  * Returns 1 when the new timer is the leftmost timer in the tree.
  */
-int enqueue_dilated_hrtimer(struct hrtimer_dilated *timer,
-                            struct hrtimer_dilated_clock_base *base) {
+int enqueue_dilated_hrtimer(struct HrtimerDilated *timer,
+                            struct HrtimerDilatedClockBase *base) {
   timer->state = HRTIMER_STATE_ENQUEUED;
   return timerqueue_add(&base->active, &timer->node);
 }
@@ -189,10 +211,10 @@ int enqueue_dilated_hrtimer(struct hrtimer_dilated *timer,
  * reprogram to zero. This is useful, when the context does a reprogramming
  * anyway (e.g. timer interrupt)
  */
-void __remove_dilated_hrtimer(struct hrtimer_dilated *timer,
-                              struct hrtimer_dilated_clock_base *base,
+void __remove_dilated_hrtimer(struct HrtimerDilated *timer,
+                              struct HrtimerDilatedClockBase *base,
                               u8 newstate) {
-  // struct dilated_timer_timeline_base *timeline_base = base->timeline_base;
+  // struct DilatedTimerTimelineBase *timeline_base = base->timeline_base;
   u8 state = timer->state;
 
   timer->state = newstate;
@@ -204,8 +226,8 @@ void __remove_dilated_hrtimer(struct hrtimer_dilated *timer,
 /*
  * remove dilated hrtimer, called with base lock held
  */
-int remove_dilated_hrtimer(struct hrtimer_dilated *timer,
-                           struct hrtimer_dilated_clock_base *base,
+int remove_dilated_hrtimer(struct HrtimerDilated *timer,
+                           struct HrtimerDilatedClockBase *base,
                            bool restart) {
   if (timer->state & HRTIMER_STATE_ENQUEUED) {
     u8 state = timer->state;
@@ -223,13 +245,13 @@ int remove_dilated_hrtimer(struct hrtimer_dilated *timer,
 /**
 **	Expiry time may be relative or absolute depending on the mode.
 **/
-void DilatedHrtimerStartRangeNs(struct hrtimer_dilated *timer,
+void DilatedHrtimerStartRangeNs(struct HrtimerDilated *timer,
                                     ktime_t expiry_time,
                                     const enum hrtimer_mode mode) {
-  struct hrtimer_dilated_clock_base *base = timer->base;
+  struct HrtimerDilatedClockBase *base = timer->base;
   unsigned long flags;
   int leftmost;
-  struct dilated_timer_timeline_base *timeline_base = base->timeline_base;
+  struct DilatedTimerTimelineBase *timeline_base = base->timeline_base;
   ktime_t expires_next;
 
   raw_spin_lock_irqsave(&timeline_base->lock, flags);
@@ -238,7 +260,11 @@ void DilatedHrtimerStartRangeNs(struct hrtimer_dilated *timer,
   remove_dilated_hrtimer(timer, base, true);
 
   if (mode & HRTIMER_MODE_REL) {
-    expiry_time = expiry_time + timeline_base->curr_virtual_time;
+    #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+    expiry_time.tv64 = expiry_time.tv64 + timeline_base->curr_virtual_time;
+    #else
+    expiry_time += timeline_base->curr_virtual_time;
+    #endif
   }
 
   timer->_softexpires = expiry_time;
@@ -256,7 +282,7 @@ unlock:
   raw_spin_unlock_irqrestore(&timeline_base->lock, flags);
 }
 
-void DilatedHrtimerStart(struct hrtimer_dilated *timer, ktime_t expiry_time,
+void DilatedHrtimerStart(struct HrtimerDilated *timer, ktime_t expiry_time,
                            const enum hrtimer_mode mode) {
   DilatedHrtimerStartRangeNs(timer, expiry_time, mode);
 }
@@ -271,10 +297,10 @@ void DilatedHrtimerStart(struct hrtimer_dilated *timer, ktime_t expiry_time,
  * -1 when the timer is currently excuting the callback function and
  *    cannot be stopped
  */
-int DilatedHrtimerTryToCancel(struct hrtimer_dilated *timer) {
-  struct hrtimer_dilated_clock_base *base = timer->base;
+int DilatedHrtimerTryToCancel(struct HrtimerDilated *timer) {
+  struct HrtimerDilatedClockBase *base = timer->base;
   unsigned long flags;
-  struct dilated_timer_timeline_base *timeline_base = base->timeline_base;
+  struct DilatedTimerTimelineBase *timeline_base = base->timeline_base;
   int ret = -1;
 
   /*
@@ -301,7 +327,7 @@ int DilatedHrtimerTryToCancel(struct hrtimer_dilated *timer) {
  *  0 when the timer was not active
  *  1 when the timer was active
  */
-int DilatedTimerCancel(struct hrtimer_dilated *timer) {
+int DilatedTimerCancel(struct HrtimerDilated *timer) {
   for (;;) {
     int ret = DilatedHrtimerTryToCancel(timer);
 
@@ -310,11 +336,11 @@ int DilatedTimerCancel(struct hrtimer_dilated *timer) {
   }
 }
 
-void a_run_dilated_hrtimer(struct dilated_timer_timeline_base *timeline_base,
-                           struct hrtimer_dilated_clock_base *base,
-                           struct hrtimer_dilated *timer,
-			   int ignore) {
-  enum hrtimer_restart (*fn)(struct hrtimer_dilated *);
+void a_run_dilated_hrtimer(struct DilatedTimerTimelineBase *timeline_base,
+                           struct HrtimerDilatedClockBase *base,
+                           struct HrtimerDilated *timer,
+         int ignore) {
+  enum hrtimer_restart (*fn)(struct HrtimerDilated *);
   int restart = HRTIMER_NORESTART;
 
   lockdep_assert_held(&timeline_base->lock);
@@ -334,41 +360,44 @@ void a_run_dilated_hrtimer(struct dilated_timer_timeline_base *timeline_base,
 }
 
 void a_DilatedHrtimerRunQueues(
-  struct dilated_timer_timeline_base *timeline_base, ktime_t now) {
-  struct hrtimer_dilated_clock_base *base = &timeline_base->dilated_clock_base;
-  struct hrtimer_dilated *timer;
+  struct DilatedTimerTimelineBase *timeline_base, ktime_t now) {
+  struct HrtimerDilatedClockBase *base = &timeline_base->dilated_clock_base;
+  struct HrtimerDilated *timer;
   int active = base->clock_active;
 
   struct timerqueue_node *next;
   while ((next = timerqueue_getnext(&base->active))) {
     if (!next) break;
 
-    timer = container_of(next, struct hrtimer_dilated, node);
+    timer = container_of(next, struct HrtimerDilated, node);
 
     if (!timer) break;
-
+    #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+    if (now.tv64 < timer->_softexpires.tv64) break;
+    #else
     if (now < timer->_softexpires) break;
+    #endif
 
     a_run_dilated_hrtimer(timeline_base, base, timer, 0);
   }
 }
 
 void DilatedHrtimerRunQueuesFlush(int timeline_id) {
-  struct dilated_timer_timeline_base *timeline_base = get_timeline_base(
+  struct DilatedTimerTimelineBase *timeline_base = get_timeline_base(
       timeline_id);
 
   if (!timeline_base)
     return;
     
-  struct hrtimer_dilated_clock_base *base = &timeline_base->dilated_clock_base;
-  struct hrtimer_dilated *timer;
+  struct HrtimerDilatedClockBase *base = &timeline_base->dilated_clock_base;
+  struct HrtimerDilated *timer;
   int active = base->clock_active;
 
   struct timerqueue_node *next;
   while ((next = timerqueue_getnext(&base->active))) {
     if (!next) break;
 
-    timer = container_of(next, struct hrtimer_dilated, node);
+    timer = container_of(next, struct HrtimerDilated, node);
 
     if (!timer) break;
 
@@ -381,27 +410,37 @@ void DilatedHrtimerRunQueuesFlush(int timeline_id) {
 
 
 void SetTimerbaseClock(int timeline_id, ktime_t time_to_set) {
-	struct dilated_timer_timeline_base * base = get_timeline_base(
-		timeline_id);
+  struct DilatedTimerTimelineBase * base = get_timeline_base(
+    timeline_id);
+  #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+  if (!base || time_to_set.tv64 <= 0)
+    return;
+  base->curr_virtual_time  = time_to_set.tv64;
+  #else
+  if (!base || time_to_set <= 0) return;
 
-	if (!base || time_to_set <= 0)
-		return;
-	base->curr_virtual_time  = time_to_set;
+  base->curr_virtual_time = time_to_set;
+  #endif
 } 
 
 void IncTimerbaseClock(int timeline_id, ktime_t inc) {
-	struct dilated_timer_timeline_base * base = get_timeline_base(
-		timeline_id);
-	if (!base || inc <= 0)
-		return;
-	base->curr_virtual_time  += inc;
+  struct DilatedTimerTimelineBase * base = get_timeline_base(
+    timeline_id);
+  #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+  if (!base || inc.tv64 <= 0)
+    return;
+  base->curr_virtual_time  += inc.tv64;
+  #else
+  if (!base || inc <= 0) return;
+  base->curr_virtual_time += inc;
+  #endif
 }
 
 /*
  * Called from Kronos with interrupts disabled
  */
 void DilatedHrtimerRunQueues(int timeline_id) {
-  struct dilated_timer_timeline_base *timeline_base = get_timeline_base(
+  struct DilatedTimerTimelineBase *timeline_base = get_timeline_base(
     timeline_id);
   ktime_t curr_virt_time;
   ktime_t expires_next;
@@ -409,16 +448,26 @@ void DilatedHrtimerRunQueues(int timeline_id) {
   if (!timeline_base ||
       timeline_base->dilated_clock_base.clock_active == 0) return;
 
+  #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+  curr_virt_time.tv64 = timeline_base->curr_virtual_time;
+  #else
   curr_virt_time = timeline_base->curr_virtual_time;
+  #endif
   raw_spin_lock(&timeline_base->lock);
 
   /* Reevaluate the clock bases for the next expiry */
   expires_next = __dilated_hrtimer_get_next_event(timeline_base);
   timeline_base->nxt_dilated_expiry = expires_next;
 
+  #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+  if (timeline_base->nxt_dilated_expiry.tv64 != 0 &&
+      timeline_base->nxt_dilated_expiry.tv64 > curr_virt_time.tv64)
+    goto skip;
+  #else
   if (timeline_base->nxt_dilated_expiry != 0 &&
       timeline_base->nxt_dilated_expiry > curr_virt_time)
     goto skip;
+  #endif
 
   a_DilatedHrtimerRunQueues(timeline_base, curr_virt_time);
 
@@ -429,68 +478,71 @@ skip:
 
 
 static enum hrtimer_restart dilated_sleep_wakeup(
-    struct hrtimer_dilated *timer) {
+    struct HrtimerDilated *timer) {
 
-	struct DilatedHrtimerSleeper *sleeper =
-		container_of(timer, struct DilatedHrtimerSleeper, timer_dilated);
+  struct DilatedHrtimerSleeper *sleeper =
+    container_of(timer, struct DilatedHrtimerSleeper, timer_dilated);
 
-	if (sleeper && sleeper->task) {
-		sleeper->associated_dilated_task_struct->resumed_by_dilated_timer = 1;
-		wake_up_process(sleeper->task);
-	}
-	return HRTIMER_NORESTART;
+  if (sleeper && sleeper->task) {
+    sleeper->associated_dilated_task_struct->resumed_by_dilated_timer = 1;
+    wake_up_process(sleeper->task);
+  }
+  return HRTIMER_NORESTART;
 }
 
 // sleeper should be allocated on heap using kmalloc
 int DilatedHrtimerSleep(ktime_t duration, struct dilated_task_struct * dilated_task) {
 
-	struct DilatedHrtimerSleeper * sleeper;
-	if (duration <= 0) {
-		PDEBUG_V("Warning: Dilated hrtimer sleep. 0 Duration.\n");
-		return 0;
-	}
+  struct DilatedHrtimerSleeper * sleeper;
+  #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+  if (duration.tv64 <= 0) {
+  #else
+  if (duration <= 0) {
+  #endif
+    PDEBUG_V("Warning: Dilated hrtimer sleep. 0 Duration.\n");
+    return 0;
+  }
 
-  	if (!dilated_task)
-    		return 0;
+  if (!dilated_task)
+    return 0;
 
-  	tracer * associated_tracer = dilated_task->associated_tracer;
-	if (!associated_tracer)
-		return 0;
+  tracer * associated_tracer = dilated_task->associated_tracer;
+  if (!associated_tracer)
+    return 0;
 
-	sleeper = (struct DilatedHrtimerSleeper *)kmalloc(
-			   sizeof(struct DilatedHrtimerSleeper), GFP_KERNEL);
-	if (!sleeper) {
-		PDEBUG_E("Dilated hrtimer sleep. NOMEM\n");
-		return -ENOMEM;
-	}
-	
-	sleeper->task = current;
-	sleeper->associated_dilated_task_struct = dilated_task;
-	DilatedHrtimerInit(&sleeper->timer_dilated,
+  sleeper = (struct DilatedHrtimerSleeper *)kmalloc(
+         sizeof(struct DilatedHrtimerSleeper), GFP_KERNEL);
+  if (!sleeper) {
+    PDEBUG_E("Dilated hrtimer sleep. NOMEM\n");
+    return -ENOMEM;
+  }
+  
+  sleeper->task = current;
+  sleeper->associated_dilated_task_struct = dilated_task;
+  DilatedHrtimerInit(&sleeper->timer_dilated,
                        associated_tracer->timeline_assignment,
                        HRTIMER_MODE_REL);
-	sleeper->timer_dilated.function = dilated_sleep_wakeup;
-	set_current_state(TASK_INTERRUPTIBLE);
+  sleeper->timer_dilated.function = dilated_sleep_wakeup;
+  set_current_state(TASK_INTERRUPTIBLE);
 
-  	// Wake-up tracer timeline worker
+    // Wake-up tracer timeline worker
 
-	PDEBUG_A("Starting dilated sleep. Sleep Duration: %llu.\n",
+  PDEBUG_A("Starting dilated sleep. Sleep Duration: %llu.\n",
            duration);
-	DilatedHrtimerStartRangeNs(&sleeper->timer_dilated, duration,
-                                   HRTIMER_MODE_REL);
+  DilatedHrtimerStartRangeNs(&sleeper->timer_dilated, duration,HRTIMER_MODE_REL);
 
-	dilated_task->ready = 0;
-	dilated_task->syscall_waiting = 0;
-	dilated_task->burst_target = 0;
-	associated_tracer->w_queue_wakeup_pid = 1;
-	wake_up_interruptible(associated_tracer->w_queue);
-	
-  	schedule();
-	kfree(sleeper);
-	PDEBUG_A("Resuming from dilated sleep. Sleep Duration: %llu.\n",
+  dilated_task->ready = 0;
+  dilated_task->syscall_waiting = 0;
+  dilated_task->burst_target = 0;
+  associated_tracer->w_queue_wakeup_pid = 1;
+  wake_up_interruptible(associated_tracer->w_queue);
+  
+  schedule();
+  kfree(sleeper);
+  PDEBUG_A("Resuming from dilated sleep. Sleep Duration: %llu.\n",
            duration);
-	if (experiment_status != RUNNING)
-		return -EFAULT;
-	return 0;
+  if (experiment_status != RUNNING)
+    return -EFAULT;
+  return 0;
 } 
 

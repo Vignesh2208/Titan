@@ -8,7 +8,7 @@
 
 ../include/libsyscall_intercept_hook_point.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/cmdline_filter.c
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/cmdline_filter.c
 stdbool.h
 -
 stdlib.h
@@ -22,11 +22,11 @@ fcntl.h
 unistd.h
 -
 libsyscall_intercept_hook_point.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/libsyscall_intercept_hook_point.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/libsyscall_intercept_hook_point.h
 intercept.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
 stdbool.h
 -
 stddef.h
@@ -34,7 +34,7 @@ stddef.h
 stdint.h
 -
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept.h
 stdbool.h
 -
 elf.h
@@ -46,5 +46,5 @@ dlfcn.h
 link.h
 -
 disasm_wrapper.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
 

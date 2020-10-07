@@ -66,7 +66,7 @@ int IsTimerArmed(int ThreadID, int fd);
 
 #ifndef DISABLE_LOOKAHEAD
 /*** For setting lookaheads ***/
-int SetLookahead(s64 bulkLookaheadValue, long spLookaheadValue);
+int SetLookahead(s64 bulkLookaheadValue, int  lookahead_anchor_type);
 #endif
 
 

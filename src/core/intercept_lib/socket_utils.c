@@ -30,32 +30,38 @@ int GetPayloadHash(const void * buf, int total_len) {
 
     
     if (IsRawPacket(buf, total_len)) {
-	    ip_header = (struct iphdr*)(buf + ether_offset);
-	    if (ip_header->protocol == 0x11) {
-		// UDP
-		iphdrlen = ip_header->ihl*sizeof (uint32_t);
-		payload = (char *)(buf + ether_offset + iphdrlen + sizeof(struct udphdr));
-		size = total_len - (ether_offset + iphdrlen + sizeof(struct udphdr));
+        ip_header = (struct iphdr*)(buf + ether_offset);
+        if (ip_header->protocol == 0x11) {
+        // UDP
+        iphdrlen = ip_header->ihl*sizeof (uint32_t);
+        payload = (char *)(buf + ether_offset + iphdrlen + sizeof(struct udphdr));
+        size = total_len - (ether_offset + iphdrlen + sizeof(struct udphdr));
 
-	    } else if (ip_header->protocol == 0x6) {
-		// TCP
-		iphdrlen = ip_header->ihl*sizeof (uint32_t);
-		tcp_header = (struct tcphdr *)(buf + ether_offset + iphdrlen);
-		tcphdrlen = sizeof (uint32_t) * tcp_header->doff;
-		payload = (char *)(buf + ether_offset + iphdrlen + tcphdrlen);
-		size = total_len - (ether_offset + iphdrlen + tcphdrlen);
+        } else if (ip_header->protocol == 0x6) {
+        // TCP
+        iphdrlen = ip_header->ihl*sizeof (uint32_t);
+        tcp_header = (struct tcphdr *)(buf + ether_offset + iphdrlen);
+        tcphdrlen = sizeof (uint32_t) * tcp_header->doff;
+        payload = (char *)(buf + ether_offset + iphdrlen + tcphdrlen);
+        size = total_len - (ether_offset + iphdrlen + tcphdrlen);
 
-	    } else {
-		return 0;
-	    }
+        } if (ip_header->protocol == 0x01) {
+        // ICMP
+        iphdrlen = ip_header->ihl*sizeof (uint32_t);
+        payload = (char *)(buf + ether_offset + iphdrlen);
+        size = total_len - (ether_offset + iphdrlen);
+
+        } else {
+        	return 0;
+        }
     } else {
-	payload = (char *)buf;
+    	payload = (char *)buf;
     }
     
     for(i = 0; i < size; i++) {
-    	hash += *payload;
-    	hash += (hash << 10);
-    	hash ^= (hash >> 6);
+        hash += *payload;
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
         ++payload;
     }
 
@@ -64,7 +70,7 @@ int GetPayloadHash(const void * buf, int total_len) {
     hash += (hash << 15);
 
     if (hash < 0)
-	return -1 * hash;
+    return -1 * hash;
 
     return hash;
 }
@@ -74,15 +80,15 @@ int GetPayloadHash(const void * buf, int total_len) {
 
 int IsRawPacket(const void *buf, size_t len) {
 
-	int ether_offset = 14;
-	if (len <= ether_offset + sizeof (struct iphdr))
-		return FAIL;
+    int ether_offset = 14;
+    if (len <= ether_offset + sizeof (struct iphdr))
+        return FAIL;
 
-	struct ether_header* eth= (struct ether_header *) buf;
-	struct iphdr* ip_header = (struct iphdr *)(buf + ether_offset);
+    struct ether_header* eth= (struct ether_header *) buf;
+    struct iphdr* ip_header = (struct iphdr *)(buf + ether_offset);
 
-	if (eth->ether_type == ETHER_TYPE_IP
-	    && ip_header->version == 0x4)
-		return SUCCESS;
-	return FAIL;
+    if (eth->ether_type == ETHER_TYPE_IP
+        && ip_header->version == 0x4)
+        return SUCCESS;
+    return FAIL;
 }

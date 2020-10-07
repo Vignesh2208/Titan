@@ -182,8 +182,12 @@ int HandleVtSetProcessLookahead(
 /*!
     \param arg A pointer to invoked_api struct containing details of the tracer.
         Upon return it would hold the lookahead value
+    \param ignore_eat_anchors If set to 1, all tasks whose lookahead are tied to
+    earliest arrival times are ignored when computing the lookahead. In other words
+    it only returns lookahead selectively from tasks which are not blocked on a packet
+    receive.
 */
-int HandleVtGetTracerLookahead(unsigned long arg);
+int HandleVtGetTracerLookahead(unsigned long arg, int ignore_eat_anchors);
 
 
 #endif

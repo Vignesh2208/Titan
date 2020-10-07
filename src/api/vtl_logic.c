@@ -66,10 +66,10 @@ s64 GetBBLLookAhead(long bblNumber) {
 
 //! Sets the lookahead for a specific loop by estimating the number of iterations it would make
 void SetLoopLookahead(int initValue, int finalValue, int stepValue) {
-	printf("SetLoopLookahead, return address: %p, currBBID: %llu, currLoopID: %llu\n",
-        __builtin_return_address(0), currBBID, currLoopID);
-	printf("Called SetLoopLookahead: init: %d, final: %d, step: %d\n",
-		initValue, finalValue, stepValue);
+    //printf("SetLoopLookahead, return address: %p, currBBID: %llu, currLoopID: %llu\n",
+    //    __builtin_return_address(0), currBBID, currLoopID);
+    //printf("Called SetLoopLookahead: init: %d, final: %d, step: %d\n",
+    //    initValue, finalValue, stepValue);
     if (!vtInitializationComplete)
         return;
     int numIterations = 0;
@@ -77,14 +77,14 @@ void SetLoopLookahead(int initValue, int finalValue, int stepValue) {
         (finalValue < initValue && stepValue < 0))
         numIterations = (finalValue - initValue)/stepValue;
     s64 loop_lookahead = GetLoopLookAhead((long)currLoopID)*numIterations;
-    SetLookahead(loop_lookahead, 0);
+    SetLookahead(loop_lookahead + GetCurrentTime(), LOOKAHEAD_ANCHOR_NONE);
 }
 
 //! Sets the lookahead at a specific basic block
 void SetBBLLookAhead(long bblNumber) {
     if (!vtInitializationComplete)
         return;
-    SetLookahead(0, GetBBLLookAhead(bblNumber));
+    SetLookahead(GetBBLLookAhead(bblNumber), LOOKAHEAD_ANCHOR_CURR_TIME);
 }
 #endif
 
@@ -99,8 +99,8 @@ void CopyAllSpecialFds(int FromProcessID, int ToProcessID) {
     llist_elem * head;
     fdInfo * currFdInfo;
     fdInfo * currFdCopy;
-	head = fromProcess->special_fds.head;
-	while (head != NULL) {
+    head = fromProcess->special_fds.head;
+    while (head != NULL) {
         currFdInfo = (fdInfo *)head->item;
 
         if (currFdInfo) {
@@ -108,8 +108,8 @@ void CopyAllSpecialFds(int FromProcessID, int ToProcessID) {
             memcpy(currFdCopy, currFdInfo, sizeof(fdInfo));
             llist_append(&fromProcess->special_fds, currFdCopy);
         }
-		head = head->next;
-	}
+        head = head->next;
+    }
 
 }
 
@@ -118,7 +118,7 @@ void SleepForNS(int ThreadID, int64_t duration) {
 
     if (duration <= 0)
         return;
-	
+    
     int ret;
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
     if (!currThreadInfo) return;
@@ -155,10 +155,10 @@ void SleepForNS(int ThreadID, int64_t duration) {
 s64 GetCurrentTime() {
     if (currBurstCyclesLeft && specifiedBurstCycles
         && specifiedBurstCycles >= currBurstCyclesLeft)
-    	return GetCurrentVtTime() + (s64)(
+        return GetCurrentVtTime() + (s64)(
             (specifiedBurstCycles - currBurstCyclesLeft)/cpuCyclesPerNs);
     else
-	    return GetCurrentVtTime();
+        return GetCurrentVtTime();
 }
 
 //! Returns current virtual time as timespec
@@ -174,27 +174,32 @@ void GetCurrentTimeval(struct timeval * tv) {
 #ifndef DISABLE_LOOKAHEAD
 //! Sets packet send time for a specific packet
 void SetPktSendTime(int payloadHash, int payloadLen, s64 pktSendTimeStamp) {
-	SetPktSendTimeAPI(payloadHash, payloadLen, pktSendTimeStamp);
+    SetPktSendTimeAPI(payloadHash, payloadLen, pktSendTimeStamp);
  
 }
 
 //! Returns earliest arrival time of any packet intended for this node 
 s64 GetPacketEAT() {
-    return GetEarliestArrivalTime();
+    //return GetEarliestArrivalTime();
+    return GetCurrentTime();
 }
 
 //! Common wrapper to set a lookahead for this node
-int SetLookahead(s64 bulkLookaheadValue, long spLookaheadValue) {
-    if (bulkLookaheadValue || spLookaheadValue)
-        return SetProcessLookahead(bulkLookaheadValue, spLookaheadValue);
-    return 0;
+int SetLookahead(s64 bulkLookaheadValue, int  lookahead_anchor_type) {
+    //if (bulkLookaheadValue)
+    return SetProcessLookahead(bulkLookaheadValue, lookahead_anchor_type);
+    //return 0;
 }
 #endif
 
 
 //! Called when the virtual time experiment is about to end
 void HandleVTExpEnd(int ThreadID) {
+    printf("\n");
+    printf("------------------------- ACTUAL STDOUT FROM EXECUTABLE ENDED -----------------------------\n");
+    printf("\n");
     printf("Process: %d exiting VT experiment !\n", ThreadID);
+    fflush(stdout);
     expStopping = 1;
 
     #ifndef DISABLE_LOOKAHEAD
@@ -222,7 +227,7 @@ void CleanupThreadInfo(ThreadInfo * relevantThreadInfo) {
     }
 
     llist_destroy(&relevantThreadInfo->special_fds);
-	
+    
 }
 
 //! Allots thread specific information
@@ -267,18 +272,18 @@ void YieldVTBurst(int ThreadID, int save, long syscall_number) {
     currThreadInfo->in_callback = TRUE;
 
     if (currThreadInfo->yielded == 0) {
-	    currThreadInfo->yielded = TRUE;
+        currThreadInfo->yielded = TRUE;
 
         #ifndef DISABLE_LOOKAHEAD
-	    if (save)
+        if (save)
             currThreadInfo->stack.currBBID = currBBID;
         #endif
 
-	    ReleaseWorker();
+        ReleaseWorker();
             
     }
     currThreadInfo->in_callback = FALSE;
-	
+    
 }
 
 //! Called by a thread to indicate that it has completed its previous execution burst
@@ -307,19 +312,19 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
 
     if (currThreadInfo) {
 
-    	currThreadInfo->stack.totalBurstLength += currBurstCyclesLeft;
+        currThreadInfo->stack.totalBurstLength += currBurstCyclesLeft;
 
         #ifndef DISABLE_LOOKAHEAD
-    	// restore globals
-    	currBBID = currThreadInfo->stack.currBBID;
+        // restore globals
+        currBBID = currThreadInfo->stack.currBBID;
         #endif
     }
 
     if (currThreadInfo->yielded == TRUE)
-    	currThreadInfo->yielded = FALSE;
+        currThreadInfo->yielded = FALSE;
 
     if (currThreadInfo->in_force_completed == TRUE)
-    	currThreadInfo->in_force_completed = FALSE;
+        currThreadInfo->in_force_completed = FALSE;
 }
 
 
@@ -370,8 +375,8 @@ void AfterForkInChild(int ThreadID, int ParentProcessID) {
 
     currThreadInfo->in_callback = TRUE; 
 
-    printf("Adding new child process\n");
-    fflush(stdout);
+    //printf("Adding new child process\n");
+    //fflush(stdout);
 
     AddToTracerSchQueue(globalTracerID);
     globalThreadID = syscall(SYS_gettid);
@@ -391,8 +396,8 @@ void AfterForkInChild(int ThreadID, int ParentProcessID) {
             llist_append(&thread_info_list, tmp);
         }
     }
-    printf("Resuming new process with Burst of length: %llu\n", currBurstCyclesLeft);
-    fflush(stdout);
+    //printf("Resuming new process with Burst of length: %llu\n", currBurstCyclesLeft);
+    //fflush(stdout);
     currThreadInfo->in_callback = FALSE;
 }
 
@@ -428,7 +433,7 @@ void ThreadFini(int ThreadID) {
 
     printf("Finishing Thread: %d\n", ThreadID);
     fflush(stdout);
-	
+    
     llist_remove(&thread_info_list, currThreadInfo);
     CleanupThreadInfo(currThreadInfo);
     hmap_remove_abs(&thread_info_map, ThreadID);
@@ -463,8 +468,8 @@ void AppFini(int ThreadID) {
        if (currThreadInfo) {
            CleanupThreadInfo(currThreadInfo);
            hmap_remove_abs(&thread_info_map, currThreadInfo->pid);
-	   if (currThreadInfo->pid == ThreadID)
-		    currThreadInfo->in_callback = FALSE;
+       if (currThreadInfo->pid == ThreadID)
+            currThreadInfo->in_callback = FALSE;
             free(currThreadInfo);
        }
     }
@@ -503,7 +508,7 @@ void TriggerSyscallFinish(int ThreadID) {
     if (currThreadInfo->in_callback) return;
  
     currThreadInfo->in_callback = TRUE;
-	
+    
     currBurstCyclesLeft = MarkBurstComplete(1);
     if (currBurstCyclesLeft)
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);
@@ -551,7 +556,7 @@ void vtCallbackFn() {
             SignalBurstCompletion(currThreadInfo, 1);
             currThreadInfo->in_callback = FALSE;
         }
-	
+    
     } 
 }
 
@@ -606,9 +611,9 @@ int IsTimerArmed(int ThreadID, int fd) {
 
     llist_elem * head;
     fdInfo * currFdInfo;
-	head = currThreadInfo->special_fds.head;
+    head = currThreadInfo->special_fds.head;
     
-	while (head != NULL) {
+    while (head != NULL) {
         currFdInfo = (fdInfo *)head->item;
 
         if (currFdInfo && currFdInfo->fd == fd) {
@@ -618,8 +623,8 @@ int IsTimerArmed(int ThreadID, int fd) {
             } 
             return FALSE;
         }
-		head = head->next;
-	}
+        head = head->next;
+    }
 
     assert(FALSE);
     return FALSE;
@@ -680,15 +685,15 @@ void InitializeVtManagement() {
 
 
     if (timeline_id >= 0)
-    	printf ("Tracer-ID: %d, Timeline-ID: %d\n", tracer_id, timeline_id);
+        printf ("Tracer-ID: %d, Timeline-ID: %d\n", tracer_id, timeline_id);
     else
-    	printf ("Tracer-ID: %d\n", tracer_id);
+        printf ("Tracer-ID: %d\n", tracer_id);
     fflush(stdout);
     
 
     if (exp_type == EXP_CBE) {
         ret = RegisterTracer(tracer_id, EXP_CBE, 0);
-	    printf("Tracer registration for EXP_CBE complete. Return = %d\n", ret);
+        printf("Tracer registration for EXP_CBE complete. Return = %d\n", ret);
         fflush(stdout);
     } else {
         if (timeline_id < 0) {
@@ -698,7 +703,7 @@ void InitializeVtManagement() {
         }
         ret = RegisterTracer(tracer_id, EXP_CS, timeline_id);
         globalTimelineID = timeline_id;
-	    printf(
+        printf(
             "Tracer registration for EXP_CS complete. TimelineID = %d, Return = %d\n",
             timeline_id, ret);
     }

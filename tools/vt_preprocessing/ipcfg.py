@@ -10,10 +10,11 @@ import vt_functions
 import numpy as np
 import logging
 import json
+import os
 from typing import Dict, Any
 from collections import OrderedDict
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.NOTSET)
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 class LoopCFG(object):
     """Represents the control flow graph of a Loop."""
@@ -175,7 +176,7 @@ class InterProceduralCFG(object):
     def DumpBBLLookahead(self, output_file: str):
         """Writes the basic block lookahead information to STDOUT or to a Json file."""
         logging.info('Dumping BBL lookahead information ...')
-
+        bbl_lookahead_json = {}
         bbl_numbers = [int(re.match('__BBL_([0-9]+)_ENTRY', x).group(1))
                        for x in self._bbl_lookahead]
         min_bbl_number = min(bbl_numbers)
@@ -189,12 +190,15 @@ class InterProceduralCFG(object):
             bbl_number = int(match.group(1))
             bbl_lookahead_dump[bbl_number - min_bbl_number] = \
                 self._bbl_lookahead[bbl_entry_node]
+            bbl_lookahead_json[bbl_number] = self._bbl_lookahead[bbl_entry_node]
 
         if not output_file:
             logging.info('No output directory specified. Dumping to STDOUT ...')
             for i in range(min_bbl_number, max_bbl_number + 1, 1):
-                logging.info(f'BBL-{i}: {bbl_lookahead_dump[i - min_bbl_number]}')
+                print(f'BBL-{i}: {bbl_lookahead_dump[i - min_bbl_number]}')
         else:
+            if os.path.exists(output_file):
+                os.remove(output_file)
             logging.info('Dumping BBL lookahead information to: %s ...',
                          output_file)
             _ = vt_functions.DumpLookahead(
@@ -205,8 +209,12 @@ class InterProceduralCFG(object):
     def DumpLoopLookahead(self, output_file: str):
         """Dumps lookahead information for each loop to STDOUT or to a Json file."""
         logging.info('Dumping Loop lookahead information ...')
+
+        if len(self._loop_cfgs.keys()) == 0:
+            return
         min_loop_number = min(self._loop_cfgs.keys())
         max_loop_number = max(self._loop_cfgs.keys())
+        loop_lookahead_json = {}
         loop_lookahead_dump = np.array([0]*(max_loop_number - min_loop_number + 1),
             dtype="long")
         for i in range(min_loop_number, max_loop_number + 1):
@@ -214,11 +222,14 @@ class InterProceduralCFG(object):
                 continue
             loop_lookahead_dump[i - min_loop_number] = \
                 self._loop_cfgs[i].GetLoopLookahead()
+            loop_lookahead_json[i] = self._loop_cfgs[i].GetLoopLookahead()
         if not output_file:
             logging.info('No output directory specified. Dumping to STDOUT ...')
             for i in range(min_loop_number, max_loop_number + 1, 1):
-                logging.info(f'Loop-{i}: {loop_lookahead_dump[i - min_loop_number]}')
+                print(f'Loop-{i}: {loop_lookahead_dump[i - min_loop_number]}')
         else:
+            if os.path.exists(output_file):
+                os.remove(output_file)
             logging.info('Dumping Loop lookahead information to: %s ...',
                          output_file)
             _ = vt_functions.DumpLookahead(

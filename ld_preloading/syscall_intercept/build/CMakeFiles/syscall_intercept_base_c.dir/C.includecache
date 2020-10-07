@@ -8,17 +8,17 @@
 
 ../include/libsyscall_intercept_hook_point.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/capstone_wrapper.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/capstone_wrapper.h
 capstone.h
 -
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.c
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.c
 intercept.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept.h
 intercept_util.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
 disasm_wrapper.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
 assert.h
 -
 string.h
@@ -26,9 +26,9 @@ string.h
 syscall.h
 -
 capstone_wrapper.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/capstone_wrapper.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/capstone_wrapper.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
 stdbool.h
 -
 stddef.h
@@ -36,7 +36,7 @@ stddef.h
 stdint.h
 -
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.c
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept.c
 assert.h
 -
 stdbool.h
@@ -66,19 +66,19 @@ stdarg.h
 sys/auxv.h
 -
 intercept.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept.h
 intercept_log.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_log.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_log.h
 intercept_util.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
 libsyscall_intercept_hook_point.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/libsyscall_intercept_hook_point.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/libsyscall_intercept_hook_point.h
 disasm_wrapper.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
 magic_syscalls.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept.h
 stdbool.h
 -
 elf.h
@@ -90,9 +90,9 @@ dlfcn.h
 link.h
 -
 disasm_wrapper.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_desc.c
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_desc.c
 assert.h
 -
 syscall.h
@@ -114,21 +114,21 @@ stdlib.h
 sys/mman.h
 -
 intercept.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept.h
 intercept_util.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
 disasm_wrapper.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_log.c
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_log.c
 intercept_log.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_log.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_log.h
 intercept.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept.h
 intercept_util.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
 syscall_formats.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/syscall_formats.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/syscall_formats.h
 assert.h
 -
 ctype.h
@@ -152,17 +152,17 @@ sys/syscall.h
 unistd.h
 -
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_log.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_log.h
 stddef.h
 -
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.c
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_util.c
 intercept_util.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
 intercept.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept.h
 libsyscall_intercept_hook_point.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/libsyscall_intercept_hook_point.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/libsyscall_intercept_hook_point.h
 assert.h
 -
 errno.h
@@ -194,37 +194,37 @@ sched.h
 linux/limits.h
 -
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
 stddef.h
 -
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.c
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.c
 stdint.h
 -
 string.h
 -
 magic_syscalls.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.h
 intercept.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept.h
 intercept_util.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
 intercept_log.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_log.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_log.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.h
 syscall.h
 -
 unistd.h
 -
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/patcher.c
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/patcher.c
 intercept.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept.h
 intercept_util.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
 intercept_log.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_log.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_log.h
 assert.h
 -
 stdint.h
@@ -238,17 +238,17 @@ string.h
 stdio.h
 -
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/syscall_formats.c
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/syscall_formats.c
 syscall_formats.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/syscall_formats.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/syscall_formats.h
 intercept_util.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_util.h
 fcntl.h
 -
 sys/syscall.h
 -
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/syscall_formats.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/syscall_formats.h
 intercept.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.h
+/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept.h
 

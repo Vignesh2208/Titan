@@ -4,6 +4,7 @@
 #include "sync_experiment.h"
 #include "general_commands.h"
 
+
 /**
 Has basic functionality for the Kernel Module itself. It defines how the
 userland process communicates with the kernel module,
@@ -35,12 +36,11 @@ llist *per_timeline_tracer_list;
 wait_queue_head_t * timeline_wqueue;
 wait_queue_head_t * timeline_worker_wqueue;
 wait_queue_head_t * syscall_wait_wqueue;
-static struct proc_dir_entry *dilation_dir;
 static struct proc_dir_entry *dilation_file;
 timeline * timeline_info;
 struct task_struct *loop_task;
 struct task_struct ** chaintask;
-struct dilated_timer_timeline_base ** global_dilated_timer_timeline_bases;
+struct DilatedTimerTimelineBase ** globalDilatedTimerTimelineBases;
 
 // hashmaps
 hashmap get_tracer_by_id;
@@ -105,7 +105,7 @@ int vt_release(struct inode *inode, struct file *filp) { return 0; }
 
 ssize_t vt_write(struct file *file, const char __user *buffer, size_t count,
                  loff_t *data) {
-	return count;
+  return count;
 }
 
 long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
@@ -131,10 +131,21 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
    * access_ok is kernel-oriented, so the concept of "read" and
    * "write" is reversed
    */
+
+  
+
+  #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,5)
+  if (_IOC_DIR(cmd) & _IOC_READ)
+    err = !access_ok(VERIFY_WRITE, (void __user *)arg, _IOC_SIZE(cmd));
+  else if (_IOC_DIR(cmd) & _IOC_WRITE)
+    err = !access_ok(VERIFY_WRITE, (void __user *)arg, _IOC_SIZE(cmd));
+  #else
   if (_IOC_DIR(cmd) & _IOC_READ)
     err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
   else if (_IOC_DIR(cmd) & _IOC_WRITE)
     err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+  #endif
+  
 
   if (err) {
     PDEBUG_V("VT-IO: Error Access\n");
@@ -149,10 +160,10 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
   }
 
   switch (cmd) {
-	
+  
     case VT_UPDATE_TRACER_CLOCK:
       return HandleVtUpdateTracerClock(arg, dilated_task);
-	
+  
     case VT_WRITE_RESULTS:
       return HandleVtWriteResults(arg, dilated_task);
 
@@ -206,13 +217,13 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
     case VT_SET_PACKET_SEND_TIME:
       return HandleVtSetPacketSendTime(arg, dilated_task);
-	
+  
     case VT_GET_PACKET_SEND_TIME:
       return HandleVtGetPacketSendTime(arg);
 
     case VT_GET_NUM_ENQUEUED_BYTES:
       return HandleVtGetNumQueuedBytes(arg);
-	
+  
     case VT_SET_EAT:
       return HandleVtSetEat(arg);
 
@@ -223,9 +234,11 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       return HandleVtSetProcessLookahead(arg, dilated_task);
 
     case VT_GET_TRACER_LOOKAHEAD:
-      return HandleVtGetTracerLookahead(arg);
+      return HandleVtGetTracerLookahead(arg, 0);
 
-	
+    case VT_GET_TRACER_NEAT_LOOKAHEAD:
+      return HandleVtGetTracerLookahead(arg, 1);
+  
     default:
       PDEBUG_V("Unkown Command !\n");
       return -ENOTTY;
@@ -249,26 +262,15 @@ int __init my_module_init(void) {
   experiment_status = NOTRUNNING;
   tracer_num = 0;
 
-  /* Set up Kronos status file in /proc */
-  dilation_dir = proc_mkdir_mode(DILATION_DIR, 0555, NULL);
-  if (dilation_dir == NULL) {
-    remove_proc_entry(DILATION_DIR, NULL);
-    PDEBUG_E(" Error: Could not initialize /proc/%s\n", DILATION_DIR);
-    return -ENOMEM;
-  }
-
-  PDEBUG_A(" /proc/%s created\n", DILATION_DIR);
   dilation_file = proc_create(DILATION_FILE, 0666, NULL, &proc_file_fops);
 
   mutex_init(&file_lock);
 
   if (dilation_file == NULL) {
-    remove_proc_entry(DILATION_FILE, dilation_dir);
-    PDEBUG_E("Error: Could not initialize /proc/%s/%s\n", DILATION_DIR,
-             DILATION_FILE);
+    PDEBUG_E("Error: Could not initialize /proc/%s\n", DILATION_FILE);
     return -ENOMEM;
   }
-  PDEBUG_A(" /proc/%s/%s created\n", DILATION_DIR, DILATION_FILE);
+  PDEBUG_A(" /proc/%s created\n",DILATION_FILE);
 
   /* If it is 64-bit, initialize the looping script */
 #ifdef __x86_64
@@ -308,8 +310,6 @@ void __exit my_module_exit(void) {
 
   remove_proc_entry(DILATION_FILE, NULL);
   PDEBUG_A(" /proc/%s deleted\n", DILATION_FILE);
-  remove_proc_entry(DILATION_DIR, NULL);
-  PDEBUG_A(" /proc/%s deleted\n", DILATION_DIR);
 
   if (tracer_num > 0) {
     // Free all tracer structs from previous experiment if any

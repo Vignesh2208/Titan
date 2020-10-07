@@ -1,11 +1,12 @@
 """Computing local CFGs, call graphs of each function and global call graphs."""
 
 import networkx as nx
+import matplotlib.pyplot as plt
 import tools.vt_preprocessing.constants as c
 from typing import Dict, Any
 import logging
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.NOTSET)
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 class FunctionCFG(object):
     """Represents the control flow graph of a resolvable function."""
@@ -86,6 +87,8 @@ class FunctionCFG(object):
         bbls = self._function_cfg_json.get(c.FN_BBLS_JSON_KEY)
         for bbl in bbls:
             for called_fn in bbls[bbl].get(c.BBL_CALLED_FNS_JSON_KEY):
+                if called_fn in c.IGNORED_CALLED_FUNCTIONS or called_fn == "":
+                    continue
                 self._called_functions.add(called_fn)
                 if called_fn in c.PKT_SEND_CALL_SITES:
                     self._packet_send_call_sites.append(bbl)
@@ -110,30 +113,40 @@ class FunctionCFG(object):
             func_name=self._fully_qualified_fn_name)
         fn_entry_bbl = self._function_cfg_json.get(c.FN_ENTRY_BBL_JSON_KEY)
         fn_return_bbls = self._function_cfg_json.get(c.FN_RETURN_BBLS_JSON_KEY)
+
+        print ("FN Entry BBL = ", fn_entry_bbl,  " FN RETURN BBLs = ", fn_return_bbls)
+        print ("FN Entry Node =", fn_entry_node, " Fn Exit Node = ", fn_exit_node)
+
         self._fn_cfg.add_node(fn_entry_node)
         self._fn_cfg.add_node(fn_exit_node)
 
         bbls = self._function_cfg_json.get(c.FN_BBLS_JSON_KEY)
+        
         for bbl in bbls:
             curr_node = c.BBL_ENTRY_NODE.format(bbl_number=bbl)
             bbl_weight = bbls[bbl].get(c.BBL_WEIGHT_JSON_KEY)
             self._global_call_graph.SetBBLWeight(curr_node, bbl_weight)
             self._fn_cfg.add_node(curr_node)
             self._bbl_entry_nodes.append(curr_node)
-
-            if bbl == fn_entry_bbl:
-                self._fn_cfg.add_edge(fn_entry_node, fn_entry_bbl, weight=0)
+            print ("CURR BBL = ", bbl)
+            if int(bbl) == fn_entry_bbl:
+                self._fn_cfg.add_edge(fn_entry_node, curr_node, weight=0)
+                print ("ADDING EDGE FROM FN-Entry For", bbl)
 
             call_site_number = 0
             for called_fn in bbls[bbl].get(c.BBL_CALLED_FNS_JSON_KEY):
+                if called_fn in c.IGNORED_CALLED_FUNCTIONS or called_fn == "":
+                    continue
                 if not self._global_call_graph.IsFunctionResolvable(called_fn):
                     continue
                 if called_fn not in self._call_sites_by_fn:
                     self._call_sites_by_fn[called_fn] = []
                 call_site_entry_node = c.BBL_CALLSITE_ENTRY_NODE.format(
-                    bbl_number=bbl, call_site_number=call_site_number)
+                    bbl_number=bbl, call_site_number=call_site_number,
+                    called_fn=called_fn)
                 call_site_return_node = c.BBL_CALLSITE_RETURN_NODE.format(
-                    bbl_number=bbl, call_site_number=call_site_number)
+                    bbl_number=bbl, call_site_number=call_site_number,
+                    called_fn=called_fn)
                 self._call_sites_by_fn[called_fn].append(
                     (called_fn, call_site_entry_node, call_site_return_node))
                 self._fn_cfg.add_edge(curr_node, call_site_entry_node, weight=0)
@@ -150,8 +163,15 @@ class FunctionCFG(object):
                                       c.BBL_ENTRY_NODE.format(
                                           bbl_number=out_bbl),
                                       weight=bbl_weight)
-            if bbl in fn_return_bbls:
+            if int(bbl) in fn_return_bbls:
                 self._fn_cfg.add_edge(curr_node, fn_exit_node, weight=0)
+                print ("ADDING EDGE TO FN EXIT FROM : ", bbl)
+
+        print ("CFG for ", self._fully_qualified_fn_name)
+        #nx.draw(self._fn_cfg, with_labels=True) 
+        #plt.show()
+        #import sys
+        #sys.exit(0)
 
 
 class InterProceduralCallGraph(object):
@@ -258,5 +278,7 @@ class InterProceduralCallGraph(object):
             for reachable_node in length:
                 if length[reachable_node] >= 0:
                     self._function_reachability[reachable_node] = True
-        logging.info('Function reachability: %s', self._function_reachability)
+        print('Function reachability: %s', self._function_reachability)
         self._is_composed = True
+        #nx.draw(self._call_graph, with_labels=True)
+        #plt.show()

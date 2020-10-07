@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_ASM
-  "/home/vignesh/Titan/ld_preloading/syscall_intercept/test/pattern_symbol_boundary0.in.S" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/pattern_symbol_boundary0.in.dir/pattern_symbol_boundary0.in.S.o"
+  "/home/kronos/Titan/ld_preloading/syscall_intercept/test/pattern_symbol_boundary0.in.S" "/home/kronos/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/pattern_symbol_boundary0.in.dir/pattern_symbol_boundary0.in.S.o"
   )
 set(CMAKE_ASM_COMPILER_ID "GNU")
 
