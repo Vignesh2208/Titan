@@ -46,6 +46,7 @@ typedef struct ThreadInfoStruct {
     int in_force_completed;
     int in_callback;
     int processPID; // pid of the holder process. May differ from pid if this is a Thread
+    char * fpuState;
     ThreadStack stack;
     llist special_fds;
 } ThreadInfo;

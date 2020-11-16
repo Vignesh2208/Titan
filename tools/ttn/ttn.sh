@@ -12,10 +12,11 @@ usage () {
   echo 'commands: '
   echo ''
   echo 'init : ttn initialization. Needs to be run only once typically'
-  echo 'activate : set project as active and add it to internal db'
-  echo 'deactivate: unset project as active'
+  echo 'add: adds a project to internal db/updates an existing projects parameters'
+  echo 'activate : sets project as active'
+  echo 'deactivate: unsets project as active'
   echo 'delete : delete project from internal db'
-  echo 'reset: re-initializes the specified project parameters'
+  echo 'reset: re-initializes the specified project clang parameters'
   echo 'list : list all projects in db'
   echo 'show : display parameters of the selected project'
   echo 'extract : extract and store lookahead information associated with project'
@@ -26,6 +27,7 @@ usage () {
   echo '-p|--project_name : Name of the project'
   echo '-s|--project_src_dir : Project source directory'
   echo '-a|--arch : project compilation target architecture name'
+  echo '--cpu_mhz : cpu speed in mhz'
   echo '--ins_cache_size_kb : instruction cache size kb'
   echo '--ins_cache_lines : instruction cache lines'
   echo '--ins_cache_type : instruction cache type'
@@ -98,12 +100,21 @@ case $key in
     shift
     shift
     ;;
+    --cpu_mhz)
+    CPU_SPEED_MHZ="$2"
+    shift
+    shift
+    ;;
     init)
     CMD="init"
     shift
     ;;
     activate)
     CMD="activate"
+    shift
+    ;;
+    add)
+    CMD="add"
     shift
     ;;
     deactivate)
@@ -202,6 +213,10 @@ then
   ARG_BUILDER+=" --data_cache_miss_cycles=$DATA_CACHE_MISS_CYCLES"
 fi
 
+if [ -n "$CPU_SPEED_MHZ" ]
+then
+  ARG_BUILDER+=" --cpu_mhz=$CPU_SPEED_MHZ"
+fi
 
 chmod +x $TITAN_DIR/tools/ttn/ttn.py
 $TITAN_DIR/tools/ttn/ttn.py $ARG_BUILDER

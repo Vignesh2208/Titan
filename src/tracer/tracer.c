@@ -556,7 +556,7 @@ int main(int argc, char * argv[]) {
   } else {
      /* Read the output a line at a time - output it. */
      while (fgets(path, sizeof(path), fp) != NULL) {
-	printf("%s", path);
+	      printf("%s", path);
         fflush(stdout);
      }
      /* close */

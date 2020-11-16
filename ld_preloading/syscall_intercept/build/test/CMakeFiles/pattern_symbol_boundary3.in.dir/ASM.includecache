@@ -6,9 +6,9 @@
 
 #IncludeRegexTransform: 
 
-/home/kronos/Titan/ld_preloading/syscall_intercept/test/mock_trampoline_table.S
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/mock_trampoline_table.S
 
-/home/kronos/Titan/ld_preloading/syscall_intercept/test/pattern_symbol_boundary3.in.S
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/pattern_symbol_boundary3.in.S
 mock_trampoline_table.S
-/home/kronos/Titan/ld_preloading/syscall_intercept/test/mock_trampoline_table.S
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/mock_trampoline_table.S
 

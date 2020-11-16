@@ -983,10 +983,12 @@ void TargetPassConfig::addMachinePasses() {
       addPass(createMachineOutlinerPass(RunOnAllFunctions));
   }
 
-  addPass(&VirtualTimeManagerID, false);
-
+  
   // Add passes that directly emit MI after all other MI passes.
   addPreEmitPass2();
+
+  addPass(&VirtualTimeManagerID, false);
+
 
   AddingMachinePasses = false;
 }

@@ -10,6 +10,9 @@
 #include "lookahead_parsing.h"
 #endif
 
+#define	fxrstor(addr)		__asm __volatile("fxrstor %0" : : "m" (*(addr)))
+#define	fxsave(addr)		__asm __volatile("fxsave %0" : "=m" (*(addr)))
+
 #define max(a,b) \
    ({ __typeof__ (a) _a = (a); \
        __typeof__ (b) _b = (b); \
@@ -227,6 +230,7 @@ void CleanupThreadInfo(ThreadInfo * relevantThreadInfo) {
     }
 
     llist_destroy(&relevantThreadInfo->special_fds);
+    free(relevantThreadInfo->fpuState);
     
 }
 
@@ -241,12 +245,14 @@ ThreadInfo * AllotThreadInfo(int ThreadID, int processPID) {
         currThreadInfo->yielded = 0;
         currThreadInfo->in_force_completed = 0;
         currThreadInfo->in_callback = 0;
+        currThreadInfo->fpuState = (char *) malloc(512 * sizeof(char));
         currThreadInfo->stack.totalBurstLength = 0;
 
         #ifndef DISABLE_LOOKAHEAD
         currThreadInfo->stack.currBBID = 0;
         #endif
 
+        assert(currThreadInfo->fpuState != NULL);
         llist_init(&currThreadInfo->special_fds);
         hmap_put_abs(&thread_info_map, ThreadID, currThreadInfo);
         llist_append(&thread_info_list, currThreadInfo);
@@ -307,6 +313,9 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);
     specifiedBurstCycles = currBurstCyclesLeft;
 
+    printf ("Resuming from force-complete burst with: %llu cycles\n", specifiedBurstCycles);
+    fflush(stdout); 
+
     if (currBurstCyclesLeft <= 0)
         HandleVTExpEnd(ThreadID);
 
@@ -329,18 +338,25 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
 
 
 //! Called by a thread to indicate that it has completed its previous execution burst
+//__attribute__((ms_abi))
 void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
 
+    fxsave(currThreadInfo->fpuState);
     
     #ifndef DISABLE_LOOKAHEAD
     // save globals
     if (save) currThreadInfo->stack.currBBID = currBBID;
     #endif
+    
+    
 
     currBurstCyclesLeft = FinishBurst();
 
     if (currBurstCyclesLeft)
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);
+
+    /*FinishBurst();
+    currBurstCyclesLeft = max((s64)(1000000*cpuCyclesPerNs), 1);*/
 
     specifiedBurstCycles = currBurstCyclesLeft;
 
@@ -352,6 +368,9 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     // restore globals
     currBBID = currThreadInfo->stack.currBBID;
     #endif
+
+    fxrstor(currThreadInfo->fpuState);
+    
 }
 
 
@@ -442,11 +461,15 @@ void ThreadFini(int ThreadID) {
     currThreadInfo->in_callback = FALSE;
     free(currThreadInfo);  
 
+    printf("Finished Thread: %d\n", ThreadID);
+    fflush(stdout);
+    #ifndef DISABLE_LOOKAHEAD
     if (!llist_size(&thread_info_list)) {
         // there is no other thread. Clean Lookahead Informations
         CleanLookaheadInfo(&bblLookAheadInfo);
         CleanLookaheadInfo(&loopLookAheadInfo);
     }
+    #endif
 }
 
 //! Called when the whole application is about to finish
@@ -477,8 +500,10 @@ void AppFini(int ThreadID) {
     llist_destroy(&thread_info_list);
     hmap_destroy(&thread_info_map);
 
+    #ifndef DISABLE_LOOKAHEAD
     CleanLookaheadInfo(&bblLookAheadInfo);
     CleanLookaheadInfo(&loopLookAheadInfo);
+    #endif
 }
 
 //! Called before a syscall which may involve some sleeping/timed wait like select, poll etc
@@ -527,13 +552,38 @@ void TriggerSyscallFinish(int ThreadID) {
     currThreadInfo->in_callback = FALSE;
 }
 
-//! Called after the current execution burst is finished
-void vtCallbackFn() {
-
+void handleVtCallback() {
     int ThreadID;
     ThreadInfo * currThreadInfo;
+    ThreadID = syscall(SYS_gettid);
+    currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
 
+    if (currThreadInfo != NULL) {
+        currThreadInfo->in_callback = TRUE;
+
+        #ifndef DISABLE_LOOKAHEAD
+        SetBBLLookAhead((long)currBBID);
+        #endif
+
+        SignalBurstCompletion(currThreadInfo, 1);
+        currThreadInfo->in_callback = FALSE;
+    }
+    
+
+}
+
+//! Called after the current execution burst is finished
+void vtCallbackFn() {
     if (!vtInitializationComplete) {
+	/*int ThreadID;
+	ThreadInfo * currThreadInfo;
+	ThreadID = syscall(SYS_gettid);
+	hmap_init(&thread_info_map, 1000);
+    	llist_init(&thread_info_list);
+	currThreadInfo = AllotThreadInfo(ThreadID, ThreadID);     
+    	assert(currThreadInfo != NULL);
+	vtInitializationComplete = 1;
+	currBurstCyclesLeft = 2700000;*/
         if (currBurstCyclesLeft <= 0) {	
             currBurstCyclesLeft = 100000000;
             specifiedBurstCycles = currBurstCyclesLeft;
@@ -542,21 +592,7 @@ void vtCallbackFn() {
     }	
     
     if (currBurstCyclesLeft <= 0) {
-
-        ThreadID = syscall(SYS_gettid);
-        currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
-
-        if (currThreadInfo != NULL) {
-            currThreadInfo->in_callback = TRUE;
-
-            #ifndef DISABLE_LOOKAHEAD
-            SetBBLLookAhead((long)currBBID);
-            #endif
-
-            SignalBurstCompletion(currThreadInfo, 1);
-            currThreadInfo->in_callback = FALSE;
-        }
-    
+	handleVtCallback();
     } 
 }
 

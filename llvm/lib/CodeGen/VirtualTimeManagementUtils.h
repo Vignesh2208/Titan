@@ -24,12 +24,17 @@ namespace llvm {
   class MachineInsPrefixTree {
     private:
       std::unique_ptr<struct MachineInsPrefixTreeNode> root;
+      
     public:
+      float avgArchInsnCycles;
+      int totalArchInsns;
       MachineInsPrefixTree() {
         root = std::unique_ptr<struct MachineInsPrefixTreeNode>(
           new struct MachineInsPrefixTreeNode);
         root->component = '\0';
         root->avgCpuCycles = -1;
+        avgArchInsnCycles = 0;
+	totalArchInsns = 0;
       };
 
       void addMachineInsn(std::string insnName, float avgCpuCycles);
@@ -38,14 +43,16 @@ namespace llvm {
   
   class MachineSpecificConfig {
     private:
-      std::string MachineArchName;
+      
       std::string MachineTimingInfoFile;
       std::unique_ptr<MachineInsPrefixTree> machineInsPrefixTree;
       
     public:
+      std::string MachineArchName;
       MachineSpecificConfig(
         std::string MachineArchName, std::string MachineTimingInfoFile)
       : MachineTimingInfoFile(MachineTimingInfoFile) {
+	  this->MachineArchName = MachineArchName;
           machineInsPrefixTree = std::unique_ptr<MachineInsPrefixTree>(
             new MachineInsPrefixTree());
         };
@@ -60,8 +67,8 @@ namespace llvm {
 
     public:
       TargetMachineSpecificInfo(
-        std::string MachineArchName="",
-        std::string MachineTimingInfoFile="") {
+        std::string MachineArchName,
+        std::string MachineTimingInfoFile) {
           machineConfig = new MachineSpecificConfig(
             MachineArchName, MachineTimingInfoFile);
           machineConfig->Initialize();

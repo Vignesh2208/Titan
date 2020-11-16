@@ -41,13 +41,12 @@ bool CacheSimPass::runOnFunction(Function &F) {
 
     Module * M;
     M = F.getParent();
+    assert(M != nullptr);
 
     #ifndef DISABLE_DATA_CACHE_SIM
     const DataLayout& dataLayout = M->getDataLayout();
     #endif
     
-    assert(M != nullptr);
-
     if (!createdExternFunctionDefinitions) {
 
         #ifndef DISABLE_INSN_CACHE_SIM
@@ -55,7 +54,7 @@ bool CacheSimPass::runOnFunction(Function &F) {
             FunctionType::get(
                 Type::getVoidTy(F.getContext()), false),
             Function::ExternalLinkage,
-            INS_CACHE_CALLBACK_FN, M);
+            VT_CALLBACK_FUNC, M);
         #endif
 
         #ifndef DISABLE_DATA_CACHE_SIM
@@ -75,7 +74,7 @@ bool CacheSimPass::runOnFunction(Function &F) {
         createdExternFunctionDefinitions = 1;
     } else {
         #ifndef DISABLE_INSN_CACHE_SIM
-        FInsnCacheCallback = M->getFunction(INS_CACHE_CALLBACK_FN);
+        FInsnCacheCallback = M->getFunction(VT_CALLBACK_FUNC);
         #endif
 
         #ifndef DISABLE_DATA_CACHE_SIM
@@ -147,7 +146,7 @@ bool CacheSimPass::runOnFunction(Function &F) {
                     continue;
                 StringRef calledFnName = 
                     cast<CallInst>(&(*BI))->getCalledFunction()->getName();
-                if (calledFnName.equals(INS_CACHE_CALLBACK_FN)){
+                if (calledFnName.equals(VT_CALLBACK_FUNC)){
                     Instruction *newInst = (Instruction *)&(*BI);
                     newInst->moveBefore(fi);
                     break;

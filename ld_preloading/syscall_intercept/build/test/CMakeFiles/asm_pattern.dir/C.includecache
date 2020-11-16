@@ -30,7 +30,7 @@ link.h
 disasm_wrapper.h
 ../src/disasm_wrapper.h
 
-/home/kronos/Titan/ld_preloading/syscall_intercept/test/asm_pattern.c
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/asm_pattern.c
 stdlib.h
 -
 stdio.h
@@ -42,7 +42,7 @@ dlfcn.h
 string.h
 -
 libsyscall_intercept_hook_point.h
-/home/kronos/Titan/ld_preloading/syscall_intercept/test/libsyscall_intercept_hook_point.h
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/libsyscall_intercept_hook_point.h
 intercept.h
-/home/kronos/Titan/ld_preloading/syscall_intercept/test/intercept.h
+/home/vignesh/Titan/ld_preloading/syscall_intercept/test/intercept.h
 

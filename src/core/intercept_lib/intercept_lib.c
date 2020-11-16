@@ -725,8 +725,8 @@ int usleep(useconds_t usec) {
     int ThreadPID = syscall(SYS_gettid);
     if (usec) {
         #ifndef DISABLE_LOOKAHEAD
-        printf("Setting sleep lookahead to %llu\n", 
-        usec*NSEC_PER_US + vtGetCurrentTime() + vtGetBBLLookahead((long)*globalCurrBBID));
+        //printf("Setting sleep lookahead to %llu\n", 
+        //usec*NSEC_PER_US + vtGetCurrentTime() + vtGetBBLLookahead((long)*globalCurrBBID));
         fflush(stdout);
         vtSetLookahead(usec*NSEC_PER_US + vtGetCurrentTime() +
                        vtGetBBLLookahead((long)*globalCurrBBID),
@@ -1174,8 +1174,9 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 static void HandleVtReadSyscall(int ThreadPID, int fd, void * buf,
                                 size_t count, long * result) {
     int goingToBlock = 1;
-    long currBBID = (long)*globalCurrBBID;
+    
     #ifndef DISABLE_LOOKAHEAD
+    long currBBID = (long)*globalCurrBBID;
     long bblLA = vtGetBBLLookahead(currBBID);
     #endif
 
@@ -1278,8 +1279,9 @@ static void HandleVtPacketReceiveSyscalls(long syscall_number, long arg0,
 
     int sockfd = (int) arg0;
     int goingToBlock = 1;
-    long CurrBBID = (long)*globalCurrBBID;
+    
     #ifndef DISABLE_LOOKAHEAD
+    long CurrBBID = (long)*globalCurrBBID;
     long bblLA = vtGetBBLLookahead(CurrBBID);
     #endif
 
@@ -1299,8 +1301,8 @@ static void HandleVtPacketReceiveSyscalls(long syscall_number, long arg0,
             #ifndef DISABLE_LOOKAHEAD
             // nothing to read as of now. set lookahead here.
             
-	    printf("Packet Receive BBL-LA: %lu, PID = %d. BBID = %lld\n", bblLA, ThreadPID, *globalCurrBBID);
-            fflush(stdout);
+	        //printf("Packet Receive BBL-LA: %lu, PID = %d. BBID = %lld\n", bblLA, ThreadPID, *globalCurrBBID);
+            //fflush(stdout);
             vtSetLookahead(bblLA, LOOKAHEAD_ANCHOR_EAT);
             #endif
 
@@ -1331,7 +1333,7 @@ static void ExecuteCpuYieldingSyscall(long syscall_number, long arg0,
     long arg1, long arg2, long arg3, long arg4, long arg5, long *result,
     int ThreadPID) {
 
-
+    
     switch(syscall_number) {
     
         case SYS_accept:
@@ -1354,8 +1356,10 @@ static void ExecuteCpuYieldingSyscall(long syscall_number, long arg0,
                         syscall_number, arg0, arg1, arg2, arg3, 
                         arg4, arg5);
 
-                    if (vtInitialized && *vtInitialized == 1)
+                    if (vtInitialized && *vtInitialized == 1) {
+                        
                         vtForceCompleteBurst(ThreadPID, 0, syscall_number);
+                    }
 
                     break;
     }

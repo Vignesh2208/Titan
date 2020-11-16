@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_ASM
-  "/home/kronos/Titan/ld_preloading/syscall_intercept/test/nosyscall.in.S" "/home/kronos/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/nosyscall.in.dir/nosyscall.in.S.o"
+  "/home/vignesh/Titan/ld_preloading/syscall_intercept/test/nosyscall.in.S" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/nosyscall.in.dir/nosyscall.in.S.o"
   )
 set(CMAKE_ASM_COMPILER_ID "GNU")
 

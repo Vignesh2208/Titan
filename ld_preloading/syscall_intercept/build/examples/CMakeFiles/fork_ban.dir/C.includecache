@@ -8,9 +8,9 @@
 
 ../include/libsyscall_intercept_hook_point.h
 
-/home/kronos/Titan/ld_preloading/syscall_intercept/examples/fork_ban.c
+/home/vignesh/Titan/ld_preloading/syscall_intercept/examples/fork_ban.c
 libsyscall_intercept_hook_point.h
-/home/kronos/Titan/ld_preloading/syscall_intercept/examples/libsyscall_intercept_hook_point.h
+/home/vignesh/Titan/ld_preloading/syscall_intercept/examples/libsyscall_intercept_hook_point.h
 errno.h
 -
 stdbool.h

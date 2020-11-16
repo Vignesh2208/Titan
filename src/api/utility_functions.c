@@ -20,7 +20,7 @@ s64 SendToVtModule(unsigned int cmd, ioctl_args *arg) {
   s64 ret = 10000;
  
   if (fp < 0) {
-    printf("ERROR communicating with VT module: Could not open proc file: %s\n", FILENAME);
+    //printf("ERROR communicating with VT module: Could not open proc file: %s\n", FILENAME);
     return -1;
   }
 

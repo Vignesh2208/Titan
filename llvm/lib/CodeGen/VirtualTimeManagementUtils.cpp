@@ -1,5 +1,10 @@
 #include "VirtualTimeManagementUtils.h"
 #include "llvm/CodeGen/TargetInstrInfo.h"
+#include <cmath>
+
+// TODO: These are processor micro-arch parameters which should be added to ttn project description
+#define NUM_DISPATCH_UNITS 8
+#define ROB_BUFFER_SIZE 1024
 
 using namespace llvm;
 
@@ -8,6 +13,8 @@ void MachineInsPrefixTree::addMachineInsn(std::string insnName,
     float avgCpuCycles) {
     struct MachineInsPrefixTreeNode * curr_node = root.get();
     std::unique_ptr<struct MachineInsPrefixTreeNode> tmp;
+    avgArchInsnCycles += avgCpuCycles;
+    totalArchInsns ++;
     for (unsigned i=0; i< insnName.length(); ++i) {
         auto got = curr_node->children.find(insnName.at(i));
         if (got == curr_node->children.end()) {
@@ -55,7 +62,7 @@ void MachineSpecificConfig::Initialize() {
             MachineTimingInfoFile);
             
         StringRef Content = Text ? Text->get()->getBuffer() : "";
-        outs() << "Parsing machine architecture timing information ...\n";
+        //outs() << "Parsing machine architecture timing information ...\n";
         if (!Content.empty()) {
             auto E = llvm::json::parse(Content);
             if (E) {
@@ -72,10 +79,10 @@ void MachineSpecificConfig::Initialize() {
                         float avgCpuCycles = -1;
                         if (latencyCycles->getNumber(key).hasValue())
                             avgCpuCycles = latencyCycles->getNumber(key).getValue();
-                        if (!count && avgCpuCycles > 0) {
+                        /*if (!count && avgCpuCycles > 0) {
                             outs() << "Instruction name: " << insnName
                                 << "avgCpuCycles: " << avgCpuCycles << "\n";
-                        }
+                        }*/
 
                         machineInsPrefixTree->addMachineInsn(insnName,
                             avgCpuCycles);
@@ -96,11 +103,17 @@ float MachineSpecificConfig::GetInsnCompletionCycles(std::string insnName) {
     if (MachineArchName == DEFAULT_PROJECT_ARCH_NAME)
         return 1.0;
     float avgCpuCycles = machineInsPrefixTree->getAvgCpuCycles(insnName);
-    if (avgCpuCycles < 0)
+    if (avgCpuCycles < 1.0) {
+	//if (machineInsPrefixTree->totalArchInsns)
+	//	return machineInsPrefixTree->avgArchInsnCycles / machineInsPrefixTree->totalArchInsns;
+        // We don't have the info right now. Simply treat it as unit latency because that seems to work best
         return 1.0;
+    }
 
     outs () << "Requested insnName: " << insnName << " avg cpu cycles: "
             << avgCpuCycles << "\n";
+
+    
     return avgCpuCycles;
 }
 
@@ -110,8 +123,12 @@ std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBComplet
     if (!mbb)
         return std::make_pair(0, 0);
     float mbbCompletionCycles = 0;
+    float totalMbbCompletionCycles = 0;
     unsigned long InstrCount = 0;
     bool skip = false;
+    
+    
+
     for (MachineBasicBlock::instr_iterator Iter = mbb->instr_begin(),
         E = mbb->instr_end(); Iter != E; Iter++) {
         skip = false;
@@ -134,7 +151,7 @@ std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBComplet
             }
 
             #ifndef DISABLE_INSN_CACHE_SIM
-            if (fnName == INS_CACHE_CALLBACK_FN)
+            if (fnName == VT_CALLBACK_FUNC)
                 skip = true;
             #endif
 
@@ -150,9 +167,10 @@ std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBComplet
             #endif
         }
 
-        if (!MI.isCFIInstruction() && !skip) {
-            mbbCompletionCycles += machineConfig->GetInsnCompletionCycles(
+        if (!MI.isMetaInstruction() && !skip) {
+            mbbCompletionCycles = machineConfig->GetInsnCompletionCycles(
                 TII.getName(MI.getOpcode())); 
+            totalMbbCompletionCycles += mbbCompletionCycles;
             InstrCount ++;
         }
     }
@@ -162,9 +180,22 @@ std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBComplet
     // with zero time elapse.
     // TODO: fix this so that burst completion cycles are tracked as floats
     // instead of long
-    if (mbbCompletionCycles < 1)
-        mbbCompletionCycles = 1;
-    return std::make_pair((long)mbbCompletionCycles, InstrCount);
+    if (InstrCount < 1)
+	InstrCount = 1;
+
+    /* Based on slight adjustments to the instruction throughput model specified in: 
+	[1] Karkhanis, Tejas S., and James E. Smith. "A first-order superscalar processor model." Proceedings. 31st Annual International Symposium on Computer Architecture, 2004.. IEEE, 2004.
+	We simply calculate total number of cycles for each basic block based on this model which is inversely proportional to the number of entries in the Re-order-buffer (ROB).
+    */
+    totalMbbCompletionCycles = totalMbbCompletionCycles / (sqrt(std::min((int)InstrCount, ROB_BUFFER_SIZE)));
+    //totalMbbCompletionCycles += float(InstrCount) / NUM_DISPATCH_UNITS;
+    if (totalMbbCompletionCycles < 1)
+	totalMbbCompletionCycles = 1;
+    
+    if (machineConfig->MachineArchName == DEFAULT_PROJECT_ARCH_NAME) {
+	return std::make_pair((long)InstrCount, InstrCount);
+    } 
+    return std::make_pair((long)round(totalMbbCompletionCycles), InstrCount);
 }
 
 
@@ -671,3 +702,4 @@ llvm::json::Object MachineFunctionCFGHolder::getComposedMFJsonObj() {
 }
 
 #endif
+

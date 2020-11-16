@@ -56,8 +56,8 @@ def createOrResetTTNProject(project_name: str, project_src_dir: str,
         os.remove(f'{project_src_dir}/{c.TTN_FOLDER_NAME}/clang_flock')
 
 
-def activateProject(project_name: str, project_src_dir: str,
-                    params: Dict[str, str]) -> None:
+def addProject(project_name: str, project_src_dir: str,
+               params: Dict[str, str]) -> None:
     """Creates a ttn project if it does not exist and marks it as active."""
     currDB = {'active': None, 'projects': {}}
     if os.path.exists(c.TTN_CONFIG_DIR):
@@ -150,6 +150,25 @@ def deactivateProject(project_name: str) -> None:
         json.dump(currDB, f)
     logging.info(f'Project {project_name} deactivated')
 
+def activateProject(project_name: str) -> None:
+    if not os.path.exists(f'{c.TTN_CONFIG_DIR}/projects.db'):
+        logging.info(f'Project {project_name} is not active !')
+        return
+
+    with open(f'{c.TTN_CONFIG_DIR}/projects.db', 'r') as f:
+        currDB = json.load(f)
+        if currDB['active'][c.PROJECT_NAME_KEY] == project_name:
+            return
+
+    if project_name not in currDB['projects']:
+        print (f"Project {project_name} does not exist !")
+
+    currDB['active'] = currDB['projects'][project_name].copy()
+
+    with open(f'{c.TTN_CONFIG_DIR}/projects.db', 'w') as f:
+        json.dump(currDB, f)
+    logging.info(f'Project {project_name} activated')
+
 def resetProject(project_name: str) -> None:
     """Resets some of the clang specific files created for a project."""
     if not os.path.exists(f'{c.TTN_CONFIG_DIR}/projects.db'):
@@ -158,7 +177,7 @@ def resetProject(project_name: str) -> None:
 
     with open(f'{c.TTN_CONFIG_DIR}/projects.db', 'r') as f:
         currDB = json.load(f)
-        if currDB['projects'][c.PROJECT_NAME_KEY] != project_name:
+        if project_name not in currDB['projects']:
             logging.info(f'Project {project_name} is not initialized !')
             return
     project_params = currDB['projects'][project_name]
@@ -174,6 +193,10 @@ def deleteProject(project_name: str) -> None:
         logging.info(f'Project {project_name} is not initialized !')
         return
 
+    if project_name == c.DEFAULT_PROJECT_NAME:
+        logging.info('DEFAULT project cannot be deleted !')
+        return
+
     with open(f'{c.TTN_CONFIG_DIR}/projects.db', 'r') as f:
         currDB = json.load(f)
         if project_name not in currDB['projects']:
@@ -181,24 +204,23 @@ def deleteProject(project_name: str) -> None:
             return
     project_params = currDB['projects'][project_name]
     project_src_dir = project_params[c.PROJECT_SRC_DIR_KEY]
-
-    if project_name == c.DEFAULT_PROJECT_NAME:
-        logging.info('DEFAULT project cannot be deleted !')
-        return
+    
     # remove ttn folder inside project source directory
     if os.path.exists(f'{project_src_dir}/{c.TTN_FOLDER_NAME}'):
         import shutil
         shutil.rmtree(f'{project_src_dir}/{c.TTN_FOLDER_NAME}')
-    del currDB['projects'][project_name]
 
     if currDB['active'][c.PROJECT_NAME_KEY] == project_name:
         currDB['active'] = getDefaultProjectParams()
+        logging.info(f'Removed {project_name} from db. '
+                     f'Current active project is: DEFAULT')
+
+
+    del currDB['projects'][project_name]
 
     with open(f'{c.TTN_CONFIG_DIR}/projects.db', 'w') as f:
         json.dump(currDB, f)
-    logging.info(f'Removed {project_name} from db. '
-                 f'Current active project is: DEFAULT')
-
+    
 
 def listAllProjects() -> None:
     """Lists all recognized project names."""

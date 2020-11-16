@@ -35,9 +35,17 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
 
+#define GET_INSTRINFO_ENUM
+#define GET_REGINFO_ENUM
+#include "../Target/X86/X86.h"
+#include "../Target/X86/X86GenInstrInfo.inc"
+#include "../Target/X86/X86GenRegisterInfo.inc"
+
+
 #undef DISABLE_LOOKAHEAD
 #undef DISABLE_INSN_CACHE_SIM
 #undef DISABLE_DATA_CACHE_SIM
+#undef DISABLE_VTL
 
 #define MAIN_FUNC "main"
 #define VT_STUB_FUNC "__Vt_Stub"

@@ -83,6 +83,7 @@ patch_llvm_project () {
     DISABLE_LOOKAHEAD=$(grep -nr "DISABLE_LOOKAHEAD" $TITAN_SOURCE_DIR/CONFIG | awk -F "=" '{print $2}' | tr -d '[ \n]')
     DISABLE_INSN_CACHE_SIM=$(grep -nr "DISABLE_INSN_CACHE_SIM" $TITAN_SOURCE_DIR/CONFIG | awk -F "=" '{print $2}')
     DISABLE_DATA_CACHE_SIM=$(grep -nr "DISABLE_DATA_CACHE_SIM" $TITAN_SOURCE_DIR/CONFIG | awk -F "=" '{print $2}')
+    DISABLE_VTL=$(grep -nr "DISABLE_VTL" $TITAN_SOURCE_DIR/CONFIG | awk -F "=" '{print $2}')
 
     find $TITAN_LLVM_SOURCE_DIR -name \* -type f ! -path "*.sh" ! -path "*Makefile*" -print \
         | sed -e "s/^${TITAN_LLVM_SOURCE_DIR//\//\\/}//" \
@@ -108,6 +109,10 @@ patch_llvm_project () {
         if [ $LINE == "lib/CodeGen/VirtualTimeManagementIncludes.h" ]; then
             if [ $DISABLE_LOOKAHEAD == "yes" ]; then
                 sed -i 's/#undef DISABLE_LOOKAHEAD/#define DISABLE_LOOKAHEAD/g' $DST_FILE
+            fi
+
+	    if [ $DISABLE_VTL == "yes" ]; then
+                sed -i 's/#undef DISABLE_VTL/#define DISABLE_VTL/g' $DST_FILE
             fi
 
             if [ $DISABLE_INSN_CACHE_SIM == "yes" ]; then
@@ -254,8 +259,8 @@ if [ $CMD == "install_deps" ]; then
     install_deps
     build_llvm_project
     install_llvm_project
-    #build_syscall_intercept_lib
-    #install_syscall_intercept_lib
+    build_syscall_intercept_lib
+    install_syscall_intercept_lib
 fi
 
 if [ $CMD == "clean" ]; then

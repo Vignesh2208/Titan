@@ -40,6 +40,12 @@ int IsFdTypeMatch(int ThreadID, int fd, int fdType) {
         return FALSE;
 
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+
+    if (!currThreadInfo) {
+        //printf ("ERROR Could not find ThreadInfo for ThreadID: %d, fd = %d\n", ThreadID, fd);
+        //fflush(stdout);
+        return FALSE;
+    }
     assert(currThreadInfo != NULL);
 
     if (currThreadInfo->in_callback)

@@ -23,10 +23,10 @@ namespace llvm {
         void __acquireFlock(std::string lockFilePath,
           std::string clangParamsFilePath);
         void __releaseFlock();
-        void __insertVtlLogic(MachineFunction &MF, MachineBasicBlock* origMBB,
+        void __insertVtlLogic(MachineFunction &MF, MachineBasicBlock* origMBB, bool force,
                               long blockNumber, long LoopID);
         #else
-        void __insertVtlLogic(MachineFunction &MF, MachineBasicBlock* origMBB);
+        void __insertVtlLogic(MachineFunction &MF, MachineBasicBlock* origMBB, bool force);
         #endif
         void __insertVtStubFn(MachineFunction &MF);
 

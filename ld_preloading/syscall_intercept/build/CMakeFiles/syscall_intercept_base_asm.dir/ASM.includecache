@@ -6,9 +6,9 @@
 
 #IncludeRegexTransform: 
 
-/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_template.S
+/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_template.S
 
-/home/kronos/Titan/ld_preloading/syscall_intercept/src/intercept_wrapper.S
+/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_wrapper.S
 
-/home/kronos/Titan/ld_preloading/syscall_intercept/src/util.S
+/home/vignesh/Titan/ld_preloading/syscall_intercept/src/util.S
 

@@ -2,12 +2,14 @@
 
 # This flag would control whether lookahead tracking would be enabled at the compiler level
 # Set no to enable lookahead tracking. Set yes to disable it.
-DISABLE_LOOKAHEAD=no
+DISABLE_LOOKAHEAD=yes
 
 # This flag would control whether instruction cache simulation callback functions would be
 # inserted by the compiler. Set no to enable ins cache simulation. Set yes to disable it.
-DISABLE_INSN_CACHE_SIM=no
+DISABLE_INSN_CACHE_SIM=yes
 
 # This flag would control whether data cache simulation callback functions would be
 # inserted by the compiler. Set no to enable data cache simulation. Set yes to disable it.
-DISABLE_DATA_CACHE_SIM=no
+DISABLE_DATA_CACHE_SIM=yes
+
+DISABLE_VTL=no

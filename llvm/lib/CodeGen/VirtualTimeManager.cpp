@@ -192,7 +192,7 @@ void VirtualTimeManager::createExternDefinitions(Module &M, bool ContainsMain) {
     Function::Create(Type, GlobalValue::ExternalLinkage, VT_CALLBACK_FUNC, &M);  
 
     if (ContainsMain) {
-            outs() << "Contains Main: Creating __VT_Stub function body" << "\n";
+            //outs() << "Contains Main: Creating __VT_Stub function body" << "\n";
             createStubFunction(M);
     } else {
 
@@ -237,6 +237,9 @@ bool VirtualTimeManager::doInitialization(Module& M) {
 
     if (DisableVtInsertion)
         return false;
+    #ifdef DISABLE_VTL
+	return false;
+    #endif
 
     #ifndef DISABLE_LOOKAHEAD
     
@@ -307,6 +310,33 @@ bool VirtualTimeManager::doInitialization(Module& M) {
     globalLoopCounter = (long )lastUsedLoop;
     outs() << "Clang File Lock Path: " << clangLockFilePath << "\n";
     outs() << "Clang Init Params Path: " << clangInitParamsPath << "\n";
+    #else
+    const char *homedir;
+    if ((homedir = getenv("HOME")) == NULL) {
+        homedir = getpwuid(getuid())->pw_dir;
+    }
+    std::string home(homedir);
+    std::string ttnProjectsDBPath = home + "/.ttn/projects.db";
+    if (access( ttnProjectsDBPath.c_str(), F_OK ) != -1) {
+        auto Text = llvm::MemoryBuffer::getFileAsStream(
+            ttnProjectsDBPath);
+            
+        StringRef Content = Text ? Text->get()->getBuffer() : "";
+        outs() << "Parsing initial parameters ...\n";
+        if (!Content.empty()) {
+            auto E = llvm::json::parse(Content);
+            if (E) {
+                llvm::json::Object * O = E->getAsObject()->getObject(
+                    TTN_PROJECTS_ACTIVE_KEY);
+                projectArchName = O->getString(
+                    TTN_PROJECTS_PROJECT_ARCH_NAME_KEY).getValue();
+                projectArchTimingsPath = O->getString(
+                    TTN_PROJECTS_PROJECT_ARCH_TIMINGS_PATH_KEY).getValue();
+            } else {
+                outs() << "WARN: Parse ERROR: Ignoring ttnProjectsDB ... \n";
+            }
+        }
+    }
     #endif
 
     outs() << "Project Arch Name: " << projectArchName << "\n";
@@ -323,6 +353,10 @@ bool VirtualTimeManager::doFinalization(Module& M) {
 
     if (DisableVtInsertion)
         return false;
+
+    #ifdef DISABLE_VTL
+	return false;
+    #endif
 
     #ifndef DISABLE_LOOKAHEAD
     __releaseFlock();
@@ -392,30 +426,32 @@ void VirtualTimeManager::__insertVtStubFn(MachineFunction &MF) {
     MF.push_front(FunctionCallMBB);
     MF.push_front(InitMBB);
     
-    // %rdx contains the current virtual time burst length. If less than or
+    // %r11 contains the current virtual time burst length. If less than or
     // equal to zero it implies, the current execution burst has been
     // completed.
-    // test %rdx, %rdx
+    // test %r11, %r11
     llvm::BuildMI(*InitMBB, InitMBB->end(), DebugLoc(),
-        TII.get(X86::TEST64rr)).addReg(X86::RDX).addReg(X86::RDX);
+        TII.get(X86::TEST64rr)).addReg(X86::R11).addReg(X86::R11);
 
-    // jns origMBB - jmp to exit if rdx > 0
+    // jns origMBB - jmp to exit if r11 > 0
     llvm::BuildMI(*InitMBB, InitMBB->end(), DebugLoc(),
         TII.get(X86::JCC_1)).addMBB(origMBB).addImm(9);
     
 
     // FunctionCallMBB: (add push pop of other registers here)
-    // push %rbp
-    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
-        TII.get(X86::PUSH64r)).addReg(X86::RBP);
+    
 
     // push %rax
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
         TII.get(X86::PUSH64r)).addReg(X86::RAX);
 
-    // push %rbx
+    // push %rcx
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
-        TII.get(X86::PUSH64r)).addReg(X86::RBX);
+        TII.get(X86::PUSH64r)).addReg(X86::RCX);
+
+    // push %rdx
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::PUSH64r)).addReg(X86::RDX);
 
     // push %rsi
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
@@ -433,28 +469,81 @@ void VirtualTimeManager::__insertVtStubFn(MachineFunction &MF) {
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
         TII.get(X86::PUSH64r)).addReg(X86::R9);
 
+    /* These are already potentially saved if needed in the basic block from which the stub is called. So no need to save them again. */
+    /*
     // push %r10
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
         TII.get(X86::PUSH64r)).addReg(X86::R10);
 
     // push %r11
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
-        TII.get(X86::PUSH64r)).addReg(X86::R11);
+        TII.get(X86::PUSH64r)).addReg(X86::R11); */
 
+    /* Callee saved registers. No Need to save them again. They will be automatically saved inside vtCallbackFn if needed. */
+    /*
+    // push %rbp - callee saved
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::PUSH64r)).addReg(X86::RBP);
+
+    // push %rbx - callee saved
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::PUSH64r)).addReg(X86::RBX);
+
+    // push %r12
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::PUSH64r)).addReg(X86::R12);
+
+    // push %r13
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::PUSH64r)).addReg(X86::R13);
+
+    // push %r14
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::PUSH64r)).addReg(X86::R14);
+
+    // push %r15
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::PUSH64r)).addReg(X86::R15); */
 
     // callq VT_CALLBACK_FUNC
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
         TII.get(X86::CALL64pcrel32)).addGlobalAddress(
             M.getNamedValue(VT_CALLBACK_FUNC));
 
-    
-    // pop %r11
+    /* Callee saved registers. No need to restore them */
+    /*
+    // pop %r15
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::POP64r)).addReg(X86::R15);
+
+    // pop %r14
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::POP64r)).addReg(X86::R14);
+
+    // pop %r13
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::POP64r)).addReg(X86::R13);
+
+    // pop %r12
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::POP64r)).addReg(X86::R12);
+
+    // pop %rbx - callee saved
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::POP64r)).addReg(X86::RBX);
+
+    // pop %rbp - callee saved
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::POP64r)).addReg(X86::RBP); */
+    
+    /* These are already potentially saved if needed in the basic block from which the stub is called. So no need to restore them again. */
+    // pop %r11
+    /* llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
         TII.get(X86::POP64r)).addReg(X86::R11);
 
     // pop %r10
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
-        TII.get(X86::POP64r)).addReg(X86::R10);
+        TII.get(X86::POP64r)).addReg(X86::R10); */
 
     // pop %r9
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
@@ -472,170 +561,186 @@ void VirtualTimeManager::__insertVtStubFn(MachineFunction &MF) {
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
         TII.get(X86::POP64r)).addReg(X86::RSI);
 
-    // pop %rbx
+    // pop %rdx
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
-        TII.get(X86::POP64r)).addReg(X86::RBX);
+        TII.get(X86::POP64r)).addReg(X86::RDX);
+
+    // pop %rcx
+    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
+        TII.get(X86::POP64r)).addReg(X86::RCX);
 
     // pop %rax
     llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
         TII.get(X86::POP64r)).addReg(X86::RAX);
 
-    // pop %rbp
-    llvm::BuildMI(*FunctionCallMBB, FunctionCallMBB->end(), DebugLoc(),
-        TII.get(X86::POP64r)).addReg(X86::RBP);
 
     llvm::BuildMI(*origMBB, origMBB->end(), DebugLoc(), TII.get(X86::RETQ));
 }
 
 #ifndef DISABLE_LOOKAHEAD
 void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
-    MachineBasicBlock* origMBB, long blockNumber, long LoopID) {
+    MachineBasicBlock* origMBB, bool force, long blockNumber, long LoopID) {
 #else
 void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
-    MachineBasicBlock* origMBB) {
+    MachineBasicBlock* origMBB, bool force) {
 #endif
 
     const llvm::TargetInstrInfo &TII = *MF.getSubtarget().getInstrInfo();
+    //const llvm::TargetRegisterInfo &TRI = TRI = *MF.getSubtarget().getRegisterInfo();
     llvm::Module &M = const_cast<Module &>(*MMI->getModule());
     auto ret = targetMachineSpecificInfo->GetMBBCompletionCycles(origMBB, TII);
     long bblCyclesConsumed = (long)ret.first;
+    
+    bool isR10Alive = origMBB->isLiveIn(X86::R10) | origMBB->isLiveIn(X86::R10D) | origMBB->isLiveIn(X86::R10W) | origMBB->isLiveIn(X86::R10B);
+
+    // Note. It appears to be crucial to only use R10 and R11 here and not other registers. The other registers e.g RBX, RCX may be carrying function
+    // arguments upon entry and liveness analysis does not track it. Further other registers such as R12 - R15, may need to be preserved across the function.
+    // So we need to do more analysis to determine if any of these other registers can be used instead of R10. If you use any other register, you must push and
+    // and pop that in every basic block and ignore its liveness.
+
+    /*bool isR13Alive = origMBB->isLiveIn(X86::R13) | origMBB->isLiveIn(X86::R13D) | origMBB->isLiveIn(X86::R13W) | origMBB->isLiveIn(X86::R13B);
+    bool isR14Alive = origMBB->isLiveIn(X86::R14) | origMBB->isLiveIn(X86::R14D) | origMBB->isLiveIn(X86::R14W) | origMBB->isLiveIn(X86::R14B);
+    bool isR15Alive = origMBB->isLiveIn(X86::R15) | origMBB->isLiveIn(X86::R15D) | origMBB->isLiveIn(X86::R15W) | origMBB->isLiveIn(X86::R15B);*/
+    bool isR11Alive = origMBB->isLiveIn(X86::R11) | origMBB->isLiveIn(X86::R11D) | origMBB->isLiveIn(X86::R11W) | origMBB->isLiveIn(X86::R11B);
+
+    MCPhysReg secondRegister = X86::R10;
+    bool isSecondRegisterLive = true;
+    bool isFlagsAlive = origMBB->isLiveIn(X86::EFLAGS);
+      
+
+    if (origMBB->empty() || !origMBB->isLegalToHoistInto() || !origMBB->getBasicBlock())
+	return;
 
     #ifndef DISABLE_LOOKAHEAD
     bool skipAddingLoopID = LoopID > 0 ? false: true;
     long currBBID = blockNumber;
     #endif
 
+    if (!isR10Alive) {
+	secondRegister = X86::R10;
+	isSecondRegisterLive = false;
+    } /*else if (!isR13Alive) {
+	secondRegister = X86::R13;
+	isSecondRegisterLive = false;
+    } else if (!isR14Alive) {
+	secondRegister = X86::R14;
+	isSecondRegisterLive = false;
+    } else if (!isR15Alive) {
+	secondRegister = X86::R15;
+	isSecondRegisterLive = false;
+    }*/
+    
+    
     // origMBB:
-    // restore rax register
-    // pop %rax
-    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::POP64r)).addReg(X86::RAX);
-
     // restore eflags register
-    // popf 
+    // popf
+    if (isFlagsAlive)
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POPF64));
 
-    // push eflags to stack so that it could be loaded with a popf
-    // push %rax
+    // pop %r11
+    if (isR11Alive || force)
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::PUSH64r)).addReg(X86::RAX);
+        TII.get(X86::POP64r)).addReg(X86::R11);
 
-    // This would contain eflags value
-    // pop %rax
+    // pop secondRegister
+    if (isSecondRegisterLive || force)
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::POP64r)).addReg(X86::RAX);
+        TII.get(X86::POP64r)).addReg(secondRegister);
+    
 
-
-    // pop %rdx
-    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::POP64r)).addReg(X86::RDX);
-
-    // pop %rcx
-    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::POP64r)).addReg(X86::RCX);
-
-
+    #ifdef DISABLE_INSN_CACHE_SIM
     // callq VT_STUB_FUNC
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
         TII.get(X86::CALL64pcrel32)).addGlobalAddress(
             M.getNamedValue(VT_STUB_FUNC));
+    #endif
 
 
     #ifndef DISABLE_LOOKAHEAD
     if (!skipAddingLoopID) {
-        // movq LoopID (%rcx)
+        // movq LoopID (secondRegister)
         llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-            TII.get(X86::MOV64mi32)).addReg(X86::RCX).addImm(1).addReg(0)
+            TII.get(X86::MOV64mi32)).addReg(secondRegister).addImm(1).addReg(0)
             .addImm(0).addReg(0).addImm(LoopID);
 
-        // movq VT_CURR_LOOP_ID_VAR@GOTPCREL(%rip) %rcx
+        // movq VT_CURR_LOOP_ID_VAR@GOTPCREL(%rip) secondRegister
         llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
             TII.get(X86::MOV64rm))
-                .addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0)
+                .addReg(secondRegister).addReg(X86::RIP).addImm(1).addReg(0)
                 .addGlobalAddress(
                     M.getNamedValue(VT_CURR_LOOP_ID_VAR), 0,
                         MO_GOTPCREL).addReg(0);
     }
     
 
-    // movq BasicBlockID (%rcx)
+    // movq BasicBlockID (secondRegister)
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::MOV64mi32)).addReg(X86::RCX).addImm(1).addReg(0)
+        TII.get(X86::MOV64mi32)).addReg(secondRegister).addImm(1).addReg(0)
         .addImm(0).addReg(0).addImm(currBBID);
 
-    // movq VT_CURR_BBID_VAR@GOTPCREL(%rip) %rcx
+    // movq VT_CURR_BBID_VAR@GOTPCREL(%rip) secondRegister
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
-            .addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0)
+            .addReg(secondRegister).addReg(X86::RIP).addImm(1).addReg(0)
             .addGlobalAddress(
                 M.getNamedValue(VT_CURR_BBID_VAR), 0, MO_GOTPCREL).addReg(0);
     #endif
 
     #ifndef DISABLE_INSN_CACHE_SIM
-    // movq bblCyclesConsumed (%rcx)
+    // movq bblCyclesConsumed (secondRegister)
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::MOV64mi32)).addReg(X86::RCX).addImm(1).addReg(0)
+        TII.get(X86::MOV64mi32)).addReg(secondRegister).addImm(1).addReg(0)
             .addImm(0).addReg(0).addImm(
                 (long)ret.second);
 
-    // movq VT_CURR_BBL_INSN_CACHE_MISS_PENALTY@GOTPCREL(%rip) %rcx
+    // movq VT_CURR_BBL_INSN_CACHE_MISS_PENALTY@GOTPCREL(%rip) secondRegister
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64rm))
-        .addReg(X86::RCX).addReg(X86::RIP).addImm(1).addReg(0)
+        .addReg(secondRegister).addReg(X86::RIP).addImm(1).addReg(0)
         .addGlobalAddress(
             M.getNamedValue(VT_CURR_BBL_INSN_CACHE_MISS_PENALTY), 0, MO_GOTPCREL).addReg(0);
     #endif
 
-    // movq %rdx %(rcx)
+    // movq %r11 %(secondRegister)
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64mr))
-            .addReg(X86::RCX).addImm(1).addReg(0).addImm(0).addReg(0)
-            .addReg(X86::RDX);
+            .addReg(secondRegister).addImm(1).addReg(0).addImm(0).addReg(0)
+            .addReg(X86::R11);
 
-    // subq	bblCyclesConsumed, %rdx
+    // subq	bblCyclesConsumed, %r11
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::SUB64ri8)).addDef(X86::RDX).addReg(X86::RDX)
+        TII.get(X86::SUB64ri8)).addDef(X86::R11).addReg(X86::R11)
             .addImm(bblCyclesConsumed);
 
 
-    // movq (%rcx) %rdx
+    // movq (secondRegister) %r11
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::MOV64rm)).addDef(X86::RDX).addReg(X86::RCX)
+        TII.get(X86::MOV64rm)).addDef(X86::R11).addReg(secondRegister)
             .addImm(1).addReg(0).addImm(0).addReg(0);
 
-    // movq VT_CYCLES_COUNTER_VAR@GOTPCREL(%rip) %rcx
+    // movq VT_CYCLES_COUNTER_VAR@GOTPCREL(%rip) secondRegister
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::MOV64rm)).addReg(X86::RCX).addReg(X86::RIP).addImm(1)
+        TII.get(X86::MOV64rm)).addReg(secondRegister).addReg(X86::RIP).addImm(1)
             .addReg(0).addGlobalAddress(
                 M.getNamedValue(VT_CYCLES_COUNTER_VAR), 0, MO_GOTPCREL).addReg(0);
 
 
-    // push %rcx
-    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::PUSH64r)).addReg(X86::RCX);
 
-    // push %rdx
+    // push secondRegister
+    if (isSecondRegisterLive || force)
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::PUSH64r)).addReg(X86::RDX);
+        TII.get(X86::PUSH64r)).addReg(secondRegister);
 
-    // We again save the pushf value here
-    // push %rax
+    
+    // push %r11
+    if (isR11Alive || force)
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::PUSH64r)).addReg(X86::RAX);
-
-    // We need to immediately pop the pushf value and store it in a register
-    // to avoid interrupt exceptions
-    // pop %rax
-    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), 
-        TII.get(X86::POP64r)).addReg(X86::RAX);
+        TII.get(X86::PUSH64r)).addReg(X86::R11);
 
     // save eflags register
     // pushf
-    MachineInstr *Push = BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::PUSHF64));
-    Push->getOperand(2).setIsUndef();
-
-    // save rax
-    // push %rax
-    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::PUSH64r)).addReg(X86::RAX);
+    if (isFlagsAlive) {
+	    MachineInstr *Push = BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+		TII.get(X86::PUSHF64));
+	    Push->getOperand(2).setIsUndef();
+    }
 
 }
 
@@ -650,12 +755,17 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
     llvm::Module &M = const_cast<Module &>(*MMI->getModule());
 
     bool ret = false;
+    int count = 0;
     bool ContainsMain = (M.getFunction(MAIN_FUNC) != nullptr);
     
 
     if (DisableVtInsertion) {
         return false;
     }
+
+    #ifdef DISABLE_VTL
+	return false;
+    #endif
 
 
     #ifndef DISABLE_LOOKAHEAD
@@ -704,8 +814,9 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
         globalBBCounter = mCFGHolder.getFinalGlobalBBLCounter();
         globalLoopCounter = mCFGHolder.getFinalGlobalLoopCounter();
         for (auto &MBB : MF) {
+	    count ++;
             MachineBasicBlock* origMBB = &MBB;
-            __insertVtlLogic(MF, origMBB,
+            __insertVtlLogic(MF, origMBB, count == 1,
                 mCFGHolder.getGlobalMBBNumber(origMBB),
                 mCFGHolder.getAssociatedLoopNumber(origMBB));		
         }
@@ -718,7 +829,8 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
         #else
         for (auto &MBB : MF) {
             MachineBasicBlock* origMBB = &MBB;
-            __insertVtlLogic(MF, origMBB);		
+            count ++;
+            __insertVtlLogic(MF, origMBB, count==1);		
         }
         #endif
         ret = true;	 

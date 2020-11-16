@@ -48,23 +48,22 @@ parser.add_argument('--data_cache_type', type=str,
 parser.add_argument('--data_cache_miss_cycles', type=int,
                     default=c.DEFAULT_DATA_CACHE_MISS_CYCLES,
                     help='Number of cycles spent in the event of a cache miss')
-
-parser.add_argument('--cpu_cycle_ns', type=float, default=1.0,
-                    help='Number of cpu clock cycles per ns')
+parser.add_argument('--cpu_mhz', type=float, default=1000.0,
+                    help='Speed of cpu in mhz. (Default 1GHz)')
 
 parser.add_argument(
     '--init', help='Initializes ttn. This is run automatically during '
                    'installation. It needs to be normally run only once.',
     action='store_true')
-parser.add_argument('--activate', help='Activates the project and adds it to db',
+parser.add_argument('--add', help='Adds the project to db', action='store_true')
+parser.add_argument('--activate', help='Activates the project specified by name',
                     action='store_true')
 parser.add_argument('--deactivate', help='Deactivates the currently active '
                     'project', action='store_true')
-parser.add_argument('--reset', help='Reactivates/re-initializes the project',
+parser.add_argument('--reset', help='re-initializes the project clang params',
                     action='store_true')
 parser.add_argument('--delete', help='Deletes the project from internal db',
                     action='store_true')
-
 parser.add_argument('--list', help='Lists all tracked projects',
                     action='store_true')
 parser.add_argument('--show', help='Displays details of the selected project. '
@@ -76,7 +75,7 @@ parser.add_argument('--extract', help='Extracts lookahead for selected project',
 def main():
     args = parser.parse_args()
     params = {
-        c.PROJECT_ARCH_NAME: args.arch,
+        c.PROJECT_ARCH_NAME: "NONE" if args.arch == "ARCH_NONE" else args.arch,
         c.PROJECT_NAME_KEY: args.project_name,
         c.PROJECT_SRC_DIR_KEY: args.project_src_dir,
         c.INS_CACHE_SIZE_KEY: args.ins_cache_size_kb,
@@ -87,7 +86,7 @@ def main():
         c.DATA_CACHE_LINES_KEY: args.data_cache_lines,
         c.DATA_CACHE_TYPE_KEY: args.data_cache_type,
         c.DATA_CACHE_MISS_CYCLES_KEY: args.data_cache_miss_cycles,
-        c.CPU_CYCLE_NS_KEY: args.cpu_cycle_ns
+        c.CPU_CYCLE_NS_KEY: float(args.cpu_mhz * 1e6)/float(1e9)
     }
     if args.list:
         ops.listAllProjects()
@@ -100,7 +99,7 @@ def main():
             ops.displayProject(args.project_name, print_active=False)
         sys.exit(0)
 
-    if args.activate:
+    if args.add:
 
         if (not os.path.exists(ops.getInsnTimingsPath(args.arch)) and
                 args.arch != c.NO_ARCH):
@@ -109,7 +108,11 @@ def main():
             print('To see list of currently supported architectures run cmd: '
                   'vtins -l')
             sys.exit(0)
-        ops.activateProject(args.project_name, args.project_src_dir, params)
+        ops.addProject(args.project_name, args.project_src_dir, params)
+        sys.exit(0)
+
+    if args.activate:
+        ops.activateProject(args.project_name)
         sys.exit(0)
 
     if args.deactivate:

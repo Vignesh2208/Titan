@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/home/kronos/Titan/ld_preloading/syscall_intercept/test/vfork_logging.c" "/home/kronos/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/vfork_logging.dir/vfork_logging.c.o"
+  "/home/vignesh/Titan/ld_preloading/syscall_intercept/test/vfork_logging.c" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/vfork_logging.dir/vfork_logging.c.o"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
 

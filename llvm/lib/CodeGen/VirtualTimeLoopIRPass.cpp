@@ -100,8 +100,10 @@ void VirtualTimeLoopIRPass::analyseLoop(Loop * l, ScalarEvolution &SE,
 }
 
 bool VirtualTimeLoopIRPass::doFinalization() {
+    #ifndef DISABLE_LOOKAHEAD
     outs() << "LOOPIR<INFO> Number of ProcessedLoops: " << numProcessedLoops
            << " Number of IgnoredLoops: " << numIgnoredLoops << "\n";
+    #endif
     return false; 
 }
 
