@@ -158,4 +158,17 @@ s64 GetTracerLookahead(int tracer_id);
 //  on packet receive.
 s64 GetTracerNEATLookahead(int tracer_id);
 
+
+int MarkStackActive(int tracerID, int stackID);
+
+int MarkStackInActive(int tracerID, int stackID);
+
+int MarkStackRxLoopComplete(int tracerID, int stackID);
+
+int TriggerStackThreadWait(int tracerID, int stackID);
+
+
+int UpdateStackSendRtxTime(int tracerID, int stackID, s64 stack_send_rtx_time);
+
+
 #endif

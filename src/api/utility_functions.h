@@ -58,6 +58,11 @@ typedef struct ioctl_args_struct {
 #define VT_SET_PROCESS_LOOKAHEAD _IOW(VT_IOC_MAGIC, 25, int)
 #define VT_GET_TRACER_LOOKAHEAD _IOW(VT_IOC_MAGIC, 26, int)
 #define VT_GET_TRACER_NEAT_LOOKAHEAD _IOW(VT_IOC_MAGIC, 27, int)
+#define VT_MARK_STACK_ACTIVE _IOW(VT_IOC_MAGIC, 28, int)
+#define VT_MARK_STACK_INACTIVE _IOW(VT_IOC_MAGIC, 29, int)
+#define VT_MARK_STACK_RXLOOP_COMPLETE _IOW(VT_IOC_MAGIC, 30, int)
+#define VT_THREAD_STACK_WAIT _IOW(VT_IOC_MAGIC, 31, int)
+#define VT_UPDATE_STACK_RTX_SEND_TIME _IOW(VT_IOC_MAGIC, 32, int)
 
 #ifndef DISABLE_LOOKAHEAD
 struct lookahead_map {
@@ -109,5 +114,8 @@ int GetFloatEnvVariable(char * env_variable_name, float * return_value);
 //! Parses an environment variable which is supposed to be a integer and sets
 //  the return value appropriately. If there is an error, it returns FAILURE
 int GetIntEnvVariable(char * env_variable_name, int * return_value);
+
+
+
 
 #endif

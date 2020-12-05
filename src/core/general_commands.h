@@ -190,5 +190,47 @@ int HandleVtSetProcessLookahead(
 int HandleVtGetTracerLookahead(unsigned long arg, int ignore_eat_anchors);
 
 
+ 
+//! Marks a tcp stack as active
+/*!
+    \param arg A pointer to invoked_api struct containing details of the processID
+        associated with this stack
+*/
+int HandleVtMarkStackActive(unsigned long arg);
+
+
+//! Marks a tcp stack as in-active
+/*!
+    \param arg A pointer to invoked_api struct containing details of the processID
+        associated with this stack
+*/
+int HandleVtMarkStackInActive(unsigned long arg);
+
+
+
+//! Marks a tcp stack rx-loop as complete in this round
+/*!
+    \param arg A pointer to invoked_api struct containing details of the processID
+        associated with this stack
+*/
+int HandleVtMarkStackRxLoopActive(unsigned long arg);
+
+
+//! Make thread stack wait until it needs to be woken-up 
+/*!
+    \param arg A pointer to invoked_api struct containing details of the processID
+        associated with this stack
+*/
+int HandleVtThreadStackWait(unsigned long arg);
+
+
+
+//! Updates a process's tcp stack's latest next re-transmit time
+/*!
+    \param arg A pointer to invoked_api struct containing tracerID, processID
+        and latest next re-transmit time
+*/
+int HandleVtUpdateStackRtxSendTime(unsigned long arg);
+
 #endif
 

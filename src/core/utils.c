@@ -64,11 +64,15 @@ void InitializeTracerEntry(tracer * new_tracer, uint32_t tracer_id) {
     llist_destroy(&new_tracer->schedule_queue);
     llist_destroy(&new_tracer->run_queue);
     llist_destroy(&new_tracer->pkt_info_queue);
+    llist_destroy(&new_tracer->process_tcp_stacks);
 
     llist_init(&new_tracer->schedule_queue);
     llist_init(&new_tracer->run_queue);
     llist_init(&new_tracer->pkt_info_queue);
+    llist_init(&new_tracer->process_tcp_stacks);
     
+    init_waitqueue_head(&new_tracer->stack_w_queue);
+
     rwlock_init(&new_tracer->tracer_lock);
 }
 
@@ -86,10 +90,25 @@ tracer * AllocTracerEntry(uint32_t tracer_id) {
     return new_tracer;
 }
 
+void CleanUpTracerStacks(tracer * tracer_entry) {
+    if (!tracer_entry)
+        return;
+        
+    while (llist_size(&tracer_entry->process_tcp_stacks)) {
+        process_tcp_stack * head;
+        head = llist_pop(&tracer_entry->process_tcp_stacks);
+        if (head != NULL) {
+            kfree(head);
+        }
+    }
+}
+
 void FreeTracerEntry(tracer * tracer_entry) {
 
     llist_destroy(&tracer_entry->schedule_queue);
     llist_destroy(&tracer_entry->run_queue);
+    CleanUpTracerStacks(tracer_entry);
+    llist_destroy(&tracer_entry->process_tcp_stacks);
     kfree(tracer_entry);
 
 }

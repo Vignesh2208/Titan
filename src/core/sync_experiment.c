@@ -2,6 +2,7 @@
 #include "dilated_timer.h"
 #include "utils.h"
 #include "sync_experiment.h"
+#include "common.h"
 
 /** EXTERN VARIABLES **/
 
@@ -663,6 +664,7 @@ int PerTimelineWorker(void *data) {
                      "worker process for tracers on timeline %d.\n",
                      timeline_id);
             curr_timeline->status = 1;
+            TriggerStackThreadExecutionsOn(timeline_id, 1);
             wake_up_interruptible(&progress_call_proc_wqueue);
             return 0;
         }
@@ -702,6 +704,7 @@ int PerTimelineWorker(void *data) {
 
         UpdateAllTracersVirtualTime(timeline_id);
         WakeUpProcessesWaitingOnSyscalls(timeline_id);
+        TriggerStackThreadExecutionsOn(timeline_id, 0);
         PDEBUG_V("PerTimelineWorker: Finished round for timeline %d\n",
                 timeline_id);
         /* when the first task has started running, signal you are done working,
@@ -824,8 +827,13 @@ void PruneTracerQueue(tracer * curr_tracer, int is_schedule_queue){
                 PopRunQueue(curr_tracer);
             else
                 PopScheduleList(curr_tracer);
+
+            // Make any associated stack threads for this pid to exit
+            TriggerAllStackThreadExecutions(curr_tracer, 1, curr_elem->pid); 
+
             PutTracerStructWrite(curr_tracer);
             GetTracerStructRead(curr_tracer);
+            
         } else {
             PutTracerStructRead(curr_tracer);
             GetTracerStructWrite(curr_tracer);
@@ -1146,6 +1154,7 @@ int UnfreezeProcExpRecurse(tracer * curr_tracer) {
     now_ns = ktime_get_real();
     #endif
     CleanUpAllIrrelevantProcesses(curr_tracer);
+    ResetAllStackRxLoopStatus(curr_tracer);
 
     total_quanta = curr_tracer->nxt_round_burst_length;
 

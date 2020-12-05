@@ -6,6 +6,10 @@
 #include "utility_functions.h"
 #include "vtl_logic.h"
 #include "fd_handling.h"
+
+#include "socket_layer/netdev.h"
+#include "socket_layer/socket.h"
+
 #ifndef DISABLE_LOOKAHEAD
 #include "lookahead_parsing.h"
 #endif
@@ -27,6 +31,8 @@ s64 currBBID = 0;
 s64 currLoopID = 0;
 struct lookahead_info bblLookAheadInfo = {.mapped_memblock = NULL, .mapped_memblock_length = 0, .lmap = NULL};
 struct lookahead_info loopLookAheadInfo = {.mapped_memblock = NULL, .mapped_memblock_length = 0, .lmap = NULL};
+
+
 #endif
 
 #ifndef DISABLE_INSN_CACHE_SIM
@@ -35,9 +41,10 @@ s64 currBBInsCacheMissPenalty = 0;
 
 int expStopping = 0;
 int vtInitializationComplete = 0;
+uint32_t tracerSrcIpAddr;
 int globalTracerID = -1;
 int globalTimelineID = -1;
-int globalThreadID = 0;
+int currActiveThreadID = 0;
 float cpuCyclesPerNs = 1.0;
 hashmap thread_info_map;
 llist thread_info_list;
@@ -68,20 +75,72 @@ s64 GetBBLLookAhead(long bblNumber) {
 }
 
 //! Sets the lookahead for a specific loop by estimating the number of iterations it would make
-void SetLoopLookahead(int initValue, int finalValue, int stepValue) {
+void SetLoopLookahead(int initValue, int finalValue, int stepValue, int loopDepth) {
     //printf("SetLoopLookahead, return address: %p, currBBID: %llu, currLoopID: %llu\n",
     //    __builtin_return_address(0), currBBID, currLoopID);
-    //printf("Called SetLoopLookahead: init: %d, final: %d, step: %d\n",
-    //    initValue, finalValue, stepValue);
+    printf("Called SetLoopLookahead: init: %d, final: %d, step: %d, loopDepth: %d\n",
+        initValue, finalValue, stepValue, loopDepth);
     if (!vtInitializationComplete)
         return;
-    int numIterations = 0;
+
+    ThreadInfo * currThreadInfo;
+    int ThreadID;
+    if (!currActiveThreadID) {
+        ThreadID = syscall(SYS_gettid);
+        currActiveThreadID = ThreadID;
+    } else {
+        ThreadID = currActiveThreadID;
+    }
+
+    currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+
+    if (!currThreadInfo)
+	    return;
+
+    s64 numIterations = 0;
+    s64 origNumIterations = 0;
+    s64 cumulativeIterations = 1;
     if ((finalValue > initValue && stepValue > 0) ||
-        (finalValue < initValue && stepValue < 0))
-        numIterations = (finalValue - initValue)/stepValue;
-    s64 loop_lookahead = GetLoopLookAhead((long)currLoopID)*numIterations;
-    SetLookahead(loop_lookahead + GetCurrentTime(), LOOKAHEAD_ANCHOR_NONE);
+        (finalValue < initValue && stepValue < 0)) {
+        numIterations = (s64)(finalValue - initValue)/stepValue;
+	    origNumIterations = numIterations;
+    }
+
+    if (loopDepth == 0) {
+	    for (int i = 0; i < MAX_LOOP_DEPTH; i++) {
+		    currThreadInfo->loopRunTime[i].entered = 0;
+		    currThreadInfo->loopRunTime[i].numIterations = 0;
+        }
+	
+    } else if (loopDepth > 0 && loopDepth < MAX_LOOP_DEPTH) {	
+        for (int i = 0; i < loopDepth; i++) {
+            if (!currThreadInfo->loopRunTime[i].entered || 
+                !currThreadInfo->loopRunTime[i].numIterations) {
+                cumulativeIterations = 1;
+                loopDepth = -1; // we implicitly play it safe and don't try to cumulate for this loop or any other child loop
+                break;
+            } else {
+                cumulativeIterations = cumulativeIterations * currThreadInfo->loopRunTime[i].numIterations;
+            }
+        }
+	    numIterations = cumulativeIterations * numIterations;
+    }
+
+    if (loopDepth < 0 || loopDepth >= MAX_LOOP_DEPTH || 
+        !currThreadInfo->loopRunTime[loopDepth].entered) {
+    	s64 loop_lookahead = GetLoopLookAhead((long)currLoopID)*numIterations;
+    	SetLookahead(loop_lookahead + GetCurrentTime(), LOOKAHEAD_ANCHOR_NONE);
+
+    }
+
+    if (loopDepth >= 0 && loopDepth < MAX_LOOP_DEPTH && 
+        !currThreadInfo->loopRunTime[loopDepth].entered) {
+    	currThreadInfo->loopRunTime[loopDepth].entered = 1;
+    	currThreadInfo->loopRunTime[loopDepth].numIterations = origNumIterations;
+    }
 }
+
+
 
 //! Sets the lookahead at a specific basic block
 void SetBBLLookAhead(long bblNumber) {
@@ -141,6 +200,7 @@ void SleepForNS(int ThreadID, int64_t duration) {
 
     currBurstCyclesLeft = MarkBurstComplete(1);
     currBurstCyclesLeft = (s64)(currBurstCyclesLeft*cpuCyclesPerNs);
+    currActiveThreadID = syscall(SYS_gettid);
     specifiedBurstCycles = currBurstCyclesLeft;
     if (currBurstCyclesLeft <= 0) HandleVTExpEnd(ThreadID);
 
@@ -309,6 +369,7 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     #endif
 
     currBurstCyclesLeft = MarkBurstComplete(0);
+    currActiveThreadID = syscall(SYS_gettid);
     if (currBurstCyclesLeft)
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);
     specifiedBurstCycles = currBurstCyclesLeft;
@@ -348,10 +409,8 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     if (save) currThreadInfo->stack.currBBID = currBBID;
     #endif
     
-    
-
     currBurstCyclesLeft = FinishBurst();
-
+    currActiveThreadID = syscall(SYS_gettid);
     if (currBurstCyclesLeft)
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);
 
@@ -398,7 +457,7 @@ void AfterForkInChild(int ThreadID, int ParentProcessID) {
     //fflush(stdout);
 
     AddToTracerSchQueue(globalTracerID);
-    globalThreadID = syscall(SYS_gettid);
+    currActiveThreadID = syscall(SYS_gettid);
     SignalBurstCompletion(currThreadInfo, 1);
 
     if (ParentProcessID != ThreadID) {
@@ -535,6 +594,7 @@ void TriggerSyscallFinish(int ThreadID) {
     currThreadInfo->in_callback = TRUE;
     
     currBurstCyclesLeft = MarkBurstComplete(1);
+    currActiveThreadID = syscall(SYS_gettid);
     if (currBurstCyclesLeft)
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);
 
@@ -575,36 +635,34 @@ void handleVtCallback() {
 //! Called after the current execution burst is finished
 void vtCallbackFn() {
     if (!vtInitializationComplete) {
-	/*int ThreadID;
-	ThreadInfo * currThreadInfo;
-	ThreadID = syscall(SYS_gettid);
-	hmap_init(&thread_info_map, 1000);
-    	llist_init(&thread_info_list);
-	currThreadInfo = AllotThreadInfo(ThreadID, ThreadID);     
-    	assert(currThreadInfo != NULL);
-	vtInitializationComplete = 1;
-	currBurstCyclesLeft = 2700000;*/
+
         if (currBurstCyclesLeft <= 0) {	
             currBurstCyclesLeft = 100000000;
+            currActiveThreadID = syscall(SYS_gettid);
             specifiedBurstCycles = currBurstCyclesLeft;
         }
         return;
     }	
     
     if (currBurstCyclesLeft <= 0) {
-	handleVtCallback();
+	    handleVtCallback();
     } 
 }
 
 /*** For Socket Handling ***/
 //! Notes a particular filedescriptor as a socket in internal book-keeping
-void AddSocket(int ThreadID, int sockFD, int isNonBlocking) {
-    AddFd(ThreadID, sockFD, FD_TYPE_SOCKET, isNonBlocking);
+void AddSocket(int ThreadID, int sockFD, int sockFdProtoType, int isNonBlocking) {
+    AddFd(ThreadID, sockFD, FD_TYPE_SOCKET, sockFdProtoType, isNonBlocking);
 }
 
 //! Returns a positive number if a particular filedescriptor is a socket
 int IsSocketFd(int ThreadID, int sockFD) {
     return IsFdTypeMatch(ThreadID, sockFD, FD_TYPE_SOCKET);
+}
+
+//! Returns a positive number if a particular filedescriptor is a tcp-socket
+int IsTCPSocket(int ThreadID, int sockFD) {
+    return IsTCPSockFd(ThreadID, sockFD);
 }
 
 //! Returns a positive number if a particular filedescriptor is a non-blocking socket
@@ -615,7 +673,7 @@ int IsSocketFdNonBlocking(int ThreadID, int sockFD) {
 /*** For TimerFd Handlng ***/
 //! Notes a particular filedescriptor as a timerfd in internal book-keeping
 void  AddTimerFd(int ThreadID, int fd, int isNonBlocking) {
-    AddFd(ThreadID, fd, FD_TYPE_TIMERFD, isNonBlocking);
+    AddFd(ThreadID, fd, FD_TYPE_TIMERFD, FD_PROTO_TYPE_NONE, isNonBlocking);
 }
 
 //! Returns a positive number if a particular filedescriptor is a timerfd
@@ -667,6 +725,75 @@ int IsTimerArmed(int ThreadID, int fd) {
 
 }
 
+#ifndef DISABLE_VT_SOCKET_LAYER
+void InitializeTCPStack(int stackID) {
+    SetNetDevStackID(globalTracerID, stackID);
+}
+
+void MarkTCPStackActive() {
+    MarkNetworkStackActive(tracerSrcIpAddr);
+}
+
+void RunTCPStackRxLoop() {
+    NetDevRxLoop();
+}
+void MarkTCPStackInactive() {
+    MarkNetworkStackInactive();
+}
+
+int HandleReadSyscall(int ThreadID, int fd, void *buf, int count, int *redirect) {
+    ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+    if (!currThreadInfo || currThreadInfo->in_callback || IsNetDevInCallback()) {
+        *redirect = 1;
+        return 0;
+    }
+    int did_block;
+    int ret;
+    currThreadInfo->in_callback = TRUE;
+
+    if (!IsTCPSockFd(ThreadID, fd)) {
+        *redirect = 1;
+        currThreadInfo->in_callback = FALSE;
+        return 0;
+    }
+
+    ret = _read(fd, buf, count, &did_block);
+
+    if (did_block)
+        TriggerSyscallFinish(ThreadID);
+    currThreadInfo->in_callback = FALSE;
+    *redirect = 0;
+    return ret;
+}
+
+int HandleWriteSyscall(int ThreadID, int fd, const void *buf, int count, int *redirect) {
+
+    ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+    if (!currThreadInfo || currThreadInfo->in_callback || IsNetDevInCallback()) {
+        *redirect = 1;
+        return 0;
+    }
+
+    int did_block;
+    int ret;
+    currThreadInfo->in_callback = TRUE;
+
+    if (!IsTCPSockFd(ThreadID, fd)) {
+        *redirect = 1;
+        currThreadInfo->in_callback = FALSE;
+        return 0;
+    }
+
+    ret = _write(fd, buf, count, &did_block);
+
+    if (did_block)
+        TriggerSyscallFinish(ThreadID);
+    currThreadInfo->in_callback = FALSE;
+    *redirect = 0;
+    return ret;
+
+}
+#endif
 
 //! Registers as a new tracer and loads any available lookahead information
 void InitializeVtManagement() {

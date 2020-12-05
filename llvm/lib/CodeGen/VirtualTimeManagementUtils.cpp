@@ -2,9 +2,7 @@
 #include "llvm/CodeGen/TargetInstrInfo.h"
 #include <cmath>
 
-// TODO: These are processor micro-arch parameters which should be added to ttn project description
-#define NUM_DISPATCH_UNITS 8
-#define ROB_BUFFER_SIZE 1024
+#define NUM_EXEC_UNITS 8
 
 using namespace llvm;
 
@@ -104,9 +102,7 @@ float MachineSpecificConfig::GetInsnCompletionCycles(std::string insnName) {
         return 1.0;
     float avgCpuCycles = machineInsPrefixTree->getAvgCpuCycles(insnName);
     if (avgCpuCycles < 1.0) {
-	//if (machineInsPrefixTree->totalArchInsns)
-	//	return machineInsPrefixTree->avgArchInsnCycles / machineInsPrefixTree->totalArchInsns;
-        // We don't have the info right now. Simply treat it as unit latency because that seems to work best
+	    // We don't have the info right now. Simply treat it as unit latency because that seems to work best
         return 1.0;
     }
 
@@ -126,7 +122,11 @@ std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBComplet
     float totalMbbCompletionCycles = 0;
     unsigned long InstrCount = 0;
     bool skip = false;
-    
+    float execUnitPressure[NUM_EXEC_UNITS];
+    int bestExecUnit = 0;
+
+    for (int i = 0; i < NUM_EXEC_UNITS; i++)
+	execUnitPressure[i] = 0.0;
     
 
     for (MachineBasicBlock::instr_iterator Iter = mbb->instr_begin(),
@@ -168,9 +168,16 @@ std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBComplet
         }
 
         if (!MI.isMetaInstruction() && !skip) {
+            bestExecUnit = 0;
+            for (int i = 0; i < NUM_EXEC_UNITS; i++) {
+                if (execUnitPressure[i] < execUnitPressure[bestExecUnit]) {
+                    bestExecUnit = i;
+                }
+            }
             mbbCompletionCycles = machineConfig->GetInsnCompletionCycles(
                 TII.getName(MI.getOpcode())); 
             totalMbbCompletionCycles += mbbCompletionCycles;
+            execUnitPressure[bestExecUnit] += mbbCompletionCycles;
             InstrCount ++;
         }
     }
@@ -181,16 +188,12 @@ std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBComplet
     // TODO: fix this so that burst completion cycles are tracked as floats
     // instead of long
     if (InstrCount < 1)
-	InstrCount = 1;
+	    InstrCount = 1;
 
-    /* Based on slight adjustments to the instruction throughput model specified in: 
-	[1] Karkhanis, Tejas S., and James E. Smith. "A first-order superscalar processor model." Proceedings. 31st Annual International Symposium on Computer Architecture, 2004.. IEEE, 2004.
-	We simply calculate total number of cycles for each basic block based on this model which is inversely proportional to the number of entries in the Re-order-buffer (ROB).
-    */
-    totalMbbCompletionCycles = totalMbbCompletionCycles / (sqrt(std::min((int)InstrCount, ROB_BUFFER_SIZE)));
-    //totalMbbCompletionCycles += float(InstrCount) / NUM_DISPATCH_UNITS;
+    totalMbbCompletionCycles = totalMbbCompletionCycles / (1.0 * sqrt(std::min((int)InstrCount, 512)));
+    //totalMbbCompletionCycles += float(InstrCount) / NUM_EXEC_UNITS;
     if (totalMbbCompletionCycles < 1)
-	totalMbbCompletionCycles = 1;
+	    totalMbbCompletionCycles = 1;
     
     if (machineConfig->MachineArchName == DEFAULT_PROJECT_ARCH_NAME) {
 	return std::make_pair((long)InstrCount, InstrCount);
@@ -305,6 +308,8 @@ void MachineLoopHolder::updateUnstructuredLoopCalledFunctions(long loopNumber) {
 void MachineLoopHolder::processAllLoops() {
     int foundLoop = 0, foundStructuredLoop = 0, numSuccessors = 0;
     int sccID = 0;
+    std::vector<long> candidateNestedLoops;
+
     if (associatedMF->getName().equals(VT_STUB_FUNC)) 
         return;
     for (scc_iterator<MachineFunction *> I = scc_begin(associatedMF),
@@ -373,8 +378,7 @@ void MachineLoopHolder::processAllLoops() {
             MachineLoop *Loop = 
                 mCFGHolder->mLoopInfo ? mCFGHolder->mLoopInfo->getLoopFor(succ): nullptr;
                             
-            if (Loop &&
-                getMachineLoopContainingPreheader(Loop, origMBB) == Loop &&
+            if (Loop && getMachineLoopContainingPreheader(Loop, origMBB) == Loop &&
                 numSuccessors == 1) {
                 outs() << "INFO: Loop-Preheader sanity check passed ...\n";
 
@@ -391,7 +395,6 @@ void MachineLoopHolder::processAllLoops() {
                     for (MachineBasicBlock* blk: Loop->blocks())
                         updateStructuredLoopCalledFunctions(globalLoopCounter, blk);
                 }
-                
                 foundStructuredLoop = 1;
                 break;
             } else {
@@ -406,8 +409,7 @@ void MachineLoopHolder::processAllLoops() {
 
         if (!foundStructuredLoop)
             updateUnstructuredLoopCalledFunctions(globalLoopCounter);
-    }
-    
+    }    
 }
 
 llvm::json::Object MachineLoopHolder::getLoopJsonObj(long loopNumber) {

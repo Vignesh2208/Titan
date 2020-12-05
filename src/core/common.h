@@ -158,4 +158,14 @@ void SignalCpuWorkerResume(tracer * curr_tracer);
 void WakeUpProcessesWaitingOnSyscalls(int timelineID);
 
 
+//! Triggers and waits for stack thread to execute and return
+void TriggerAllStackThreadExecutions(tracer * curr_tracer, int exit_status, int optional_stack_id);
+
+//! Resets all rx_loop_complete flags to zero for all stacks aligned on this tracer
+void ResetAllStackRxLoopStatus(tracer * curr_tracer);
+
+
+//! Triggers and waits for stack thread aligned on timeline execute and return
+void TriggerStackThreadExecutionsOn(int timelineID, int exit_status);
+
 #endif

@@ -31,6 +31,15 @@
 #define LOOKAHEAD_ANCHOR_CURR_TIME 1
 #define LOOKAHEAD_ANCHOR_EAT 2
 
+#define FD_TYPE_DEFAULT 0x0
+#define FD_TYPE_SOCKET 0x1
+#define FD_TYPE_TIMERFD 0x2
+#define MAX_ASSIGNABLE_FD 1024
+
+#define FD_PROTO_TYPE_TCP 0x1
+#define FD_PROTO_TYPE_OTHER 0x2
+#define FD_PROTO_TYPE_NONE 0
+
 typedef long long s64;
 typedef unsigned long long u64;
 

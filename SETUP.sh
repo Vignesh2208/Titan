@@ -189,7 +189,7 @@ install_deps () {
     sudo apt-get install -y git-core build-essential \
                             python3-dev autoconf autotools-dev automake \
                             libcap-dev libssl-dev pkg-config libcapstone-dev \
-                            python3-pip
+                            python3-pip cmake
 
 } 
 

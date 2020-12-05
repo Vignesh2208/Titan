@@ -12,13 +12,17 @@
 
 /*** General Fd Handling ***/
 //! Adds a file descriptor opened by a thread into an internal-datastore
-void AddFd(int ThreadID, int fd, int fdType, int isNonBlocking);
+void AddFd(int ThreadID, int fd, int fdType, int fdProtoType, int isNonBlocking);
 
 //! Returns a positive number if the a file descriptor matches the specified type
 int IsFdTypeMatch(int ThreadID, int fd, int fdType);
 
 //! Returns a positive number if the file descriptor is non-blocking
 int IsFdNonBlocking(int ThreadID, int fd);
+
+
+//! Returns a positive number if the file descriptor is a tcp-socket
+int IsTCPSockFd(int ThreadID, int fd);
 
 //! Sets the blocking mode of the file descriptor
 void SetFdBlockingMode(int ThreadID, int fd, int isNonBlocking);

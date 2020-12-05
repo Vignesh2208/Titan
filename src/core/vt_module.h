@@ -77,6 +77,17 @@ typedef struct timeline_struct {
     wait_queue_head_t * w_queue;
 } timeline;
 
+typedef struct process_tcp_stack_struct {
+    int id;
+    int num_sockets;
+    int active;
+    int rx_loop_complete;
+    int stack_thread_waiting;
+    int exit_status;
+    s64 stack_rtx_send_time;
+    struct tracer_struct * associated_tracer;
+} process_tcp_stack;
+
 
 typedef struct tracer_struct {
     struct dilated_task_struct * main_task;
@@ -89,18 +100,20 @@ typedef struct tracer_struct {
     s64 curr_virtual_time;
     s64 round_overshoot;
     s64 round_start_virt_time;
-       s64 nxt_round_burst_length;
+    s64 nxt_round_burst_length;
     s64 running_task_lookahead;
     s64 earliest_arrival_time;
 
     rwlock_t tracer_lock;
     llist schedule_queue;
-       llist run_queue;
+    llist run_queue;
     llist pkt_info_queue;
+    llist process_tcp_stacks;
     wait_queue_head_t * w_queue;
+    wait_queue_head_t stack_w_queue;
     int w_queue_wakeup_pid;
     lxc_schedule_elem * last_run;
-
+    
 } tracer;
 
 #endif

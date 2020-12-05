@@ -5,7 +5,7 @@
 
 extern hashmap thread_info_map;
 
-void AddFd(int ThreadID, int fd, int fdType, int isNonBlocking) {
+void AddFd(int ThreadID, int fd, int fdType, int fdProtoType, int isNonBlocking) {
     if (fd <= 0)
         return;
 
@@ -27,6 +27,7 @@ void AddFd(int ThreadID, int fd, int fdType, int isNonBlocking) {
 
     currFdInfo->fd = fd;
     currFdInfo->fdType = fdType;
+    currFdInfo->fdProtoType = fdProtoType;
     currFdInfo->isNonBlocking = isNonBlocking;
     currFdInfo->absExpiryTime = 0;
     currFdInfo->intervalNS = 0;
@@ -72,6 +73,49 @@ int IsFdTypeMatch(int ThreadID, int fd, int fdType) {
     }
 
     return FALSE;
+}
+
+
+int IsTCPSockFd(int ThreadID, int fd) {
+
+     if (fd <= 0)
+        return FALSE;
+
+    ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+
+    if (!currThreadInfo) {
+        //printf ("ERROR Could not find ThreadInfo for ThreadID: %d, fd = %d\n", ThreadID, fd);
+        //fflush(stdout);
+        return FALSE;
+    }
+    assert(currThreadInfo != NULL);
+
+    if (currThreadInfo->in_callback)
+        return FALSE;
+
+    if (currThreadInfo->processPID != ThreadID) {
+        // need to get processPID's threadInfo
+        currThreadInfo = hmap_get_abs(&thread_info_map,
+                                      currThreadInfo->processPID);
+        assert(currThreadInfo != NULL);
+    }
+
+    llist_elem * head;
+    fdInfo * currFdInfo;
+    head = currThreadInfo->special_fds.head;
+    while (head != NULL) {
+        currFdInfo = (fdInfo *)head->item;
+
+        if (currFdInfo && currFdInfo->fd == fd &&
+            currFdInfo->fdType == FD_TYPE_SOCKET &&
+            currFdInfo->fdProtoType == FD_PROTO_TYPE_TCP) {
+            return TRUE;
+        }
+        head = head->next;
+    }
+
+    return FALSE;
+
 }
 
 int GetNxtTimerFdNumber(int ThreadID) {

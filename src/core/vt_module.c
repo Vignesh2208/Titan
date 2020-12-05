@@ -238,6 +238,22 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 
     case VT_GET_TRACER_NEAT_LOOKAHEAD:
       return HandleVtGetTracerLookahead(arg, 1);
+
+    case VT_MARK_STACK_ACTIVE:
+      return HandleVtMarkStackActive(arg);
+
+    case VT_MARK_STACK_INACTIVE:
+      return HandleVtMarkStackActive(arg);
+
+    case VT_MARK_STACK_RXLOOP_COMPLETE:
+      return HandleVtMarkStackRxLoopActive(arg);
+
+    case VT_THREAD_STACK_WAIT:
+      return HandleVtThreadStackWait(arg);
+
+    case VT_UPDATE_STACK_RTX_SEND_TIME:
+      return HandleVtUpdateStackRtxSendTime(arg);
+
   
     default:
       PDEBUG_V("Unkown Command !\n");

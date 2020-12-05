@@ -4,6 +4,8 @@
 
 
 
+
+
 typedef int (*pthread_create_t)(pthread_t *, const pthread_attr_t *,
                                 void *(*)(void*), void *);
 
@@ -35,6 +37,16 @@ ssize_t (*orig_send)(int sockfd, const void *buf, size_t len, int flags);
 ssize_t (*orig_sendto)(int sockfd, const void *buf, size_t len, int flags,
                const struct sockaddr *dest_addr, socklen_t addrlen);
 
+ssize_t (*orig_write)(int fd, const void *buf, size_t count);
+
+ssize_t (*orig_read)(int fd, void *buf, size_t count);
+
+ssize_t (*orig_recv)(int sockfd, void *buf, size_t len, int flags);
+
+ssize_t (*orig_recvfrom)(int sockfd, void *buf, size_t len, int flags,
+    struct sockaddr *src_addr, socklen_t *addrlen);
+
+
 int (*orig_socket)(int domain, int type, int protocol);
 
 int (*orig_close)(int fd);
@@ -43,6 +55,21 @@ int (*orig_accept)(int sockfd, struct sockaddr * addr, socklen_t * addrlen);
 
 int (*orig_accept4)(int sockfd, struct sockaddr * addr, socklen_t * addrlen,
                     int flags);
+
+int (*orig_connect)(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+
+
+
+int (*orig_getsockopt)(int fd, int level, int optname, void *optval, socklen_t *optlen);
+int (*orig_setsockopt)(int sockfd, int level, int option_name,
+                    const void *option_value, socklen_t option_len);
+int (*orig_getpeername)(int socket, struct sockaddr *restrict addr,
+                    socklen_t *restrict address_len);
+int (*orig_getsockname)(int socket, struct sockaddr *restrict addr,
+                    socklen_t *restrict address_len);
+int (*orig_listen)(int socket, int backlog);
+
+int (*orig_bind)(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 
 /*** Orig timerfd fns ***/
 
@@ -84,7 +111,8 @@ extern s64 (*vtGetCurrentTime)();
 extern void (*vt_ns_2_timespec)(s64 nsec, struct timespec * ts);
 
 /*** For Socket Handling ***/
-extern void  (*vtAddSocket)(int ThreadID, int sockFD, int isNonBlocking);
+extern void  (*vtAddSocket)(int ThreadID, int sockFD, int sockFdProtoType, int isNonBlocking);
+extern int (*vtIsTCPSocket)(int ThreadID, int sockFD);
 extern int (*vtIsSocketFd)(int ThreadID, int sockFD);
 extern int (*vtIsSocketFdNonBlocking)(int ThreadID, int sockFD);
 
@@ -106,6 +134,39 @@ extern int (*vtComputeClosestTimerExpiryForSelect)(int ThreadID,
     fd_set * readfs, int nfds, s64 * closestTimerExpiryDurationNS);
 extern int (*vtComputeClosestTimerExpiryForPoll)(int ThreadID,
     struct pollfd * fds, int nfds, s64 * closestTimerExpiryDurationNS);
+
+/** Virtual TCP socket layer ***/
+extern int (*_vsocket)(int domain, int type, int protocol);
+extern int (*_vconnect)(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+extern int (*_vwrite)(int sockfd, const void *buf, const unsigned int count, int *did_block);
+extern int (*_vread)(int sockfd, void *buf, const unsigned int count, int *did_block);
+extern int (*_vclose)(int sockfd);
+extern int (*_vpoll)(struct pollfd fds[], nfds_t nfds);
+extern int (*_vgetsockopt)(int fd, int level, int optname, void *optval, socklen_t *optlen);
+extern int (*_vsetsockopt)(int sockfd, int level, int option_name,
+                    const void *option_value, socklen_t option_len);
+extern int (*_vgetpeername)(int socket, struct sockaddr *restrict addr,
+                    socklen_t *restrict address_len);
+extern int (*_vgetsockname)(int socket, struct sockaddr *restrict addr,
+                    socklen_t *restrict address_len);
+extern int (*_vlisten)(int socket, int backlog);
+
+
+extern int (*_vbind)(int socket, const struct sockaddr *skaddr);
+extern int (*_vaccept)(int socket, struct sockaddr *skaddr);
+
+
+#ifndef DISABLE_VT_SOCKET_LAYER
+extern int (*vtIsNetDevInCallback)();
+extern void (*vtRunTCPStackRxLoop)();
+extern void (*vtInitializeTCPStack)(int stackID);
+extern void (*vtMarkTCPStackActive)();
+extern void (*vtMarkTCPStackInactive)();
+extern int (*vtHandleReadSyscall)(int ThreadID, int fd, void *buf, int count, int *redirect);
+extern int (*vtHandleWriteSyscall)(int ThreadID, int fd, const void *buf, int count, int * redirect);
+#endif
+
+
 
 
 /*** For Sockets and TimerFD ***/
@@ -322,6 +383,32 @@ int __libc_start_main(int (*main) (int, char **, char **),
         _exit(EXIT_FAILURE);
     }
 
+    orig_write = dlsym(libc_handle, "write");
+    if (!orig_write) {
+        fprintf(stderr, "can't find sendto():%s\n", dlerror());
+        _exit(EXIT_FAILURE);
+    }
+
+
+    orig_recv = dlsym(libc_handle, "recv");
+    if (!orig_send) {
+        fprintf(stderr, "can't find recv():%s\n", dlerror());
+        _exit(EXIT_FAILURE);
+    }
+
+
+    orig_recvfrom = dlsym(libc_handle, "recvfrom");
+    if (!orig_recvfrom) {
+        fprintf(stderr, "can't find recvfrom():%s\n", dlerror());
+        _exit(EXIT_FAILURE);
+    }
+
+    orig_read = dlsym(libc_handle, "read");
+    if (!orig_read) {
+        fprintf(stderr, "can't find write():%s\n", dlerror());
+        _exit(EXIT_FAILURE);
+    }
+
 
     orig_socket = dlsym(libc_handle, "socket");
     if (!orig_socket) {
@@ -347,6 +434,49 @@ int __libc_start_main(int (*main) (int, char **, char **),
         _exit(EXIT_FAILURE);
     }
 
+
+    orig_connect = dlsym(libc_handle, "connect");
+    if (!orig_connect) {
+        fprintf(stderr, "can't find connect(...):%s\n", dlerror());
+        _exit(EXIT_FAILURE);
+    }
+
+    orig_getsockopt = dlsym(libc_handle, "getsockopt");
+    if (!orig_getsockopt) {
+        fprintf(stderr, "can't find getsockopt(...):%s\n", dlerror());
+        _exit(EXIT_FAILURE);
+    }
+
+    orig_setsockopt = dlsym(libc_handle, "setsockopt");
+    if (!orig_setsockopt) {
+        fprintf(stderr, "can't find setsockopt(...):%s\n", dlerror());
+        _exit(EXIT_FAILURE);
+    }
+
+    orig_getpeername = dlsym(libc_handle, "getpeername");
+    if (!orig_getpeername) {
+        fprintf(stderr, "can't find getpeername(...):%s\n", dlerror());
+        _exit(EXIT_FAILURE);
+    }
+
+    orig_getsockname = dlsym(libc_handle, "getsockname");
+    if (!orig_getsockname) {
+        fprintf(stderr, "can't find getsockname(...):%s\n", dlerror());
+        _exit(EXIT_FAILURE);
+    }
+
+    orig_listen = dlsym(libc_handle, "listen");
+    if (!orig_listen) {
+        fprintf(stderr, "can't find listen(...):%s\n", dlerror());
+        _exit(EXIT_FAILURE);
+    }
+
+    orig_bind = dlsym(libc_handle, "bind");
+    if (!orig_bind) {
+        fprintf(stderr, "can't find bind(...):%s\n", dlerror());
+        _exit(EXIT_FAILURE);
+    }
+
     orig_timerfd_create = dlsym(libc_handle, "timerfd_create");
     if (!orig_timerfd_create) {
         fprintf(stderr, "can't find timerfd_create(...):%s\n", dlerror());
@@ -364,6 +494,8 @@ int __libc_start_main(int (*main) (int, char **, char **),
         fprintf(stderr, "can't find timerfd_gettime(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
+
+
 
     real_libc_start_main.sym = sym;
     real_main = main;
@@ -513,7 +645,7 @@ int timerfd_create(int clockid, int flags) {
 
     
     if (alottedFd) {
-        int isNonBlocking = (flags & TFD_NONBLOCK != 0) ? 1: 0;
+        int isNonBlocking = ((flags & TFD_NONBLOCK) != 0) ? 1: 0;
         vtAddTimerFd(ThreadID, alottedFd, isNonBlocking);
         return alottedFd;
     }
@@ -598,43 +730,141 @@ int timerfd_gettime(int fd, struct itimerspec *curr_value) {
 //! Overloaded accept function/syscall
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 
-    int ThreadID = syscall(SYS_gettid);
-    int ret = orig_accept(sockfd, addr, addrlen);
+    int ret;
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_accept(sockfd, addr, addrlen);
 
-    if(ret) {
-        vtAddSocket(ThreadID, ret, 0);
-    }
+        int ThreadID = syscall(SYS_gettid);
+        if (vtIsTCPSocket(ThreadID, sockfd)) {
+            ret = _vaccept(sockfd, addr);
+            if(ret) {
+                vtAddSocket(ThreadID, ret, FD_PROTO_TYPE_TCP, 0);
+            }
+            vtTriggerSyscallFinish(ThreadID);
+        } else {
+            ret = orig_accept(sockfd, addr, addrlen);
+            if(ret) {
+                vtAddSocket(ThreadID, ret, FD_PROTO_TYPE_OTHER, 0);
+            }
+        }
+    #else
+        if (!vtInitialized || *vtInitialized != 1)
+            return orig_accept(sockfd, addr, addrlen);
+        ret = orig_accept(sockfd, addr, addrlen);
+        if(ret) {
+            vtAddSocket(ThreadID, ret, FD_PROTO_TYPE_OTHER, 0);
+        }
+    #endif
+    
 
     return ret;
 } 
 
 //! Overloaded accept4 function/syscall
 int accept4(int sockfd, struct sockaddr *addr,
-                   socklen_t *addrlen, int flags) {
-    int ThreadID = syscall(SYS_gettid);
-    int ret = orig_accept4(sockfd, addr, addrlen, flags);
+            socklen_t *addrlen, int flags) {
 
-    if(ret) {
-        int isNonBlocking = (flags & SOCK_NONBLOCK != 0) ? 1: 0; 
-        vtAddSocket(ThreadID, ret, isNonBlocking);
-    }
-
+    int ret;
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_accept4(sockfd, addr, addrlen, flags);
+        int ThreadID = syscall(SYS_gettid);
+        if (vtIsTCPSocket(ThreadID, sockfd)) {
+            ret = _vaccept(sockfd, addr);
+            if(ret) {
+                vtAddSocket(ThreadID, ret, FD_PROTO_TYPE_TCP, 0);
+            }
+            vtTriggerSyscallFinish(ThreadID);
+        } else {
+            ret = orig_accept4(sockfd, addr, addrlen, flags);
+            if(ret) {
+                vtAddSocket(ThreadID, ret, FD_PROTO_TYPE_OTHER, 0);
+            }
+        }
+    #else
+        if (!vtInitialized || *vtInitialized != 1)
+            return orig_accept4(sockfd, addr, addrlen, flags);
+        ret = orig_accept4(sockfd, addr, addrlen, flags);
+        if(ret) {
+            vtAddSocket(ThreadID, ret, FD_PROTO_TYPE_OTHER, 0);
+        }
+    #endif
+    
     return ret;
 
 }
 
+
+#ifndef DISABLE_VT_SOCKET_LAYER
+ssize_t write(int fd, const void *buf, size_t count) {
+    int ThreadID = syscall(SYS_gettid);
+    int redirect;
+    int ret;
+
+    ret = vtHandleWriteSyscall(ThreadID, fd, buf, count, &redirect);
+    if (redirect) {
+        ret = orig_write(fd, buf, count);
+    }
+    return ret;
+}
+
+ssize_t read(int fd, void *buf, size_t count) {
+    int ThreadID = syscall(SYS_gettid);
+    int redirect;
+    int ret;
+
+    ret = vtHandleReadSyscall(ThreadID, fd, buf, count, &redirect);
+    if (redirect) {
+        ret = orig_read(fd, buf, count);
+    }
+    return ret;
+}
+#endif
+
 //! Overloaded send syscall
 ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
     int payload_hash;
-    ssize_t ret = orig_send(sockfd, buf, len, flags);
+    ssize_t ret;
     #ifndef DISABLE_LOOKAHEAD
-    if (len > 0 && ret > 0) {
+    int setLA = 0;
+    #endif
+    
+
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_send(sockfd, buf, len, flags);
+        int ThreadID = syscall(SYS_gettid);
+        int did_block = 0;
+        if (vtIsTCPSocket(ThreadID, sockfd)) {
+            ret = _vwrite(sockfd, buf, len, &did_block);
+
+            if (did_block)
+                vtTriggerSyscallFinish(ThreadID);
+        } else {
+            ret = orig_send(sockfd, buf, len, flags);
+            #ifndef DISABLE_LOOKAHEAD
+            setLA = 1;
+            #endif
+        }
+    #else
+        ret = orig_send(sockfd, buf, len, flags);
+        #ifndef DISABLE_LOOKAHEAD
+        setLA = 1;
+        #endif
+
+    #endif
+
+    #ifndef DISABLE_LOOKAHEAD
+    if (len > 0 && ret > 0 && setLA > 0) {
         payload_hash = GetPayloadHash(buf, ret);
         if (payload_hash) {
             vtSetPktSendTime(payload_hash, ret, vtGetCurrentTime());
         }
     }
     #endif
+
+    
     return ret;
 }
 
@@ -644,9 +874,36 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
                const struct sockaddr *dest_addr, socklen_t addrlen) {
 
     int payload_hash;
-    ssize_t ret = orig_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
+    ssize_t ret;
     #ifndef DISABLE_LOOKAHEAD
-    if (len > 0 && ret > 0) {
+    int setLA = 0;
+    #endif
+
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
+        int ThreadID = syscall(SYS_gettid);
+        if (vtIsTCPSocket(ThreadID, sockfd)) {
+            int did_block;
+            ret = _vwrite(sockfd, buf, len, &did_block);
+            if (did_block)
+                vtTriggerSyscallFinish(ThreadID);
+
+        } else {
+            ret = orig_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
+            #ifndef DISABLE_LOOKAHEAD
+            setLA = 1;
+            #endif
+        }
+    #else
+        ret = orig_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
+        #ifndef DISABLE_LOOKAHEAD
+        setLA = 1;
+        #endif
+    #endif
+
+    #ifndef DISABLE_LOOKAHEAD
+    if (len > 0 && ret > 0 && setLA > 0) {
         payload_hash = GetPayloadHash(buf, ret);
         if (payload_hash) {
             vtSetPktSendTime(payload_hash, ret, vtGetCurrentTime());
@@ -657,26 +914,108 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 
 }
 
+
+//! Overloaded recv syscall
+ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
+    ssize_t ret;
+    
+
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_recv(sockfd, buf, len, flags);
+        int ThreadID = syscall(SYS_gettid);
+        int did_block = 0;
+        if (vtIsTCPSocket(ThreadID, sockfd)) {
+            ret = _vread(sockfd, buf, len, &did_block);
+
+            if (did_block)
+                vtTriggerSyscallFinish(ThreadID);
+        } else {
+            ret = orig_recv(sockfd, buf, len, flags);
+        }
+    #else
+        ret = orig_recv(sockfd, buf, len, flags);
+    #endif
+    return ret;
+}
+
+
+//! Overloaded recvfrom syscall
+ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
+    struct sockaddr *src_addr, socklen_t *addrlen) {
+    ssize_t ret;
+    
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
+        int ThreadID = syscall(SYS_gettid);
+        if (vtIsTCPSocket(ThreadID, sockfd)) {
+            int did_block;
+            ret = _vread(sockfd, buf, len, &did_block);
+            if (did_block)
+                vtTriggerSyscallFinish(ThreadID);
+                
+        } else {
+            ret = orig_recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
+        }
+    #else
+        ret = orig_recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
+    #endif
+    return ret;
+
+}
+
+
 //! Overloaded socket() syscall
 int socket(int domain, int type, int protocol) {
-    int retFD = orig_socket(domain, type, protocol);
+    int retFD;
 
-    if(!vtInitialized || *vtInitialized != 1)
-        return retFD;
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_socket(domain, type, protocol);
+        if ((type & SOCK_STREAM) && (domain == AF_INET) && (protocol == 0) ) {
+            printf ("Adding new vt-tcp-socket !\n");
+            retFD = _vsocket(domain, type, protocol);
+        } else {
+            retFD = orig_socket(domain, type, protocol);
+        }
 
-    if(retFD) {
-        int ThreadPID = syscall(SYS_gettid);
-        int isNonBlocking = (type & SOCK_NONBLOCK) != 0 ? 1: 0;
-        vtAddSocket(ThreadPID, retFD, isNonBlocking);
-    }
+        if(retFD) {
+            int ThreadPID = syscall(SYS_gettid);
+            int isNonBlocking = (type & SOCK_NONBLOCK) != 0 ? 1: 0;
+
+            if ((type & SOCK_STREAM) && (domain == AF_INET) && (protocol == 0)) {
+                vtAddSocket(ThreadPID, retFD, FD_PROTO_TYPE_TCP, isNonBlocking);
+            } else
+                vtAddSocket(ThreadPID, retFD, FD_PROTO_TYPE_OTHER, isNonBlocking);
+        }
+
+    #else
+        if (!vtInitialized || *vtInitialized != 1)
+            return orig_socket(domain, type, protocol);
+        retFD = orig_socket(domain, type, protocol);
+        if(retFD) {
+            int ThreadPID = syscall(SYS_gettid);
+            int isNonBlocking = (type & SOCK_NONBLOCK) != 0 ? 1: 0;
+            vtAddSocket(ThreadPID, retFD, FD_PROTO_TYPE_OTHER, isNonBlocking);
+        }
+
+    #endif
 
     return retFD;
 }
 
 //! Overloaded close() syscall
 int close(int fd) {
-    if(!vtInitialized || *vtInitialized != 1)
-        return orig_close(fd);
+
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_close(fd);
+    #else
+        if (!vtInitialized || *vtInitialized != 1)
+            return orig_close(fd);
+    #endif
+
 
     int ThreadPID = syscall(SYS_gettid);
     int isTimer = vtIsTimerFd(ThreadPID, fd);
@@ -684,11 +1023,150 @@ int close(int fd) {
         vtCloseFd(ThreadPID, fd);
     }
 
-    if (!isTimer)
-        return orig_close(fd);
-    else
+    if (!isTimer) {
+        #ifndef DISABLE_VT_SOCKET_LAYER
+            if (vtIsTCPSocket(ThreadPID, fd)) {
+                return _vclose(fd);
+            }
+            return orig_close(fd);
+        #else
+            return orig_close(fd);
+        #endif
+    } else
         return 0;
 }
+
+
+int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
+    int ret;
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_connect(sockfd, addr, addrlen);
+        int ThreadID = syscall(SYS_gettid);
+        if (vtIsTCPSocket(ThreadID, sockfd)) {
+            ret = _vconnect(sockfd, addr, addrlen);
+            vtTriggerSyscallFinish(ThreadID);
+        } else {
+            return orig_connect(sockfd, addr, addrlen);
+        }
+    #else
+        return orig_connect(sockfd, addr, addrlen);
+    #endif
+    return ret;
+}
+
+
+int getsockopt(int fd, int level, int optname, void *optval, socklen_t *optlen) {
+    int ret;
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_getsockopt(fd, level, optname, optval, optlen);
+        int ThreadID = syscall(SYS_gettid);
+        if (vtIsTCPSocket(ThreadID, fd)) {
+            ret = _vgetsockopt(fd, level, optname, optval, optlen);
+        } else {
+            ret = orig_getsockopt(fd, level, optname, optval, optlen);
+        }
+    #else
+        return orig_getsockopt(fd, level, optname, optval, optlen);
+    #endif
+    return ret;
+}
+
+int setsockopt(int sockfd, int level, int option_name,
+              const void *option_value, socklen_t option_len) {
+    int ret;
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_setsockopt(sockfd, level, option_name, option_value, option_len);
+        int ThreadID = syscall(SYS_gettid);
+        if (vtIsTCPSocket(ThreadID, sockfd)) {
+            ret = _vsetsockopt(sockfd, level, option_name, option_value, option_len);
+        } else {
+            ret = orig_setsockopt(sockfd, level,option_name, option_value, option_len);
+        }
+    #else
+        return orig_setsockopt(fd, level, optname, optval, optlen);
+    #endif
+    return ret;
+
+}
+int getpeername(int socket, struct sockaddr *restrict addr,
+               socklen_t *restrict address_len) {
+
+    int ret;
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_getpeername(socket, addr, address_len);
+        int ThreadID = syscall(SYS_gettid);
+        if (vtIsTCPSocket(ThreadID, socket)) {
+            ret = _vgetpeername(socket, addr, address_len);
+        } else {
+            return orig_getpeername(socket, addr, address_len);
+        }
+    #else
+        return orig_getpeername(socket, addr, address_len);
+    #endif
+    return ret;
+
+}
+int getsockname(int socket, struct sockaddr *restrict addr,
+                socklen_t *restrict address_len) {
+    int ret;
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_getsockname(socket, addr, address_len);
+        int ThreadID = syscall(SYS_gettid);
+        if (vtIsTCPSocket(ThreadID, socket)) {
+            ret = _vgetsockname(socket, addr, address_len);
+        } else {
+            return orig_getsockname(socket, addr, address_len);
+        }
+    #else
+        return orig_getsockname(socket, addr, address_len);
+    #endif
+    return ret;
+
+}
+
+int listen(int socket, int backlog) {
+
+    int ret;
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_listen(socket, backlog);
+        int ThreadID = syscall(SYS_gettid);
+        if (vtIsTCPSocket(ThreadID, socket)) {
+            ret = _vlisten(socket, backlog);
+        } else {
+            return orig_listen(socket, backlog);
+        }
+    #else
+        return orig_listen(socket, backlog);
+    #endif
+    return ret;
+
+}
+
+int bind(int socket, const struct sockaddr *skaddr, socklen_t addrlen) {
+
+    int ret;
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+            return orig_bind(socket, skaddr, addrlen);
+        int ThreadID = syscall(SYS_gettid);
+        if (vtIsTCPSocket(ThreadID, socket)) {
+            ret = _vbind(socket, skaddr);
+        } else {
+            return orig_bind(socket, skaddr, addrlen);
+        }
+    #else
+        return orig_bind(socket, skaddr, addrlen);
+    #endif
+    return ret;
+
+}
+
 
 /***** Time related functions ****/
 
@@ -1090,7 +1568,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
         }
 
         if (writefds) {
-            memcpy(&writefds, writefds, sizeof(fd_set));
+            memcpy(&writefds_copy, writefds, sizeof(fd_set));
             isWriteInc = 1;
         }
 
@@ -1274,7 +1752,8 @@ static void HandleVtPacketReceiveSyscalls(long syscall_number, long arg0,
         && syscall_number != SYS_recvmsg
         && syscall_number != SYS_recvmmsg
         && syscall_number != SYS_accept
-        && syscall_number != SYS_accept4)
+        && syscall_number != SYS_accept4
+        && syscall_number != SYS_connect)
         return;
 
     int sockfd = (int) arg0;
@@ -1336,6 +1815,7 @@ static void ExecuteCpuYieldingSyscall(long syscall_number, long arg0,
     
     switch(syscall_number) {
     
+        case SYS_connect:
         case SYS_accept:
         case SYS_accept4:
         case SYS_recvmsg:
@@ -1370,6 +1850,11 @@ static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
     long arg4, long arg5, long *result) {
 
     int ThreadPID = 0;
+
+    #ifndef DISABLE_VT_SOCKET_LAYER
+    if (vtIsNetDevInCallback())
+        return 1;
+    #endif
     
     if (syscall_number == SYS_futex
         || syscall_number == SYS_connect

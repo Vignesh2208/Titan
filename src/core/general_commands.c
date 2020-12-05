@@ -1437,7 +1437,9 @@ int HandleVtGetTracerLookahead(unsigned long arg, int ignore_eat_anchors) {
     lxc_schedule_elem* curr_elem;
     llist* schedule_queue;
     llist_elem* head;
-
+    process_tcp_stack * curr_stack;
+    s64 minStackSendRtxTime = 0;
+  
     memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
     memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
 
@@ -1497,8 +1499,377 @@ int HandleVtGetTracerLookahead(unsigned long arg, int ignore_eat_anchors) {
         min_tracer_lookahead < curr_tracer->curr_virtual_time)
       min_tracer_lookahead = curr_tracer->curr_virtual_time;
 
+    // Also look at active tracer tcp-stacks and their next send-rtx-times here.
+    head = curr_tracer->process_tcp_stacks.head;
+    while (head != NULL) {
+      curr_stack = (process_tcp_stack *)head->item;
+      if (curr_stack && curr_stack->active && 
+          curr_stack->stack_rtx_send_time > 0) {
+          // ignore if stack_rtx_send_time == 0 or inactive
+        if (minStackSendRtxTime == 0 || 
+            minStackSendRtxTime > curr_stack->stack_rtx_send_time) {
+          minStackSendRtxTime = curr_stack->stack_rtx_send_time;
+        }
+      }
+      head = head->next;    
+    }
+
+    if (minStackSendRtxTime > 0 &&
+        minStackSendRtxTime >= curr_tracer->curr_virtual_time && 
+        minStackSendRtxTime < min_tracer_lookahead)
+      min_tracer_lookahead = minStackSendRtxTime;
+
     api_info_tmp.return_value = min_tracer_lookahead;
     BUG_ON(copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api)));
     return 0;
 
+}
+
+
+
+
+int HandleVtMarkStackActive(unsigned long arg) {
+  invoked_api *api_info;
+  invoked_api api_info_tmp;
+  int num_integer_args;
+  int api_integer_args[MAX_API_ARGUMENT_SIZE];
+  int tracer_id;
+  int stack_id;
+  tracer * curr_tracer;
+  process_tcp_stack * curr_stack;
+  llist_elem * head;
+    
+  memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
+  memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
+
+
+  if (initialization_status != INITIALIZED
+      || experiment_status == STOPPING) {
+      PDEBUG_I(
+          "VT_MARK_STACK_ACTIVE: Operation cannot be performed when experiment is "
+          "not initialized !\n");
+      return -EFAULT;
+        }
+
+
+
+  api_info = (invoked_api *)arg;
+  if (!api_info) return -EFAULT;
+  if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+      return -EFAULT;
+  }
+  num_integer_args = ConvertStringToArray(
+    api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+  if (num_integer_args <= 1) {
+    PDEBUG_I("VT_MARK_STACK_ACTIVE: Not enough arguments !");
+    return -EFAULT;
+  }
+  
+  tracer_id = api_integer_args[0];
+  stack_id = api_integer_args[1];
+  curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+  if (!curr_tracer) {
+    PDEBUG_I("VT_MARK_STACK_ACTIVE: Tracer : %d, not registered\n", tracer_id);
+    return -EFAULT;
+  }
+
+  head = curr_tracer->process_tcp_stacks.head;
+  
+
+
+  while (head != NULL) {
+    curr_stack = (process_tcp_stack *)head->item;
+    if (curr_stack && curr_stack->id == stack_id) {
+      curr_stack->active = 1;
+      return 0;
+    }
+    head = head->next;    
+  }
+
+  // Not found. Return error.
+  PDEBUG_I("VT_MARK_STACK_ACTIVE: Tracer: %d, Stack: %d not registered\n",
+        tracer_id, stack_id);
+  
+  return -EFAULT;
+}
+
+
+int HandleVtMarkStackInActive(unsigned long arg) {
+
+  invoked_api *api_info;
+  invoked_api api_info_tmp;
+  int num_integer_args;
+  int api_integer_args[MAX_API_ARGUMENT_SIZE];
+  int tracer_id;
+  int stack_id;
+  tracer * curr_tracer;
+  process_tcp_stack * curr_stack;
+  llist_elem * head;
+    
+  memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
+  memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
+
+
+  if (initialization_status != INITIALIZED
+      || experiment_status == STOPPING) {
+      PDEBUG_I(
+          "VT_MARK_STACK_INACTIVE: Operation cannot be performed when experiment is "
+          "not initialized !\n");
+      return -EFAULT;
+        }
+
+
+
+  api_info = (invoked_api *)arg;
+  if (!api_info) return -EFAULT;
+  if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+      return -EFAULT;
+  }
+  num_integer_args = ConvertStringToArray(
+    api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+  if (num_integer_args <= 1) {
+    PDEBUG_I("VT_MARK_STACK_INACTIVE: Not enough arguments !");
+    return -EFAULT;
+  }
+  
+  tracer_id = api_integer_args[0];
+  stack_id = api_integer_args[1];
+  curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+  if (!curr_tracer) {
+    PDEBUG_I("VT_MARK_STACK_INACTIVE: Tracer : %d, not registered\n", tracer_id);
+    return -EFAULT;
+  }
+
+  head = curr_tracer->process_tcp_stacks.head;
+
+  while (head != NULL) {
+    curr_stack = (process_tcp_stack *)head->item;
+    if (curr_stack && curr_stack->id == stack_id) {
+      curr_stack->active = 0;
+      return 0;
+    }
+    head = head->next;    
+  }
+
+  // Not found. Create new stack
+  curr_stack = (process_tcp_stack *)kmalloc(sizeof(process_tcp_stack), GFP_KERNEL);
+  if (!curr_stack)
+    return -ENOMEM;
+
+  curr_stack->id = stack_id;
+  curr_stack->associated_tracer = curr_tracer;
+  curr_stack->active = 0;
+  curr_stack->rx_loop_complete = 0;
+  curr_stack->num_sockets = 0;
+  curr_stack->exit_status = 0;
+  curr_stack->stack_thread_waiting = 0;
+  curr_stack->stack_rtx_send_time = 0;
+  llist_append(&curr_tracer->process_tcp_stacks, curr_stack);
+  return 0;
+}
+
+
+int HandleVtMarkStackRxLoopActive(unsigned long arg) {
+  invoked_api *api_info;
+  invoked_api api_info_tmp;
+  int num_integer_args;
+  int api_integer_args[MAX_API_ARGUMENT_SIZE];
+  int tracer_id;
+  int stack_id;
+  tracer * curr_tracer;
+  process_tcp_stack * curr_stack;
+  llist_elem * head;
+    
+  memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
+  memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
+
+
+  if (initialization_status != INITIALIZED
+      || experiment_status == STOPPING) {
+      PDEBUG_I(
+          "VT_MARK_STACK_RX_LOOP_COMPLETE: Operation cannot be performed when experiment is "
+          "not initialized !\n");
+      return -EFAULT;
+        }
+
+
+
+  api_info = (invoked_api *)arg;
+  if (!api_info) return -EFAULT;
+  if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+      return -EFAULT;
+  }
+  num_integer_args = ConvertStringToArray(
+    api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+  if (num_integer_args <= 1) {
+    PDEBUG_I("VT_MARK_STACK_RX_LOOP_COMPLETE: Not enough arguments !");
+    return -EFAULT;
+  }
+  
+  tracer_id = api_integer_args[0];
+  stack_id = api_integer_args[1];
+  curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+  if (!curr_tracer) {
+    PDEBUG_I("VT_MARK_STACK_RX_LOOP_COMPLETE: Tracer : %d, not registered\n", tracer_id);
+    return -EFAULT;
+  }
+
+  head = curr_tracer->process_tcp_stacks.head;
+  
+
+
+  while (head != NULL) {
+    curr_stack = (process_tcp_stack *)head->item;
+    if (curr_stack && curr_stack->id == stack_id) {
+      curr_stack->rx_loop_complete = 1;
+      return 0;
+    }
+    head = head->next;    
+  }
+
+  // Not found. Return error.
+  PDEBUG_I("VT_MARK_STACK_RX_LOOP_COMPLETE: Tracer: %d, Stack: %d not registered\n",
+        tracer_id, stack_id);
+  
+  return -EFAULT;
+}
+
+
+int HandleVtThreadStackWait(unsigned long arg) {
+  invoked_api *api_info;
+  invoked_api api_info_tmp;
+  int num_integer_args;
+  int api_integer_args[MAX_API_ARGUMENT_SIZE];
+  int tracer_id;
+  int stack_id;
+  tracer * curr_tracer;
+  process_tcp_stack * curr_stack;
+  llist_elem * head;
+    
+  memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
+  memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
+
+
+  if (initialization_status != INITIALIZED
+      || experiment_status == STOPPING) {
+      PDEBUG_I(
+          "VT_THREAD_STACK_WAIT: Operation cannot be performed when experiment is "
+          "not initialized !\n");
+      return -EFAULT;
+        }
+
+
+
+  api_info = (invoked_api *)arg;
+  if (!api_info) return -EFAULT;
+  if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+      return -EFAULT;
+  }
+  num_integer_args = ConvertStringToArray(
+    api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+  if (num_integer_args <= 1) {
+    PDEBUG_I("VT_THREAD_STACK_WAIT: Not enough arguments !");
+    return -EFAULT;
+  }
+  
+  tracer_id = api_integer_args[0];
+  stack_id = api_integer_args[1];
+  curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+  if (!curr_tracer) {
+    PDEBUG_I("VT_THREAD_STACK_WAIT: Tracer : %d, not registered\n", tracer_id);
+    return -EFAULT;
+  }
+
+  head = curr_tracer->process_tcp_stacks.head;
+  
+
+
+  while (head != NULL) {
+    curr_stack = (process_tcp_stack *)head->item;
+    if (curr_stack && curr_stack->id == stack_id) {
+      PDEBUG_I("VT_THREAD_STACK_WAIT: Tracer: %d, Stack-Thread: %d Entering Wait !\n",
+        tracer_id, stack_id);
+      curr_stack->stack_thread_waiting = 1;
+      wake_up_interruptible(&curr_tracer->stack_w_queue);
+      wait_event_interruptible(curr_tracer->stack_w_queue,
+        curr_stack->stack_thread_waiting == 0 || curr_stack->exit_status > 0);
+      PDEBUG_I("VT_THREAD_STACK_WAIT: Tracer: %d, Stack-Thread: %d Resuming!\n",
+        tracer_id, stack_id);
+      return -1 * curr_stack->exit_status;
+    }
+    head = head->next;    
+  }
+
+  // Not found. Its a bug.
+  BUG_ON(true);
+}
+
+
+int HandleVtUpdateStackRtxSendTime(unsigned long arg) {
+  invoked_api *api_info;
+  invoked_api api_info_tmp;
+  int num_integer_args;
+  int api_integer_args[MAX_API_ARGUMENT_SIZE];
+  int tracer_id;
+  int stack_id;
+  tracer * curr_tracer;
+  s64 stack_rtx_send_time;
+  process_tcp_stack * curr_stack;
+  llist_elem * head;
+    
+  memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
+  memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
+
+
+  if (initialization_status != INITIALIZED
+      || experiment_status == STOPPING) {
+      PDEBUG_I(
+          "VT_UPDATE_STACK_RTX_SEND_TIME: Operation cannot be performed when experiment is "
+          "not initialized !\n");
+      return -EFAULT;
+        }
+
+
+
+  api_info = (invoked_api *)arg;
+  if (!api_info) return -EFAULT;
+  if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
+      return -EFAULT;
+  }
+  num_integer_args = ConvertStringToArray(
+    api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
+
+  if (num_integer_args <= 1) {
+    PDEBUG_I("VT_UPDATE_STACK_RTX_SEND_TIME: Not enough arguments !");
+    return -EFAULT;
+  }
+  
+  tracer_id = api_integer_args[0];
+  stack_id = api_integer_args[1];
+  stack_rtx_send_time = api_info_tmp.return_value;
+  curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+  if (!curr_tracer) {
+    PDEBUG_I("VT_UPDATE_STACK_RTX_SEND_TIME: Tracer : %d, not registered\n", tracer_id);
+    return -EFAULT;
+  }
+
+  head = curr_tracer->process_tcp_stacks.head;
+  
+
+
+  while (head != NULL) {
+    curr_stack = (process_tcp_stack *)head->item;
+    if (curr_stack && curr_stack->id == stack_id) {
+      curr_stack->stack_rtx_send_time = stack_rtx_send_time;
+      return 0;
+    }
+    head = head->next;    
+  }
+
+  // Not found. Bug.
+  BUG_ON(true);
 }

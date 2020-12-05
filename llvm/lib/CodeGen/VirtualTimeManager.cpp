@@ -814,7 +814,7 @@ bool VirtualTimeManager::runOnMachineFunction(MachineFunction &MF) {
         globalBBCounter = mCFGHolder.getFinalGlobalBBLCounter();
         globalLoopCounter = mCFGHolder.getFinalGlobalLoopCounter();
         for (auto &MBB : MF) {
-	    count ++;
+	        count ++;
             MachineBasicBlock* origMBB = &MBB;
             __insertVtlLogic(MF, origMBB, count == 1,
                 mCFGHolder.getGlobalMBBNumber(origMBB),

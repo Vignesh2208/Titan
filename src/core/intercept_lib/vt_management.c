@@ -28,8 +28,9 @@ void (*vt_ns_2_timespec)(s64 nsec, struct timespec * ts) = NULL;
 s64 (*vtGetCurrentTime)() = NULL;
 
 /*** For Socket Handling ***/
-void  (*vtAddSocket)(int ThreadID, int sockFD, int isNonBlocking) = NULL;
+void  (*vtAddSocket)(int ThreadID, int sockFD, int sockFdProtoType, int isNonBlocking) = NULL;
 int (*vtIsSocketFd)(int ThreadID, int sockFD) = NULL;
+int (*vtIsTCPSocket)(int ThreadID, int sockFD) = NULL;
 int (*vtIsSocketFdNonBlocking)(int ThreadID, int sockFD) = NULL;
 
 /*** For TimerFD Handlng ***/
@@ -59,6 +60,36 @@ int (*vtComputeClosestTimerExpiryForPoll)(
 /*** For Sockets and TimerFD ***/
 void (*vtCloseFd)(int ThreadID, int fd) = NULL;
 
+/** Virtual TCP socket layer ***/
+int (*_vsocket)(int domain, int type, int protocol) = NULL;
+int (*_vconnect)(int sockfd, const struct sockaddr *addr, socklen_t addrlen) = NULL;
+int (*_vwrite)(int sockfd, const void *buf, const unsigned int count, int *did_block) = NULL;
+int (*_vread)(int sockfd, void *buf, const unsigned int count, int *did_block) = NULL;
+int (*_vclose)(int sockfd) = NULL;
+int (*_vpoll)(struct pollfd fds[], nfds_t nfds) = NULL;
+int (*_vgetsockopt)(int fd, int level, int optname, void *optval, socklen_t *optlen) = NULL;
+int (*_vsetsockopt)(int sockfd, int level, int option_name,
+                    const void *option_value, socklen_t option_len) = NULL;
+int (*_vgetpeername)(int socket, struct sockaddr *restrict addr,
+                    socklen_t *restrict address_len) = NULL;
+int (*_vgetsockname)(int socket, struct sockaddr *restrict addr,
+                    socklen_t *restrict address_len) = NULL;
+int (*_vlisten)(int socket, int backlog) = NULL;
+int (*_vbind)(int socket, struct sockaddr *skaddr) = NULL;
+int (*_vaccept)(int socket, struct sockaddr *skaddr) = NULL;
+
+
+#ifndef DISABLE_VT_SOCKET_LAYER
+int (*vtIsNetDevInCallback)() = NULL;
+void (*vtRunTCPStackRxLoop)() = NULL;
+void (*vtInitializeTCPStack)(int stackID) = NULL;
+void (*vtMarkTCPStackActive)() = NULL;
+void (*vtMarkTCPStackInactive)() = NULL;
+int (*vtHandleReadSyscall)(int ThreadID, int fd, void *buf, int count, int *redirect)   = NULL;
+int (*vtHandleWriteSyscall)(int ThreadID, int fd, const void *buf, int count, int * redirect) = NULL;
+
+#endif
+
 #ifndef DISABLE_LOOKAHEAD
 /*** For lookahead handling ***/
 s64 (*vtGetPacketEAT)() = NULL;
@@ -67,6 +98,134 @@ int (*vtSetLookahead)(s64 bulkLookaheadValue, int lookahead_anchor_type) = NULL;
 void (*vtSetPktSendTime)(int payloadHash, int payloadLen, s64 send_tstamp) = NULL;
 #endif
 
+
+void LoadAllVtSocketLayerFunctions(void * lib_vt_lib_handle) {
+    if (!lib_vt_lib_handle)
+        return;
+
+    _vsocket = dlsym(lib_vt_lib_handle, "_socket");
+    if (!_vsocket) {
+        printf("_socket not found !\n");
+        fflush(stdout); abort();
+    }
+
+    _vconnect = dlsym(lib_vt_lib_handle, "_connect");
+    if (!_vconnect) {
+        printf("_connect not found !\n");
+        fflush(stdout); abort();
+    }
+
+    _vwrite = dlsym(lib_vt_lib_handle, "_write");
+    if (!_vwrite) {
+        printf("_write not found !\n");
+        fflush(stdout); abort();
+    }
+
+    _vread = dlsym(lib_vt_lib_handle, "_read");
+    if (!_vread) {
+        printf("_read not found !\n");
+        fflush(stdout); abort();
+    }
+
+    _vclose = dlsym(lib_vt_lib_handle, "_close");
+    if (!_vclose) {
+        printf("_close not found !\n");
+        fflush(stdout); abort();
+    }
+
+    _vpoll = dlsym(lib_vt_lib_handle, "_poll");
+    if (!_vpoll) {
+        printf("_poll not found !\n");
+        fflush(stdout); abort();
+    }
+
+    _vgetsockopt = dlsym(lib_vt_lib_handle, "_getsockopt");
+    if (!_vgetsockopt) {
+        printf("_getsockopt not found !\n");
+        fflush(stdout); abort();
+    }
+
+    _vsetsockopt = dlsym(lib_vt_lib_handle, "_setsockopt");
+    if (!_vsetsockopt) {
+        printf("_setsockopt not found !\n");
+        fflush(stdout); abort();
+    }
+
+    _vgetpeername = dlsym(lib_vt_lib_handle, "_getpeername");
+    if (!_vgetpeername) {
+        printf("_getpeername not found !\n");
+        fflush(stdout); abort();
+    }
+
+    _vgetsockname = dlsym(lib_vt_lib_handle, "_getsockname");
+    if (!_vgetsockname) {
+        printf("_getsockname not found !\n");
+        fflush(stdout); abort();
+    }
+
+    _vlisten = dlsym(lib_vt_lib_handle, "_listen");
+    if (!_vlisten) {
+        printf("_listen not found !\n");
+        fflush(stdout); abort();
+    }
+
+    _vbind = dlsym(lib_vt_lib_handle, "_bind");
+    if (!_vbind) {
+        printf("_bind not found !\n");
+        fflush(stdout); abort();
+    }
+
+    _vaccept = dlsym(lib_vt_lib_handle, "_accept");
+    if (!_vaccept) {
+        printf("_accept not found !\n");
+        fflush(stdout); abort();
+    }
+
+
+    #ifndef DISABLE_VT_SOCKET_LAYER
+    vtIsNetDevInCallback = dlsym(lib_vt_lib_handle, "IsNetDevInCallback");
+    if (!vtIsNetDevInCallback) {
+        printf("IsNetDevInCallback not found !\n");
+        fflush(stdout); abort();
+    }
+
+    vtRunTCPStackRxLoop = dlsym(lib_vt_lib_handle, "RunTCPStackRxLoop");
+    if (!vtRunTCPStackRxLoop) {
+        printf("RunTCPStackRxLoop not found !\n");
+        fflush(stdout); abort();
+    }
+
+    vtInitializeTCPStack = dlsym(lib_vt_lib_handle, "InitializeTCPStack");
+    if (!vtInitializeTCPStack) {
+        printf("InitializeTCPStack not found !\n");
+        fflush(stdout); abort();
+    }
+
+    vtMarkTCPStackActive = dlsym(lib_vt_lib_handle, "MarkTCPStackActive");
+    if (!vtMarkTCPStackActive) {
+        printf("MarkTCPStackActive not found !\n");
+        fflush(stdout); abort();
+    }
+
+    vtMarkTCPStackInactive = dlsym(lib_vt_lib_handle, "MarkTCPStackInactive");
+    if (!vtMarkTCPStackInactive) {
+        printf("MarkTCPStackInactive not found !\n");
+        fflush(stdout); abort();
+    }
+
+    vtHandleReadSyscall = dlsym(lib_vt_lib_handle, "HandleReadSyscall");
+    if (!vtHandleReadSyscall) {
+        printf("HandleReadSyscall not found !\n");
+        fflush(stdout); abort();
+    }
+
+    vtHandleWriteSyscall = dlsym(lib_vt_lib_handle, "HandleWriteSyscall");
+    if (!vtHandleWriteSyscall) {
+        printf("HandleWriteSyscall not found !\n");
+        fflush(stdout); abort();
+    }
+    #endif
+}
 
 void LoadAllVtlFunctions(void * lib_vt_lib_handle) {
     if (!lib_vt_lib_handle)
@@ -174,6 +333,12 @@ void LoadAllVtlFunctions(void * lib_vt_lib_handle) {
         fflush(stdout); abort();
     }
 
+    vtIsTCPSocket = dlsym(lib_vt_lib_handle, "IsTCPSocket");
+    if (!vtIsTCPSocket) {
+        printf ("IsTCPSocket not found !\n");
+        fflush(stdout); abort();
+    }
+
     
     vtIsSocketFdNonBlocking = dlsym(lib_vt_lib_handle, "IsSocketFdNonBlocking");
     if (!vtIsSocketFdNonBlocking) {
@@ -259,6 +424,9 @@ void LoadAllVtlFunctions(void * lib_vt_lib_handle) {
         printf("closeSocket not found !\n");
         fflush(stdout); abort();
     }
+
+
+    LoadAllVtSocketLayerFunctions(lib_vt_lib_handle);
 
     #ifndef DISABLE_LOOKAHEAD
     /*** For lookahead handling ***/

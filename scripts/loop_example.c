@@ -52,13 +52,13 @@ int main(int argc, char *argv[]) {
     int counter = 0;
     for(i = 0; i < 99; i++) {
         a[i].x = i;
-        printf("a[i].x = %c, &a[i].x = %p\n", a[i].x, (void *)&a[i].x);
-        printf("a[i+1].x = %c, &a[i+1].x = %p\n", a[i+1].x, (void *)&a[i+1].x);
+        //printf("a[i].x = %c, &a[i].x = %p\n", a[i].x, (void *)&a[i].x);
+        //printf("a[i+1].x = %c, &a[i+1].x = %p\n", a[i+1].x, (void *)&a[i+1].x);
     }
    
    
     print_elapsed_time(0);
-    for(i = init; i >= max; i-=1) {
+    /*for(i = init; i >= max; i-=1) {
             if (counter < 100)
                 continue;
             counter ++;
@@ -81,7 +81,26 @@ int main(int argc, char *argv[]) {
         counter ++;
         print_elapsed_time(i);
         
+    }*/
+
+    for(i= init; i < max; i++) {	
+        for(int j = 0; j < max; j+=2) {
+            for (int k = 3; k < max; k++) {
+                //if (counter < 100)
+                //    continue;
+                printf("Hello %d, %d, %d\n", i, j, k);
+		print_elapsed_time(k);
+		print_elapsed_time(k);
+                
+            }
+            //counter ++;
+            //printf("Hello %d, %d\n", i, j);
+        }
+        //counter ++;
+        //print_elapsed_time(i);
+        
     }
+
 
     print_elapsed_time(0);
     printf("Counter = %d\n", counter);

@@ -325,3 +325,69 @@ s64 GetTracerNEATLookahead(int tracer_id) {
   sprintf(arg.cmd_buf, "%d", tracer_id);
   return SendToVtModule(VT_GET_TRACER_NEAT_LOOKAHEAD, &arg);
 }
+
+
+int MarkStackActive(int tracerID, int stackID) {
+  if (tracerID <= 0 || stackID <= 0) {
+    printf ("MarkStackActive: invalid arguments !\n");
+    return -1;
+  }
+
+  ioctl_args arg;
+  InitIoctlArg(&arg);
+  sprintf(arg.cmd_buf, "%d,%d", tracerID, stackID);
+  return SendToVtModule(VT_MARK_STACK_ACTIVE, &arg);
+
+}
+
+int MarkStackInActive(int tracerID, int stackID) {
+    if (tracerID <= 0 || stackID <= 0) {
+    printf ("MarkStackInActive: invalid arguments !\n");
+    return -1;
+  }
+
+  ioctl_args arg;
+  InitIoctlArg(&arg);
+  sprintf(arg.cmd_buf, "%d,%d", tracerID, stackID);
+  return SendToVtModule(VT_MARK_STACK_INACTIVE, &arg);
+
+}
+
+int MarkStackRxLoopComplete(int tracerID, int stackID) {
+    if (tracerID <= 0 || stackID <= 0) {
+    printf ("MarkStackRxLoopComplete: invalid arguments !\n");
+    return -1;
+  }
+
+  ioctl_args arg;
+  InitIoctlArg(&arg);
+  sprintf(arg.cmd_buf, "%d,%d", tracerID, stackID);
+  return SendToVtModule(VT_MARK_STACK_RXLOOP_COMPLETE, &arg);
+
+}
+
+int TriggerStackThreadWait(int tracerID, int stackID) {
+  if (tracerID <= 0 || stackID <= 0) {
+    printf ("TriggerStackThreadWait: invalid arguments !\n");
+    return -1;
+  }
+
+  ioctl_args arg;
+  InitIoctlArg(&arg);
+  sprintf(arg.cmd_buf, "%d,%d", tracerID, stackID);
+  return SendToVtModule(VT_THREAD_STACK_WAIT, &arg);
+}
+
+
+int UpdateStackSendRtxTime(int tracerID, int stackID, s64 stack_send_rtx_time) {
+  if (tracerID <= 0 || stackID <= 0 || stack_send_rtx_time <= 0) {
+    printf ("UpdateStackSendRtxTime: invalid arguments !\n");
+    return -1;
+  }
+
+  ioctl_args arg;
+  InitIoctlArg(&arg);
+  sprintf(arg.cmd_buf, "%d,%d", tracerID, stackID);
+  arg.cmd_value = stack_send_rtx_time;
+  return SendToVtModule(VT_UPDATE_STACK_RTX_SEND_TIME, &arg);
+}

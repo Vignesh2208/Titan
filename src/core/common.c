@@ -161,7 +161,6 @@ void CleanUpScheduleList(tracer * tracer_entry) {
 }
 
 void CleanUpRunQueue(tracer * tracer_entry) {
-
     if (!tracer_entry)
         return;
 
@@ -169,6 +168,8 @@ void CleanUpRunQueue(tracer * tracer_entry) {
         PopRunQueue(tracer_entry);
     }
 }
+
+
 
 
 
@@ -631,6 +632,27 @@ void WakeUpProcessesWaitingOnSyscalls(int timelineID) {
         curr_tracer = (tracer*)head->item;
         GetTracerStructWrite(curr_tracer);
         wake_up_syscall_waiting_processes(curr_tracer);
+
+        PutTracerStructWrite(curr_tracer);
+        head = head->next;
+    }
+
+}
+
+void TriggerStackThreadExecutionsOn(int timelineID, int exit_status) {
+    llist_elem * head;
+    llist * tracer_list;
+    tracer * curr_tracer;
+    s64 target_increment;
+
+    tracer_list =  &per_timeline_tracer_list[timelineID];
+    head = tracer_list->head;
+
+
+    while (head != NULL) {
+        curr_tracer = (tracer*)head->item;
+        GetTracerStructWrite(curr_tracer);
+        TriggerAllStackThreadExecutions(curr_tracer, exit_status, -1);
         PutTracerStructWrite(curr_tracer);
         head = head->next;
     }
@@ -779,6 +801,68 @@ s64 HandleGettimepid(char * write_buffer) {
     if (!task)
         return 0;
     return GetCurrentVirtualTime(task);
+}
+
+void TriggerAllStackThreadExecutions(tracer * curr_tracer, int exit_status, int optional_stack_id) {
+    process_tcp_stack * curr_stack;
+    llist_elem * head;
+    
+    head = curr_tracer->process_tcp_stacks.head;
+  
+    while (head != NULL) {
+        curr_stack = (process_tcp_stack *)head->item;
+        head = head->next;  
+
+        if (optional_stack_id > 0 && curr_stack->id != optional_stack_id)
+            continue; 
+
+        if (!curr_stack->active && !exit_status)
+            // consider only active stacks.
+            continue;
+
+        if (curr_stack->rx_loop_complete && !exit_status) {
+            // No need to trigger stack thread if rx-loop is already complete for this round.
+            continue;
+        }
+
+        if (curr_stack->stack_thread_waiting && curr_stack->exit_status == 0) {
+            curr_stack->stack_thread_waiting = 0;
+            curr_stack->exit_status = exit_status;
+            PDEBUG_I("Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Triggering Stack Thread !\n",
+                curr_tracer->tracer_id, stack_id);
+            wake_up_interruptible(&curr_tracer->stack_w_queue);
+        }
+
+        if (!curr_stack->exit_status) {
+            PDEBUG_I("Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Entering Wait !\n",
+                    curr_tracer->tracer_id, stack_id);
+            wait_event_interruptible(curr_tracer->stack_w_queue,
+                curr_stack->stack_thread_waiting == 1);
+            PDEBUG_I("Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Resuming from Wait !\n",
+                    curr_tracer->tracer_id, stack_id);
+        } else {
+            curr_stack->active = 0; // this stack-thread is exiting permanently
+            curr_stack->rx_loop_complete = 0;
+        }
+        
+        if (optional_stack_id)
+            break;
+    }
+}
+
+void ResetAllStackRxLoopStatus(tracer * curr_tracer) {
+
+    process_tcp_stack * curr_stack;
+    llist_elem * head;
+    
+    head = curr_tracer->process_tcp_stacks.head;
+  
+    while (head != NULL) {
+        curr_stack = (process_tcp_stack *)head->item;
+        curr_stack->rx_loop_complete = 0;
+        curr_stack->stack_rtx_send_time = 0;
+        head = head->next;
+    }
 }
 
 
