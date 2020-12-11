@@ -224,9 +224,9 @@ void TCPInit(uint32_t src_ip_addr) {
 static uint16_t GeneratePort() {
     /* TODO:: Generate a proper port */
     static int port = 40000;
-    pthread_rwlock_wrlock(&tcplock);
+    //pthread_rwlock_wrlock(&tcplock);
     int copy =  ++port + (TimerGetTick() % 10000);
-    pthread_rwlock_unlock(&tcplock);
+    //pthread_rwlock_unlock(&tcplock);
 
     return copy;
 }
@@ -529,10 +529,15 @@ void TcpRearmUserTimeout(struct vsock *sk) {
 void TcpRtt(struct tcp_sock *tsk) {
     if (tsk->backoff > 0 || !tsk->retransmit) {
         // Karn's Algorithm: Don't measure retransmissions
+        tsk->rto = 200;
         tsk->backoff = 0;
         return;
     }
 
+    s64 rtt_ns = TimerGetTick() - (tsk->retransmit->expires - (tsk->rto * NS_PER_MS));
+
+    printf ("TCP rtt_ns = %llu\n", rtt_ns);
+    /*
     // tsk->retransmit->expires - tsk->rto represents timer_tick at which the retransmit
     // timer was started i.e time right after a segment is sent.
     int rtt = (int)(TimerGetTick() - (tsk->retransmit->expires - (tsk->rto * NS_PER_MS)) / NS_PER_MS);
@@ -554,7 +559,7 @@ void TcpRtt(struct tcp_sock *tsk) {
     int k = 4 * tsk->rttvar;
 
     // RFC6298 says RTO should be at least 1 second. Linux uses 200ms
-    if (k < 200) k = 200;
-
-    tsk->rto = tsk->srtt + k;
+    if (k < 200) k = 200; */
+    tsk->rto = 200;
+    //tsk->rto = tsk->srtt + k;
 }

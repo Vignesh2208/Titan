@@ -1,1 +1,1 @@
-/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -O3 -DNDEBUG  -rdynamic CMakeFiles/syscall_format.dir/syscall_format.c.o  -o syscall_format  -Wl,-rpath,/home/vignesh/Titan/ld_preloading/syscall_intercept/build ../libsyscall_intercept.so.0.1.0 
+/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -O3 -DNDEBUG  -rdynamic CMakeFiles/syscall_format.dir/syscall_format.c.o  -o syscall_format  -Wl,-rpath,/home/titan/Titan/ld_preloading/syscall_intercept/build ../libsyscall_intercept.so.0.1.0 

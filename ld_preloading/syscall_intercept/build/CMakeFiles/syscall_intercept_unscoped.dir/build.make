@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept
+CMAKE_SOURCE_DIR = /home/titan/Titan/ld_preloading/syscall_intercept
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
+CMAKE_BINARY_DIR = /home/titan/Titan/ld_preloading/syscall_intercept/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/syscall_intercept_unscoped.dir/depend.make
@@ -62,18 +62,18 @@ syscall_intercept_unscoped_OBJECTS =
 
 # External object files for target syscall_intercept_unscoped
 syscall_intercept_unscoped_EXTERNAL_OBJECTS = \
-"/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.o" \
-"/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.o" \
-"/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.o" \
-"/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.o" \
-"/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.o" \
-"/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.o" \
-"/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.o" \
-"/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.o" \
-"/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_template.S.o" \
-"/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o" \
-"/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_wrapper.S.o" \
-"/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.o"
+"/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.o" \
+"/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.o" \
+"/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.o" \
+"/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.o" \
+"/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.o" \
+"/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.o" \
+"/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.o" \
+"/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.o" \
+"/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_template.S.o" \
+"/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o" \
+"/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_wrapper.S.o" \
+"/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.o"
 
 libsyscall_intercept_unscoped.a: CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.o
 libsyscall_intercept_unscoped.a: CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.o
@@ -89,7 +89,7 @@ libsyscall_intercept_unscoped.a: CMakeFiles/syscall_intercept_base_asm.dir/src/i
 libsyscall_intercept_unscoped.a: CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.o
 libsyscall_intercept_unscoped.a: CMakeFiles/syscall_intercept_unscoped.dir/build.make
 libsyscall_intercept_unscoped.a: CMakeFiles/syscall_intercept_unscoped.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Linking C static library libsyscall_intercept_unscoped.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Linking C static library libsyscall_intercept_unscoped.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/syscall_intercept_unscoped.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/syscall_intercept_unscoped.dir/link.txt --verbose=$(VERBOSE)
 
@@ -103,6 +103,6 @@ CMakeFiles/syscall_intercept_unscoped.dir/clean:
 .PHONY : CMakeFiles/syscall_intercept_unscoped.dir/clean
 
 CMakeFiles/syscall_intercept_unscoped.dir/depend:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_unscoped.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_unscoped.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/syscall_intercept_unscoped.dir/depend
 

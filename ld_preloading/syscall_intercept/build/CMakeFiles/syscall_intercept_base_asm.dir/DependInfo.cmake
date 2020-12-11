@@ -4,9 +4,9 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_ASM
-  "/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_template.S" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_template.S.o"
-  "/home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_wrapper.S" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_wrapper.S.o"
-  "/home/vignesh/Titan/ld_preloading/syscall_intercept/src/util.S" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o"
+  "/home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_template.S" "/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_template.S.o"
+  "/home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_wrapper.S" "/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_wrapper.S.o"
+  "/home/titan/Titan/ld_preloading/syscall_intercept/src/util.S" "/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o"
   )
 set(CMAKE_ASM_COMPILER_ID "GNU")
 

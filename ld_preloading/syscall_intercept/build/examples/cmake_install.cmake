@@ -1,4 +1,4 @@
-# Install script for directory: /home/vignesh/Titan/ld_preloading/syscall_intercept/examples
+# Install script for directory: /home/titan/Titan/ld_preloading/syscall_intercept/examples
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

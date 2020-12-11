@@ -32,9 +32,9 @@ struct vsocket *AllockSocket() {
     sock->active = 1;
     sock->send_buf_size = 8192; // linux: default 8kb
     sock->rcv_buf_size = 87380; // linux default 
-    pthread_rwlock_wrlock(&slock);
+    //pthread_rwlock_wrlock(&slock);
     sock->fd = fd++;
-    pthread_rwlock_unlock(&slock);
+    //pthread_rwlock_unlock(&slock);
 
     sock->state = SS_UNCONNECTED;
     sock->ops = NULL;
@@ -50,14 +50,12 @@ struct vsocket *AllockSocket() {
 
 //! Acquires read lock on vsocket
 int SocketRdAcquire(struct vsocket *sock) {
-    //int rc = pthread_rwlock_wrlock(&sock->lock);
     sock->refcnt++;
     return 0;
 }
 
 //! Acquires write lock on vsocket
 int SocketWrAcquire(struct vsocket *sock) {
-    //int rc = pthread_rwlock_wrlock(&sock->lock);
     sock->refcnt++;
     return 0;
 }
@@ -66,10 +64,11 @@ int SocketWrAcquire(struct vsocket *sock) {
 int SocketRelease(struct vsocket *sock) {
     int rc = 0;
     sock->refcnt--;
-    //rc = pthread_rwlock_unlock(&sock->lock);
-
+    
     if (sock->refcnt == 0 && !sock->active) {
         printf ("Freeing socket: %d\n", sock->fd);
+        fflush(stdout);
+        sock_amount--;
         sock->ops->free(sock);
         free(sock);
     }
@@ -78,10 +77,9 @@ int SocketRelease(struct vsocket *sock) {
 
 //! Returns number of active sockets
 int NumActiveSockets() {
-    pthread_rwlock_wrlock(&slock);
-    int ret = sock_amount;
-    pthread_rwlock_unlock(&slock);
-    return ret;
+    //pthread_rwlock_wrlock(&slock);
+    return sock_amount;
+    //pthread_rwlock_unlock(&slock);
 }
 
 
@@ -92,7 +90,7 @@ s64 GetEarliestRtxSendTime() {
     s64 earliest_rtx_send_time = 0;
     struct tcp_sock * tsk;
 
-    pthread_rwlock_rdlock(&slock);
+    //pthread_rwlock_rdlock(&slock);
     
     list_for_each(item, &sockets) {
         sock = list_entry(item, struct vsocket, list);
@@ -104,7 +102,7 @@ s64 GetEarliestRtxSendTime() {
         }
         
     }
-    pthread_rwlock_unlock(&slock);
+    //pthread_rwlock_unlock(&slock);
     return earliest_rtx_send_time;
 }
 
@@ -112,12 +110,13 @@ s64 GetEarliestRtxSendTime() {
 int SocketFree(struct vsocket *sock) {
    
     
-    pthread_rwlock_wrlock(&slock);
+    //pthread_rwlock_wrlock(&slock);
     SocketWrAcquire(sock);
     ListDel(&sock->list);
-    sock_amount--;
+    printf ("Socket: %d garbage collection\n", sock->fd);
+    fflush(stdout);
     sock->active = 0;
-    pthread_rwlock_unlock(&slock);
+    //pthread_rwlock_unlock(&slock);
 
     // triggers wake-up of any process which might still be waiting on
     // sleep condition variable (only processes in connect syscall may be)
@@ -133,6 +132,17 @@ void SocketGarbageCollect(struct vsocket * sock) {
         return;
     
     SocketFree(sock);
+}
+
+void GarbageCollectSockets() {
+    struct list_head *item, *tmp;
+    struct vsocket *sock;
+    list_for_each_safe(item, tmp, &sockets) {
+        sock = list_entry(item, struct vsocket, list);
+        if (sock && sock->sched_for_delete) {
+            SocketGarbageCollect(sock);
+        }
+    }
 }
 
 //! Sets socket state to disconnecting and starts a one-shot timer to garbage
@@ -163,16 +173,20 @@ static struct vsocket *GetSocket(uint32_t fd) {
     struct list_head *item;
     struct vsocket *sock = NULL;
 
-    pthread_rwlock_rdlock(&slock);
+    //pthread_rwlock_rdlock(&slock);
     list_for_each(item, &sockets) {
         sock = list_entry(item, struct vsocket, list);
-        if (sock->fd == fd) goto out;
+        if (sock->fd == fd) {
+            if (sock->sched_for_delete)
+                return NULL;
+            goto out;
+        }
     }
     
     sock = NULL;
 
 out:
-    pthread_rwlock_unlock(&slock);
+    //pthread_rwlock_unlock(&slock);
     return sock;
 }
 
@@ -186,7 +200,7 @@ struct vsocket *TcpLookupSockEstablish(
     struct vsocket *sock = NULL;
     struct vsock *sk = NULL;
 
-    pthread_rwlock_rdlock(&slock);
+    //pthread_rwlock_rdlock(&slock);
     
     list_for_each(item, &sockets) {
         sock = list_entry(item, struct vsocket, list);
@@ -202,7 +216,7 @@ struct vsocket *TcpLookupSockEstablish(
 
     sock = NULL;
     found:
-    pthread_rwlock_unlock(&slock);
+    //pthread_rwlock_unlock(&slock);
     return sock;
 }
 
@@ -215,7 +229,7 @@ static struct vsocket *TcpLookupSockListen(unsigned int addr, unsigned int nport
     struct vsocket *sock = NULL;
     struct vsock *sk = NULL;
 
-    pthread_rwlock_rdlock(&slock);
+    //pthread_rwlock_rdlock(&slock);
     
     list_for_each(item, &sockets) {
         sock = list_entry(item, struct vsocket, list);
@@ -230,7 +244,7 @@ static struct vsocket *TcpLookupSockListen(unsigned int addr, unsigned int nport
 
     sock = NULL;
     found:
-    pthread_rwlock_unlock(&slock);
+    //pthread_rwlock_unlock(&slock);
     return sock;
 }
 
@@ -254,7 +268,7 @@ struct vsocket *SocketFind(struct vsocket *find) {
     struct list_head *item;
     struct vsocket *sock = NULL;
 
-    pthread_rwlock_rdlock(&slock);
+    //pthread_rwlock_rdlock(&slock);
     list_for_each(item, &sockets) {
         sock = list_entry(item, struct vsocket, list);
         if (sock == find) goto out;
@@ -263,7 +277,7 @@ struct vsocket *SocketFind(struct vsocket *find) {
     sock = NULL;
 
 out:
-    pthread_rwlock_unlock(&slock);
+    //pthread_rwlock_unlock(&slock);
     return sock;
 }
 
@@ -272,7 +286,7 @@ void SocketDebug() {
     struct list_head *item;
     struct vsocket *sock = NULL;
 
-    pthread_rwlock_rdlock(&slock);
+    //pthread_rwlock_rdlock(&slock);
 
     list_for_each(item, &sockets) {
         sock = list_entry(item, struct vsocket, list);
@@ -281,7 +295,7 @@ void SocketDebug() {
         SocketRelease(sock);
     }
 
-    pthread_rwlock_unlock(&slock);
+    //pthread_rwlock_unlock(&slock);
 }
 #else
 void SocketDebug() {
@@ -293,10 +307,10 @@ void SocketDebug() {
 void AddVSocketToList(struct vsocket * sock) {
     if (!sock)
         return;
-    pthread_rwlock_wrlock(&slock);
+    //pthread_rwlock_wrlock(&slock);
     ListAddTail(&sock->list, &sockets);
     sock_amount++;
-    pthread_rwlock_unlock(&slock);
+    //pthread_rwlock_unlock(&slock);
 }
 
 
@@ -309,6 +323,8 @@ int _socket(int domain, int type, int protocol) {
         print_err("Could not alloc socket\n");
         return -1;
     }
+     printf ("Creating vt-tcp socket !\n");
+     fflush(stdout);
 
     sock->type = type;
     family = families[domain];
@@ -323,10 +339,10 @@ int _socket(int domain, int type, int protocol) {
         goto abort_socket;
     }
 
-    pthread_rwlock_wrlock(&slock);
+    //pthread_rwlock_wrlock(&slock);
     ListAddTail(&sock->list, &sockets);
     sock_amount++;
-    pthread_rwlock_unlock(&slock);
+    //pthread_rwlock_unlock(&slock);
 
     SocketRdAcquire(sock);
     int rc = sock->fd;
@@ -348,7 +364,8 @@ int _connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
         print_err("Connect: could not find socket (fd %u)\n", sockfd);
         return -EBADF;
     }
-
+    printf ("Connecting through vt-tcp !\n");
+    fflush(stdout);
     SocketWrAcquire(sock);
     IncSocketRef(sock);
 
@@ -360,15 +377,13 @@ int _connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     case -ETIMEDOUT:
         DecSocketRef(sock);
         SocketRelease(sock);
-        SocketFree(sock);
         break;
     default:
         DecSocketRef(sock);
         SocketRelease(sock);
-
-        if (sock->sched_for_delete)
-            SocketGarbageCollect(sock);
     }
+    printf ("Connecting through vt-tcp success !\n");
+    fflush(stdout);
     
     return rc;
 }
@@ -383,14 +398,14 @@ int _write(int sockfd, const void *buf, const unsigned int count, int * did_bloc
         return -EBADF;
     }
 
+    printf ("send through vt-tcp !\n");
+    fflush(stdout);
+
     SocketWrAcquire(sock);
     IncSocketRef(sock);
     int rc = sock->ops->write(sock, buf, count, did_block);
     DecSocketRef(sock);
     SocketRelease(sock);
-
-    if (sock->sched_for_delete)
-        SocketGarbageCollect(sock);
 
     return rc;
 }
@@ -406,14 +421,14 @@ int _read(int sockfd, void *buf, const unsigned int count, int * did_block) {
         return -EBADF;
     }
 
+    printf ("recv through vt-tcp !\n");
+    fflush(stdout);
+
     SocketWrAcquire(sock);
     IncSocketRef(sock);
     int rc = sock->ops->read(sock, buf, count, did_block);
     DecSocketRef(sock);
     SocketRelease(sock);
-
-    if (sock->sched_for_delete)
-        SocketGarbageCollect(sock);
 
     return rc;
 }
@@ -428,15 +443,14 @@ int _close(int sockfd) {
         return -EBADF;
     }
 
+    printf ("close through vt-tcp !\n");
+    fflush(stdout);
 
     SocketWrAcquire(sock);
     IncSocketRef(sock);
     int rc = sock->ops->close(sock);
     DecSocketRef(sock);
     SocketRelease(sock);
-
-    if (sock->sched_for_delete)
-        SocketGarbageCollect(sock);
 
     return rc;
 }
@@ -472,12 +486,6 @@ int _poll(struct pollfd fds[], nfds_t nfds) {
         }
         DecSocketRef(sock);
         SocketRelease(sock);
-
-        if (sock->sched_for_delete) {
-            SocketGarbageCollect(sock);
-            poll->revents = POLLERR;
-            return -EBADF;
-        }
 
         if (poll->revents > 0) {
             polled++;
@@ -522,9 +530,6 @@ out:
     DecSocketRef(sock);
     SocketRelease(sock);
 
-    if (sock->sched_for_delete) {
-        SocketGarbageCollect(sock);
-    }
     return rc;
 }
 
@@ -543,6 +548,8 @@ int _getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *opt
     if (level != SOL_SOCKET)
         return -EPROTONOSUPPORT;
 
+    printf ("getsockopt through vt-tcp !\n");
+    fflush(stdout);
 
     int rc = 0;
 
@@ -570,10 +577,6 @@ int _getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *opt
     DecSocketRef(sock);
     SocketRelease(sock);
 
-    if (sock->sched_for_delete) {
-        SocketGarbageCollect(sock);
-    }
-
     return rc;
 }
 
@@ -589,6 +592,9 @@ int _setsockopt(int sockfd, int level, int option_name,
 
     if (!option_value)
         return -EINVAL;
+
+    printf ("setsockopt through vt-tcp !\n");
+    fflush(stdout);
 
     int rc = 0;
 
@@ -608,10 +614,6 @@ int _setsockopt(int sockfd, int level, int option_name,
     }
     DecSocketRef(sock);
     SocketRelease(sock);
-
-    if (sock->sched_for_delete) {
-        SocketGarbageCollect(sock);
-    }
 
     return rc;
     
@@ -634,9 +636,6 @@ int _getpeername(int sockfd, struct sockaddr *restrict address,
     DecSocketRef(sock);
     SocketRelease(sock);
 
-    if (sock->sched_for_delete) {
-        SocketGarbageCollect(sock);
-    }
 
     return rc;
 }
@@ -657,10 +656,6 @@ int _getsockname(int sockfd, struct sockaddr *restrict address,
     DecSocketRef(sock);
     SocketRelease(sock);
 
-    if (sock->sched_for_delete) {
-        SocketGarbageCollect(sock);
-    }
-
     return rc;
 }
 
@@ -677,6 +672,8 @@ int _listen(int sockfd, int backlog) {
 	if (!sock || backlog < 0)
 		goto out;
 
+    printf ("listen through vt-tcp !\n");
+    fflush(stdout);
 	SocketWrAcquire(sock);
     IncSocketRef(sock);
     print_debug ("Invoking InetListen !\n");
@@ -685,10 +682,6 @@ int _listen(int sockfd, int backlog) {
     print_debug ("Finished InetListen !\n");
     DecSocketRef(sock);
 	SocketRelease(sock);
-
-    if (sock->sched_for_delete) {
-        SocketGarbageCollect(sock);
-    }
 
 out:
 	return err;
@@ -707,6 +700,8 @@ int _bind(int sockfd, const struct sockaddr *skaddr) {
 	if (!sock || !skaddr)
 		goto out;
 	
+    printf ("bind through vt-tcp !\n");
+    fflush(stdout);
     SocketWrAcquire(sock);
     IncSocketRef(sock);
 	if (sock->ops)
@@ -714,9 +709,6 @@ int _bind(int sockfd, const struct sockaddr *skaddr) {
     DecSocketRef(sock);
 	SocketRelease(sock);
 
-    if (sock->sched_for_delete) {
-        SocketGarbageCollect(sock);
-    }
 out:
 	return err;
 }
@@ -728,13 +720,17 @@ out:
 int _accept(int sockfd, struct sockaddr *skaddr) {
 	struct vsocket *newsock = NULL;
     struct vsocket *sock;
-	int err = 0;
+    int err = 0;
+
     if ((sock = GetSocket(sockfd)) == NULL) {
         print_err("Getsockname: could not find socket (fd %u)\n", sockfd);
         return -1;
     }
 	if (!sock)
 		return -1;
+
+    printf ("Accept through vt-tcp !\n");
+    fflush(stdout);
 	/* real accepting process */
     SocketWrAcquire(sock);
     IncSocketRef(sock);
@@ -743,14 +739,6 @@ int _accept(int sockfd, struct sockaddr *skaddr) {
 		newsock = sock->ops->accept(sock, &err, skaddr);
     DecSocketRef(sock);
 	SocketRelease(sock);
-
-    if (sock->sched_for_delete) {
-        SocketGarbageCollect(sock);
-        if (newsock) {
-            SocketFree(newsock);
-        }
-        return -EBADF;
-    }
 
     if (!newsock)
         return err;

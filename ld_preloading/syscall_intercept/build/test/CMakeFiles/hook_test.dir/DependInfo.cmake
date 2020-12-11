@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/home/vignesh/Titan/ld_preloading/syscall_intercept/test/hook_test.c" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/hook_test.dir/hook_test.c.o"
+  "/home/titan/Titan/ld_preloading/syscall_intercept/test/hook_test.c" "/home/titan/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/hook_test.dir/hook_test.c.o"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
 

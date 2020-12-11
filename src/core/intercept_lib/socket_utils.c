@@ -5,7 +5,7 @@
 #include <netinet/ip_icmp.h>
 #include <netinet/udp.h>
 #include <netinet/ip.h>
-#include <netinet/tcp.h>
+#include <linux/tcp.h>
 
 
 #define SUCCESS 1
@@ -17,7 +17,7 @@
 #define ETHER_TYPE_IPV6  (0x86DD)
 
 
-int GetPayloadHash(const void * buf, int total_len) {
+int GetPacketHash(const void * buf, int total_len) {
 
     int hash = 0;
     char * payload;
@@ -32,30 +32,28 @@ int GetPayloadHash(const void * buf, int total_len) {
     if (IsRawPacket(buf, total_len)) {
         ip_header = (struct iphdr*)(buf + ether_offset);
         if (ip_header->protocol == 0x11) {
-        // UDP
-        iphdrlen = ip_header->ihl*sizeof (uint32_t);
-        payload = (char *)(buf + ether_offset + iphdrlen + sizeof(struct udphdr));
-        size = total_len - (ether_offset + iphdrlen + sizeof(struct udphdr));
+            // UDP - use payload
+            iphdrlen = ip_header->ihl*sizeof (uint32_t);
+            payload = (char *)(buf + ether_offset + iphdrlen + sizeof(struct udphdr));
+            size = total_len - (ether_offset + iphdrlen + sizeof(struct udphdr));
 
         } else if (ip_header->protocol == 0x6) {
-        // TCP
-        iphdrlen = ip_header->ihl*sizeof (uint32_t);
-        tcp_header = (struct tcphdr *)(buf + ether_offset + iphdrlen);
-        tcphdrlen = sizeof (uint32_t) * tcp_header->doff;
-        payload = (char *)(buf + ether_offset + iphdrlen + tcphdrlen);
-        size = total_len - (ether_offset + iphdrlen + tcphdrlen);
-
+            // TCP - use ip + tcp header (same used by virtual socket layer)
+            payload = (char *)(buf + ether_offset);
+            size = sizeof(struct iphdr) + sizeof(struct tcphdr);
         } if (ip_header->protocol == 0x01) {
-        // ICMP
-        iphdrlen = ip_header->ihl*sizeof (uint32_t);
-        payload = (char *)(buf + ether_offset + iphdrlen);
-        size = total_len - (ether_offset + iphdrlen);
+            // ICMP - use payload
+            iphdrlen = ip_header->ihl*sizeof (uint32_t);
+            payload = (char *)(buf + ether_offset + iphdrlen);
+            size = total_len - (ether_offset + iphdrlen);
 
         } else {
         	return 0;
         }
     } else {
+        // if not raw packet - use full packet as payload
     	payload = (char *)buf;
+        size = total_len;
     }
     
     for(i = 0; i < size; i++) {
@@ -70,7 +68,7 @@ int GetPayloadHash(const void * buf, int total_len) {
     hash += (hash << 15);
 
     if (hash < 0)
-    return -1 * hash;
+        return -1 * hash;
 
     return hash;
 }

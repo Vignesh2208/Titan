@@ -18,7 +18,7 @@ build:
 			${INTERCEPT_LIB_DIR}/intercept_lib.c \
 			${INTERCEPT_LIB_DIR}/vt_management.c \
 			${INTERCEPT_LIB_DIR}/socket_utils.c \
-			-lsyscall_intercept \
+			-lsyscall_intercept -lpthread \
 			-fpic -shared -o ${INTERCEPT_LIB_DIR}/build/lib/libvtintercept.so $(BUILD_CONFIG_FLAGS)
 	@$(CHMOD) 777 ${INTERCEPT_LIB_DIR}/build/lib/libvtintercept.so
 

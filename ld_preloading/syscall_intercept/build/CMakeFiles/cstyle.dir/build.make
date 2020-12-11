@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept
+CMAKE_SOURCE_DIR = /home/titan/Titan/ld_preloading/syscall_intercept
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
+CMAKE_BINARY_DIR = /home/titan/Titan/ld_preloading/syscall_intercept/build
 
 # Utility rule file for cstyle.
 
@@ -54,7 +54,7 @@ CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
 include CMakeFiles/cstyle.dir/progress.make
 
 CMakeFiles/cstyle:
-	/usr/bin/perl /home/vignesh/Titan/ld_preloading/syscall_intercept/utils/cstyle.pl -pP /home/vignesh/Titan/ld_preloading/syscall_intercept/src/*.[ch] /home/vignesh/Titan/ld_preloading/syscall_intercept/include/*.h /home/vignesh/Titan/ld_preloading/syscall_intercept/test/*.c /home/vignesh/Titan/ld_preloading/syscall_intercept/examples/*.c
+	/usr/bin/perl /home/titan/Titan/ld_preloading/syscall_intercept/utils/cstyle.pl -pP /home/titan/Titan/ld_preloading/syscall_intercept/src/*.[ch] /home/titan/Titan/ld_preloading/syscall_intercept/include/*.h /home/titan/Titan/ld_preloading/syscall_intercept/test/*.c /home/titan/Titan/ld_preloading/syscall_intercept/examples/*.c
 
 cstyle: CMakeFiles/cstyle
 cstyle: CMakeFiles/cstyle.dir/build.make
@@ -71,6 +71,6 @@ CMakeFiles/cstyle.dir/clean:
 .PHONY : CMakeFiles/cstyle.dir/clean
 
 CMakeFiles/cstyle.dir/depend:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/cstyle.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/cstyle.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/cstyle.dir/depend
 

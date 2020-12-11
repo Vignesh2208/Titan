@@ -8,9 +8,9 @@
 
 ../include/libsyscall_intercept_hook_point.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/test/test_clone_thread_preload.c
+/home/titan/Titan/ld_preloading/syscall_intercept/test/test_clone_thread_preload.c
 libsyscall_intercept_hook_point.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/test/libsyscall_intercept_hook_point.h
+/home/titan/Titan/ld_preloading/syscall_intercept/test/libsyscall_intercept_hook_point.h
 assert.h
 -
 syscall.h

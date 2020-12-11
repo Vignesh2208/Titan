@@ -3,5 +3,5 @@
 
 test/CMakeFiles/hook_test.dir/hook_test.c.o
  ../src/magic_syscalls.h
- /home/vignesh/Titan/ld_preloading/syscall_intercept/test/hook_test.c
- /home/vignesh/Titan/ld_preloading/syscall_intercept/test/hook_test_data.h
+ /home/titan/Titan/ld_preloading/syscall_intercept/test/hook_test.c
+ /home/titan/Titan/ld_preloading/syscall_intercept/test/hook_test_data.h

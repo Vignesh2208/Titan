@@ -12,7 +12,11 @@ int * vtGlobalTimelineID;
 int * vtInitialized;
 
 
-void (*vtAfterForkInChild)(int ThreadID, int ParentProcessPID) = NULL;
+#ifndef DISABLE_VT_SOCKET_LAYER
+void (*vtAfterForkInChild)(int ThreadID, int ParendProcessPID, pthread_t stackThread) = NULL;
+#else
+void (*vtAfterForkInChild)(int ThreadID, int ParendProcessPID) = NULL;
+#endif
 void (*vtThreadStart)(int ThreadID) = NULL;
 void (*vtThreadFini)(int ThreadID) = NULL;
 void (*vtAppFini)(int ThreadID) = NULL;
@@ -87,7 +91,7 @@ void (*vtMarkTCPStackActive)() = NULL;
 void (*vtMarkTCPStackInactive)() = NULL;
 int (*vtHandleReadSyscall)(int ThreadID, int fd, void *buf, int count, int *redirect)   = NULL;
 int (*vtHandleWriteSyscall)(int ThreadID, int fd, const void *buf, int count, int * redirect) = NULL;
-
+void * (*vtStackThread)(void *arg) = NULL;
 #endif
 
 #ifndef DISABLE_LOOKAHEAD
@@ -224,6 +228,13 @@ void LoadAllVtSocketLayerFunctions(void * lib_vt_lib_handle) {
         printf("HandleWriteSyscall not found !\n");
         fflush(stdout); abort();
     }
+
+    vtStackThread = dlsym(lib_vt_lib_handle, "StackThread");
+    if (!vtStackThread) {
+        printf("StackThread not found !\n");
+        fflush(stdout); abort();
+    }
+
     #endif
 }
 

@@ -168,6 +168,9 @@ int MarkStackRxLoopComplete(int tracerID, int stackID);
 int TriggerStackThreadWait(int tracerID, int stackID);
 
 
+int TriggerStackThreadFinish(int tracerID, int stackID);
+
+
 int UpdateStackSendRtxTime(int tracerID, int stackID, s64 stack_send_rtx_time);
 
 

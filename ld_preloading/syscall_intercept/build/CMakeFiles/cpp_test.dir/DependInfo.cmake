@@ -5,7 +5,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/home/vignesh/Titan/ld_preloading/syscall_intercept/src/cpp_compile_mock.c" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.o"
+  "/home/titan/Titan/ld_preloading/syscall_intercept/src/cpp_compile_mock.c" "/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.o"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
 
@@ -20,7 +20,7 @@ set(CMAKE_C_TARGET_INCLUDE_PATH
   "../include"
   )
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/vignesh/Titan/ld_preloading/syscall_intercept/src/cpp_compile_test.cc" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.o"
+  "/home/titan/Titan/ld_preloading/syscall_intercept/src/cpp_compile_test.cc" "/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

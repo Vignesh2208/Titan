@@ -32,4 +32,6 @@
 #include <sys/capability.h>
 #include <assert.h>
 
+typedef long long s64;
+
 #endif

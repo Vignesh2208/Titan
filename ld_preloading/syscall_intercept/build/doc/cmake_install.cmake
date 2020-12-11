@@ -1,4 +1,4 @@
-# Install script for directory: /home/vignesh/Titan/ld_preloading/syscall_intercept/doc
+# Install script for directory: /home/titan/Titan/ld_preloading/syscall_intercept/doc
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   if("${CMAKE_INSTALL_CONFIG_NAME}" MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee]|[Nn][Oo][Nn][Ee])$")
-    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man3" TYPE FILE FILES "/home/vignesh/Titan/ld_preloading/syscall_intercept/doc/generated/libsyscall_intercept.3")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man3" TYPE FILE FILES "/home/titan/Titan/ld_preloading/syscall_intercept/doc/generated/libsyscall_intercept.3")
   endif("${CMAKE_INSTALL_CONFIG_NAME}" MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee]|[Nn][Oo][Nn][Ee])$")
 endif()
 

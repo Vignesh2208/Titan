@@ -4,8 +4,8 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.c" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples/CMakeFiles/syscall_logger.dir/syscall_desc.c.o"
-  "/home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_logger.c" "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples/CMakeFiles/syscall_logger.dir/syscall_logger.c.o"
+  "/home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.c" "/home/titan/Titan/ld_preloading/syscall_intercept/build/examples/CMakeFiles/syscall_logger.dir/syscall_desc.c.o"
+  "/home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_logger.c" "/home/titan/Titan/ld_preloading/syscall_intercept/build/examples/CMakeFiles/syscall_logger.dir/syscall_logger.c.o"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
 
@@ -23,7 +23,7 @@ set(CMAKE_C_TARGET_INCLUDE_PATH
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
-  "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_shared.dir/DependInfo.cmake"
+  "/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_shared.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

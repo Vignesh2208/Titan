@@ -2,6 +2,7 @@
 #include "vt_module.h"
 #include "sync_experiment.h"
 #include "utils.h"
+#include "common.h"
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(5,4,0)
 #include <uapi/linux/sched/types.h>
@@ -324,9 +325,9 @@ void AddToPktInfoQueue(tracer * tracer_entry,
 void CleanUpPktInfoQueue(tracer * tracer_entry) {
 
     BUG_ON(!tracer_entry);
-    if (llist_size(&tracer_entry->pkt_info_queue))
+    /*if (llist_size(&tracer_entry->pkt_info_queue))
         PDEBUG_I("Cleaning up pkt info queue for tracer: %d, at time: %llu\n",
-            tracer_entry->tracer_id, tracer_entry->curr_virtual_time);
+            tracer_entry->tracer_id, tracer_entry->curr_virtual_time);*/
 
     while(llist_size(&tracer_entry->pkt_info_queue)) {
         pkt_info * head;
@@ -816,32 +817,35 @@ void TriggerAllStackThreadExecutions(tracer * curr_tracer, int exit_status, int 
         if (optional_stack_id > 0 && curr_stack->id != optional_stack_id)
             continue; 
 
-        if (!curr_stack->active && !exit_status)
+        if (!curr_stack->active && exit_status == STACK_THREAD_CONTINUE)
             // consider only active stacks.
             continue;
 
-        if (curr_stack->rx_loop_complete && !exit_status) {
+        if (curr_stack->rx_loop_complete && exit_status == STACK_THREAD_CONTINUE) {
             // No need to trigger stack thread if rx-loop is already complete for this round.
             continue;
         }
 
-        if (curr_stack->stack_thread_waiting && curr_stack->exit_status == 0) {
+        if (curr_stack->stack_thread_waiting) {
             curr_stack->stack_thread_waiting = 0;
             curr_stack->exit_status = exit_status;
             PDEBUG_I("Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Triggering Stack Thread !\n",
-                curr_tracer->tracer_id, stack_id);
+                     curr_tracer->tracer_id, curr_stack->id);
             wake_up_interruptible(&curr_tracer->stack_w_queue);
+            
         }
 
-        if (!curr_stack->exit_status) {
+        
+        if (curr_stack->exit_status != STACK_THREAD_EXP_EXIT) {
             PDEBUG_I("Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Entering Wait !\n",
-                    curr_tracer->tracer_id, stack_id);
+                    curr_tracer->tracer_id, curr_stack->id);
             wait_event_interruptible(curr_tracer->stack_w_queue,
                 curr_stack->stack_thread_waiting == 1);
             PDEBUG_I("Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Resuming from Wait !\n",
-                    curr_tracer->tracer_id, stack_id);
+                    curr_tracer->tracer_id, curr_stack->id);
         } else {
-            curr_stack->active = 0; // this stack-thread is exiting permanently
+            // this stack-thread is exiting permanently
+            curr_stack->active = 0; 
             curr_stack->rx_loop_complete = 0;
         }
         

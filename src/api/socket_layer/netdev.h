@@ -17,11 +17,17 @@ struct netdev {
     uint32_t mtu;
     int stackID;
     int tracerID;
+    int uniqueID;
     int raw_sock_fd;
     int initialized;
     int in_callback;
+    int exiting;
 };
 
+void MarkInNetDevCallback();
+void ClearInNetDevCallback();
+int GetStackTracerID();
+void MarkNetDevExiting();
 int IsNetDevInCallback();
 void SetNetDevStackID(int tracerID, int stackID);
 void NetDevInit(uint32_t src_ip_addr);
@@ -29,5 +35,7 @@ int NetDevTransmit(struct sk_buff *skb, struct sockaddr_in * skaddr);
 void NetDevRxLoop();
 void MarkNetworkStackActive(uint32_t src_ip_addr);
 void MarkNetworkStackInactive();
+
+void * StackThread(void *arg);
 
 #endif

@@ -11,7 +11,7 @@ ECHO:=echo
 .PHONY: install
 install:
 	@$(ECHO) "Intalling tracer ..." 
-	$(info "Tracer install: BUILD_CONFIG_FLAGS=$(BUILD_CONFIG_FLAGS))
+	$(info "Tracer: BUILD_CONFIG_FLAGS=$(BUILD_CONFIG_FLAGS)")
 	@$(MKDIR) -p ${TRACER_DIR}/bin
 	@$(CC) ${TRACER_DIR}/tracer.c ${TRACER_DIR}/cJSON/cJSON.c \
 		-o ${TRACER_DIR}/bin/ttn_tracer -lpthread -lvtapi $(BUILD_CONFIG_FLAGS)

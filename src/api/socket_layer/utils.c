@@ -7,9 +7,17 @@
 #include <unistd.h>
 #include <sys/syscall.h> 
 
+#define LOOKAHEAD_ANCHOR_NONE 0
+#define LOOKAHEAD_ANCHOR_CURR_TIME 1
+#define LOOKAHEAD_ANCHOR_EAT 2
 
-void RegisterSyscallWait() {
+void RegisterSysCallWait() {
     int ThreadId = syscall(SYS_gettid);
+    #ifndef DISABLE_LOOKAHEAD
+    /*** For setting lookaheads ***/
+    SetLookahead(0, LOOKAHEAD_ANCHOR_EAT);
+    #endif
+
     TriggerSyscallWait(ThreadId, 0);
     NetDevRxLoop();
 }

@@ -3,4 +3,4 @@
 
 test/CMakeFiles/fork_logging.dir/fork_logging.c.o
  ../src/magic_syscalls.h
- /home/vignesh/Titan/ld_preloading/syscall_intercept/test/fork_logging.c
+ /home/titan/Titan/ld_preloading/syscall_intercept/test/fork_logging.c

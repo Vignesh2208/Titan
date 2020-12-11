@@ -6,5 +6,5 @@ C_FLAGS =  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -O3 -DNDEBUG -fPI
 
 C_DEFINES = -DHAS_GCC_PRAGMA_SYSH -D_GNU_SOURCE -Dfork_ban_EXPORTS
 
-C_INCLUDES = -I/home/vignesh/Titan/ld_preloading/syscall_intercept/include 
+C_INCLUDES = -I/home/titan/Titan/ld_preloading/syscall_intercept/include 
 

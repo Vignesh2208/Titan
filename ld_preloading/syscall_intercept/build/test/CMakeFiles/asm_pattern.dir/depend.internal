@@ -5,4 +5,4 @@ test/CMakeFiles/asm_pattern.dir/asm_pattern.c.o
  ../include/libsyscall_intercept_hook_point.h
  ../src/disasm_wrapper.h
  ../src/intercept.h
- /home/vignesh/Titan/ld_preloading/syscall_intercept/test/asm_pattern.c
+ /home/titan/Titan/ld_preloading/syscall_intercept/test/asm_pattern.c

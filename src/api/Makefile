@@ -13,7 +13,7 @@ build_api:
 	@$(MKDIR) -p ${API_DIR}/build/include
 	@$(MKDIR) -p ${API_DIR}/build/lib
 
-	@$(CC) -w -c -Wall -Werror -fpic ${API_DIR}/VT_functions.c \
+	@$(CC) -w -c -g -Wall -Werror -fpic ${API_DIR}/VT_functions.c \
 	${API_DIR}/utility_functions.c 
 	@$(CC) -w -shared -o ${API_DIR}/build/lib/libvtapi.so \
 	${API_DIR}/VT_functions.o ${API_DIR}/utility_functions.o 
@@ -23,20 +23,48 @@ build_api:
 	@$(CP) ${API_DIR}/utility_functions.h ${API_DIR}/build/include
 
 
-	$(info "VTL Logic: BUILD_CONFIG_FLAGS=$(BUILD_CONFIG_FLAGS))
+	$(info "VTL Logic: BUILD_CONFIG_FLAGS=$(BUILD_CONFIG_FLAGS)")
 	@$(ECHO) "Building VTL-Logic shared library ..."
 
-	@$(CC) -w -c -Wall -Werror -fpic ${API_DIR}/VT_functions.c \
+	@$(CC) -w -c -Wall -Werror -g -fpic ${API_DIR}/VT_functions.c \
 	${API_DIR}/utility_functions.c ${API_DIR}/vtl_logic.c \
 	${API_DIR}/fd_handling.c ${API_DIR}/lookahead_parsing.c \
 	${API_DIR}/utils/linkedlist.c ${API_DIR}/cache_simulation.c \
-	${API_DIR}/utils/hashmap.c $(BUILD_CONFIG_FLAGS)
+	${API_DIR}/utils/hashmap.c \
+	${API_DIR}/socket_layer/inet.c \
+	${API_DIR}/socket_layer/ip_input.c \
+	${API_DIR}/socket_layer/ip_output.c \
+	${API_DIR}/socket_layer/tcp.c \
+	${API_DIR}/socket_layer/tcp_input.c \
+	${API_DIR}/socket_layer/tcp_output.c \
+	${API_DIR}/socket_layer/tcp_data.c \
+	${API_DIR}/socket_layer/socket.c \
+	${API_DIR}/socket_layer/sock.c \
+	${API_DIR}/socket_layer/netdev.c \
+	${API_DIR}/socket_layer/utils.c \
+	${API_DIR}/socket_layer/skbuff.c \
+	${API_DIR}/socket_layer/timer.c \
+	$(BUILD_CONFIG_FLAGS)
 
-	@$(CC) -w -shared -o ${API_DIR}/build/lib/libvtllogic.so \
+	@$(CC) -g -w -shared -o ${API_DIR}/build/lib/libvtllogic.so \
 	${API_DIR}/VT_functions.o ${API_DIR}/utility_functions.o \
 	${API_DIR}/vtl_logic.o ${API_DIR}/fd_handling.o  \
 	${API_DIR}/lookahead_parsing.o ${API_DIR}/cache_simulation.o \
-	${API_DIR}/utils/linkedlist.o ${API_DIR}/utils/hashmap.o
+	${API_DIR}/utils/linkedlist.o ${API_DIR}/utils/hashmap.o \
+	${API_DIR}/inet.o \
+	${API_DIR}/ip_input.o \
+	${API_DIR}/ip_output.o \
+	${API_DIR}/tcp.o \
+	${API_DIR}/tcp_input.o \
+	${API_DIR}/tcp_output.o \
+	${API_DIR}/tcp_data.o \
+	${API_DIR}/socket.o \
+	${API_DIR}/sock.o \
+	${API_DIR}/netdev.o \
+	${API_DIR}/utils.o \
+	${API_DIR}/skbuff.o \
+	${API_DIR}/timer.o \
+	-lpthread	
 
 	@$(CHMOD) 777 ${API_DIR}/build/lib/libvtllogic.so
 	@$(CHMOD) +x setup.py

@@ -160,7 +160,11 @@ int TcpSendNext(struct vsock *sk) {
         i ++;
 
         th = tcp_hdr(next);
-        if (th->fin) tcb->snd_nxt++;
+        if (th->fin) {
+            printf ("Transmitting fin packet \n");
+            fflush(stdout);
+            tcb->snd_nxt++;
+        }
     }
     
     return i;
@@ -622,6 +626,9 @@ int TcpQueueFin(struct vsock *sk) {
 
     th->fin = 1;
     th->ack = 1;
+
+    printf ("Queuing fin \n");
+    fflush(stdout);
 
     tcpsock_dbg("Queueing fin", sk);
     

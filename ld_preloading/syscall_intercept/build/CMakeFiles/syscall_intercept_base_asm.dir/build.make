@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept
+CMAKE_SOURCE_DIR = /home/titan/Titan/ld_preloading/syscall_intercept
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
+CMAKE_BINARY_DIR = /home/titan/Titan/ld_preloading/syscall_intercept/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/syscall_intercept_base_asm.dir/depend.make
@@ -59,18 +59,18 @@ include CMakeFiles/syscall_intercept_base_asm.dir/flags.make
 
 CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_template.S.o: CMakeFiles/syscall_intercept_base_asm.dir/flags.make
 CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_template.S.o: ../src/intercept_template.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building ASM object CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_template.S.o"
-	/usr/bin/gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_template.S.o -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_template.S
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building ASM object CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_template.S.o"
+	/usr/bin/gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_template.S.o -c /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_template.S
 
 CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o: CMakeFiles/syscall_intercept_base_asm.dir/flags.make
 CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o: ../src/util.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building ASM object CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o"
-	/usr/bin/gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/util.S
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building ASM object CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o"
+	/usr/bin/gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o -c /home/titan/Titan/ld_preloading/syscall_intercept/src/util.S
 
 CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_wrapper.S.o: CMakeFiles/syscall_intercept_base_asm.dir/flags.make
 CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_wrapper.S.o: ../src/intercept_wrapper.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building ASM object CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_wrapper.S.o"
-	/usr/bin/gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_wrapper.S.o -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_wrapper.S
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building ASM object CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_wrapper.S.o"
+	/usr/bin/gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_wrapper.S.o -c /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_wrapper.S
 
 syscall_intercept_base_asm: CMakeFiles/syscall_intercept_base_asm.dir/src/intercept_template.S.o
 syscall_intercept_base_asm: CMakeFiles/syscall_intercept_base_asm.dir/src/util.S.o
@@ -89,6 +89,6 @@ CMakeFiles/syscall_intercept_base_asm.dir/clean:
 .PHONY : CMakeFiles/syscall_intercept_base_asm.dir/clean
 
 CMakeFiles/syscall_intercept_base_asm.dir/depend:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_asm.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/syscall_intercept_base_asm.dir/depend
 

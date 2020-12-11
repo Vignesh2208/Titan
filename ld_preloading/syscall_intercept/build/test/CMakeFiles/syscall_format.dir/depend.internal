@@ -4,4 +4,4 @@
 test/CMakeFiles/syscall_format.dir/syscall_format.c.o
  ../include/libsyscall_intercept_hook_point.h
  ../src/magic_syscalls.h
- /home/vignesh/Titan/ld_preloading/syscall_intercept/test/syscall_format.c
+ /home/titan/Titan/ld_preloading/syscall_intercept/test/syscall_format.c

@@ -1,6 +1,7 @@
 #include "syshead.h"
 #include "timer.h"
 #include "socket.h"
+#include "netdev.h"
 #include "../VT_functions.h"
 
 static LIST_HEAD(timers);
@@ -33,12 +34,12 @@ static struct timer *TimerAlloc() {
 void TimersProcessTick() {
     struct list_head *item, *tmp = NULL;
     struct timer *t = NULL;
-    
+    s64 curr_time = GetCurrentTimeTracer(GetStackTracerID());
     list_for_each_safe(item, tmp, &timers) {
         if (!item) continue;
         t = list_entry(item, struct timer, list);
         
-        if (!t->cancelled && t->expires < GetCurrentVtTime()) {
+        if (!t->cancelled && t->expires < curr_time) {
             t->cancelled = 1;
             t->handler(t->arg);
         }
@@ -71,7 +72,7 @@ void TimersCleanup() {
 void TimerOneshot(uint32_t expire_ms, void *(*handler)(void *), void *arg) {
     struct timer *t = TimerAlloc();
     t->refcnt = 0;
-    t->expires = GetCurrentVtTime() + expire_ms * NS_PER_MS;
+    t->expires = GetCurrentTimeTracer(GetStackTracerID()) + expire_ms * NS_PER_MS;
     t->cancelled = 0;
     t->handler = handler;
     t->arg = arg;
@@ -82,7 +83,7 @@ void TimerOneshot(uint32_t expire_ms, void *(*handler)(void *), void *arg) {
 struct timer *TimerAdd(uint32_t expire_ms, void *(*handler)(void *), void *arg) {
     struct timer *t = TimerAlloc();
     t->refcnt = 1;
-    t->expires = GetCurrentVtTime() + expire_ms * NS_PER_MS;
+    t->expires = GetCurrentTimeTracer(GetStackTracerID()) + expire_ms * NS_PER_MS;
     t->cancelled = 0;
     t->handler = handler;
     t->arg = arg;
@@ -103,5 +104,5 @@ void TimerCancel(struct timer *t) {
 }
 
 s64 TimerGetTick() {
-    return GetCurrentVtTime();
+    return GetCurrentTimeTracer(GetStackTracerID());
 }

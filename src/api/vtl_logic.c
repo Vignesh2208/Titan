@@ -41,7 +41,10 @@ s64 currBBInsCacheMissPenalty = 0;
 
 int expStopping = 0;
 int vtInitializationComplete = 0;
-uint32_t tracerSrcIpAddr;
+
+#ifndef DISABLE_VT_SOCKET_LAYER
+uint32_t tracerSrcIpAddr = 0;
+#endif
 int globalTracerID = -1;
 int globalTimelineID = -1;
 int currActiveThreadID = 0;
@@ -78,7 +81,8 @@ s64 GetBBLLookAhead(long bblNumber) {
 void SetLoopLookahead(int initValue, int finalValue, int stepValue, int loopDepth) {
     //printf("SetLoopLookahead, return address: %p, currBBID: %llu, currLoopID: %llu\n",
     //    __builtin_return_address(0), currBBID, currLoopID);
-    printf("Called SetLoopLookahead: init: %d, final: %d, step: %d, loopDepth: %d\n",
+    
+    /*printf("Called SetLoopLookahead: init: %d, final: %d, step: %d, loopDepth: %d\n",
         initValue, finalValue, stepValue, loopDepth);
     if (!vtInitializationComplete)
         return;
@@ -137,7 +141,8 @@ void SetLoopLookahead(int initValue, int finalValue, int stepValue, int loopDept
         !currThreadInfo->loopRunTime[loopDepth].entered) {
     	currThreadInfo->loopRunTime[loopDepth].entered = 1;
     	currThreadInfo->loopRunTime[loopDepth].numIterations = origNumIterations;
-    }
+    }*/
+
 }
 
 
@@ -196,13 +201,21 @@ void SleepForNS(int ThreadID, int64_t duration) {
 
     ret = VtSleepFor(duration);
 
-    if (ret < 0) HandleVTExpEnd(ThreadID);
+    if (ret < 0) {
+	printf ("VT-sleep-for exiting !\n");
+	fflush(stdout);
+	HandleVTExpEnd(ThreadID);
+    }
 
     currBurstCyclesLeft = MarkBurstComplete(1);
     currBurstCyclesLeft = (s64)(currBurstCyclesLeft*cpuCyclesPerNs);
     currActiveThreadID = syscall(SYS_gettid);
     specifiedBurstCycles = currBurstCyclesLeft;
-    if (currBurstCyclesLeft <= 0) HandleVTExpEnd(ThreadID);
+    if (currBurstCyclesLeft <= 0) {
+	printf ("VT-sleep-for exiting after resume !\n");
+	fflush(stdout);
+	HandleVTExpEnd(ThreadID);
+    }
 
     currThreadInfo->stack.totalBurstLength += currBurstCyclesLeft;
 
@@ -307,6 +320,10 @@ ThreadInfo * AllotThreadInfo(int ThreadID, int processPID) {
         currThreadInfo->in_callback = 0;
         currThreadInfo->fpuState = (char *) malloc(512 * sizeof(char));
         currThreadInfo->stack.totalBurstLength = 0;
+
+	#ifndef DISABLE_VT_SOCKET_LAYER
+	currThreadInfo->stackThread = -1;
+	#endif
 
         #ifndef DISABLE_LOOKAHEAD
         currThreadInfo->stack.currBBID = 0;
@@ -434,7 +451,12 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
 
 
 //! Called in the forked child process as soon as it starts
+
+#ifndef DISABLE_VT_SOCKET_LAYER
+void AfterForkInChild(int ThreadID, int ParentProcessID, pthread_t stackThread) {
+#else
 void AfterForkInChild(int ThreadID, int ParentProcessID) {
+#endif
 
     // destroy existing hmap
     ThreadInfo * currThreadInfo;
@@ -444,6 +466,10 @@ void AfterForkInChild(int ThreadID, int ParentProcessID) {
     currThreadInfo = AllotThreadInfo(ThreadID, ThreadID);     
     assert(currThreadInfo != NULL);
     currBurstCyclesLeft = 0;
+
+    #ifndef DISABLE_VT_SOCKET_LAYER
+    currThreadInfo->stackThread = stackThread;
+    #endif
 
     #ifndef DISABLE_LOOKAHEAD
     currBBID = 0;
@@ -540,6 +566,10 @@ void AppFini(int ThreadID) {
     if (currThreadInfo->in_callback) return;
 
     currThreadInfo->in_callback = TRUE;
+    #ifndef DISABLE_VT_SOCKET_LAYER
+    pthread_t stackThread = currThreadInfo->stackThread;
+    #endif
+
     printf("Finishing Process: %d\n", ThreadID);
     fflush(stdout);
 
@@ -558,6 +588,13 @@ void AppFini(int ThreadID) {
 
     llist_destroy(&thread_info_list);
     hmap_destroy(&thread_info_map);
+
+    #ifndef DISABLE_VT_SOCKET_LAYER
+    printf ("Waiting for stack-thread to exit ...\n");
+    MarkNetDevExiting();
+    pthread_join(stackThread, NULL);
+    printf ("Exiting ...\n");
+    #endif
 
     #ifndef DISABLE_LOOKAHEAD
     CleanLookaheadInfo(&bblLookAheadInfo);
@@ -625,6 +662,10 @@ void handleVtCallback() {
         SetBBLLookAhead((long)currBBID);
         #endif
 
+        #ifndef DISABLE_VT_SOCKET_LAYER
+        RunTCPStackRxLoop();
+        #endif
+        
         SignalBurstCompletion(currThreadInfo, 1);
         currThreadInfo->in_callback = FALSE;
     }
@@ -831,6 +872,13 @@ void InitializeVtManagement() {
     if (!GetFloatEnvVariable("VT_CPU_CYLES_NS", &cpuCyclesPerNs))
         printf ("Failed to parse cpu cycles per ns. Using default value: %f\n",
             cpuCyclesPerNs);
+
+    #ifndef DISABLE_VT_SOCKET_LAYER
+        if (!GetIntEnvVariable("VT_SOCKET_LAYER_IP", (int *)&tracerSrcIpAddr)) {
+            printf("Missing Src-IP-addr\n");
+            exit(EXIT_FAILURE);
+        }
+    #endif
 
     if (cpuCyclesPerNs <= 0)
         cpuCyclesPerNs = 1.0;

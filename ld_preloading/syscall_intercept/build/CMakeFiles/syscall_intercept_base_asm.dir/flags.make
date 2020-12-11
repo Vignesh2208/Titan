@@ -6,5 +6,5 @@ ASM_FLAGS = -O3 -DNDEBUG -fPIC   -Wno-unused-command-line-argument
 
 ASM_DEFINES = -DHAS_GCC_PRAGMA_SYSH -D_GNU_SOURCE
 
-ASM_INCLUDES = -I/home/vignesh/Titan/ld_preloading/syscall_intercept/include 
+ASM_INCLUDES = -I/home/titan/Titan/ld_preloading/syscall_intercept/include 
 

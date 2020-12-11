@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept
+CMAKE_SOURCE_DIR = /home/titan/Titan/ld_preloading/syscall_intercept
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
+CMAKE_BINARY_DIR = /home/titan/Titan/ld_preloading/syscall_intercept/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/cpp_test.dir/depend.make
@@ -59,29 +59,29 @@ include CMakeFiles/cpp_test.dir/flags.make
 
 CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.o: CMakeFiles/cpp_test.dir/flags.make
 CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.o: ../src/cpp_compile_test.cc
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.o -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/cpp_compile_test.cc
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.o -c /home/titan/Titan/ld_preloading/syscall_intercept/src/cpp_compile_test.cc
 
 CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/src/cpp_compile_test.cc > CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/src/cpp_compile_test.cc > CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.i
 
 CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/src/cpp_compile_test.cc -o CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/src/cpp_compile_test.cc -o CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.s
 
 CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.o: CMakeFiles/cpp_test.dir/flags.make
 CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.o: ../src/cpp_compile_mock.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/cpp_compile_mock.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.o"
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/src/cpp_compile_mock.c
 
 CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/src/cpp_compile_mock.c > CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.i
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/src/cpp_compile_mock.c > CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.i
 
 CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/src/cpp_compile_mock.c -o CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.s
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/src/cpp_compile_mock.c -o CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.s
 
 # Object files for target cpp_test
 cpp_test_OBJECTS = \
@@ -95,7 +95,7 @@ cpp_test: CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.o
 cpp_test: CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.o
 cpp_test: CMakeFiles/cpp_test.dir/build.make
 cpp_test: CMakeFiles/cpp_test.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable cpp_test"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable cpp_test"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/cpp_test.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -108,6 +108,6 @@ CMakeFiles/cpp_test.dir/clean:
 .PHONY : CMakeFiles/cpp_test.dir/clean
 
 CMakeFiles/cpp_test.dir/depend:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/cpp_test.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/cpp_test.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/cpp_test.dir/depend
 

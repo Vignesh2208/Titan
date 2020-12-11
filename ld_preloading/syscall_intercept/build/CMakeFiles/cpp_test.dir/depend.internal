@@ -3,7 +3,7 @@
 
 CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.o
  ../include/libsyscall_intercept_hook_point.h
- /home/vignesh/Titan/ld_preloading/syscall_intercept/src/cpp_compile_mock.c
+ /home/titan/Titan/ld_preloading/syscall_intercept/src/cpp_compile_mock.c
 CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.o
  ../include/libsyscall_intercept_hook_point.h
- /home/vignesh/Titan/ld_preloading/syscall_intercept/src/cpp_compile_test.cc
+ /home/titan/Titan/ld_preloading/syscall_intercept/src/cpp_compile_test.cc

@@ -1,4 +1,4 @@
-The system is: Linux - 5.4.0-52-generic - x86_64
+The system is: Linux - 5.4.0-53-generic - x86_64
 Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
 Compiler: /usr/bin/gcc 
 Build flags: 
@@ -10,7 +10,7 @@ The output was:
 
 Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
 
-The C compiler identification is GNU, found in "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/3.16.3/CompilerIdC/a.out"
+The C compiler identification is GNU, found in "/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/3.16.3/CompilerIdC/a.out"
 
 Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
 Compiler: /usr/bin/c++ 
@@ -23,7 +23,7 @@ The output was:
 
 Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
 
-The CXX compiler identification is GNU, found in "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/3.16.3/CompilerIdCXX/a.out"
+The CXX compiler identification is GNU, found in "/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/3.16.3/CompilerIdCXX/a.out"
 
 Checking whether the ASM compiler is GNU using "--version" matched "(GNU assembler)|(GCC)|(Free Software Foundation)":
 gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0
@@ -32,26 +32,26 @@ This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 Determining if the C compiler works passed with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_a2a63/fast && /usr/bin/make -f CMakeFiles/cmTC_a2a63.dir/build.make CMakeFiles/cmTC_a2a63.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_a2a63.dir/testCCompiler.c.o
-/usr/bin/gcc    -o CMakeFiles/cmTC_a2a63.dir/testCCompiler.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/testCCompiler.c
-Linking C executable cmTC_a2a63
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a2a63.dir/link.txt --verbose=1
-/usr/bin/gcc      -rdynamic CMakeFiles/cmTC_a2a63.dir/testCCompiler.c.o  -o cmTC_a2a63 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_0cf2b/fast && /usr/bin/make -f CMakeFiles/cmTC_0cf2b.dir/build.make CMakeFiles/cmTC_0cf2b.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_0cf2b.dir/testCCompiler.c.o
+/usr/bin/gcc    -o CMakeFiles/cmTC_0cf2b.dir/testCCompiler.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTC_0cf2b
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0cf2b.dir/link.txt --verbose=1
+/usr/bin/gcc      -rdynamic CMakeFiles/cmTC_0cf2b.dir/testCCompiler.c.o  -o cmTC_0cf2b 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 
 Detecting C compiler ABI info compiled with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_fc64c/fast && /usr/bin/make -f CMakeFiles/cmTC_fc64c.dir/build.make CMakeFiles/cmTC_fc64c.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o
-/usr/bin/gcc   -v -o CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o   -c /usr/local/share/cmake-3.16/Modules/CMakeCCompilerABI.c
+Run Build Command(s):/usr/bin/make cmTC_e7a8e/fast && /usr/bin/make -f CMakeFiles/cmTC_e7a8e.dir/build.make CMakeFiles/cmTC_e7a8e.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o
+/usr/bin/gcc   -v -o CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o   -c /usr/local/share/cmake-3.16/Modules/CMakeCCompilerABI.c
 Using built-in specs.
 COLLECT_GCC=/usr/bin/gcc
 OFFLOAD_TARGET_NAMES=nvptx-none
@@ -60,8 +60,8 @@ Target: x86_64-linux-gnu
 Configured with: ../src/configure -v --with-pkgversion='Ubuntu 7.5.0-3ubuntu1~18.04' --with-bugurl=file:///usr/share/doc/gcc-7/README.Bugs --enable-languages=c,ada,c++,go,brig,d,fortran,objc,obj-c++ --prefix=/usr --with-gcc-major-version-only --program-suffix=-7 --program-prefix=x86_64-linux-gnu- --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-bootstrap --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-gnu-unique-object --disable-vtable-verify --enable-libmpx --enable-plugin --enable-default-pie --with-system-zlib --with-target-system-zlib --enable-objc-gc=auto --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-offload-targets=nvptx-none --without-cuda-driver --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu
 Thread model: posix
 gcc version 7.5.0 (Ubuntu 7.5.0-3ubuntu1~18.04) 
-COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64'
- /usr/lib/gcc/x86_64-linux-gnu/7/cc1 -quiet -v -imultiarch x86_64-linux-gnu /usr/local/share/cmake-3.16/Modules/CMakeCCompilerABI.c -quiet -dumpbase CMakeCCompilerABI.c -mtune=generic -march=x86-64 -auxbase-strip CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o -version -fstack-protector-strong -Wformat -Wformat-security -o /tmp/ccGzNq9D.s
+COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64'
+ /usr/lib/gcc/x86_64-linux-gnu/7/cc1 -quiet -v -imultiarch x86_64-linux-gnu /usr/local/share/cmake-3.16/Modules/CMakeCCompilerABI.c -quiet -dumpbase CMakeCCompilerABI.c -mtune=generic -march=x86-64 -auxbase-strip CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o -version -fstack-protector-strong -Wformat -Wformat-security -o /tmp/ccgwCFyW.s
 GNU C11 (Ubuntu 7.5.0-3ubuntu1~18.04) version 7.5.0 (x86_64-linux-gnu)
 	compiled by GNU C version 7.5.0, GMP version 6.1.2, MPFR version 4.0.1, MPC version 1.1.0, isl version isl-0.19-GMP
 
@@ -81,15 +81,15 @@ GNU C11 (Ubuntu 7.5.0-3ubuntu1~18.04) version 7.5.0 (x86_64-linux-gnu)
 
 GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
 Compiler executable checksum: b62ed4a2880cd4159476ea8293b72fa8
-COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64'
- as -v --64 -o CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o /tmp/ccGzNq9D.s
+COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64'
+ as -v --64 -o CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o /tmp/ccgwCFyW.s
 GNU assembler version 2.30 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.30
 COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/
 LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../:/lib/:/usr/lib/
-COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64'
-Linking C executable cmTC_fc64c
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_fc64c.dir/link.txt --verbose=1
-/usr/bin/gcc     -v -rdynamic CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o  -o cmTC_fc64c 
+COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64'
+Linking C executable cmTC_e7a8e
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e7a8e.dir/link.txt --verbose=1
+/usr/bin/gcc     -v -rdynamic CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o  -o cmTC_e7a8e 
 Using built-in specs.
 COLLECT_GCC=/usr/bin/gcc
 COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper
@@ -101,10 +101,10 @@ Thread model: posix
 gcc version 7.5.0 (Ubuntu 7.5.0-3ubuntu1~18.04) 
 COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/
 LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../:/lib/:/usr/lib/
-COLLECT_GCC_OPTIONS='-v' '-rdynamic' '-o' 'cmTC_fc64c' '-mtune=generic' '-march=x86-64'
- /usr/lib/gcc/x86_64-linux-gnu/7/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/7/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper -plugin-opt=-fresolution=/tmp/ccOSWYIQ.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_fc64c /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/7 -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/7/../../.. CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o
-COLLECT_GCC_OPTIONS='-v' '-rdynamic' '-o' 'cmTC_fc64c' '-mtune=generic' '-march=x86-64'
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+COLLECT_GCC_OPTIONS='-v' '-rdynamic' '-o' 'cmTC_e7a8e' '-mtune=generic' '-march=x86-64'
+ /usr/lib/gcc/x86_64-linux-gnu/7/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/7/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper -plugin-opt=-fresolution=/tmp/ccg3i2ZY.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_e7a8e /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/7 -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/7/../../.. CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o
+COLLECT_GCC_OPTIONS='-v' '-rdynamic' '-o' 'cmTC_e7a8e' '-mtune=generic' '-march=x86-64'
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 
@@ -127,12 +127,12 @@ Parsed C implicit include dir info from above output: rv=done
 
 Parsed C implicit link information from above output:
   link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
-  ignore line: [Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp]
+  ignore line: [Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp]
   ignore line: []
-  ignore line: [Run Build Command(s):/usr/bin/make cmTC_fc64c/fast && /usr/bin/make -f CMakeFiles/cmTC_fc64c.dir/build.make CMakeFiles/cmTC_fc64c.dir/build]
-  ignore line: [make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp']
-  ignore line: [Building C object CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o]
-  ignore line: [/usr/bin/gcc   -v -o CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o   -c /usr/local/share/cmake-3.16/Modules/CMakeCCompilerABI.c]
+  ignore line: [Run Build Command(s):/usr/bin/make cmTC_e7a8e/fast && /usr/bin/make -f CMakeFiles/cmTC_e7a8e.dir/build.make CMakeFiles/cmTC_e7a8e.dir/build]
+  ignore line: [make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp']
+  ignore line: [Building C object CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o]
+  ignore line: [/usr/bin/gcc   -v -o CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o   -c /usr/local/share/cmake-3.16/Modules/CMakeCCompilerABI.c]
   ignore line: [Using built-in specs.]
   ignore line: [COLLECT_GCC=/usr/bin/gcc]
   ignore line: [OFFLOAD_TARGET_NAMES=nvptx-none]
@@ -141,8 +141,8 @@ Parsed C implicit link information from above output:
   ignore line: [Configured with: ../src/configure -v --with-pkgversion='Ubuntu 7.5.0-3ubuntu1~18.04' --with-bugurl=file:///usr/share/doc/gcc-7/README.Bugs --enable-languages=c ada c++ go brig d fortran objc obj-c++ --prefix=/usr --with-gcc-major-version-only --program-suffix=-7 --program-prefix=x86_64-linux-gnu- --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-bootstrap --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-gnu-unique-object --disable-vtable-verify --enable-libmpx --enable-plugin --enable-default-pie --with-system-zlib --with-target-system-zlib --enable-objc-gc=auto --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32 m64 mx32 --enable-multilib --with-tune=generic --enable-offload-targets=nvptx-none --without-cuda-driver --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu]
   ignore line: [Thread model: posix]
   ignore line: [gcc version 7.5.0 (Ubuntu 7.5.0-3ubuntu1~18.04) ]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64']
-  ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/7/cc1 -quiet -v -imultiarch x86_64-linux-gnu /usr/local/share/cmake-3.16/Modules/CMakeCCompilerABI.c -quiet -dumpbase CMakeCCompilerABI.c -mtune=generic -march=x86-64 -auxbase-strip CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o -version -fstack-protector-strong -Wformat -Wformat-security -o /tmp/ccGzNq9D.s]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64']
+  ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/7/cc1 -quiet -v -imultiarch x86_64-linux-gnu /usr/local/share/cmake-3.16/Modules/CMakeCCompilerABI.c -quiet -dumpbase CMakeCCompilerABI.c -mtune=generic -march=x86-64 -auxbase-strip CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o -version -fstack-protector-strong -Wformat -Wformat-security -o /tmp/ccgwCFyW.s]
   ignore line: [GNU C11 (Ubuntu 7.5.0-3ubuntu1~18.04) version 7.5.0 (x86_64-linux-gnu)]
   ignore line: [	compiled by GNU C version 7.5.0  GMP version 6.1.2  MPFR version 4.0.1  MPC version 1.1.0  isl version isl-0.19-GMP]
   ignore line: []
@@ -162,15 +162,15 @@ Parsed C implicit link information from above output:
   ignore line: []
   ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
   ignore line: [Compiler executable checksum: b62ed4a2880cd4159476ea8293b72fa8]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64']
-  ignore line: [ as -v --64 -o CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o /tmp/ccGzNq9D.s]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64']
+  ignore line: [ as -v --64 -o CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o /tmp/ccgwCFyW.s]
   ignore line: [GNU assembler version 2.30 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.30]
   ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/]
   ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../:/lib/:/usr/lib/]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64']
-  ignore line: [Linking C executable cmTC_fc64c]
-  ignore line: [/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_fc64c.dir/link.txt --verbose=1]
-  ignore line: [/usr/bin/gcc     -v -rdynamic CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o  -o cmTC_fc64c ]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64']
+  ignore line: [Linking C executable cmTC_e7a8e]
+  ignore line: [/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e7a8e.dir/link.txt --verbose=1]
+  ignore line: [/usr/bin/gcc     -v -rdynamic CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o  -o cmTC_e7a8e ]
   ignore line: [Using built-in specs.]
   ignore line: [COLLECT_GCC=/usr/bin/gcc]
   ignore line: [COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper]
@@ -182,13 +182,13 @@ Parsed C implicit link information from above output:
   ignore line: [gcc version 7.5.0 (Ubuntu 7.5.0-3ubuntu1~18.04) ]
   ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/]
   ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../:/lib/:/usr/lib/]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-rdynamic' '-o' 'cmTC_fc64c' '-mtune=generic' '-march=x86-64']
-  link line: [ /usr/lib/gcc/x86_64-linux-gnu/7/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/7/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper -plugin-opt=-fresolution=/tmp/ccOSWYIQ.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_fc64c /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/7 -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/7/../../.. CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-rdynamic' '-o' 'cmTC_e7a8e' '-mtune=generic' '-march=x86-64']
+  link line: [ /usr/lib/gcc/x86_64-linux-gnu/7/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/7/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper -plugin-opt=-fresolution=/tmp/ccg3i2ZY.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_e7a8e /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/7 -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/7/../../.. CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o]
     arg [/usr/lib/gcc/x86_64-linux-gnu/7/collect2] ==> ignore
     arg [-plugin] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/7/liblto_plugin.so] ==> ignore
     arg [-plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper] ==> ignore
-    arg [-plugin-opt=-fresolution=/tmp/ccOSWYIQ.res] ==> ignore
+    arg [-plugin-opt=-fresolution=/tmp/ccg3i2ZY.res] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
     arg [-plugin-opt=-pass-through=-lc] ==> ignore
@@ -207,7 +207,7 @@ Parsed C implicit link information from above output:
     arg [-znow] ==> ignore
     arg [-zrelro] ==> ignore
     arg [-o] ==> ignore
-    arg [cmTC_fc64c] ==> ignore
+    arg [cmTC_e7a8e] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o] ==> ignore
@@ -219,7 +219,7 @@ Parsed C implicit link information from above output:
     arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
     arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
     arg [-L/usr/lib/gcc/x86_64-linux-gnu/7/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/7/../../..]
-    arg [CMakeFiles/cmTC_fc64c.dir/CMakeCCompilerABI.c.o] ==> ignore
+    arg [CMakeFiles/cmTC_e7a8e.dir/CMakeCCompilerABI.c.o] ==> ignore
     arg [-lgcc] ==> lib [gcc]
     arg [--push-state] ==> ignore
     arg [--as-needed] ==> ignore
@@ -247,26 +247,26 @@ Parsed C implicit link information from above output:
 
 
 Determining if the CXX compiler works passed with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_d3352/fast && /usr/bin/make -f CMakeFiles/cmTC_d3352.dir/build.make CMakeFiles/cmTC_d3352.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_d3352.dir/testCXXCompiler.cxx.o
-/usr/bin/c++     -o CMakeFiles/cmTC_d3352.dir/testCXXCompiler.cxx.o -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
-Linking CXX executable cmTC_d3352
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d3352.dir/link.txt --verbose=1
-/usr/bin/c++       -rdynamic CMakeFiles/cmTC_d3352.dir/testCXXCompiler.cxx.o  -o cmTC_d3352 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_68aca/fast && /usr/bin/make -f CMakeFiles/cmTC_68aca.dir/build.make CMakeFiles/cmTC_68aca.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_68aca.dir/testCXXCompiler.cxx.o
+/usr/bin/c++     -o CMakeFiles/cmTC_68aca.dir/testCXXCompiler.cxx.o -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
+Linking CXX executable cmTC_68aca
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_68aca.dir/link.txt --verbose=1
+/usr/bin/c++       -rdynamic CMakeFiles/cmTC_68aca.dir/testCXXCompiler.cxx.o  -o cmTC_68aca 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 
 Detecting CXX compiler ABI info compiled with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_4ab61/fast && /usr/bin/make -f CMakeFiles/cmTC_4ab61.dir/build.make CMakeFiles/cmTC_4ab61.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o
-/usr/bin/c++    -v -o CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o -c /usr/local/share/cmake-3.16/Modules/CMakeCXXCompilerABI.cpp
+Run Build Command(s):/usr/bin/make cmTC_6a915/fast && /usr/bin/make -f CMakeFiles/cmTC_6a915.dir/build.make CMakeFiles/cmTC_6a915.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o
+/usr/bin/c++    -v -o CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o -c /usr/local/share/cmake-3.16/Modules/CMakeCXXCompilerABI.cpp
 Using built-in specs.
 COLLECT_GCC=/usr/bin/c++
 OFFLOAD_TARGET_NAMES=nvptx-none
@@ -275,8 +275,8 @@ Target: x86_64-linux-gnu
 Configured with: ../src/configure -v --with-pkgversion='Ubuntu 7.5.0-3ubuntu1~18.04' --with-bugurl=file:///usr/share/doc/gcc-7/README.Bugs --enable-languages=c,ada,c++,go,brig,d,fortran,objc,obj-c++ --prefix=/usr --with-gcc-major-version-only --program-suffix=-7 --program-prefix=x86_64-linux-gnu- --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-bootstrap --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-gnu-unique-object --disable-vtable-verify --enable-libmpx --enable-plugin --enable-default-pie --with-system-zlib --with-target-system-zlib --enable-objc-gc=auto --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-offload-targets=nvptx-none --without-cuda-driver --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu
 Thread model: posix
 gcc version 7.5.0 (Ubuntu 7.5.0-3ubuntu1~18.04) 
-COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
- /usr/lib/gcc/x86_64-linux-gnu/7/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /usr/local/share/cmake-3.16/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpbase CMakeCXXCompilerABI.cpp -mtune=generic -march=x86-64 -auxbase-strip CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o -version -fstack-protector-strong -Wformat -Wformat-security -o /tmp/ccXMcR7d.s
+COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
+ /usr/lib/gcc/x86_64-linux-gnu/7/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /usr/local/share/cmake-3.16/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpbase CMakeCXXCompilerABI.cpp -mtune=generic -march=x86-64 -auxbase-strip CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o -version -fstack-protector-strong -Wformat -Wformat-security -o /tmp/cc8eI8M9.s
 GNU C++14 (Ubuntu 7.5.0-3ubuntu1~18.04) version 7.5.0 (x86_64-linux-gnu)
 	compiled by GNU C version 7.5.0, GMP version 6.1.2, MPFR version 4.0.1, MPC version 1.1.0, isl version isl-0.19-GMP
 
@@ -300,15 +300,15 @@ GNU C++14 (Ubuntu 7.5.0-3ubuntu1~18.04) version 7.5.0 (x86_64-linux-gnu)
 
 GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
 Compiler executable checksum: 3eb3dc290cd5714c3e1c3ae751116f07
-COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
- as -v --64 -o CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccXMcR7d.s
+COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
+ as -v --64 -o CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o /tmp/cc8eI8M9.s
 GNU assembler version 2.30 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.30
 COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/
 LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../:/lib/:/usr/lib/
-COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
-Linking CXX executable cmTC_4ab61
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4ab61.dir/link.txt --verbose=1
-/usr/bin/c++      -v -rdynamic CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_4ab61 
+COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
+Linking CXX executable cmTC_6a915
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6a915.dir/link.txt --verbose=1
+/usr/bin/c++      -v -rdynamic CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_6a915 
 Using built-in specs.
 COLLECT_GCC=/usr/bin/c++
 COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper
@@ -320,10 +320,10 @@ Thread model: posix
 gcc version 7.5.0 (Ubuntu 7.5.0-3ubuntu1~18.04) 
 COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/
 LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../:/lib/:/usr/lib/
-COLLECT_GCC_OPTIONS='-v' '-rdynamic' '-o' 'cmTC_4ab61' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
- /usr/lib/gcc/x86_64-linux-gnu/7/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/7/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper -plugin-opt=-fresolution=/tmp/cc8izpTj.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_4ab61 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/7 -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/7/../../.. CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o
-COLLECT_GCC_OPTIONS='-v' '-rdynamic' '-o' 'cmTC_4ab61' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+COLLECT_GCC_OPTIONS='-v' '-rdynamic' '-o' 'cmTC_6a915' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
+ /usr/lib/gcc/x86_64-linux-gnu/7/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/7/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper -plugin-opt=-fresolution=/tmp/ccBGjdYd.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_6a915 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/7 -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/7/../../.. CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o
+COLLECT_GCC_OPTIONS='-v' '-rdynamic' '-o' 'cmTC_6a915' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 
@@ -352,12 +352,12 @@ Parsed CXX implicit include dir info from above output: rv=done
 
 Parsed CXX implicit link information from above output:
   link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
-  ignore line: [Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp]
+  ignore line: [Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp]
   ignore line: []
-  ignore line: [Run Build Command(s):/usr/bin/make cmTC_4ab61/fast && /usr/bin/make -f CMakeFiles/cmTC_4ab61.dir/build.make CMakeFiles/cmTC_4ab61.dir/build]
-  ignore line: [make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp']
-  ignore line: [Building CXX object CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o]
-  ignore line: [/usr/bin/c++    -v -o CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o -c /usr/local/share/cmake-3.16/Modules/CMakeCXXCompilerABI.cpp]
+  ignore line: [Run Build Command(s):/usr/bin/make cmTC_6a915/fast && /usr/bin/make -f CMakeFiles/cmTC_6a915.dir/build.make CMakeFiles/cmTC_6a915.dir/build]
+  ignore line: [make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp']
+  ignore line: [Building CXX object CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o]
+  ignore line: [/usr/bin/c++    -v -o CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o -c /usr/local/share/cmake-3.16/Modules/CMakeCXXCompilerABI.cpp]
   ignore line: [Using built-in specs.]
   ignore line: [COLLECT_GCC=/usr/bin/c++]
   ignore line: [OFFLOAD_TARGET_NAMES=nvptx-none]
@@ -366,8 +366,8 @@ Parsed CXX implicit link information from above output:
   ignore line: [Configured with: ../src/configure -v --with-pkgversion='Ubuntu 7.5.0-3ubuntu1~18.04' --with-bugurl=file:///usr/share/doc/gcc-7/README.Bugs --enable-languages=c ada c++ go brig d fortran objc obj-c++ --prefix=/usr --with-gcc-major-version-only --program-suffix=-7 --program-prefix=x86_64-linux-gnu- --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-bootstrap --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --with-default-libstdcxx-abi=new --enable-gnu-unique-object --disable-vtable-verify --enable-libmpx --enable-plugin --enable-default-pie --with-system-zlib --with-target-system-zlib --enable-objc-gc=auto --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32 m64 mx32 --enable-multilib --with-tune=generic --enable-offload-targets=nvptx-none --without-cuda-driver --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu]
   ignore line: [Thread model: posix]
   ignore line: [gcc version 7.5.0 (Ubuntu 7.5.0-3ubuntu1~18.04) ]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
-  ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/7/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /usr/local/share/cmake-3.16/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpbase CMakeCXXCompilerABI.cpp -mtune=generic -march=x86-64 -auxbase-strip CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o -version -fstack-protector-strong -Wformat -Wformat-security -o /tmp/ccXMcR7d.s]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
+  ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/7/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /usr/local/share/cmake-3.16/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpbase CMakeCXXCompilerABI.cpp -mtune=generic -march=x86-64 -auxbase-strip CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o -version -fstack-protector-strong -Wformat -Wformat-security -o /tmp/cc8eI8M9.s]
   ignore line: [GNU C++14 (Ubuntu 7.5.0-3ubuntu1~18.04) version 7.5.0 (x86_64-linux-gnu)]
   ignore line: [	compiled by GNU C version 7.5.0  GMP version 6.1.2  MPFR version 4.0.1  MPC version 1.1.0  isl version isl-0.19-GMP]
   ignore line: []
@@ -391,15 +391,15 @@ Parsed CXX implicit link information from above output:
   ignore line: []
   ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
   ignore line: [Compiler executable checksum: 3eb3dc290cd5714c3e1c3ae751116f07]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
-  ignore line: [ as -v --64 -o CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccXMcR7d.s]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
+  ignore line: [ as -v --64 -o CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o /tmp/cc8eI8M9.s]
   ignore line: [GNU assembler version 2.30 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.30]
   ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/]
   ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../:/lib/:/usr/lib/]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
-  ignore line: [Linking CXX executable cmTC_4ab61]
-  ignore line: [/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4ab61.dir/link.txt --verbose=1]
-  ignore line: [/usr/bin/c++      -v -rdynamic CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_4ab61 ]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
+  ignore line: [Linking CXX executable cmTC_6a915]
+  ignore line: [/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6a915.dir/link.txt --verbose=1]
+  ignore line: [/usr/bin/c++      -v -rdynamic CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_6a915 ]
   ignore line: [Using built-in specs.]
   ignore line: [COLLECT_GCC=/usr/bin/c++]
   ignore line: [COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper]
@@ -411,13 +411,13 @@ Parsed CXX implicit link information from above output:
   ignore line: [gcc version 7.5.0 (Ubuntu 7.5.0-3ubuntu1~18.04) ]
   ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/]
   ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/7/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/7/../../../:/lib/:/usr/lib/]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-rdynamic' '-o' 'cmTC_4ab61' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
-  link line: [ /usr/lib/gcc/x86_64-linux-gnu/7/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/7/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper -plugin-opt=-fresolution=/tmp/cc8izpTj.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_4ab61 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/7 -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/7/../../.. CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-rdynamic' '-o' 'cmTC_6a915' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
+  link line: [ /usr/lib/gcc/x86_64-linux-gnu/7/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/7/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper -plugin-opt=-fresolution=/tmp/ccBGjdYd.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_6a915 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/7 -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/7/../../.. CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o]
     arg [/usr/lib/gcc/x86_64-linux-gnu/7/collect2] ==> ignore
     arg [-plugin] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/7/liblto_plugin.so] ==> ignore
     arg [-plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/7/lto-wrapper] ==> ignore
-    arg [-plugin-opt=-fresolution=/tmp/cc8izpTj.res] ==> ignore
+    arg [-plugin-opt=-fresolution=/tmp/ccBGjdYd.res] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
     arg [-plugin-opt=-pass-through=-lc] ==> ignore
@@ -436,7 +436,7 @@ Parsed CXX implicit link information from above output:
     arg [-znow] ==> ignore
     arg [-zrelro] ==> ignore
     arg [-o] ==> ignore
-    arg [cmTC_4ab61] ==> ignore
+    arg [cmTC_6a915] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o] ==> ignore
@@ -448,7 +448,7 @@ Parsed CXX implicit link information from above output:
     arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
     arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
     arg [-L/usr/lib/gcc/x86_64-linux-gnu/7/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/7/../../..]
-    arg [CMakeFiles/cmTC_4ab61.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+    arg [CMakeFiles/cmTC_6a915.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
     arg [-lstdc++] ==> lib [stdc++]
     arg [-lm] ==> lib [m]
     arg [-lgcc_s] ==> lib [gcc_s]
@@ -472,181 +472,181 @@ Parsed CXX implicit link information from above output:
 
 
 Performing C SOURCE FILE Test HAS_WERROR succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_16f18/fast && /usr/bin/make -f CMakeFiles/cmTC_16f18.dir/build.make CMakeFiles/cmTC_16f18.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_16f18.dir/src.c.o
-/usr/bin/gcc   -DHAS_WERROR   -Werror -o CMakeFiles/cmTC_16f18.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_16f18
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_16f18.dir/link.txt --verbose=1
-/usr/bin/gcc  -DHAS_WERROR    -rdynamic CMakeFiles/cmTC_16f18.dir/src.c.o  -o cmTC_16f18 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_d7d2d/fast && /usr/bin/make -f CMakeFiles/cmTC_d7d2d.dir/build.make CMakeFiles/cmTC_d7d2d.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_d7d2d.dir/src.c.o
+/usr/bin/gcc   -DHAS_WERROR   -Werror -o CMakeFiles/cmTC_d7d2d.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_d7d2d
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d7d2d.dir/link.txt --verbose=1
+/usr/bin/gcc  -DHAS_WERROR    -rdynamic CMakeFiles/cmTC_d7d2d.dir/src.c.o  -o cmTC_d7d2d 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
 int main(void) { return 0; }
 Performing C SOURCE FILE Test HAS_WALL succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_3a69c/fast && /usr/bin/make -f CMakeFiles/cmTC_3a69c.dir/build.make CMakeFiles/cmTC_3a69c.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_3a69c.dir/src.c.o
-/usr/bin/gcc   -DHAS_WALL   -Wall -o CMakeFiles/cmTC_3a69c.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_3a69c
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3a69c.dir/link.txt --verbose=1
-/usr/bin/gcc  -DHAS_WALL    -rdynamic CMakeFiles/cmTC_3a69c.dir/src.c.o  -o cmTC_3a69c 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_71a4e/fast && /usr/bin/make -f CMakeFiles/cmTC_71a4e.dir/build.make CMakeFiles/cmTC_71a4e.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_71a4e.dir/src.c.o
+/usr/bin/gcc   -DHAS_WALL   -Wall -o CMakeFiles/cmTC_71a4e.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_71a4e
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_71a4e.dir/link.txt --verbose=1
+/usr/bin/gcc  -DHAS_WALL    -rdynamic CMakeFiles/cmTC_71a4e.dir/src.c.o  -o cmTC_71a4e 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
 int main(void) { return 0; }
 Performing C SOURCE FILE Test HAS_WEXTRA succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_3f5bf/fast && /usr/bin/make -f CMakeFiles/cmTC_3f5bf.dir/build.make CMakeFiles/cmTC_3f5bf.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_3f5bf.dir/src.c.o
-/usr/bin/gcc   -DHAS_WEXTRA   -Wextra -o CMakeFiles/cmTC_3f5bf.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_3f5bf
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3f5bf.dir/link.txt --verbose=1
-/usr/bin/gcc  -DHAS_WEXTRA    -rdynamic CMakeFiles/cmTC_3f5bf.dir/src.c.o  -o cmTC_3f5bf 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_3a718/fast && /usr/bin/make -f CMakeFiles/cmTC_3a718.dir/build.make CMakeFiles/cmTC_3a718.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_3a718.dir/src.c.o
+/usr/bin/gcc   -DHAS_WEXTRA   -Wextra -o CMakeFiles/cmTC_3a718.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_3a718
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3a718.dir/link.txt --verbose=1
+/usr/bin/gcc  -DHAS_WEXTRA    -rdynamic CMakeFiles/cmTC_3a718.dir/src.c.o  -o cmTC_3a718 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
 int main(void) { return 0; }
 Performing C SOURCE FILE Test HAS_PEDANTIC succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_30463/fast && /usr/bin/make -f CMakeFiles/cmTC_30463.dir/build.make CMakeFiles/cmTC_30463.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_30463.dir/src.c.o
-/usr/bin/gcc   -DHAS_PEDANTIC   -pedantic -o CMakeFiles/cmTC_30463.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_30463
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_30463.dir/link.txt --verbose=1
-/usr/bin/gcc  -DHAS_PEDANTIC    -rdynamic CMakeFiles/cmTC_30463.dir/src.c.o  -o cmTC_30463 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_121c8/fast && /usr/bin/make -f CMakeFiles/cmTC_121c8.dir/build.make CMakeFiles/cmTC_121c8.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_121c8.dir/src.c.o
+/usr/bin/gcc   -DHAS_PEDANTIC   -pedantic -o CMakeFiles/cmTC_121c8.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_121c8
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_121c8.dir/link.txt --verbose=1
+/usr/bin/gcc  -DHAS_PEDANTIC    -rdynamic CMakeFiles/cmTC_121c8.dir/src.c.o  -o cmTC_121c8 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
 int main(void) { return 0; }
 Performing C SOURCE FILE Test HAS_NOMFI succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_88a02/fast && /usr/bin/make -f CMakeFiles/cmTC_88a02.dir/build.make CMakeFiles/cmTC_88a02.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_88a02.dir/src.c.o
-/usr/bin/gcc   -DHAS_NOMFI   -Wno-missing-field-initializers -o CMakeFiles/cmTC_88a02.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_88a02
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_88a02.dir/link.txt --verbose=1
-/usr/bin/gcc  -DHAS_NOMFI    -rdynamic CMakeFiles/cmTC_88a02.dir/src.c.o  -o cmTC_88a02 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_277a4/fast && /usr/bin/make -f CMakeFiles/cmTC_277a4.dir/build.make CMakeFiles/cmTC_277a4.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_277a4.dir/src.c.o
+/usr/bin/gcc   -DHAS_NOMFI   -Wno-missing-field-initializers -o CMakeFiles/cmTC_277a4.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_277a4
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_277a4.dir/link.txt --verbose=1
+/usr/bin/gcc  -DHAS_NOMFI    -rdynamic CMakeFiles/cmTC_277a4.dir/src.c.o  -o cmTC_277a4 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
 int main(void) { return 0; }
 Performing C SOURCE FILE Test HAS_NO9099 succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_c6d7b/fast && /usr/bin/make -f CMakeFiles/cmTC_c6d7b.dir/build.make CMakeFiles/cmTC_c6d7b.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_c6d7b.dir/src.c.o
-/usr/bin/gcc   -DHAS_NO9099   -Wno-c90-c99-compat -o CMakeFiles/cmTC_c6d7b.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_c6d7b
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c6d7b.dir/link.txt --verbose=1
-/usr/bin/gcc  -DHAS_NO9099    -rdynamic CMakeFiles/cmTC_c6d7b.dir/src.c.o  -o cmTC_c6d7b 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_43225/fast && /usr/bin/make -f CMakeFiles/cmTC_43225.dir/build.make CMakeFiles/cmTC_43225.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_43225.dir/src.c.o
+/usr/bin/gcc   -DHAS_NO9099   -Wno-c90-c99-compat -o CMakeFiles/cmTC_43225.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_43225
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_43225.dir/link.txt --verbose=1
+/usr/bin/gcc  -DHAS_NO9099    -rdynamic CMakeFiles/cmTC_43225.dir/src.c.o  -o cmTC_43225 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
 int main(void) { return 0; }
 Performing C SOURCE FILE Test LINKER_HAS_NOSTDLIB succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_bd93f/fast && /usr/bin/make -f CMakeFiles/cmTC_bd93f.dir/build.make CMakeFiles/cmTC_bd93f.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_bd93f.dir/src.c.o
-/usr/bin/gcc   -DLINKER_HAS_NOSTDLIB   -Wl,-nostdlib -o CMakeFiles/cmTC_bd93f.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_bd93f
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_bd93f.dir/link.txt --verbose=1
-/usr/bin/gcc  -DLINKER_HAS_NOSTDLIB    -rdynamic CMakeFiles/cmTC_bd93f.dir/src.c.o  -o cmTC_bd93f 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_0dae9/fast && /usr/bin/make -f CMakeFiles/cmTC_0dae9.dir/build.make CMakeFiles/cmTC_0dae9.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_0dae9.dir/src.c.o
+/usr/bin/gcc   -DLINKER_HAS_NOSTDLIB   -Wl,-nostdlib -o CMakeFiles/cmTC_0dae9.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_0dae9
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0dae9.dir/link.txt --verbose=1
+/usr/bin/gcc  -DLINKER_HAS_NOSTDLIB    -rdynamic CMakeFiles/cmTC_0dae9.dir/src.c.o  -o cmTC_0dae9 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
 int main(void) { return 0; }
 Performing C SOURCE FILE Test HAS_WLFATAL succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_78869/fast && /usr/bin/make -f CMakeFiles/cmTC_78869.dir/build.make CMakeFiles/cmTC_78869.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_78869.dir/src.c.o
-/usr/bin/gcc   -DHAS_WLFATAL   -Wl,--fatal-warnings -o CMakeFiles/cmTC_78869.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_78869
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_78869.dir/link.txt --verbose=1
-/usr/bin/gcc  -DHAS_WLFATAL    -rdynamic CMakeFiles/cmTC_78869.dir/src.c.o  -o cmTC_78869 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_3abd6/fast && /usr/bin/make -f CMakeFiles/cmTC_3abd6.dir/build.make CMakeFiles/cmTC_3abd6.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_3abd6.dir/src.c.o
+/usr/bin/gcc   -DHAS_WLFATAL   -Wl,--fatal-warnings -o CMakeFiles/cmTC_3abd6.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_3abd6
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3abd6.dir/link.txt --verbose=1
+/usr/bin/gcc  -DHAS_WLFATAL    -rdynamic CMakeFiles/cmTC_3abd6.dir/src.c.o  -o cmTC_3abd6 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
 int main(void) { return 0; }
 Performing C SOURCE FILE Test HAS_NOUNUSEDARG succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_d4f88/fast && /usr/bin/make -f CMakeFiles/cmTC_d4f88.dir/build.make CMakeFiles/cmTC_d4f88.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_d4f88.dir/src.c.o
-/usr/bin/gcc   -DHAS_NOUNUSEDARG   -Wno-unused-command-line-argument -o CMakeFiles/cmTC_d4f88.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_d4f88
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d4f88.dir/link.txt --verbose=1
-/usr/bin/gcc  -DHAS_NOUNUSEDARG    -rdynamic CMakeFiles/cmTC_d4f88.dir/src.c.o  -o cmTC_d4f88 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_a125c/fast && /usr/bin/make -f CMakeFiles/cmTC_a125c.dir/build.make CMakeFiles/cmTC_a125c.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_a125c.dir/src.c.o
+/usr/bin/gcc   -DHAS_NOUNUSEDARG   -Wno-unused-command-line-argument -o CMakeFiles/cmTC_a125c.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_a125c
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a125c.dir/link.txt --verbose=1
+/usr/bin/gcc  -DHAS_NOUNUSEDARG    -rdynamic CMakeFiles/cmTC_a125c.dir/src.c.o  -o cmTC_a125c 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
 int main(void) { return 0; }
 Performing C SOURCE FILE Test HAS_ARG_PIE succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_e4c73/fast && /usr/bin/make -f CMakeFiles/cmTC_e4c73.dir/build.make CMakeFiles/cmTC_e4c73.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_e4c73.dir/src.c.o
-/usr/bin/gcc   -DHAS_ARG_PIE   -pie -o CMakeFiles/cmTC_e4c73.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_e4c73
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e4c73.dir/link.txt --verbose=1
-/usr/bin/gcc  -DHAS_ARG_PIE    -rdynamic CMakeFiles/cmTC_e4c73.dir/src.c.o  -o cmTC_e4c73 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_79101/fast && /usr/bin/make -f CMakeFiles/cmTC_79101.dir/build.make CMakeFiles/cmTC_79101.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_79101.dir/src.c.o
+/usr/bin/gcc   -DHAS_ARG_PIE   -pie -o CMakeFiles/cmTC_79101.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_79101
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_79101.dir/link.txt --verbose=1
+/usr/bin/gcc  -DHAS_ARG_PIE    -rdynamic CMakeFiles/cmTC_79101.dir/src.c.o  -o cmTC_79101 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
 int main(void) { return 0; }
 Performing C SOURCE FILE Test HAS_ARG_NO_PIE succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_e84a7/fast && /usr/bin/make -f CMakeFiles/cmTC_e84a7.dir/build.make CMakeFiles/cmTC_e84a7.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_e84a7.dir/src.c.o
-/usr/bin/gcc   -DHAS_ARG_NO_PIE   -no-pie -o CMakeFiles/cmTC_e84a7.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_e84a7
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e84a7.dir/link.txt --verbose=1
-/usr/bin/gcc  -DHAS_ARG_NO_PIE    -rdynamic CMakeFiles/cmTC_e84a7.dir/src.c.o  -o cmTC_e84a7 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_265f4/fast && /usr/bin/make -f CMakeFiles/cmTC_265f4.dir/build.make CMakeFiles/cmTC_265f4.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_265f4.dir/src.c.o
+/usr/bin/gcc   -DHAS_ARG_NO_PIE   -no-pie -o CMakeFiles/cmTC_265f4.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_265f4
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_265f4.dir/link.txt --verbose=1
+/usr/bin/gcc  -DHAS_ARG_NO_PIE    -rdynamic CMakeFiles/cmTC_265f4.dir/src.c.o  -o cmTC_265f4 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
 int main(void) { return 0; }
 Performing C SOURCE FILE Test HAS_GCC_ATTR_CONSTR succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_4a4b1/fast && /usr/bin/make -f CMakeFiles/cmTC_4a4b1.dir/build.make CMakeFiles/cmTC_4a4b1.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_4a4b1.dir/src.c.o
-/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DHAS_GCC_ATTR_CONSTR   -o CMakeFiles/cmTC_4a4b1.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_4a4b1
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4a4b1.dir/link.txt --verbose=1
-/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DHAS_GCC_ATTR_CONSTR    -rdynamic CMakeFiles/cmTC_4a4b1.dir/src.c.o  -o cmTC_4a4b1 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_ff3d8/fast && /usr/bin/make -f CMakeFiles/cmTC_ff3d8.dir/build.make CMakeFiles/cmTC_ff3d8.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_ff3d8.dir/src.c.o
+/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DHAS_GCC_ATTR_CONSTR   -o CMakeFiles/cmTC_ff3d8.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_ff3d8
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ff3d8.dir/link.txt --verbose=1
+/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DHAS_GCC_ATTR_CONSTR    -rdynamic CMakeFiles/cmTC_ff3d8.dir/src.c.o  -o cmTC_ff3d8 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
@@ -657,16 +657,16 @@ entry_point(void) {}
 int main(void) { return 0; }
 
 Performing C SOURCE FILE Test HAS_GCC_PRAGMA_SYSH succeeded with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_736c5/fast && /usr/bin/make -f CMakeFiles/cmTC_736c5.dir/build.make CMakeFiles/cmTC_736c5.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_736c5.dir/src.c.o
-/usr/bin/gcc  -I/home/vignesh/Titan/ld_preloading/syscall_intercept/cmake  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DHAS_GCC_PRAGMA_SYSH   -o CMakeFiles/cmTC_736c5.dir/src.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_736c5
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_736c5.dir/link.txt --verbose=1
-/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DHAS_GCC_PRAGMA_SYSH    -rdynamic CMakeFiles/cmTC_736c5.dir/src.c.o  -o cmTC_736c5 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_8334f/fast && /usr/bin/make -f CMakeFiles/cmTC_8334f.dir/build.make CMakeFiles/cmTC_8334f.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_8334f.dir/src.c.o
+/usr/bin/gcc  -I/home/titan/Titan/ld_preloading/syscall_intercept/cmake  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DHAS_GCC_PRAGMA_SYSH   -o CMakeFiles/cmTC_8334f.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_8334f
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_8334f.dir/link.txt --verbose=1
+/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DHAS_GCC_PRAGMA_SYSH    -rdynamic CMakeFiles/cmTC_8334f.dir/src.c.o  -o cmTC_8334f 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 Source file was:
@@ -676,58 +676,58 @@ Source file was:
 int main(void) { return 0; }
 
 Determining if files elf.h exist passed with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_21268/fast && /usr/bin/make -f CMakeFiles/cmTC_21268.dir/build.make CMakeFiles/cmTC_21268.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_21268.dir/HAS_ELF_H.c.o
-/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat    -o CMakeFiles/cmTC_21268.dir/HAS_ELF_H.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CheckIncludeFiles/HAS_ELF_H.c
-Linking C executable cmTC_21268
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_21268.dir/link.txt --verbose=1
-/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat     -rdynamic CMakeFiles/cmTC_21268.dir/HAS_ELF_H.c.o  -o cmTC_21268 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_fad7d/fast && /usr/bin/make -f CMakeFiles/cmTC_fad7d.dir/build.make CMakeFiles/cmTC_fad7d.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_fad7d.dir/HAS_ELF_H.c.o
+/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat    -o CMakeFiles/cmTC_fad7d.dir/HAS_ELF_H.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CheckIncludeFiles/HAS_ELF_H.c
+Linking C executable cmTC_fad7d
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_fad7d.dir/link.txt --verbose=1
+/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat     -rdynamic CMakeFiles/cmTC_fad7d.dir/HAS_ELF_H.c.o  -o cmTC_fad7d 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 
 Determining if the function dladdr exists passed with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_41efc/fast && /usr/bin/make -f CMakeFiles/cmTC_41efc.dir/build.make CMakeFiles/cmTC_41efc.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_41efc.dir/CheckFunctionExists.c.o
-/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCHECK_FUNCTION_EXISTS=dladdr   -o CMakeFiles/cmTC_41efc.dir/CheckFunctionExists.c.o   -c /usr/local/share/cmake-3.16/Modules/CheckFunctionExists.c
-Linking C executable cmTC_41efc
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_41efc.dir/link.txt --verbose=1
-/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCHECK_FUNCTION_EXISTS=dladdr    -rdynamic CMakeFiles/cmTC_41efc.dir/CheckFunctionExists.c.o  -o cmTC_41efc  -ldl 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_80837/fast && /usr/bin/make -f CMakeFiles/cmTC_80837.dir/build.make CMakeFiles/cmTC_80837.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_80837.dir/CheckFunctionExists.c.o
+/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCHECK_FUNCTION_EXISTS=dladdr   -o CMakeFiles/cmTC_80837.dir/CheckFunctionExists.c.o   -c /usr/local/share/cmake-3.16/Modules/CheckFunctionExists.c
+Linking C executable cmTC_80837
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_80837.dir/link.txt --verbose=1
+/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCHECK_FUNCTION_EXISTS=dladdr    -rdynamic CMakeFiles/cmTC_80837.dir/CheckFunctionExists.c.o  -o cmTC_80837  -ldl 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 
 Determining if the include file pthread.h exists passed with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_2ab36/fast && /usr/bin/make -f CMakeFiles/cmTC_2ab36.dir/build.make CMakeFiles/cmTC_2ab36.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_2ab36.dir/CheckIncludeFile.c.o
-/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat  -fPIE   -o CMakeFiles/cmTC_2ab36.dir/CheckIncludeFile.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/CheckIncludeFile.c
-Linking C executable cmTC_2ab36
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_2ab36.dir/link.txt --verbose=1
-/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat     -rdynamic CMakeFiles/cmTC_2ab36.dir/CheckIncludeFile.c.o  -o cmTC_2ab36 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_703db/fast && /usr/bin/make -f CMakeFiles/cmTC_703db.dir/build.make CMakeFiles/cmTC_703db.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_703db.dir/CheckIncludeFile.c.o
+/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat  -fPIE   -o CMakeFiles/cmTC_703db.dir/CheckIncludeFile.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTC_703db
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_703db.dir/link.txt --verbose=1
+/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat     -rdynamic CMakeFiles/cmTC_703db.dir/CheckIncludeFile.c.o  -o cmTC_703db 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 
 Determining if the function pthread_create exists in the pthread passed with the following output:
-Change Dir: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
+Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_2742e/fast && /usr/bin/make -f CMakeFiles/cmTC_2742e.dir/build.make CMakeFiles/cmTC_2742e.dir/build
-make[1]: Entering directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_2742e.dir/CheckFunctionExists.c.o
-/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCHECK_FUNCTION_EXISTS=pthread_create -fPIE   -o CMakeFiles/cmTC_2742e.dir/CheckFunctionExists.c.o   -c /usr/local/share/cmake-3.16/Modules/CheckFunctionExists.c
-Linking C executable cmTC_2742e
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_2742e.dir/link.txt --verbose=1
-/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_2742e.dir/CheckFunctionExists.c.o  -o cmTC_2742e  -lpthread 
-make[1]: Leaving directory '/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Run Build Command(s):/usr/bin/make cmTC_87ba2/fast && /usr/bin/make -f CMakeFiles/cmTC_87ba2.dir/build.make CMakeFiles/cmTC_87ba2.dir/build
+make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_87ba2.dir/CheckFunctionExists.c.o
+/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCHECK_FUNCTION_EXISTS=pthread_create -fPIE   -o CMakeFiles/cmTC_87ba2.dir/CheckFunctionExists.c.o   -c /usr/local/share/cmake-3.16/Modules/CheckFunctionExists.c
+Linking C executable cmTC_87ba2
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_87ba2.dir/link.txt --verbose=1
+/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_87ba2.dir/CheckFunctionExists.c.o  -o cmTC_87ba2  -lpthread 
+make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
 
 
 

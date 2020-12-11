@@ -4,7 +4,41 @@
 #include "ip.h"
 #include "tcp.h"
 #include "netdev.h"
+#include "../VT_functions.h"
 
+
+#define SUCCESS 1
+#define FAIL 0
+
+#define ETHER_TYPE_IP    (0x0800)
+#define ETHER_TYPE_ARP   (0x0806)
+#define ETHER_TYPE_8021Q (0x8100)
+#define ETHER_TYPE_IPV6  (0x86DD)
+
+
+int GetPacketHash(struct sk_buff *skb) {
+
+    
+    char * payload = (char *)skb->head;
+    int size = IP_HDR_LEN + TCP_HDR_LEN;
+    int hash;
+    
+    for(int i = 0; i < size; i++) {
+        hash += *payload;
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+        ++payload;
+    }
+
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
+
+    if (hash < 0)
+        return -1 * hash;
+
+    return hash;
+}
 
 
 void ip_send_check(struct iphdr *ihdr) {
@@ -29,11 +63,6 @@ int IpOutputDaddr(struct sk_buff *skb, uint32_t daddr) {
     ihdr->version = IPV4;
     ihdr->ihl = 0x05;
     ihdr->tos = 0x0;
-    /*if (thdr->rst)
-        ihdr->tos = 0x0;
-    else
-        ihdr->tos = 0x10;
-    */
 
     ihdr->len = skb->len;
     ihdr->id = ihdr->id;
@@ -55,5 +84,9 @@ int IpOutputDaddr(struct sk_buff *skb, uint32_t daddr) {
     ip_out_dbg(ihdr);
     
 
+    int payload_hash = GetPacketHash(skb);
+    SetPktSendTimeAPI(payload_hash, IP_HDR_LEN + TCP_HDR_LEN,
+        GetCurrentTimeTracer(GetStackTracerID()));
+    
     return NetDevTransmit(skb, &sin);
 }

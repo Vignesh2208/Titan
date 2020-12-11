@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept
+CMAKE_SOURCE_DIR = /home/titan/Titan/ld_preloading/syscall_intercept
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
+CMAKE_BINARY_DIR = /home/titan/Titan/ld_preloading/syscall_intercept/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/syscall_intercept_base_clf.dir/depend.make
@@ -59,16 +59,16 @@ include CMakeFiles/syscall_intercept_base_clf.dir/flags.make
 
 CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.o: CMakeFiles/syscall_intercept_base_clf.dir/flags.make
 CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.o: ../src/cmdline_filter.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/cmdline_filter.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.o"
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/src/cmdline_filter.c
 
 CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/src/cmdline_filter.c > CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.i
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/src/cmdline_filter.c > CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.i
 
 CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/src/cmdline_filter.c -o CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.s
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/src/cmdline_filter.c -o CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.s
 
 syscall_intercept_base_clf: CMakeFiles/syscall_intercept_base_clf.dir/src/cmdline_filter.c.o
 syscall_intercept_base_clf: CMakeFiles/syscall_intercept_base_clf.dir/build.make
@@ -85,6 +85,6 @@ CMakeFiles/syscall_intercept_base_clf.dir/clean:
 .PHONY : CMakeFiles/syscall_intercept_base_clf.dir/clean
 
 CMakeFiles/syscall_intercept_base_clf.dir/depend:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_clf.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_clf.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/syscall_intercept_base_clf.dir/depend
 

@@ -62,7 +62,8 @@ typedef struct ioctl_args_struct {
 #define VT_MARK_STACK_INACTIVE _IOW(VT_IOC_MAGIC, 29, int)
 #define VT_MARK_STACK_RXLOOP_COMPLETE _IOW(VT_IOC_MAGIC, 30, int)
 #define VT_THREAD_STACK_WAIT _IOW(VT_IOC_MAGIC, 31, int)
-#define VT_UPDATE_STACK_RTX_SEND_TIME _IOW(VT_IOC_MAGIC, 32, int)
+#define VT_THREAD_STACK_FINISH _IOW(VT_IOC_MAGIC, 32, int)
+#define VT_UPDATE_STACK_RTX_SEND_TIME _IOW(VT_IOC_MAGIC, 33, int)
 
 #ifndef DISABLE_LOOKAHEAD
 struct lookahead_map {

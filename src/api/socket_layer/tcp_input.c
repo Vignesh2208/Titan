@@ -826,6 +826,8 @@ int TcpInputState(struct vsock *sk, struct tcphdr *th, struct sk_buff *skb) {
     // the expected check is included to not process fin right away if it arrives out of order
     // so we don't send an ack for it. It will eventually be re-transmitted.
     if (th->fin && expected) {
+        printf ("Received fin !\n");
+        fflush(stdout);
         tcpsock_dbg("Received FIN", sk);
 
         switch (sk->state) {

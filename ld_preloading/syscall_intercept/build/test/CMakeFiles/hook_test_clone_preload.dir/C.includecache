@@ -8,7 +8,7 @@
 
 ../include/libsyscall_intercept_hook_point.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/test/hook_test_clone_preload.c
+/home/titan/Titan/ld_preloading/syscall_intercept/test/hook_test_clone_preload.c
 assert.h
 -
 stdbool.h
@@ -24,5 +24,5 @@ unistd.h
 syscall.h
 -
 libsyscall_intercept_hook_point.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/test/libsyscall_intercept_hook_point.h
+/home/titan/Titan/ld_preloading/syscall_intercept/test/libsyscall_intercept_hook_point.h
 

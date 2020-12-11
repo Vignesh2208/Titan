@@ -5,6 +5,7 @@
 #include "utils/hashmap.h"
 #include "utility_functions.h"
 #include "cache_simulation.h"
+#include <pthread.h>
 
 
 
@@ -60,6 +61,9 @@ typedef struct ThreadInfoStruct {
     int in_force_completed;
     int in_callback;
     int processPID; // pid of the holder process. May differ from pid if this is a Thread
+    #ifndef DISABLE_VT_SOCKET_LAYER
+    pthread_t stackThread;
+    #endif
     char * fpuState;
     #ifndef DISABLE_LOOKAHEAD
     LoopRunTime loopRunTime[MAX_LOOP_DEPTH];

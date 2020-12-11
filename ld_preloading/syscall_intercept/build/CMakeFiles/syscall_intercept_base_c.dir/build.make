@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept
+CMAKE_SOURCE_DIR = /home/titan/Titan/ld_preloading/syscall_intercept
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
+CMAKE_BINARY_DIR = /home/titan/Titan/ld_preloading/syscall_intercept/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/syscall_intercept_base_c.dir/depend.make
@@ -59,107 +59,107 @@ include CMakeFiles/syscall_intercept_base_c.dir/flags.make
 
 CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.o: CMakeFiles/syscall_intercept_base_c.dir/flags.make
 CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.o: ../src/disasm_wrapper.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.o"
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.c
 
 CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.c > CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.i
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.c > CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.i
 
 CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.c -o CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.s
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/src/disasm_wrapper.c -o CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.s
 
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.o: CMakeFiles/syscall_intercept_base_c.dir/flags.make
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.o: ../src/intercept.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.o"
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept.c
 
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.c > CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.i
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept.c > CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.i
 
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept.c -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.s
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept.c -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.s
 
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.o: CMakeFiles/syscall_intercept_base_c.dir/flags.make
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.o: ../src/intercept_desc.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_desc.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.o"
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_desc.c
 
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_desc.c > CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.i
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_desc.c > CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.i
 
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_desc.c -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.s
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_desc.c -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept_desc.c.s
 
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.o: CMakeFiles/syscall_intercept_base_c.dir/flags.make
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.o: ../src/intercept_log.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_log.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.o"
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_log.c
 
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_log.c > CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.i
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_log.c > CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.i
 
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_log.c -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.s
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_log.c -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept_log.c.s
 
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.o: CMakeFiles/syscall_intercept_base_c.dir/flags.make
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.o: ../src/intercept_util.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.o"
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_util.c
 
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.c > CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.i
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_util.c > CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.i
 
 CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/src/intercept_util.c -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.s
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/src/intercept_util.c -o CMakeFiles/syscall_intercept_base_c.dir/src/intercept_util.c.s
 
 CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.o: CMakeFiles/syscall_intercept_base_c.dir/flags.make
 CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.o: ../src/patcher.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/patcher.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.o"
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/src/patcher.c
 
 CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/src/patcher.c > CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.i
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/src/patcher.c > CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.i
 
 CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/src/patcher.c -o CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.s
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/src/patcher.c -o CMakeFiles/syscall_intercept_base_c.dir/src/patcher.c.s
 
 CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.o: CMakeFiles/syscall_intercept_base_c.dir/flags.make
 CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.o: ../src/magic_syscalls.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.o"
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.c
 
 CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.c > CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.i
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.c > CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.i
 
 CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.c -o CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.s
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/src/magic_syscalls.c -o CMakeFiles/syscall_intercept_base_c.dir/src/magic_syscalls.c.s
 
 CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.o: CMakeFiles/syscall_intercept_base_c.dir/flags.make
 CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.o: ../src/syscall_formats.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/src/syscall_formats.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.o"
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/src/syscall_formats.c
 
 CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/src/syscall_formats.c > CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.i
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/src/syscall_formats.c > CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.i
 
 CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/src/syscall_formats.c -o CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.s
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/src/syscall_formats.c -o CMakeFiles/syscall_intercept_base_c.dir/src/syscall_formats.c.s
 
 syscall_intercept_base_c: CMakeFiles/syscall_intercept_base_c.dir/src/disasm_wrapper.c.o
 syscall_intercept_base_c: CMakeFiles/syscall_intercept_base_c.dir/src/intercept.c.o
@@ -183,6 +183,6 @@ CMakeFiles/syscall_intercept_base_c.dir/clean:
 .PHONY : CMakeFiles/syscall_intercept_base_c.dir/clean
 
 CMakeFiles/syscall_intercept_base_c.dir/depend:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/syscall_intercept_base_c.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/syscall_intercept_base_c.dir/depend
 

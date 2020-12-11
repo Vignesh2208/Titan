@@ -221,7 +221,7 @@ int HandleVtMarkStackRxLoopActive(unsigned long arg);
     \param arg A pointer to invoked_api struct containing details of the processID
         associated with this stack
 */
-int HandleVtThreadStackWait(unsigned long arg);
+int HandleVtThreadStackWait(unsigned long arg, int finish);
 
 
 

@@ -8,7 +8,7 @@
 
 ../include/libsyscall_intercept_hook_point.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/cpp_compile_test.cc
+/home/titan/Titan/ld_preloading/syscall_intercept/src/cpp_compile_test.cc
 libsyscall_intercept_hook_point.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/src/libsyscall_intercept_hook_point.h
+/home/titan/Titan/ld_preloading/syscall_intercept/src/libsyscall_intercept_hook_point.h
 

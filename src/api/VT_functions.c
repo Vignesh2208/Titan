@@ -379,8 +379,21 @@ int TriggerStackThreadWait(int tracerID, int stackID) {
 }
 
 
+int TriggerStackThreadFinish(int tracerID, int stackID) {
+  if (tracerID <= 0 || stackID <= 0) {
+    printf ("TriggerStackThreadWait: invalid arguments !\n");
+    return -1;
+  }
+
+  ioctl_args arg;
+  InitIoctlArg(&arg);
+  sprintf(arg.cmd_buf, "%d,%d", tracerID, stackID);
+  return SendToVtModule(VT_THREAD_STACK_FINISH, &arg);
+}
+
+
 int UpdateStackSendRtxTime(int tracerID, int stackID, s64 stack_send_rtx_time) {
-  if (tracerID <= 0 || stackID <= 0 || stack_send_rtx_time <= 0) {
+  if (tracerID <= 0 || stackID <= 0 || stack_send_rtx_time < 0) {
     printf ("UpdateStackSendRtxTime: invalid arguments !\n");
     return -1;
   }

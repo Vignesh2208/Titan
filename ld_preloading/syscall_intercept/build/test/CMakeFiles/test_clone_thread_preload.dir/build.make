@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept
+CMAKE_SOURCE_DIR = /home/titan/Titan/ld_preloading/syscall_intercept
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
+CMAKE_BINARY_DIR = /home/titan/Titan/ld_preloading/syscall_intercept/build
 
 # Include any dependencies generated for this target.
 include test/CMakeFiles/test_clone_thread_preload.dir/depend.make
@@ -59,16 +59,16 @@ include test/CMakeFiles/test_clone_thread_preload.dir/flags.make
 
 test/CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.o: test/CMakeFiles/test_clone_thread_preload.dir/flags.make
 test/CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.o: ../test/test_clone_thread_preload.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object test/CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.o"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/test/test_clone_thread_preload.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object test/CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.o"
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/test && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/test/test_clone_thread_preload.c
 
 test/CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.i"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/test/test_clone_thread_preload.c > CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/test && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/test/test_clone_thread_preload.c > CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.i
 
 test/CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.s"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/test/test_clone_thread_preload.c -o CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/test && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/test/test_clone_thread_preload.c -o CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.s
 
 # Object files for target test_clone_thread_preload
 test_clone_thread_preload_OBJECTS = \
@@ -81,8 +81,8 @@ test/libtest_clone_thread_preload.so: test/CMakeFiles/test_clone_thread_preload.
 test/libtest_clone_thread_preload.so: test/CMakeFiles/test_clone_thread_preload.dir/build.make
 test/libtest_clone_thread_preload.so: libsyscall_intercept.so.0.1.0
 test/libtest_clone_thread_preload.so: test/CMakeFiles/test_clone_thread_preload.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C shared library libtest_clone_thread_preload.so"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_clone_thread_preload.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C shared library libtest_clone_thread_preload.so"
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/test && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_clone_thread_preload.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 test/CMakeFiles/test_clone_thread_preload.dir/build: test/libtest_clone_thread_preload.so
@@ -90,10 +90,10 @@ test/CMakeFiles/test_clone_thread_preload.dir/build: test/libtest_clone_thread_p
 .PHONY : test/CMakeFiles/test_clone_thread_preload.dir/build
 
 test/CMakeFiles/test_clone_thread_preload.dir/clean:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test && $(CMAKE_COMMAND) -P CMakeFiles/test_clone_thread_preload.dir/cmake_clean.cmake
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/test && $(CMAKE_COMMAND) -P CMakeFiles/test_clone_thread_preload.dir/cmake_clean.cmake
 .PHONY : test/CMakeFiles/test_clone_thread_preload.dir/clean
 
 test/CMakeFiles/test_clone_thread_preload.dir/depend:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept/test /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/test_clone_thread_preload.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept/test /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build/test /home/titan/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/test_clone_thread_preload.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : test/CMakeFiles/test_clone_thread_preload.dir/depend
 

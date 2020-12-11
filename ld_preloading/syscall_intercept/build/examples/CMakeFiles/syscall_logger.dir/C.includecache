@@ -8,9 +8,9 @@
 
 ../include/libsyscall_intercept_hook_point.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.c
+/home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.c
 syscall_desc.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.h
+/home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.h
 stddef.h
 -
 syscall.h
@@ -18,13 +18,13 @@ syscall.h
 fcntl.h
 -
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.h
+/home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.h
 
-/home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_logger.c
+/home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_logger.c
 libsyscall_intercept_hook_point.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/examples/libsyscall_intercept_hook_point.h
+/home/titan/Titan/ld_preloading/syscall_intercept/examples/libsyscall_intercept_hook_point.h
 syscall_desc.h
-/home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.h
+/home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.h
 errno.h
 -
 limits.h

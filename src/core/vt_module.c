@@ -243,13 +243,16 @@ long vt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
       return HandleVtMarkStackActive(arg);
 
     case VT_MARK_STACK_INACTIVE:
-      return HandleVtMarkStackActive(arg);
+      return HandleVtMarkStackInActive(arg);
 
     case VT_MARK_STACK_RXLOOP_COMPLETE:
       return HandleVtMarkStackRxLoopActive(arg);
 
     case VT_THREAD_STACK_WAIT:
-      return HandleVtThreadStackWait(arg);
+      return HandleVtThreadStackWait(arg, 0);
+
+    case VT_THREAD_STACK_FINISH:
+      return HandleVtThreadStackWait(arg, 1);
 
     case VT_UPDATE_STACK_RTX_SEND_TIME:
       return HandleVtUpdateStackRtxSendTime(arg);

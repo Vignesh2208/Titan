@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <pwd.h>
+#include <arpa/inet.h>
 #include "cJSON/cJSON.h"
 
 #define MAX_COMMAND_LENGTH 1000
@@ -315,16 +316,18 @@ end:
 }
 
 void SetEnvVariables(int tracer_id, int timeline_id, int exp_type,
-  char * ttn_project_name) {
+  char * ttn_project_name, uint32_t src_ip_addr) {
 
   char tracer_id_env_variable[MAX_STRING_SIZE];
   char timeline_id_env_variable[MAX_STRING_SIZE];
   char exp_type_env_variable[MAX_STRING_SIZE];
+  char src_ip_addr_str[MAX_STRING_SIZE];
 
 
   memset(tracer_id_env_variable, 0,  sizeof(char) * MAX_STRING_SIZE);
   memset(timeline_id_env_variable, 0, sizeof(char) * MAX_STRING_SIZE);
   memset(exp_type_env_variable, 0, sizeof(char) * MAX_STRING_SIZE);
+  memset(src_ip_addr_str, 0, sizeof(char) * MAX_STRING_SIZE);
   
   if (snprintf(tracer_id_env_variable,
                MAX_STRING_SIZE, "%d", tracer_id) >= MAX_STRING_SIZE) {
@@ -347,6 +350,13 @@ void SetEnvVariables(int tracer_id, int timeline_id, int exp_type,
     exit(FAIL);
   }
 
+  if (snprintf(src_ip_addr_str,
+      MAX_STRING_SIZE, "%d", src_ip_addr) >= MAX_STRING_SIZE) {
+    printf ("Inet_addr(src_ip): %d has too many digits. Max allowed digits: %d\n",
+      src_ip_addr, MAX_STRING_SIZE);
+    exit(FAIL);
+  }
+
   if (setenv("VT_TRACER_ID", tracer_id_env_variable, 1) < 0 )
       perror("Failed to set env VT_TRACER_ID\n");
 
@@ -356,6 +366,11 @@ void SetEnvVariables(int tracer_id, int timeline_id, int exp_type,
   if (setenv("VT_EXP_TYPE", exp_type_env_variable, 1) < 0)
     perror("Failed to set env VT_EXP_TYPE\n");
 
+  #ifndef DISABLE_VT_SOCKET_LAYER
+  if (setenv("VT_SOCKET_LAYER_IP", src_ip_addr_str, 1) < 0)
+    perror("Failed to set env VT_SOCKET_LAYER_IP\n");
+  #endif
+
   if (!ParseTTNProject(ttn_project_name))
     perror("Failure to parse and set ttn project env variables \n");
 
@@ -364,7 +379,7 @@ void SetEnvVariables(int tracer_id, int timeline_id, int exp_type,
 
 int RunCommandUnderVtManagement(
     char *orig_command_str, pid_t *child_pid, int tracer_id, int timeline_id,
-    int exp_type, char *ttn_project_name) {
+    int exp_type, char *ttn_project_name, uint32_t src_ip_addr) {
   char **args;
   char full_command_str[MAX_COMMAND_LENGTH];
   char *iter = full_command_str;
@@ -455,7 +470,7 @@ int RunCommandUnderVtManagement(
     }
     
     printf("Setting appropriate environment variables ...\n");
-    SetEnvVariables(tracer_id, timeline_id, exp_type, ttn_project_name);
+    SetEnvVariables(tracer_id, timeline_id, exp_type, ttn_project_name, src_ip_addr);
     printf("Starting command: %s\n", args[0]);
     fflush(stdout);
     fflush(stderr);
@@ -476,7 +491,7 @@ void PrintUsage(int argc, char* argv[]) {
   fprintf(stderr, "\n");
   fprintf(stderr,
           "%s -i <TRACER_ID> -t <TIMELINE_ID> -e <EXP_TYPE>"
-          " -c \"CMD with args\" -p <TTN PROJECT NAME>\n", argv[0]);
+          " -c \"CMD with args\" -p <TTN PROJECT NAME> -a <Optional src-ip-addr>\n", argv[0]);
   fprintf(stderr, "\n");
   fprintf(stderr,
           "This program executes the specified CMD with arguments "
@@ -491,13 +506,16 @@ int main(int argc, char * argv[]) {
   int tracer_id = 0, timeline_id, exp_type;
   char command[MAX_COMMAND_LENGTH];
   char project[MAX_COMMAND_LENGTH];
+  char srcIPAddr[MAX_COMMAND_LENGTH];
   int option = 0;
+  int srcIPProvided = 0;
   int i, status;
   pid_t controlled_pid;
 
 
   memset(command, 0, sizeof(char)*MAX_COMMAND_LENGTH);
   memset(project, 0, sizeof(char)*MAX_COMMAND_LENGTH);
+  memset(srcIPAddr, 0, sizeof(char)*MAX_COMMAND_LENGTH);
   timeline_id = 0;
 
   if (argc < 4 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
@@ -506,7 +524,7 @@ int main(int argc, char * argv[]) {
   }
 
 
-  while ((option = getopt(argc, argv, "i:e:t:n:c:p:h")) != -1) {
+  while ((option = getopt(argc, argv, "i:e:t:n:c:p:a:h")) != -1) {
     switch (option) {
     case 'i' :  tracer_id = atoi(optarg);
                 if (tracer_id < 0) {
@@ -540,6 +558,14 @@ int main(int argc, char * argv[]) {
                 }
                 snprintf(project, MAX_COMMAND_LENGTH, "%s", optarg);
                 break;
+    case 'a' :  if (strlen(optarg) > MAX_COMMAND_LENGTH) {
+                  printf ("Src-ip string: %s too long. Max allowed characters: %d\n",
+                  optarg, MAX_COMMAND_LENGTH);
+                  exit(FAIL);
+                }
+                snprintf(srcIPAddr, MAX_COMMAND_LENGTH, "%s", optarg);
+                srcIPProvided = 1;
+                break;
     case 'h' :
     default  :  PrintUsage(argc, argv);
                 exit(FAIL);
@@ -552,8 +578,9 @@ int main(int argc, char * argv[]) {
   /* Open the command for reading. */
   fp = popen("/usr/sbin/arp -f /tmp/arp_entries.txt", "r");
   if (fp == NULL) {
-    printf("Failed to run arp command\n" );
+    printf("No static arp entries set !\n" );
   } else {
+    printf ("Attempting to set static arp entries ...\n");
      /* Read the output a line at a time - output it. */
      while (fgets(path, sizeof(path), fp) != NULL) {
 	      printf("%s", path);
@@ -562,10 +589,36 @@ int main(int argc, char * argv[]) {
      /* close */
      pclose(fp);
   }
+
+  #ifndef DISABLE_VT_SOCKET_LAYER
+  if (!srcIPProvided) {
+    snprintf(srcIPAddr, MAX_COMMAND_LENGTH, "%s", "127.0.0.1");
+  }
+  printf("Tracer: %d >> Using SRC IP: %s for any spawned virtual tcp-stacks\n",
+    tracer_id, srcIPAddr);
+  printf ("Tracer: %d >> Updating firewall rules to drop outgoing TCP-RST packets\n", tracer_id);
+
+  fp = popen("/sbin/iptables -A OUTPUT -p tcp --tcp-flags RST RST -j DROP", "r");
+  if (fp == NULL) {
+    printf("Failed to add firewall rules !\n" );
+  } else {
+    printf ("Attempting to set firewall rules ...\n");
+     /* Read the output a line at a time - output it. */
+     while (fgets(path, sizeof(path), fp) != NULL) {
+	      printf("%s", path);
+        fflush(stdout);
+     }
+     /* close */
+     pclose(fp);
+  }
+
+  #endif
+
   printf("Tracer: %d >> CMD TO RUN: %s\n", tracer_id, command);		
 
   RunCommandUnderVtManagement(
-    command, &controlled_pid, tracer_id, timeline_id, exp_type, project);
+    command, &controlled_pid, tracer_id, timeline_id, exp_type, project,
+    inet_addr(srcIPAddr));
   printf("Tracer: %d >> Started Command: %s, PID: %d. Timeline-id: %d\n",
     tracer_id, command, controlled_pid, timeline_id);
 

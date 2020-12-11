@@ -7,11 +7,11 @@ C_FLAGS =  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -O3 -DNDEBUG -fPI
 
 C_DEFINES = -DHAS_GCC_PRAGMA_SYSH -D_GNU_SOURCE
 
-C_INCLUDES = -I/home/vignesh/Titan/ld_preloading/syscall_intercept/include 
+C_INCLUDES = -I/home/titan/Titan/ld_preloading/syscall_intercept/include 
 
 CXX_FLAGS = -O3 -DNDEBUG -fPIE   -std=gnu++11
 
 CXX_DEFINES = -DHAS_GCC_PRAGMA_SYSH -D_GNU_SOURCE
 
-CXX_INCLUDES = -I/home/vignesh/Titan/ld_preloading/syscall_intercept/include 
+CXX_INCLUDES = -I/home/titan/Titan/ld_preloading/syscall_intercept/include 
 

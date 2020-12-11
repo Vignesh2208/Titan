@@ -1,10 +1,10 @@
 # From: https://cmake.org/Wiki/CMake_FAQ
 
-if(NOT EXISTS "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt")
-	message(FATAL_ERROR "Cannot find install manifest: /home/vignesh/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt")
-endif(NOT EXISTS "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt")
+if(NOT EXISTS "/home/titan/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt")
+	message(FATAL_ERROR "Cannot find install manifest: /home/titan/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt")
+endif(NOT EXISTS "/home/titan/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt")
 
-file(READ "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt" files)
+file(READ "/home/titan/Titan/ld_preloading/syscall_intercept/build/install_manifest.txt" files)
 string(REGEX REPLACE "\n" ";" files "${files}")
 foreach(file ${files})
 	message(STATUS "Uninstalling $ENV{DESTDIR}${file}")

@@ -128,6 +128,7 @@ struct vsocket *AllockSocket();
 void AddVSocketToList(struct vsocket * sock);
 
 void SocketGarbageCollect(struct vsocket * sock);
+void GarbageCollectSockets();
 
 void AbortSockets();
 void SocketDebug();

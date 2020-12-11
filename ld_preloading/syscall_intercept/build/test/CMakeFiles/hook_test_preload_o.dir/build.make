@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept
+CMAKE_SOURCE_DIR = /home/titan/Titan/ld_preloading/syscall_intercept
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
+CMAKE_BINARY_DIR = /home/titan/Titan/ld_preloading/syscall_intercept/build
 
 # Include any dependencies generated for this target.
 include test/CMakeFiles/hook_test_preload_o.dir/depend.make
@@ -59,16 +59,16 @@ include test/CMakeFiles/hook_test_preload_o.dir/flags.make
 
 test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.o: test/CMakeFiles/hook_test_preload_o.dir/flags.make
 test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.o: ../test/hook_test_preload.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.o"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/test/hook_test_preload.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.o"
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/test && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/test/hook_test_preload.c
 
 test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.i"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/test/hook_test_preload.c > CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/test && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/test/hook_test_preload.c > CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.i
 
 test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.s"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/test/hook_test_preload.c -o CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/test && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/test/hook_test_preload.c -o CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.s
 
 hook_test_preload_o: test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.o
 hook_test_preload_o: test/CMakeFiles/hook_test_preload_o.dir/build.make
@@ -81,10 +81,10 @@ test/CMakeFiles/hook_test_preload_o.dir/build: hook_test_preload_o
 .PHONY : test/CMakeFiles/hook_test_preload_o.dir/build
 
 test/CMakeFiles/hook_test_preload_o.dir/clean:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test && $(CMAKE_COMMAND) -P CMakeFiles/hook_test_preload_o.dir/cmake_clean.cmake
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/test && $(CMAKE_COMMAND) -P CMakeFiles/hook_test_preload_o.dir/cmake_clean.cmake
 .PHONY : test/CMakeFiles/hook_test_preload_o.dir/clean
 
 test/CMakeFiles/hook_test_preload_o.dir/depend:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept/test /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/hook_test_preload_o.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept/test /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build/test /home/titan/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/hook_test_preload_o.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : test/CMakeFiles/hook_test_preload_o.dir/depend
 

@@ -40,5 +40,7 @@ void SockConnected(struct vsock *sk) {
     sock->state = SS_CONNECTED;
     sk->err = 0;
     sk->poll_events = (POLLOUT | POLLWRNORM | POLLWRBAND);
+    printf ("Waking up connected socket !\n");
+    fflush(stdout);
     sock->sleep_wait_wakeup = 1;
 }

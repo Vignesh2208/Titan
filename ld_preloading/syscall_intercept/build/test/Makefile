@@ -48,10 +48,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept
+CMAKE_SOURCE_DIR = /home/titan/Titan/ld_preloading/syscall_intercept
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
+CMAKE_BINARY_DIR = /home/titan/Titan/ld_preloading/syscall_intercept/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -137,14 +137,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles /home/vignesh/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/progress.marks
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles 0
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles /home/titan/Titan/ld_preloading/syscall_intercept/build/test/CMakeFiles/progress.marks
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/clean
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/clean
 .PHONY : clean
 
 # The main clean target
@@ -154,22 +154,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/preinstall
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/preinstall
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 test/CMakeFiles/vfork_logging.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/vfork_logging.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/vfork_logging.dir/rule
 .PHONY : test/CMakeFiles/vfork_logging.dir/rule
 
 # Convenience name for target.
@@ -179,12 +179,12 @@ vfork_logging: test/CMakeFiles/vfork_logging.dir/rule
 
 # fast build rule for target.
 vfork_logging/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/vfork_logging.dir/build.make test/CMakeFiles/vfork_logging.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/vfork_logging.dir/build.make test/CMakeFiles/vfork_logging.dir/build
 .PHONY : vfork_logging/fast
 
 # Convenience name for target.
 test/CMakeFiles/intercept_sys_write.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/intercept_sys_write.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/intercept_sys_write.dir/rule
 .PHONY : test/CMakeFiles/intercept_sys_write.dir/rule
 
 # Convenience name for target.
@@ -194,12 +194,12 @@ intercept_sys_write: test/CMakeFiles/intercept_sys_write.dir/rule
 
 # fast build rule for target.
 intercept_sys_write/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/intercept_sys_write.dir/build.make test/CMakeFiles/intercept_sys_write.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/intercept_sys_write.dir/build.make test/CMakeFiles/intercept_sys_write.dir/build
 .PHONY : intercept_sys_write/fast
 
 # Convenience name for target.
 test/CMakeFiles/executable_with_syscall_pie.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/executable_with_syscall_pie.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/executable_with_syscall_pie.dir/rule
 .PHONY : test/CMakeFiles/executable_with_syscall_pie.dir/rule
 
 # Convenience name for target.
@@ -209,12 +209,12 @@ executable_with_syscall_pie: test/CMakeFiles/executable_with_syscall_pie.dir/rul
 
 # fast build rule for target.
 executable_with_syscall_pie/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/executable_with_syscall_pie.dir/build.make test/CMakeFiles/executable_with_syscall_pie.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/executable_with_syscall_pie.dir/build.make test/CMakeFiles/executable_with_syscall_pie.dir/build
 .PHONY : executable_with_syscall_pie/fast
 
 # Convenience name for target.
 test/CMakeFiles/test_clone_thread_preload.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/test_clone_thread_preload.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/test_clone_thread_preload.dir/rule
 .PHONY : test/CMakeFiles/test_clone_thread_preload.dir/rule
 
 # Convenience name for target.
@@ -224,12 +224,12 @@ test_clone_thread_preload: test/CMakeFiles/test_clone_thread_preload.dir/rule
 
 # fast build rule for target.
 test_clone_thread_preload/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread_preload.dir/build.make test/CMakeFiles/test_clone_thread_preload.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread_preload.dir/build.make test/CMakeFiles/test_clone_thread_preload.dir/build
 .PHONY : test_clone_thread_preload/fast
 
 # Convenience name for target.
 test/CMakeFiles/test_clone_thread.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/test_clone_thread.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/test_clone_thread.dir/rule
 .PHONY : test/CMakeFiles/test_clone_thread.dir/rule
 
 # Convenience name for target.
@@ -239,12 +239,12 @@ test_clone_thread: test/CMakeFiles/test_clone_thread.dir/rule
 
 # fast build rule for target.
 test_clone_thread/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread.dir/build.make test/CMakeFiles/test_clone_thread.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread.dir/build.make test/CMakeFiles/test_clone_thread.dir/build
 .PHONY : test_clone_thread/fast
 
 # Convenience name for target.
 test/CMakeFiles/hook_test_preload_with_static.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/hook_test_preload_with_static.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/hook_test_preload_with_static.dir/rule
 .PHONY : test/CMakeFiles/hook_test_preload_with_static.dir/rule
 
 # Convenience name for target.
@@ -254,12 +254,12 @@ hook_test_preload_with_static: test/CMakeFiles/hook_test_preload_with_static.dir
 
 # fast build rule for target.
 hook_test_preload_with_static/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_preload_with_static.dir/build.make test/CMakeFiles/hook_test_preload_with_static.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_preload_with_static.dir/build.make test/CMakeFiles/hook_test_preload_with_static.dir/build
 .PHONY : hook_test_preload_with_static/fast
 
 # Convenience name for target.
 test/CMakeFiles/hook_test.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/hook_test.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/hook_test.dir/rule
 .PHONY : test/CMakeFiles/hook_test.dir/rule
 
 # Convenience name for target.
@@ -269,12 +269,12 @@ hook_test: test/CMakeFiles/hook_test.dir/rule
 
 # fast build rule for target.
 hook_test/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test.dir/build.make test/CMakeFiles/hook_test.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test.dir/build.make test/CMakeFiles/hook_test.dir/build
 .PHONY : hook_test/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_jmps.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_jmps.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_jmps.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_jmps.out.dir/rule
 
 # Convenience name for target.
@@ -284,12 +284,12 @@ pattern_jmps.out: test/CMakeFiles/pattern_jmps.out.dir/rule
 
 # fast build rule for target.
 pattern_jmps.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_jmps.out.dir/build.make test/CMakeFiles/pattern_jmps.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_jmps.out.dir/build.make test/CMakeFiles/pattern_jmps.out.dir/build
 .PHONY : pattern_jmps.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_jmps.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_jmps.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_jmps.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_jmps.in.dir/rule
 
 # Convenience name for target.
@@ -299,12 +299,12 @@ pattern_jmps.in: test/CMakeFiles/pattern_jmps.in.dir/rule
 
 # fast build rule for target.
 pattern_jmps.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_jmps.in.dir/build.make test/CMakeFiles/pattern_jmps.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_jmps.in.dir/build.make test/CMakeFiles/pattern_jmps.in.dir/build
 .PHONY : pattern_jmps.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_rets.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_rets.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_rets.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_rets.in.dir/rule
 
 # Convenience name for target.
@@ -314,12 +314,12 @@ pattern_rets.in: test/CMakeFiles/pattern_rets.in.dir/rule
 
 # fast build rule for target.
 pattern_rets.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_rets.in.dir/build.make test/CMakeFiles/pattern_rets.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_rets.in.dir/build.make test/CMakeFiles/pattern_rets.in.dir/build
 .PHONY : pattern_rets.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_rets.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_rets.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_rets.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_rets.out.dir/rule
 
 # Convenience name for target.
@@ -329,12 +329,12 @@ pattern_rets.out: test/CMakeFiles/pattern_rets.out.dir/rule
 
 # fast build rule for target.
 pattern_rets.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_rets.out.dir/build.make test/CMakeFiles/pattern_rets.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_rets.out.dir/build.make test/CMakeFiles/pattern_rets.out.dir/build
 .PHONY : pattern_rets.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_double_syscall.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_double_syscall.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_double_syscall.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_double_syscall.out.dir/rule
 
 # Convenience name for target.
@@ -344,12 +344,12 @@ pattern_double_syscall.out: test/CMakeFiles/pattern_double_syscall.out.dir/rule
 
 # fast build rule for target.
 pattern_double_syscall.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_double_syscall.out.dir/build.make test/CMakeFiles/pattern_double_syscall.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_double_syscall.out.dir/build.make test/CMakeFiles/pattern_double_syscall.out.dir/build
 .PHONY : pattern_double_syscall.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/syscall_format.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/syscall_format.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/syscall_format.dir/rule
 .PHONY : test/CMakeFiles/syscall_format.dir/rule
 
 # Convenience name for target.
@@ -359,12 +359,12 @@ syscall_format: test/CMakeFiles/syscall_format.dir/rule
 
 # fast build rule for target.
 syscall_format/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/syscall_format.dir/build.make test/CMakeFiles/syscall_format.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/syscall_format.dir/build.make test/CMakeFiles/syscall_format.dir/build
 .PHONY : syscall_format/fast
 
 # Convenience name for target.
 test/CMakeFiles/hook_test_preload_o.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/hook_test_preload_o.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/hook_test_preload_o.dir/rule
 .PHONY : test/CMakeFiles/hook_test_preload_o.dir/rule
 
 # Convenience name for target.
@@ -374,12 +374,12 @@ hook_test_preload_o: test/CMakeFiles/hook_test_preload_o.dir/rule
 
 # fast build rule for target.
 hook_test_preload_o/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_preload_o.dir/build.make test/CMakeFiles/hook_test_preload_o.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_preload_o.dir/build.make test/CMakeFiles/hook_test_preload_o.dir/build
 .PHONY : hook_test_preload_o/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding8.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding8.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding8.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding8.in.dir/rule
 
 # Convenience name for target.
@@ -389,12 +389,12 @@ pattern_nop_padding8.in: test/CMakeFiles/pattern_nop_padding8.in.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding8.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding8.in.dir/build.make test/CMakeFiles/pattern_nop_padding8.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding8.in.dir/build.make test/CMakeFiles/pattern_nop_padding8.in.dir/build
 .PHONY : pattern_nop_padding8.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding7.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding7.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding7.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding7.in.dir/rule
 
 # Convenience name for target.
@@ -404,12 +404,12 @@ pattern_nop_padding7.in: test/CMakeFiles/pattern_nop_padding7.in.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding7.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding7.in.dir/build.make test/CMakeFiles/pattern_nop_padding7.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding7.in.dir/build.make test/CMakeFiles/pattern_nop_padding7.in.dir/build
 .PHONY : pattern_nop_padding7.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding6.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding6.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding6.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding6.out.dir/rule
 
 # Convenience name for target.
@@ -419,12 +419,12 @@ pattern_nop_padding6.out: test/CMakeFiles/pattern_nop_padding6.out.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding6.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding6.out.dir/build.make test/CMakeFiles/pattern_nop_padding6.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding6.out.dir/build.make test/CMakeFiles/pattern_nop_padding6.out.dir/build
 .PHONY : pattern_nop_padding6.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding9.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding9.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding9.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding9.in.dir/rule
 
 # Convenience name for target.
@@ -434,12 +434,12 @@ pattern_nop_padding9.in: test/CMakeFiles/pattern_nop_padding9.in.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding9.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding9.in.dir/build.make test/CMakeFiles/pattern_nop_padding9.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding9.in.dir/build.make test/CMakeFiles/pattern_nop_padding9.in.dir/build
 .PHONY : pattern_nop_padding9.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_symbol_boundary0.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary0.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary0.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_symbol_boundary0.in.dir/rule
 
 # Convenience name for target.
@@ -449,12 +449,12 @@ pattern_symbol_boundary0.in: test/CMakeFiles/pattern_symbol_boundary0.in.dir/rul
 
 # fast build rule for target.
 pattern_symbol_boundary0.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary0.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary0.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary0.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary0.in.dir/build
 .PHONY : pattern_symbol_boundary0.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_loop2.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_loop2.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_loop2.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_loop2.out.dir/rule
 
 # Convenience name for target.
@@ -464,12 +464,12 @@ pattern_loop2.out: test/CMakeFiles/pattern_loop2.out.dir/rule
 
 # fast build rule for target.
 pattern_loop2.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop2.out.dir/build.make test/CMakeFiles/pattern_loop2.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop2.out.dir/build.make test/CMakeFiles/pattern_loop2.out.dir/build
 .PHONY : pattern_loop2.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_loop2.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_loop2.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_loop2.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_loop2.in.dir/rule
 
 # Convenience name for target.
@@ -479,12 +479,12 @@ pattern_loop2.in: test/CMakeFiles/pattern_loop2.in.dir/rule
 
 # fast build rule for target.
 pattern_loop2.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop2.in.dir/build.make test/CMakeFiles/pattern_loop2.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop2.in.dir/build.make test/CMakeFiles/pattern_loop2.in.dir/build
 .PHONY : pattern_loop2.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_loop.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_loop.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_loop.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_loop.out.dir/rule
 
 # Convenience name for target.
@@ -494,12 +494,12 @@ pattern_loop.out: test/CMakeFiles/pattern_loop.out.dir/rule
 
 # fast build rule for target.
 pattern_loop.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop.out.dir/build.make test/CMakeFiles/pattern_loop.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop.out.dir/build.make test/CMakeFiles/pattern_loop.out.dir/build
 .PHONY : pattern_loop.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding1.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding1.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding1.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding1.in.dir/rule
 
 # Convenience name for target.
@@ -509,12 +509,12 @@ pattern_nop_padding1.in: test/CMakeFiles/pattern_nop_padding1.in.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding1.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding1.in.dir/build.make test/CMakeFiles/pattern_nop_padding1.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding1.in.dir/build.make test/CMakeFiles/pattern_nop_padding1.in.dir/build
 .PHONY : pattern_nop_padding1.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_loop.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_loop.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_loop.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_loop.in.dir/rule
 
 # Convenience name for target.
@@ -524,12 +524,12 @@ pattern_loop.in: test/CMakeFiles/pattern_loop.in.dir/rule
 
 # fast build rule for target.
 pattern_loop.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop.in.dir/build.make test/CMakeFiles/pattern_loop.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop.in.dir/build.make test/CMakeFiles/pattern_loop.in.dir/build
 .PHONY : pattern_loop.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/hook_test_preload_with_shared.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/hook_test_preload_with_shared.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/hook_test_preload_with_shared.dir/rule
 .PHONY : test/CMakeFiles/hook_test_preload_with_shared.dir/rule
 
 # Convenience name for target.
@@ -539,12 +539,12 @@ hook_test_preload_with_shared: test/CMakeFiles/hook_test_preload_with_shared.dir
 
 # fast build rule for target.
 hook_test_preload_with_shared/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_preload_with_shared.dir/build.make test/CMakeFiles/hook_test_preload_with_shared.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_preload_with_shared.dir/build.make test/CMakeFiles/hook_test_preload_with_shared.dir/build
 .PHONY : hook_test_preload_with_shared/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern4.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern4.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern4.in.dir/rule
 .PHONY : test/CMakeFiles/pattern4.in.dir/rule
 
 # Convenience name for target.
@@ -554,12 +554,12 @@ pattern4.in: test/CMakeFiles/pattern4.in.dir/rule
 
 # fast build rule for target.
 pattern4.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern4.in.dir/build.make test/CMakeFiles/pattern4.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern4.in.dir/build.make test/CMakeFiles/pattern4.in.dir/build
 .PHONY : pattern4.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern2.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern2.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern2.in.dir/rule
 .PHONY : test/CMakeFiles/pattern2.in.dir/rule
 
 # Convenience name for target.
@@ -569,12 +569,12 @@ pattern2.in: test/CMakeFiles/pattern2.in.dir/rule
 
 # fast build rule for target.
 pattern2.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern2.in.dir/build.make test/CMakeFiles/pattern2.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern2.in.dir/build.make test/CMakeFiles/pattern2.in.dir/build
 .PHONY : pattern2.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern3.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern3.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern3.out.dir/rule
 .PHONY : test/CMakeFiles/pattern3.out.dir/rule
 
 # Convenience name for target.
@@ -584,12 +584,12 @@ pattern3.out: test/CMakeFiles/pattern3.out.dir/rule
 
 # fast build rule for target.
 pattern3.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern3.out.dir/build.make test/CMakeFiles/pattern3.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern3.out.dir/build.make test/CMakeFiles/pattern3.out.dir/build
 .PHONY : pattern3.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding7.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding7.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding7.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding7.out.dir/rule
 
 # Convenience name for target.
@@ -599,12 +599,12 @@ pattern_nop_padding7.out: test/CMakeFiles/pattern_nop_padding7.out.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding7.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding7.out.dir/build.make test/CMakeFiles/pattern_nop_padding7.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding7.out.dir/build.make test/CMakeFiles/pattern_nop_padding7.out.dir/build
 .PHONY : pattern_nop_padding7.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding4.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding4.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding4.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding4.out.dir/rule
 
 # Convenience name for target.
@@ -614,12 +614,12 @@ pattern_nop_padding4.out: test/CMakeFiles/pattern_nop_padding4.out.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding4.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding4.out.dir/build.make test/CMakeFiles/pattern_nop_padding4.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding4.out.dir/build.make test/CMakeFiles/pattern_nop_padding4.out.dir/build
 .PHONY : pattern_nop_padding4.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/asm_pattern.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/asm_pattern.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/asm_pattern.dir/rule
 .PHONY : test/CMakeFiles/asm_pattern.dir/rule
 
 # Convenience name for target.
@@ -629,12 +629,12 @@ asm_pattern: test/CMakeFiles/asm_pattern.dir/rule
 
 # fast build rule for target.
 asm_pattern/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/asm_pattern.dir/build.make test/CMakeFiles/asm_pattern.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/asm_pattern.dir/build.make test/CMakeFiles/asm_pattern.dir/build
 .PHONY : asm_pattern/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding5.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding5.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding5.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding5.in.dir/rule
 
 # Convenience name for target.
@@ -644,12 +644,12 @@ pattern_nop_padding5.in: test/CMakeFiles/pattern_nop_padding5.in.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding5.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding5.in.dir/build.make test/CMakeFiles/pattern_nop_padding5.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding5.in.dir/build.make test/CMakeFiles/pattern_nop_padding5.in.dir/build
 .PHONY : pattern_nop_padding5.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/filter_test.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/filter_test.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/filter_test.dir/rule
 .PHONY : test/CMakeFiles/filter_test.dir/rule
 
 # Convenience name for target.
@@ -659,12 +659,12 @@ filter_test: test/CMakeFiles/filter_test.dir/rule
 
 # fast build rule for target.
 filter_test/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/filter_test.dir/build.make test/CMakeFiles/filter_test.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/filter_test.dir/build.make test/CMakeFiles/filter_test.dir/build
 .PHONY : filter_test/fast
 
 # Convenience name for target.
 test/CMakeFiles/fork_logging.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/fork_logging.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/fork_logging.dir/rule
 .PHONY : test/CMakeFiles/fork_logging.dir/rule
 
 # Convenience name for target.
@@ -674,12 +674,12 @@ fork_logging: test/CMakeFiles/fork_logging.dir/rule
 
 # fast build rule for target.
 fork_logging/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/fork_logging.dir/build.make test/CMakeFiles/fork_logging.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/fork_logging.dir/build.make test/CMakeFiles/fork_logging.dir/build
 .PHONY : fork_logging/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_double_syscall.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_double_syscall.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_double_syscall.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_double_syscall.in.dir/rule
 
 # Convenience name for target.
@@ -689,12 +689,12 @@ pattern_double_syscall.in: test/CMakeFiles/pattern_double_syscall.in.dir/rule
 
 # fast build rule for target.
 pattern_double_syscall.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_double_syscall.in.dir/build.make test/CMakeFiles/pattern_double_syscall.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_double_syscall.in.dir/build.make test/CMakeFiles/pattern_double_syscall.in.dir/build
 .PHONY : pattern_double_syscall.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern1.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern1.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern1.in.dir/rule
 .PHONY : test/CMakeFiles/pattern1.in.dir/rule
 
 # Convenience name for target.
@@ -704,12 +704,12 @@ pattern1.in: test/CMakeFiles/pattern1.in.dir/rule
 
 # fast build rule for target.
 pattern1.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern1.in.dir/build.make test/CMakeFiles/pattern1.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern1.in.dir/build.make test/CMakeFiles/pattern1.in.dir/build
 .PHONY : pattern1.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding8.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding8.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding8.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding8.out.dir/rule
 
 # Convenience name for target.
@@ -719,12 +719,12 @@ pattern_nop_padding8.out: test/CMakeFiles/pattern_nop_padding8.out.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding8.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding8.out.dir/build.make test/CMakeFiles/pattern_nop_padding8.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding8.out.dir/build.make test/CMakeFiles/pattern_nop_padding8.out.dir/build
 .PHONY : pattern_nop_padding8.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/nosyscall.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/nosyscall.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/nosyscall.out.dir/rule
 .PHONY : test/CMakeFiles/nosyscall.out.dir/rule
 
 # Convenience name for target.
@@ -734,12 +734,12 @@ nosyscall.out: test/CMakeFiles/nosyscall.out.dir/rule
 
 # fast build rule for target.
 nosyscall.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/nosyscall.out.dir/build.make test/CMakeFiles/nosyscall.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/nosyscall.out.dir/build.make test/CMakeFiles/nosyscall.out.dir/build
 .PHONY : nosyscall.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_symbol_boundary2.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary2.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary2.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_symbol_boundary2.in.dir/rule
 
 # Convenience name for target.
@@ -749,12 +749,12 @@ pattern_symbol_boundary2.in: test/CMakeFiles/pattern_symbol_boundary2.in.dir/rul
 
 # fast build rule for target.
 pattern_symbol_boundary2.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary2.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary2.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary2.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary2.in.dir/build
 .PHONY : pattern_symbol_boundary2.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern4.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern4.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern4.out.dir/rule
 .PHONY : test/CMakeFiles/pattern4.out.dir/rule
 
 # Convenience name for target.
@@ -764,12 +764,12 @@ pattern4.out: test/CMakeFiles/pattern4.out.dir/rule
 
 # fast build rule for target.
 pattern4.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern4.out.dir/build.make test/CMakeFiles/pattern4.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern4.out.dir/build.make test/CMakeFiles/pattern4.out.dir/build
 .PHONY : pattern4.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding3.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding3.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding3.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding3.in.dir/rule
 
 # Convenience name for target.
@@ -779,12 +779,12 @@ pattern_nop_padding3.in: test/CMakeFiles/pattern_nop_padding3.in.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding3.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding3.in.dir/build.make test/CMakeFiles/pattern_nop_padding3.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding3.in.dir/build.make test/CMakeFiles/pattern_nop_padding3.in.dir/build
 .PHONY : pattern_nop_padding3.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/nosyscall.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/nosyscall.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/nosyscall.in.dir/rule
 .PHONY : test/CMakeFiles/nosyscall.in.dir/rule
 
 # Convenience name for target.
@@ -794,12 +794,12 @@ nosyscall.in: test/CMakeFiles/nosyscall.in.dir/rule
 
 # fast build rule for target.
 nosyscall.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/nosyscall.in.dir/build.make test/CMakeFiles/nosyscall.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/nosyscall.in.dir/build.make test/CMakeFiles/nosyscall.in.dir/build
 .PHONY : nosyscall.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/hook_test_clone_preload.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/hook_test_clone_preload.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/hook_test_clone_preload.dir/rule
 .PHONY : test/CMakeFiles/hook_test_clone_preload.dir/rule
 
 # Convenience name for target.
@@ -809,12 +809,12 @@ hook_test_clone_preload: test/CMakeFiles/hook_test_clone_preload.dir/rule
 
 # fast build rule for target.
 hook_test_clone_preload/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_clone_preload.dir/build.make test/CMakeFiles/hook_test_clone_preload.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_clone_preload.dir/build.make test/CMakeFiles/hook_test_clone_preload.dir/build
 .PHONY : hook_test_clone_preload/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern1.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern1.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern1.out.dir/rule
 .PHONY : test/CMakeFiles/pattern1.out.dir/rule
 
 # Convenience name for target.
@@ -824,12 +824,12 @@ pattern1.out: test/CMakeFiles/pattern1.out.dir/rule
 
 # fast build rule for target.
 pattern1.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern1.out.dir/build.make test/CMakeFiles/pattern1.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern1.out.dir/build.make test/CMakeFiles/pattern1.out.dir/build
 .PHONY : pattern1.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_symbol_boundary0.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary0.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary0.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_symbol_boundary0.out.dir/rule
 
 # Convenience name for target.
@@ -839,12 +839,12 @@ pattern_symbol_boundary0.out: test/CMakeFiles/pattern_symbol_boundary0.out.dir/r
 
 # fast build rule for target.
 pattern_symbol_boundary0.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary0.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary0.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary0.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary0.out.dir/build
 .PHONY : pattern_symbol_boundary0.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_symbol_boundary1.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary1.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary1.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_symbol_boundary1.out.dir/rule
 
 # Convenience name for target.
@@ -854,12 +854,12 @@ pattern_symbol_boundary1.out: test/CMakeFiles/pattern_symbol_boundary1.out.dir/r
 
 # fast build rule for target.
 pattern_symbol_boundary1.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary1.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary1.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary1.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary1.out.dir/build
 .PHONY : pattern_symbol_boundary1.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/executable_with_syscall_no_pie.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/executable_with_syscall_no_pie.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/executable_with_syscall_no_pie.dir/rule
 .PHONY : test/CMakeFiles/executable_with_syscall_no_pie.dir/rule
 
 # Convenience name for target.
@@ -869,12 +869,12 @@ executable_with_syscall_no_pie: test/CMakeFiles/executable_with_syscall_no_pie.d
 
 # fast build rule for target.
 executable_with_syscall_no_pie/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/executable_with_syscall_no_pie.dir/build.make test/CMakeFiles/executable_with_syscall_no_pie.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/executable_with_syscall_no_pie.dir/build.make test/CMakeFiles/executable_with_syscall_no_pie.dir/build
 .PHONY : executable_with_syscall_no_pie/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding9.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding9.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding9.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding9.out.dir/rule
 
 # Convenience name for target.
@@ -884,12 +884,12 @@ pattern_nop_padding9.out: test/CMakeFiles/pattern_nop_padding9.out.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding9.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding9.out.dir/build.make test/CMakeFiles/pattern_nop_padding9.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding9.out.dir/build.make test/CMakeFiles/pattern_nop_padding9.out.dir/build
 .PHONY : pattern_nop_padding9.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding2.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding2.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding2.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding2.in.dir/rule
 
 # Convenience name for target.
@@ -899,12 +899,12 @@ pattern_nop_padding2.in: test/CMakeFiles/pattern_nop_padding2.in.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding2.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding2.in.dir/build.make test/CMakeFiles/pattern_nop_padding2.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding2.in.dir/build.make test/CMakeFiles/pattern_nop_padding2.in.dir/build
 .PHONY : pattern_nop_padding2.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_symbol_boundary2.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary2.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary2.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_symbol_boundary2.out.dir/rule
 
 # Convenience name for target.
@@ -914,12 +914,12 @@ pattern_symbol_boundary2.out: test/CMakeFiles/pattern_symbol_boundary2.out.dir/r
 
 # fast build rule for target.
 pattern_symbol_boundary2.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary2.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary2.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary2.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary2.out.dir/build
 .PHONY : pattern_symbol_boundary2.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_symbol_boundary3.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary3.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary3.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_symbol_boundary3.in.dir/rule
 
 # Convenience name for target.
@@ -929,12 +929,12 @@ pattern_symbol_boundary3.in: test/CMakeFiles/pattern_symbol_boundary3.in.dir/rul
 
 # fast build rule for target.
 pattern_symbol_boundary3.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary3.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary3.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary3.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary3.in.dir/build
 .PHONY : pattern_symbol_boundary3.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding0.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding0.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding0.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding0.in.dir/rule
 
 # Convenience name for target.
@@ -944,12 +944,12 @@ pattern_nop_padding0.in: test/CMakeFiles/pattern_nop_padding0.in.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding0.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding0.in.dir/build.make test/CMakeFiles/pattern_nop_padding0.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding0.in.dir/build.make test/CMakeFiles/pattern_nop_padding0.in.dir/build
 .PHONY : pattern_nop_padding0.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern3.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern3.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern3.in.dir/rule
 .PHONY : test/CMakeFiles/pattern3.in.dir/rule
 
 # Convenience name for target.
@@ -959,12 +959,12 @@ pattern3.in: test/CMakeFiles/pattern3.in.dir/rule
 
 # fast build rule for target.
 pattern3.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern3.in.dir/build.make test/CMakeFiles/pattern3.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern3.in.dir/build.make test/CMakeFiles/pattern3.in.dir/build
 .PHONY : pattern3.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_symbol_boundary3.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary3.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary3.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_symbol_boundary3.out.dir/rule
 
 # Convenience name for target.
@@ -974,12 +974,12 @@ pattern_symbol_boundary3.out: test/CMakeFiles/pattern_symbol_boundary3.out.dir/r
 
 # fast build rule for target.
 pattern_symbol_boundary3.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary3.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary3.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary3.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary3.out.dir/build
 .PHONY : pattern_symbol_boundary3.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding0.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding0.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding0.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding0.out.dir/rule
 
 # Convenience name for target.
@@ -989,12 +989,12 @@ pattern_nop_padding0.out: test/CMakeFiles/pattern_nop_padding0.out.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding0.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding0.out.dir/build.make test/CMakeFiles/pattern_nop_padding0.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding0.out.dir/build.make test/CMakeFiles/pattern_nop_padding0.out.dir/build
 .PHONY : pattern_nop_padding0.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding5.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding5.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding5.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding5.out.dir/rule
 
 # Convenience name for target.
@@ -1004,12 +1004,12 @@ pattern_nop_padding5.out: test/CMakeFiles/pattern_nop_padding5.out.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding5.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding5.out.dir/build.make test/CMakeFiles/pattern_nop_padding5.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding5.out.dir/build.make test/CMakeFiles/pattern_nop_padding5.out.dir/build
 .PHONY : pattern_nop_padding5.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding1.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding1.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding1.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding1.out.dir/rule
 
 # Convenience name for target.
@@ -1019,12 +1019,12 @@ pattern_nop_padding1.out: test/CMakeFiles/pattern_nop_padding1.out.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding1.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding1.out.dir/build.make test/CMakeFiles/pattern_nop_padding1.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding1.out.dir/build.make test/CMakeFiles/pattern_nop_padding1.out.dir/build
 .PHONY : pattern_nop_padding1.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_symbol_boundary1.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary1.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_symbol_boundary1.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_symbol_boundary1.in.dir/rule
 
 # Convenience name for target.
@@ -1034,12 +1034,12 @@ pattern_symbol_boundary1.in: test/CMakeFiles/pattern_symbol_boundary1.in.dir/rul
 
 # fast build rule for target.
 pattern_symbol_boundary1.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary1.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary1.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary1.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary1.in.dir/build
 .PHONY : pattern_symbol_boundary1.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding2.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding2.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding2.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding2.out.dir/rule
 
 # Convenience name for target.
@@ -1049,12 +1049,12 @@ pattern_nop_padding2.out: test/CMakeFiles/pattern_nop_padding2.out.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding2.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding2.out.dir/build.make test/CMakeFiles/pattern_nop_padding2.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding2.out.dir/build.make test/CMakeFiles/pattern_nop_padding2.out.dir/build
 .PHONY : pattern_nop_padding2.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding4.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding4.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding4.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding4.in.dir/rule
 
 # Convenience name for target.
@@ -1064,12 +1064,12 @@ pattern_nop_padding4.in: test/CMakeFiles/pattern_nop_padding4.in.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding4.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding4.in.dir/build.make test/CMakeFiles/pattern_nop_padding4.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding4.in.dir/build.make test/CMakeFiles/pattern_nop_padding4.in.dir/build
 .PHONY : pattern_nop_padding4.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding6.in.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding6.in.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding6.in.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding6.in.dir/rule
 
 # Convenience name for target.
@@ -1079,12 +1079,12 @@ pattern_nop_padding6.in: test/CMakeFiles/pattern_nop_padding6.in.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding6.in/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding6.in.dir/build.make test/CMakeFiles/pattern_nop_padding6.in.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding6.in.dir/build.make test/CMakeFiles/pattern_nop_padding6.in.dir/build
 .PHONY : pattern_nop_padding6.in/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern2.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern2.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern2.out.dir/rule
 .PHONY : test/CMakeFiles/pattern2.out.dir/rule
 
 # Convenience name for target.
@@ -1094,12 +1094,12 @@ pattern2.out: test/CMakeFiles/pattern2.out.dir/rule
 
 # fast build rule for target.
 pattern2.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern2.out.dir/build.make test/CMakeFiles/pattern2.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern2.out.dir/build.make test/CMakeFiles/pattern2.out.dir/build
 .PHONY : pattern2.out/fast
 
 # Convenience name for target.
 test/CMakeFiles/pattern_nop_padding3.out.dir/rule:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding3.out.dir/rule
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/pattern_nop_padding3.out.dir/rule
 .PHONY : test/CMakeFiles/pattern_nop_padding3.out.dir/rule
 
 # Convenience name for target.
@@ -1109,7 +1109,7 @@ pattern_nop_padding3.out: test/CMakeFiles/pattern_nop_padding3.out.dir/rule
 
 # fast build rule for target.
 pattern_nop_padding3.out/fast:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding3.out.dir/build.make test/CMakeFiles/pattern_nop_padding3.out.dir/build
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding3.out.dir/build.make test/CMakeFiles/pattern_nop_padding3.out.dir/build
 .PHONY : pattern_nop_padding3.out/fast
 
 asm_pattern.o: asm_pattern.c.o
@@ -1118,7 +1118,7 @@ asm_pattern.o: asm_pattern.c.o
 
 # target to build an object file
 asm_pattern.c.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/asm_pattern.dir/build.make test/CMakeFiles/asm_pattern.dir/asm_pattern.c.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/asm_pattern.dir/build.make test/CMakeFiles/asm_pattern.dir/asm_pattern.c.o
 .PHONY : asm_pattern.c.o
 
 asm_pattern.i: asm_pattern.c.i
@@ -1127,7 +1127,7 @@ asm_pattern.i: asm_pattern.c.i
 
 # target to preprocess a source file
 asm_pattern.c.i:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/asm_pattern.dir/build.make test/CMakeFiles/asm_pattern.dir/asm_pattern.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/asm_pattern.dir/build.make test/CMakeFiles/asm_pattern.dir/asm_pattern.c.i
 .PHONY : asm_pattern.c.i
 
 asm_pattern.s: asm_pattern.c.s
@@ -1136,7 +1136,7 @@ asm_pattern.s: asm_pattern.c.s
 
 # target to generate assembly for a file
 asm_pattern.c.s:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/asm_pattern.dir/build.make test/CMakeFiles/asm_pattern.dir/asm_pattern.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/asm_pattern.dir/build.make test/CMakeFiles/asm_pattern.dir/asm_pattern.c.s
 .PHONY : asm_pattern.c.s
 
 executable_with_syscall.o: executable_with_syscall.S.o
@@ -1145,8 +1145,8 @@ executable_with_syscall.o: executable_with_syscall.S.o
 
 # target to build an object file
 executable_with_syscall.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/executable_with_syscall_pie.dir/build.make test/CMakeFiles/executable_with_syscall_pie.dir/executable_with_syscall.S.o
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/executable_with_syscall_no_pie.dir/build.make test/CMakeFiles/executable_with_syscall_no_pie.dir/executable_with_syscall.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/executable_with_syscall_pie.dir/build.make test/CMakeFiles/executable_with_syscall_pie.dir/executable_with_syscall.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/executable_with_syscall_no_pie.dir/build.make test/CMakeFiles/executable_with_syscall_no_pie.dir/executable_with_syscall.S.o
 .PHONY : executable_with_syscall.S.o
 
 filter_test.o: filter_test.c.o
@@ -1155,7 +1155,7 @@ filter_test.o: filter_test.c.o
 
 # target to build an object file
 filter_test.c.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/filter_test.dir/build.make test/CMakeFiles/filter_test.dir/filter_test.c.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/filter_test.dir/build.make test/CMakeFiles/filter_test.dir/filter_test.c.o
 .PHONY : filter_test.c.o
 
 filter_test.i: filter_test.c.i
@@ -1164,7 +1164,7 @@ filter_test.i: filter_test.c.i
 
 # target to preprocess a source file
 filter_test.c.i:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/filter_test.dir/build.make test/CMakeFiles/filter_test.dir/filter_test.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/filter_test.dir/build.make test/CMakeFiles/filter_test.dir/filter_test.c.i
 .PHONY : filter_test.c.i
 
 filter_test.s: filter_test.c.s
@@ -1173,7 +1173,7 @@ filter_test.s: filter_test.c.s
 
 # target to generate assembly for a file
 filter_test.c.s:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/filter_test.dir/build.make test/CMakeFiles/filter_test.dir/filter_test.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/filter_test.dir/build.make test/CMakeFiles/filter_test.dir/filter_test.c.s
 .PHONY : filter_test.c.s
 
 fork_logging.o: fork_logging.c.o
@@ -1182,7 +1182,7 @@ fork_logging.o: fork_logging.c.o
 
 # target to build an object file
 fork_logging.c.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/fork_logging.dir/build.make test/CMakeFiles/fork_logging.dir/fork_logging.c.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/fork_logging.dir/build.make test/CMakeFiles/fork_logging.dir/fork_logging.c.o
 .PHONY : fork_logging.c.o
 
 fork_logging.i: fork_logging.c.i
@@ -1191,7 +1191,7 @@ fork_logging.i: fork_logging.c.i
 
 # target to preprocess a source file
 fork_logging.c.i:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/fork_logging.dir/build.make test/CMakeFiles/fork_logging.dir/fork_logging.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/fork_logging.dir/build.make test/CMakeFiles/fork_logging.dir/fork_logging.c.i
 .PHONY : fork_logging.c.i
 
 fork_logging.s: fork_logging.c.s
@@ -1200,7 +1200,7 @@ fork_logging.s: fork_logging.c.s
 
 # target to generate assembly for a file
 fork_logging.c.s:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/fork_logging.dir/build.make test/CMakeFiles/fork_logging.dir/fork_logging.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/fork_logging.dir/build.make test/CMakeFiles/fork_logging.dir/fork_logging.c.s
 .PHONY : fork_logging.c.s
 
 hook_test.o: hook_test.c.o
@@ -1209,7 +1209,7 @@ hook_test.o: hook_test.c.o
 
 # target to build an object file
 hook_test.c.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test.dir/build.make test/CMakeFiles/hook_test.dir/hook_test.c.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test.dir/build.make test/CMakeFiles/hook_test.dir/hook_test.c.o
 .PHONY : hook_test.c.o
 
 hook_test.i: hook_test.c.i
@@ -1218,7 +1218,7 @@ hook_test.i: hook_test.c.i
 
 # target to preprocess a source file
 hook_test.c.i:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test.dir/build.make test/CMakeFiles/hook_test.dir/hook_test.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test.dir/build.make test/CMakeFiles/hook_test.dir/hook_test.c.i
 .PHONY : hook_test.c.i
 
 hook_test.s: hook_test.c.s
@@ -1227,7 +1227,7 @@ hook_test.s: hook_test.c.s
 
 # target to generate assembly for a file
 hook_test.c.s:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test.dir/build.make test/CMakeFiles/hook_test.dir/hook_test.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test.dir/build.make test/CMakeFiles/hook_test.dir/hook_test.c.s
 .PHONY : hook_test.c.s
 
 hook_test_clone_preload.o: hook_test_clone_preload.c.o
@@ -1236,7 +1236,7 @@ hook_test_clone_preload.o: hook_test_clone_preload.c.o
 
 # target to build an object file
 hook_test_clone_preload.c.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_clone_preload.dir/build.make test/CMakeFiles/hook_test_clone_preload.dir/hook_test_clone_preload.c.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_clone_preload.dir/build.make test/CMakeFiles/hook_test_clone_preload.dir/hook_test_clone_preload.c.o
 .PHONY : hook_test_clone_preload.c.o
 
 hook_test_clone_preload.i: hook_test_clone_preload.c.i
@@ -1245,7 +1245,7 @@ hook_test_clone_preload.i: hook_test_clone_preload.c.i
 
 # target to preprocess a source file
 hook_test_clone_preload.c.i:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_clone_preload.dir/build.make test/CMakeFiles/hook_test_clone_preload.dir/hook_test_clone_preload.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_clone_preload.dir/build.make test/CMakeFiles/hook_test_clone_preload.dir/hook_test_clone_preload.c.i
 .PHONY : hook_test_clone_preload.c.i
 
 hook_test_clone_preload.s: hook_test_clone_preload.c.s
@@ -1254,7 +1254,7 @@ hook_test_clone_preload.s: hook_test_clone_preload.c.s
 
 # target to generate assembly for a file
 hook_test_clone_preload.c.s:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_clone_preload.dir/build.make test/CMakeFiles/hook_test_clone_preload.dir/hook_test_clone_preload.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_clone_preload.dir/build.make test/CMakeFiles/hook_test_clone_preload.dir/hook_test_clone_preload.c.s
 .PHONY : hook_test_clone_preload.c.s
 
 hook_test_preload.o: hook_test_preload.c.o
@@ -1263,7 +1263,7 @@ hook_test_preload.o: hook_test_preload.c.o
 
 # target to build an object file
 hook_test_preload.c.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_preload_o.dir/build.make test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_preload_o.dir/build.make test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.o
 .PHONY : hook_test_preload.c.o
 
 hook_test_preload.i: hook_test_preload.c.i
@@ -1272,7 +1272,7 @@ hook_test_preload.i: hook_test_preload.c.i
 
 # target to preprocess a source file
 hook_test_preload.c.i:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_preload_o.dir/build.make test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_preload_o.dir/build.make test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.i
 .PHONY : hook_test_preload.c.i
 
 hook_test_preload.s: hook_test_preload.c.s
@@ -1281,7 +1281,7 @@ hook_test_preload.s: hook_test_preload.c.s
 
 # target to generate assembly for a file
 hook_test_preload.c.s:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_preload_o.dir/build.make test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/hook_test_preload_o.dir/build.make test/CMakeFiles/hook_test_preload_o.dir/hook_test_preload.c.s
 .PHONY : hook_test_preload.c.s
 
 intercept_sys_write.o: intercept_sys_write.c.o
@@ -1290,7 +1290,7 @@ intercept_sys_write.o: intercept_sys_write.c.o
 
 # target to build an object file
 intercept_sys_write.c.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/intercept_sys_write.dir/build.make test/CMakeFiles/intercept_sys_write.dir/intercept_sys_write.c.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/intercept_sys_write.dir/build.make test/CMakeFiles/intercept_sys_write.dir/intercept_sys_write.c.o
 .PHONY : intercept_sys_write.c.o
 
 intercept_sys_write.i: intercept_sys_write.c.i
@@ -1299,7 +1299,7 @@ intercept_sys_write.i: intercept_sys_write.c.i
 
 # target to preprocess a source file
 intercept_sys_write.c.i:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/intercept_sys_write.dir/build.make test/CMakeFiles/intercept_sys_write.dir/intercept_sys_write.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/intercept_sys_write.dir/build.make test/CMakeFiles/intercept_sys_write.dir/intercept_sys_write.c.i
 .PHONY : intercept_sys_write.c.i
 
 intercept_sys_write.s: intercept_sys_write.c.s
@@ -1308,7 +1308,7 @@ intercept_sys_write.s: intercept_sys_write.c.s
 
 # target to generate assembly for a file
 intercept_sys_write.c.s:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/intercept_sys_write.dir/build.make test/CMakeFiles/intercept_sys_write.dir/intercept_sys_write.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/intercept_sys_write.dir/build.make test/CMakeFiles/intercept_sys_write.dir/intercept_sys_write.c.s
 .PHONY : intercept_sys_write.c.s
 
 nosyscall.in.o: nosyscall.in.S.o
@@ -1317,7 +1317,7 @@ nosyscall.in.o: nosyscall.in.S.o
 
 # target to build an object file
 nosyscall.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/nosyscall.in.dir/build.make test/CMakeFiles/nosyscall.in.dir/nosyscall.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/nosyscall.in.dir/build.make test/CMakeFiles/nosyscall.in.dir/nosyscall.in.S.o
 .PHONY : nosyscall.in.S.o
 
 nosyscall.out.o: nosyscall.out.S.o
@@ -1326,7 +1326,7 @@ nosyscall.out.o: nosyscall.out.S.o
 
 # target to build an object file
 nosyscall.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/nosyscall.out.dir/build.make test/CMakeFiles/nosyscall.out.dir/nosyscall.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/nosyscall.out.dir/build.make test/CMakeFiles/nosyscall.out.dir/nosyscall.out.S.o
 .PHONY : nosyscall.out.S.o
 
 pattern1.in.o: pattern1.in.S.o
@@ -1335,7 +1335,7 @@ pattern1.in.o: pattern1.in.S.o
 
 # target to build an object file
 pattern1.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern1.in.dir/build.make test/CMakeFiles/pattern1.in.dir/pattern1.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern1.in.dir/build.make test/CMakeFiles/pattern1.in.dir/pattern1.in.S.o
 .PHONY : pattern1.in.S.o
 
 pattern1.out.o: pattern1.out.S.o
@@ -1344,7 +1344,7 @@ pattern1.out.o: pattern1.out.S.o
 
 # target to build an object file
 pattern1.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern1.out.dir/build.make test/CMakeFiles/pattern1.out.dir/pattern1.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern1.out.dir/build.make test/CMakeFiles/pattern1.out.dir/pattern1.out.S.o
 .PHONY : pattern1.out.S.o
 
 pattern2.in.o: pattern2.in.S.o
@@ -1353,7 +1353,7 @@ pattern2.in.o: pattern2.in.S.o
 
 # target to build an object file
 pattern2.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern2.in.dir/build.make test/CMakeFiles/pattern2.in.dir/pattern2.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern2.in.dir/build.make test/CMakeFiles/pattern2.in.dir/pattern2.in.S.o
 .PHONY : pattern2.in.S.o
 
 pattern2.out.o: pattern2.out.S.o
@@ -1362,7 +1362,7 @@ pattern2.out.o: pattern2.out.S.o
 
 # target to build an object file
 pattern2.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern2.out.dir/build.make test/CMakeFiles/pattern2.out.dir/pattern2.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern2.out.dir/build.make test/CMakeFiles/pattern2.out.dir/pattern2.out.S.o
 .PHONY : pattern2.out.S.o
 
 pattern3.in.o: pattern3.in.S.o
@@ -1371,7 +1371,7 @@ pattern3.in.o: pattern3.in.S.o
 
 # target to build an object file
 pattern3.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern3.in.dir/build.make test/CMakeFiles/pattern3.in.dir/pattern3.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern3.in.dir/build.make test/CMakeFiles/pattern3.in.dir/pattern3.in.S.o
 .PHONY : pattern3.in.S.o
 
 pattern3.out.o: pattern3.out.S.o
@@ -1380,7 +1380,7 @@ pattern3.out.o: pattern3.out.S.o
 
 # target to build an object file
 pattern3.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern3.out.dir/build.make test/CMakeFiles/pattern3.out.dir/pattern3.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern3.out.dir/build.make test/CMakeFiles/pattern3.out.dir/pattern3.out.S.o
 .PHONY : pattern3.out.S.o
 
 pattern4.in.o: pattern4.in.S.o
@@ -1389,7 +1389,7 @@ pattern4.in.o: pattern4.in.S.o
 
 # target to build an object file
 pattern4.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern4.in.dir/build.make test/CMakeFiles/pattern4.in.dir/pattern4.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern4.in.dir/build.make test/CMakeFiles/pattern4.in.dir/pattern4.in.S.o
 .PHONY : pattern4.in.S.o
 
 pattern4.out.o: pattern4.out.S.o
@@ -1398,7 +1398,7 @@ pattern4.out.o: pattern4.out.S.o
 
 # target to build an object file
 pattern4.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern4.out.dir/build.make test/CMakeFiles/pattern4.out.dir/pattern4.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern4.out.dir/build.make test/CMakeFiles/pattern4.out.dir/pattern4.out.S.o
 .PHONY : pattern4.out.S.o
 
 pattern_double_syscall.in.o: pattern_double_syscall.in.S.o
@@ -1407,7 +1407,7 @@ pattern_double_syscall.in.o: pattern_double_syscall.in.S.o
 
 # target to build an object file
 pattern_double_syscall.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_double_syscall.in.dir/build.make test/CMakeFiles/pattern_double_syscall.in.dir/pattern_double_syscall.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_double_syscall.in.dir/build.make test/CMakeFiles/pattern_double_syscall.in.dir/pattern_double_syscall.in.S.o
 .PHONY : pattern_double_syscall.in.S.o
 
 pattern_double_syscall.out.o: pattern_double_syscall.out.S.o
@@ -1416,7 +1416,7 @@ pattern_double_syscall.out.o: pattern_double_syscall.out.S.o
 
 # target to build an object file
 pattern_double_syscall.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_double_syscall.out.dir/build.make test/CMakeFiles/pattern_double_syscall.out.dir/pattern_double_syscall.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_double_syscall.out.dir/build.make test/CMakeFiles/pattern_double_syscall.out.dir/pattern_double_syscall.out.S.o
 .PHONY : pattern_double_syscall.out.S.o
 
 pattern_jmps.in.o: pattern_jmps.in.S.o
@@ -1425,7 +1425,7 @@ pattern_jmps.in.o: pattern_jmps.in.S.o
 
 # target to build an object file
 pattern_jmps.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_jmps.in.dir/build.make test/CMakeFiles/pattern_jmps.in.dir/pattern_jmps.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_jmps.in.dir/build.make test/CMakeFiles/pattern_jmps.in.dir/pattern_jmps.in.S.o
 .PHONY : pattern_jmps.in.S.o
 
 pattern_jmps.out.o: pattern_jmps.out.S.o
@@ -1434,7 +1434,7 @@ pattern_jmps.out.o: pattern_jmps.out.S.o
 
 # target to build an object file
 pattern_jmps.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_jmps.out.dir/build.make test/CMakeFiles/pattern_jmps.out.dir/pattern_jmps.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_jmps.out.dir/build.make test/CMakeFiles/pattern_jmps.out.dir/pattern_jmps.out.S.o
 .PHONY : pattern_jmps.out.S.o
 
 pattern_loop.in.o: pattern_loop.in.S.o
@@ -1443,7 +1443,7 @@ pattern_loop.in.o: pattern_loop.in.S.o
 
 # target to build an object file
 pattern_loop.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop.in.dir/build.make test/CMakeFiles/pattern_loop.in.dir/pattern_loop.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop.in.dir/build.make test/CMakeFiles/pattern_loop.in.dir/pattern_loop.in.S.o
 .PHONY : pattern_loop.in.S.o
 
 pattern_loop.out.o: pattern_loop.out.S.o
@@ -1452,7 +1452,7 @@ pattern_loop.out.o: pattern_loop.out.S.o
 
 # target to build an object file
 pattern_loop.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop.out.dir/build.make test/CMakeFiles/pattern_loop.out.dir/pattern_loop.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop.out.dir/build.make test/CMakeFiles/pattern_loop.out.dir/pattern_loop.out.S.o
 .PHONY : pattern_loop.out.S.o
 
 pattern_loop2.in.o: pattern_loop2.in.S.o
@@ -1461,7 +1461,7 @@ pattern_loop2.in.o: pattern_loop2.in.S.o
 
 # target to build an object file
 pattern_loop2.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop2.in.dir/build.make test/CMakeFiles/pattern_loop2.in.dir/pattern_loop2.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop2.in.dir/build.make test/CMakeFiles/pattern_loop2.in.dir/pattern_loop2.in.S.o
 .PHONY : pattern_loop2.in.S.o
 
 pattern_loop2.out.o: pattern_loop2.out.S.o
@@ -1470,7 +1470,7 @@ pattern_loop2.out.o: pattern_loop2.out.S.o
 
 # target to build an object file
 pattern_loop2.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop2.out.dir/build.make test/CMakeFiles/pattern_loop2.out.dir/pattern_loop2.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_loop2.out.dir/build.make test/CMakeFiles/pattern_loop2.out.dir/pattern_loop2.out.S.o
 .PHONY : pattern_loop2.out.S.o
 
 pattern_nop_padding0.in.o: pattern_nop_padding0.in.S.o
@@ -1479,7 +1479,7 @@ pattern_nop_padding0.in.o: pattern_nop_padding0.in.S.o
 
 # target to build an object file
 pattern_nop_padding0.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding0.in.dir/build.make test/CMakeFiles/pattern_nop_padding0.in.dir/pattern_nop_padding0.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding0.in.dir/build.make test/CMakeFiles/pattern_nop_padding0.in.dir/pattern_nop_padding0.in.S.o
 .PHONY : pattern_nop_padding0.in.S.o
 
 pattern_nop_padding0.out.o: pattern_nop_padding0.out.S.o
@@ -1488,7 +1488,7 @@ pattern_nop_padding0.out.o: pattern_nop_padding0.out.S.o
 
 # target to build an object file
 pattern_nop_padding0.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding0.out.dir/build.make test/CMakeFiles/pattern_nop_padding0.out.dir/pattern_nop_padding0.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding0.out.dir/build.make test/CMakeFiles/pattern_nop_padding0.out.dir/pattern_nop_padding0.out.S.o
 .PHONY : pattern_nop_padding0.out.S.o
 
 pattern_nop_padding1.in.o: pattern_nop_padding1.in.S.o
@@ -1497,7 +1497,7 @@ pattern_nop_padding1.in.o: pattern_nop_padding1.in.S.o
 
 # target to build an object file
 pattern_nop_padding1.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding1.in.dir/build.make test/CMakeFiles/pattern_nop_padding1.in.dir/pattern_nop_padding1.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding1.in.dir/build.make test/CMakeFiles/pattern_nop_padding1.in.dir/pattern_nop_padding1.in.S.o
 .PHONY : pattern_nop_padding1.in.S.o
 
 pattern_nop_padding1.out.o: pattern_nop_padding1.out.S.o
@@ -1506,7 +1506,7 @@ pattern_nop_padding1.out.o: pattern_nop_padding1.out.S.o
 
 # target to build an object file
 pattern_nop_padding1.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding1.out.dir/build.make test/CMakeFiles/pattern_nop_padding1.out.dir/pattern_nop_padding1.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding1.out.dir/build.make test/CMakeFiles/pattern_nop_padding1.out.dir/pattern_nop_padding1.out.S.o
 .PHONY : pattern_nop_padding1.out.S.o
 
 pattern_nop_padding2.in.o: pattern_nop_padding2.in.S.o
@@ -1515,7 +1515,7 @@ pattern_nop_padding2.in.o: pattern_nop_padding2.in.S.o
 
 # target to build an object file
 pattern_nop_padding2.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding2.in.dir/build.make test/CMakeFiles/pattern_nop_padding2.in.dir/pattern_nop_padding2.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding2.in.dir/build.make test/CMakeFiles/pattern_nop_padding2.in.dir/pattern_nop_padding2.in.S.o
 .PHONY : pattern_nop_padding2.in.S.o
 
 pattern_nop_padding2.out.o: pattern_nop_padding2.out.S.o
@@ -1524,7 +1524,7 @@ pattern_nop_padding2.out.o: pattern_nop_padding2.out.S.o
 
 # target to build an object file
 pattern_nop_padding2.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding2.out.dir/build.make test/CMakeFiles/pattern_nop_padding2.out.dir/pattern_nop_padding2.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding2.out.dir/build.make test/CMakeFiles/pattern_nop_padding2.out.dir/pattern_nop_padding2.out.S.o
 .PHONY : pattern_nop_padding2.out.S.o
 
 pattern_nop_padding3.in.o: pattern_nop_padding3.in.S.o
@@ -1533,7 +1533,7 @@ pattern_nop_padding3.in.o: pattern_nop_padding3.in.S.o
 
 # target to build an object file
 pattern_nop_padding3.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding3.in.dir/build.make test/CMakeFiles/pattern_nop_padding3.in.dir/pattern_nop_padding3.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding3.in.dir/build.make test/CMakeFiles/pattern_nop_padding3.in.dir/pattern_nop_padding3.in.S.o
 .PHONY : pattern_nop_padding3.in.S.o
 
 pattern_nop_padding3.out.o: pattern_nop_padding3.out.S.o
@@ -1542,7 +1542,7 @@ pattern_nop_padding3.out.o: pattern_nop_padding3.out.S.o
 
 # target to build an object file
 pattern_nop_padding3.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding3.out.dir/build.make test/CMakeFiles/pattern_nop_padding3.out.dir/pattern_nop_padding3.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding3.out.dir/build.make test/CMakeFiles/pattern_nop_padding3.out.dir/pattern_nop_padding3.out.S.o
 .PHONY : pattern_nop_padding3.out.S.o
 
 pattern_nop_padding4.in.o: pattern_nop_padding4.in.S.o
@@ -1551,7 +1551,7 @@ pattern_nop_padding4.in.o: pattern_nop_padding4.in.S.o
 
 # target to build an object file
 pattern_nop_padding4.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding4.in.dir/build.make test/CMakeFiles/pattern_nop_padding4.in.dir/pattern_nop_padding4.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding4.in.dir/build.make test/CMakeFiles/pattern_nop_padding4.in.dir/pattern_nop_padding4.in.S.o
 .PHONY : pattern_nop_padding4.in.S.o
 
 pattern_nop_padding4.out.o: pattern_nop_padding4.out.S.o
@@ -1560,7 +1560,7 @@ pattern_nop_padding4.out.o: pattern_nop_padding4.out.S.o
 
 # target to build an object file
 pattern_nop_padding4.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding4.out.dir/build.make test/CMakeFiles/pattern_nop_padding4.out.dir/pattern_nop_padding4.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding4.out.dir/build.make test/CMakeFiles/pattern_nop_padding4.out.dir/pattern_nop_padding4.out.S.o
 .PHONY : pattern_nop_padding4.out.S.o
 
 pattern_nop_padding5.in.o: pattern_nop_padding5.in.S.o
@@ -1569,7 +1569,7 @@ pattern_nop_padding5.in.o: pattern_nop_padding5.in.S.o
 
 # target to build an object file
 pattern_nop_padding5.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding5.in.dir/build.make test/CMakeFiles/pattern_nop_padding5.in.dir/pattern_nop_padding5.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding5.in.dir/build.make test/CMakeFiles/pattern_nop_padding5.in.dir/pattern_nop_padding5.in.S.o
 .PHONY : pattern_nop_padding5.in.S.o
 
 pattern_nop_padding5.out.o: pattern_nop_padding5.out.S.o
@@ -1578,7 +1578,7 @@ pattern_nop_padding5.out.o: pattern_nop_padding5.out.S.o
 
 # target to build an object file
 pattern_nop_padding5.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding5.out.dir/build.make test/CMakeFiles/pattern_nop_padding5.out.dir/pattern_nop_padding5.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding5.out.dir/build.make test/CMakeFiles/pattern_nop_padding5.out.dir/pattern_nop_padding5.out.S.o
 .PHONY : pattern_nop_padding5.out.S.o
 
 pattern_nop_padding6.in.o: pattern_nop_padding6.in.S.o
@@ -1587,7 +1587,7 @@ pattern_nop_padding6.in.o: pattern_nop_padding6.in.S.o
 
 # target to build an object file
 pattern_nop_padding6.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding6.in.dir/build.make test/CMakeFiles/pattern_nop_padding6.in.dir/pattern_nop_padding6.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding6.in.dir/build.make test/CMakeFiles/pattern_nop_padding6.in.dir/pattern_nop_padding6.in.S.o
 .PHONY : pattern_nop_padding6.in.S.o
 
 pattern_nop_padding6.out.o: pattern_nop_padding6.out.S.o
@@ -1596,7 +1596,7 @@ pattern_nop_padding6.out.o: pattern_nop_padding6.out.S.o
 
 # target to build an object file
 pattern_nop_padding6.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding6.out.dir/build.make test/CMakeFiles/pattern_nop_padding6.out.dir/pattern_nop_padding6.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding6.out.dir/build.make test/CMakeFiles/pattern_nop_padding6.out.dir/pattern_nop_padding6.out.S.o
 .PHONY : pattern_nop_padding6.out.S.o
 
 pattern_nop_padding7.in.o: pattern_nop_padding7.in.S.o
@@ -1605,7 +1605,7 @@ pattern_nop_padding7.in.o: pattern_nop_padding7.in.S.o
 
 # target to build an object file
 pattern_nop_padding7.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding7.in.dir/build.make test/CMakeFiles/pattern_nop_padding7.in.dir/pattern_nop_padding7.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding7.in.dir/build.make test/CMakeFiles/pattern_nop_padding7.in.dir/pattern_nop_padding7.in.S.o
 .PHONY : pattern_nop_padding7.in.S.o
 
 pattern_nop_padding7.out.o: pattern_nop_padding7.out.S.o
@@ -1614,7 +1614,7 @@ pattern_nop_padding7.out.o: pattern_nop_padding7.out.S.o
 
 # target to build an object file
 pattern_nop_padding7.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding7.out.dir/build.make test/CMakeFiles/pattern_nop_padding7.out.dir/pattern_nop_padding7.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding7.out.dir/build.make test/CMakeFiles/pattern_nop_padding7.out.dir/pattern_nop_padding7.out.S.o
 .PHONY : pattern_nop_padding7.out.S.o
 
 pattern_nop_padding8.in.o: pattern_nop_padding8.in.S.o
@@ -1623,7 +1623,7 @@ pattern_nop_padding8.in.o: pattern_nop_padding8.in.S.o
 
 # target to build an object file
 pattern_nop_padding8.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding8.in.dir/build.make test/CMakeFiles/pattern_nop_padding8.in.dir/pattern_nop_padding8.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding8.in.dir/build.make test/CMakeFiles/pattern_nop_padding8.in.dir/pattern_nop_padding8.in.S.o
 .PHONY : pattern_nop_padding8.in.S.o
 
 pattern_nop_padding8.out.o: pattern_nop_padding8.out.S.o
@@ -1632,7 +1632,7 @@ pattern_nop_padding8.out.o: pattern_nop_padding8.out.S.o
 
 # target to build an object file
 pattern_nop_padding8.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding8.out.dir/build.make test/CMakeFiles/pattern_nop_padding8.out.dir/pattern_nop_padding8.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding8.out.dir/build.make test/CMakeFiles/pattern_nop_padding8.out.dir/pattern_nop_padding8.out.S.o
 .PHONY : pattern_nop_padding8.out.S.o
 
 pattern_nop_padding9.in.o: pattern_nop_padding9.in.S.o
@@ -1641,7 +1641,7 @@ pattern_nop_padding9.in.o: pattern_nop_padding9.in.S.o
 
 # target to build an object file
 pattern_nop_padding9.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding9.in.dir/build.make test/CMakeFiles/pattern_nop_padding9.in.dir/pattern_nop_padding9.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding9.in.dir/build.make test/CMakeFiles/pattern_nop_padding9.in.dir/pattern_nop_padding9.in.S.o
 .PHONY : pattern_nop_padding9.in.S.o
 
 pattern_nop_padding9.out.o: pattern_nop_padding9.out.S.o
@@ -1650,7 +1650,7 @@ pattern_nop_padding9.out.o: pattern_nop_padding9.out.S.o
 
 # target to build an object file
 pattern_nop_padding9.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding9.out.dir/build.make test/CMakeFiles/pattern_nop_padding9.out.dir/pattern_nop_padding9.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_nop_padding9.out.dir/build.make test/CMakeFiles/pattern_nop_padding9.out.dir/pattern_nop_padding9.out.S.o
 .PHONY : pattern_nop_padding9.out.S.o
 
 pattern_rets.in.o: pattern_rets.in.S.o
@@ -1659,7 +1659,7 @@ pattern_rets.in.o: pattern_rets.in.S.o
 
 # target to build an object file
 pattern_rets.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_rets.in.dir/build.make test/CMakeFiles/pattern_rets.in.dir/pattern_rets.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_rets.in.dir/build.make test/CMakeFiles/pattern_rets.in.dir/pattern_rets.in.S.o
 .PHONY : pattern_rets.in.S.o
 
 pattern_rets.out.o: pattern_rets.out.S.o
@@ -1668,7 +1668,7 @@ pattern_rets.out.o: pattern_rets.out.S.o
 
 # target to build an object file
 pattern_rets.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_rets.out.dir/build.make test/CMakeFiles/pattern_rets.out.dir/pattern_rets.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_rets.out.dir/build.make test/CMakeFiles/pattern_rets.out.dir/pattern_rets.out.S.o
 .PHONY : pattern_rets.out.S.o
 
 pattern_symbol_boundary0.in.o: pattern_symbol_boundary0.in.S.o
@@ -1677,7 +1677,7 @@ pattern_symbol_boundary0.in.o: pattern_symbol_boundary0.in.S.o
 
 # target to build an object file
 pattern_symbol_boundary0.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary0.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary0.in.dir/pattern_symbol_boundary0.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary0.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary0.in.dir/pattern_symbol_boundary0.in.S.o
 .PHONY : pattern_symbol_boundary0.in.S.o
 
 pattern_symbol_boundary0.out.o: pattern_symbol_boundary0.out.S.o
@@ -1686,7 +1686,7 @@ pattern_symbol_boundary0.out.o: pattern_symbol_boundary0.out.S.o
 
 # target to build an object file
 pattern_symbol_boundary0.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary0.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary0.out.dir/pattern_symbol_boundary0.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary0.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary0.out.dir/pattern_symbol_boundary0.out.S.o
 .PHONY : pattern_symbol_boundary0.out.S.o
 
 pattern_symbol_boundary1.in.o: pattern_symbol_boundary1.in.S.o
@@ -1695,7 +1695,7 @@ pattern_symbol_boundary1.in.o: pattern_symbol_boundary1.in.S.o
 
 # target to build an object file
 pattern_symbol_boundary1.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary1.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary1.in.dir/pattern_symbol_boundary1.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary1.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary1.in.dir/pattern_symbol_boundary1.in.S.o
 .PHONY : pattern_symbol_boundary1.in.S.o
 
 pattern_symbol_boundary1.out.o: pattern_symbol_boundary1.out.S.o
@@ -1704,7 +1704,7 @@ pattern_symbol_boundary1.out.o: pattern_symbol_boundary1.out.S.o
 
 # target to build an object file
 pattern_symbol_boundary1.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary1.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary1.out.dir/pattern_symbol_boundary1.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary1.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary1.out.dir/pattern_symbol_boundary1.out.S.o
 .PHONY : pattern_symbol_boundary1.out.S.o
 
 pattern_symbol_boundary2.in.o: pattern_symbol_boundary2.in.S.o
@@ -1713,7 +1713,7 @@ pattern_symbol_boundary2.in.o: pattern_symbol_boundary2.in.S.o
 
 # target to build an object file
 pattern_symbol_boundary2.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary2.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary2.in.dir/pattern_symbol_boundary2.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary2.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary2.in.dir/pattern_symbol_boundary2.in.S.o
 .PHONY : pattern_symbol_boundary2.in.S.o
 
 pattern_symbol_boundary2.out.o: pattern_symbol_boundary2.out.S.o
@@ -1722,7 +1722,7 @@ pattern_symbol_boundary2.out.o: pattern_symbol_boundary2.out.S.o
 
 # target to build an object file
 pattern_symbol_boundary2.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary2.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary2.out.dir/pattern_symbol_boundary2.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary2.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary2.out.dir/pattern_symbol_boundary2.out.S.o
 .PHONY : pattern_symbol_boundary2.out.S.o
 
 pattern_symbol_boundary3.in.o: pattern_symbol_boundary3.in.S.o
@@ -1731,7 +1731,7 @@ pattern_symbol_boundary3.in.o: pattern_symbol_boundary3.in.S.o
 
 # target to build an object file
 pattern_symbol_boundary3.in.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary3.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary3.in.dir/pattern_symbol_boundary3.in.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary3.in.dir/build.make test/CMakeFiles/pattern_symbol_boundary3.in.dir/pattern_symbol_boundary3.in.S.o
 .PHONY : pattern_symbol_boundary3.in.S.o
 
 pattern_symbol_boundary3.out.o: pattern_symbol_boundary3.out.S.o
@@ -1740,7 +1740,7 @@ pattern_symbol_boundary3.out.o: pattern_symbol_boundary3.out.S.o
 
 # target to build an object file
 pattern_symbol_boundary3.out.S.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary3.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary3.out.dir/pattern_symbol_boundary3.out.S.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/pattern_symbol_boundary3.out.dir/build.make test/CMakeFiles/pattern_symbol_boundary3.out.dir/pattern_symbol_boundary3.out.S.o
 .PHONY : pattern_symbol_boundary3.out.S.o
 
 syscall_format.o: syscall_format.c.o
@@ -1749,7 +1749,7 @@ syscall_format.o: syscall_format.c.o
 
 # target to build an object file
 syscall_format.c.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/syscall_format.dir/build.make test/CMakeFiles/syscall_format.dir/syscall_format.c.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/syscall_format.dir/build.make test/CMakeFiles/syscall_format.dir/syscall_format.c.o
 .PHONY : syscall_format.c.o
 
 syscall_format.i: syscall_format.c.i
@@ -1758,7 +1758,7 @@ syscall_format.i: syscall_format.c.i
 
 # target to preprocess a source file
 syscall_format.c.i:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/syscall_format.dir/build.make test/CMakeFiles/syscall_format.dir/syscall_format.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/syscall_format.dir/build.make test/CMakeFiles/syscall_format.dir/syscall_format.c.i
 .PHONY : syscall_format.c.i
 
 syscall_format.s: syscall_format.c.s
@@ -1767,7 +1767,7 @@ syscall_format.s: syscall_format.c.s
 
 # target to generate assembly for a file
 syscall_format.c.s:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/syscall_format.dir/build.make test/CMakeFiles/syscall_format.dir/syscall_format.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/syscall_format.dir/build.make test/CMakeFiles/syscall_format.dir/syscall_format.c.s
 .PHONY : syscall_format.c.s
 
 test_clone_thread.o: test_clone_thread.c.o
@@ -1776,7 +1776,7 @@ test_clone_thread.o: test_clone_thread.c.o
 
 # target to build an object file
 test_clone_thread.c.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread.dir/build.make test/CMakeFiles/test_clone_thread.dir/test_clone_thread.c.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread.dir/build.make test/CMakeFiles/test_clone_thread.dir/test_clone_thread.c.o
 .PHONY : test_clone_thread.c.o
 
 test_clone_thread.i: test_clone_thread.c.i
@@ -1785,7 +1785,7 @@ test_clone_thread.i: test_clone_thread.c.i
 
 # target to preprocess a source file
 test_clone_thread.c.i:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread.dir/build.make test/CMakeFiles/test_clone_thread.dir/test_clone_thread.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread.dir/build.make test/CMakeFiles/test_clone_thread.dir/test_clone_thread.c.i
 .PHONY : test_clone_thread.c.i
 
 test_clone_thread.s: test_clone_thread.c.s
@@ -1794,7 +1794,7 @@ test_clone_thread.s: test_clone_thread.c.s
 
 # target to generate assembly for a file
 test_clone_thread.c.s:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread.dir/build.make test/CMakeFiles/test_clone_thread.dir/test_clone_thread.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread.dir/build.make test/CMakeFiles/test_clone_thread.dir/test_clone_thread.c.s
 .PHONY : test_clone_thread.c.s
 
 test_clone_thread_preload.o: test_clone_thread_preload.c.o
@@ -1803,7 +1803,7 @@ test_clone_thread_preload.o: test_clone_thread_preload.c.o
 
 # target to build an object file
 test_clone_thread_preload.c.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread_preload.dir/build.make test/CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread_preload.dir/build.make test/CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.o
 .PHONY : test_clone_thread_preload.c.o
 
 test_clone_thread_preload.i: test_clone_thread_preload.c.i
@@ -1812,7 +1812,7 @@ test_clone_thread_preload.i: test_clone_thread_preload.c.i
 
 # target to preprocess a source file
 test_clone_thread_preload.c.i:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread_preload.dir/build.make test/CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread_preload.dir/build.make test/CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.i
 .PHONY : test_clone_thread_preload.c.i
 
 test_clone_thread_preload.s: test_clone_thread_preload.c.s
@@ -1821,7 +1821,7 @@ test_clone_thread_preload.s: test_clone_thread_preload.c.s
 
 # target to generate assembly for a file
 test_clone_thread_preload.c.s:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread_preload.dir/build.make test/CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/test_clone_thread_preload.dir/build.make test/CMakeFiles/test_clone_thread_preload.dir/test_clone_thread_preload.c.s
 .PHONY : test_clone_thread_preload.c.s
 
 vfork_logging.o: vfork_logging.c.o
@@ -1830,7 +1830,7 @@ vfork_logging.o: vfork_logging.c.o
 
 # target to build an object file
 vfork_logging.c.o:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/vfork_logging.dir/build.make test/CMakeFiles/vfork_logging.dir/vfork_logging.c.o
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/vfork_logging.dir/build.make test/CMakeFiles/vfork_logging.dir/vfork_logging.c.o
 .PHONY : vfork_logging.c.o
 
 vfork_logging.i: vfork_logging.c.i
@@ -1839,7 +1839,7 @@ vfork_logging.i: vfork_logging.c.i
 
 # target to preprocess a source file
 vfork_logging.c.i:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/vfork_logging.dir/build.make test/CMakeFiles/vfork_logging.dir/vfork_logging.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/vfork_logging.dir/build.make test/CMakeFiles/vfork_logging.dir/vfork_logging.c.i
 .PHONY : vfork_logging.c.i
 
 vfork_logging.s: vfork_logging.c.s
@@ -1848,7 +1848,7 @@ vfork_logging.s: vfork_logging.c.s
 
 # target to generate assembly for a file
 vfork_logging.c.s:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/vfork_logging.dir/build.make test/CMakeFiles/vfork_logging.dir/vfork_logging.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(MAKE) -f test/CMakeFiles/vfork_logging.dir/build.make test/CMakeFiles/vfork_logging.dir/vfork_logging.c.s
 .PHONY : vfork_logging.c.s
 
 # Help Target
@@ -2020,6 +2020,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

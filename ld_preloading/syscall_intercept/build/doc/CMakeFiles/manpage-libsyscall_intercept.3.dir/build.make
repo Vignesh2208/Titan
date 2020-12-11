@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept
+CMAKE_SOURCE_DIR = /home/titan/Titan/ld_preloading/syscall_intercept
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
+CMAKE_BINARY_DIR = /home/titan/Titan/ld_preloading/syscall_intercept/build
 
 # Utility rule file for manpage-libsyscall_intercept.3.
 
@@ -54,7 +54,7 @@ CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
 include doc/CMakeFiles/manpage-libsyscall_intercept.3.dir/progress.make
 
 doc/CMakeFiles/manpage-libsyscall_intercept.3:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/doc && ../../utils/md2man.sh /home/vignesh/Titan/ld_preloading/syscall_intercept/doc/libsyscall_intercept.3.md /home/vignesh/Titan/ld_preloading/syscall_intercept/doc/default.man /home/vignesh/Titan/ld_preloading/syscall_intercept/doc/generated/libsyscall_intercept.3
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/doc && ../../utils/md2man.sh /home/titan/Titan/ld_preloading/syscall_intercept/doc/libsyscall_intercept.3.md /home/titan/Titan/ld_preloading/syscall_intercept/doc/default.man /home/titan/Titan/ld_preloading/syscall_intercept/doc/generated/libsyscall_intercept.3
 
 manpage-libsyscall_intercept.3: doc/CMakeFiles/manpage-libsyscall_intercept.3
 manpage-libsyscall_intercept.3: doc/CMakeFiles/manpage-libsyscall_intercept.3.dir/build.make
@@ -67,10 +67,10 @@ doc/CMakeFiles/manpage-libsyscall_intercept.3.dir/build: manpage-libsyscall_inte
 .PHONY : doc/CMakeFiles/manpage-libsyscall_intercept.3.dir/build
 
 doc/CMakeFiles/manpage-libsyscall_intercept.3.dir/clean:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/doc && $(CMAKE_COMMAND) -P CMakeFiles/manpage-libsyscall_intercept.3.dir/cmake_clean.cmake
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/doc && $(CMAKE_COMMAND) -P CMakeFiles/manpage-libsyscall_intercept.3.dir/cmake_clean.cmake
 .PHONY : doc/CMakeFiles/manpage-libsyscall_intercept.3.dir/clean
 
 doc/CMakeFiles/manpage-libsyscall_intercept.3.dir/depend:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept/doc /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build/doc /home/vignesh/Titan/ld_preloading/syscall_intercept/build/doc/CMakeFiles/manpage-libsyscall_intercept.3.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept/doc /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build/doc /home/titan/Titan/ld_preloading/syscall_intercept/build/doc/CMakeFiles/manpage-libsyscall_intercept.3.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : doc/CMakeFiles/manpage-libsyscall_intercept.3.dir/depend
 

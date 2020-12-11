@@ -4,6 +4,10 @@
 #include "includes.h"
 #include "vt_module.h"
 
+#define STACK_THREAD_CONTINUE 0
+#define STACK_THREAD_EXP_EXIT 1
+#define STACK_THREAD_PROCESS_EXIT 2
+
 //! This file defines some commonly used functions for virtual time management
 
 // ! Returns task with pid in the namespace corresponding to tsk
@@ -147,7 +151,7 @@ s64 HandleGettimepid(char * write_buffer);
         running
 */
 void WaitForTaskCompletion(tracer * curr_tracer, 
-    struct task_struct * relevant_task);
+    struct dilated_task_struct * relevant_task);
 
 //! Signals a timeline thread/cpu worker responsible for a tracer to resume execution
 /*! \param curr_tracer Represents the relvant tracer is question */

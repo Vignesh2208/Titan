@@ -93,8 +93,11 @@ extern s64 * globalCurrBBID;
 extern int * vtInitialized;
 extern int * vtGlobalTracerID;
 extern int * vtGlobalTimelineID;
-
+#ifndef DISABLE_VT_SOCKET_LAYER
+extern void (*vtAfterForkInChild)(int ThreadID, int ParendProcessPID, pthread_t stackThread);
+#else
 extern void (*vtAfterForkInChild)(int ThreadID, int ParendProcessPID);
+#endif
 extern void (*vtThreadStart)(int ThreadID);
 extern void (*vtThreadFini)(int ThreadID);
 extern void (*vtAppFini)(int ThreadID);
@@ -164,6 +167,7 @@ extern void (*vtMarkTCPStackActive)();
 extern void (*vtMarkTCPStackInactive)();
 extern int (*vtHandleReadSyscall)(int ThreadID, int fd, void *buf, int count, int *redirect);
 extern int (*vtHandleWriteSyscall)(int ThreadID, int fd, const void *buf, int count, int * redirect);
+extern void * (*vtStackThread)(void *arg);
 #endif
 
 
@@ -191,7 +195,15 @@ struct Thunk {
 //! Thread function calls are wrapped with this function
 static void * WrapThreadFn(void *thunk_vp) {
     
+    
     struct Thunk *thunk_p = (struct Thunk *)thunk_vp;
+    #ifndef DISABLE_VT_SOCKET_LAYER
+	if (thunk_p->start_routine == vtStackThread) {
+		printf ("Pthread_create: vtStackThread special case\n");
+		fflush(stdout);
+		return (thunk_p->start_routine)(thunk_p->arg);
+	}
+    #endif
     int ThreadPID = syscall(SYS_gettid);
     
     vtThreadStart(ThreadPID);
@@ -203,12 +215,14 @@ static void * WrapThreadFn(void *thunk_vp) {
     vtThreadFini(ThreadPID);
     return result;
 }
+    
 
 //! Overloaded pthread_create function
 int pthread_create(pthread_t *thread ,const pthread_attr_t *attr,
                       void *(*start_routine)(void*), void *arg) {
-    static pthread_create_t real_pthread_create;
     
+    
+    static pthread_create_t real_pthread_create;
 
     if (!real_pthread_create)
     {
@@ -251,13 +265,25 @@ static int FakeMain(int argc, char **argv, char **envp)
     printf ("Starting executable with Pid = %d\n", ThreadPID);
     fflush(stdout);
     InitializeVtlLogic();
+    *vtInitialized = 1;
+
+    #ifndef DISABLE_VT_SOCKET_LAYER
+    pthread_t stackThread;
+    printf ("Initializing TCP-stack ...\n");
+    fflush(stdout);
+    vtInitializeTCPStack(ThreadPID);
+    printf ("Starting virtual socket layer stack-thread !\n");
+    fflush(stdout);
+    pthread_create( &stackThread, NULL, vtStackThread, NULL);
+    vtAfterForkInChild(ThreadPID, ThreadPID, stackThread);
+    #else
+    vtAfterForkInChild(ThreadPID, ThreadPID);
+    #endif
     printf("Successfully initialized VTL-Logic embedded into the executable\n");
     printf ("\n");
     printf("------------------------- ACTUAL STDOUT FROM EXECUTABLE STARTS -----------------------------\n");
     printf ("\n");
     fflush(stdout);
-    *vtInitialized = 1;
-    vtAfterForkInChild(ThreadPID, ThreadPID);
     /* Finally call the real main function */
     return real_main(argc, argv, envp);
 }
@@ -337,7 +363,7 @@ int __libc_start_main(int (*main) (int, char **, char **),
     libc_handle = dlopen("libc.so.6", RTLD_NOLOAD | RTLD_NOW);
 
     if (!libc_handle) {
-        fprintf(stderr, "can't open handle to libc.so.6: %s\n",
+        fprintf(stdout, "can't open handle to libc.so.6: %s\n",
             dlerror());
         /* We dare not use abort() here because it would run atexit(3)
          * handlers and try to flush stdio. */
@@ -349,7 +375,7 @@ int __libc_start_main(int (*main) (int, char **, char **),
      * fake main we'd like to run before the real main function. */
     sym = dlsym(libc_handle, "__libc_start_main");
     if (!sym) {
-        fprintf(stderr, "can't find __libc_start_main():%s\n",
+        fprintf(stdout, "can't find __libc_start_main():%s\n",
             dlerror());
         _exit(EXIT_FAILURE);
     }
@@ -357,7 +383,7 @@ int __libc_start_main(int (*main) (int, char **, char **),
 
     orig_exit = dlsym(libc_handle, "_exit");
     if (!orig_exit) {
-        fprintf(stderr, "can't find _exit():%s\n",
+        fprintf(stdout, "can't find _exit():%s\n",
             dlerror());
         _exit(EXIT_FAILURE);
     }
@@ -365,135 +391,137 @@ int __libc_start_main(int (*main) (int, char **, char **),
 
     orig_syscall = dlsym(libc_handle, "syscall");
     if (!orig_syscall) {
-        fprintf(stderr, "can't find syscall():%s\n",
+        fprintf(stdout, "can't find syscall():%s\n",
             dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_send = dlsym(libc_handle, "send");
     if (!orig_send) {
-        fprintf(stderr, "can't find send():%s\n", dlerror());
+        fprintf(stdout, "can't find send():%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
 
     orig_sendto = dlsym(libc_handle, "sendto");
     if (!orig_sendto) {
-        fprintf(stderr, "can't find sendto():%s\n", dlerror());
+        fprintf(stdout, "can't find sendto():%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_write = dlsym(libc_handle, "write");
     if (!orig_write) {
-        fprintf(stderr, "can't find sendto():%s\n", dlerror());
+        fprintf(stdout, "can't find sendto():%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
 
     orig_recv = dlsym(libc_handle, "recv");
-    if (!orig_send) {
-        fprintf(stderr, "can't find recv():%s\n", dlerror());
+    if (!orig_recv) {
+        fprintf(stdout, "can't find recv():%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
 
     orig_recvfrom = dlsym(libc_handle, "recvfrom");
     if (!orig_recvfrom) {
-        fprintf(stderr, "can't find recvfrom():%s\n", dlerror());
+        fprintf(stdout, "can't find recvfrom():%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_read = dlsym(libc_handle, "read");
     if (!orig_read) {
-        fprintf(stderr, "can't find write():%s\n", dlerror());
+        fprintf(stdout, "can't find write():%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
 
     orig_socket = dlsym(libc_handle, "socket");
     if (!orig_socket) {
-        fprintf(stderr, "can't find socket():%s\n", dlerror());
+        fprintf(stdout, "can't find socket():%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_close = dlsym(libc_handle, "close");
     if (!orig_close) {
-        fprintf(stderr, "can't find close(int fd):%s\n", dlerror());
+        fprintf(stdout, "can't find close(int fd):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_accept = dlsym(libc_handle, "accept");
     if (!orig_accept) {
-        fprintf(stderr, "can't find accept(...):%s\n", dlerror());
+        fprintf(stdout, "can't find accept(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_accept4 = dlsym(libc_handle, "accept4");
     if (!orig_accept4) {
-        fprintf(stderr, "can't find accept4(...):%s\n", dlerror());
+        fprintf(stdout, "can't find accept4(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
 
     orig_connect = dlsym(libc_handle, "connect");
     if (!orig_connect) {
-        fprintf(stderr, "can't find connect(...):%s\n", dlerror());
+        fprintf(stdout, "can't find connect(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_getsockopt = dlsym(libc_handle, "getsockopt");
     if (!orig_getsockopt) {
-        fprintf(stderr, "can't find getsockopt(...):%s\n", dlerror());
+        fprintf(stdout, "can't find getsockopt(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_setsockopt = dlsym(libc_handle, "setsockopt");
     if (!orig_setsockopt) {
-        fprintf(stderr, "can't find setsockopt(...):%s\n", dlerror());
+        fprintf(stdout, "can't find setsockopt(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_getpeername = dlsym(libc_handle, "getpeername");
     if (!orig_getpeername) {
-        fprintf(stderr, "can't find getpeername(...):%s\n", dlerror());
+        fprintf(stdout, "can't find getpeername(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_getsockname = dlsym(libc_handle, "getsockname");
     if (!orig_getsockname) {
-        fprintf(stderr, "can't find getsockname(...):%s\n", dlerror());
+        fprintf(stdout, "can't find getsockname(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_listen = dlsym(libc_handle, "listen");
     if (!orig_listen) {
-        fprintf(stderr, "can't find listen(...):%s\n", dlerror());
+        fprintf(stdout, "can't find listen(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_bind = dlsym(libc_handle, "bind");
     if (!orig_bind) {
-        fprintf(stderr, "can't find bind(...):%s\n", dlerror());
+        fprintf(stdout, "can't find bind(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_timerfd_create = dlsym(libc_handle, "timerfd_create");
     if (!orig_timerfd_create) {
-        fprintf(stderr, "can't find timerfd_create(...):%s\n", dlerror());
+        fprintf(stdout, "can't find timerfd_create(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_timerfd_settime = dlsym(libc_handle, "timerfd_settime");
     if (!orig_timerfd_settime) {
-        fprintf(stderr, "can't find timerfd_settime(...):%s\n", dlerror());
+        fprintf(stdout, "can't find timerfd_settime(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 
     orig_timerfd_gettime = dlsym(libc_handle, "timerfd_gettime");
     if (!orig_timerfd_gettime) {
-        fprintf(stderr, "can't find timerfd_gettime(...):%s\n", dlerror());
+        fprintf(stdout, "can't find timerfd_gettime(...):%s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
+
+
 
 
 
@@ -508,12 +536,13 @@ int __libc_start_main(int (*main) (int, char **, char **),
      * defer closing the handle to our spliced-in fake main before it call
      * the real main function. */
     if(dlclose(libc_handle)) {
-        fprintf(stderr, "can't close handle to libc.so.6: %s\n",
+        fprintf(stdout, "can't close handle to libc.so.6: %s\n",
             dlerror());
         _exit(EXIT_FAILURE);
     }
 
     printf("Loading orig functions !\n");
+    fflush(stdout);
     LoadOrigFunctions();
 
     /* Note that we swap FakeMain in for main - FakeMain should call
@@ -553,7 +582,7 @@ void LoadOrigFunctions() {
     void *libc_handle;
     libc_handle = dlopen("libc.so.6", RTLD_NOLOAD | RTLD_NOW);
     if (!libc_handle) {
-        fprintf(stderr, "can't open handle to libc.so.6: %s\n", dlerror());
+        fprintf(stdout, "can't open handle to libc.so.6: %s\n", dlerror());
         /* We dare not use abort() here because it would run atexit(3)
            handlers and try to flush stdio. */
         _exit(EXIT_FAILURE);
@@ -562,7 +591,7 @@ void LoadOrigFunctions() {
     if (!orig_fork) {	
         orig_fork = dlsym(libc_handle, "fork");
         if (!orig_fork) {
-            fprintf(stderr, "can't find fork():%s\n", dlerror());
+            fprintf(stdout, "can't find fork():%s\n", dlerror());
             _exit(EXIT_FAILURE);
         }
     }
@@ -570,7 +599,7 @@ void LoadOrigFunctions() {
     if (!orig_gettimeofday) {
         orig_gettimeofday = dlsym(libc_handle, "gettimeofday");
         if (!orig_gettimeofday) {
-            fprintf(stderr, "can't find gettimeofday():%s\n", dlerror());
+            fprintf(stdout, "can't find gettimeofday():%s\n", dlerror());
             _exit(EXIT_FAILURE);
         }
     }
@@ -578,7 +607,7 @@ void LoadOrigFunctions() {
     if (!orig_clock_gettime) {
         orig_clock_gettime = dlsym(libc_handle, "clock_gettime");
         if (!orig_clock_gettime) {
-            fprintf(stderr, "can't find orig_clock_gettime():%s\n", dlerror());
+            fprintf(stdout, "can't find orig_clock_gettime():%s\n", dlerror());
             _exit(EXIT_FAILURE);
         }
 
@@ -587,7 +616,7 @@ void LoadOrigFunctions() {
     if (!orig_sleep) {
         orig_sleep = dlsym(libc_handle, "sleep");
         if (!orig_sleep) {
-            fprintf(stderr, "can't find orig_sleep():%s\n", dlerror());
+            fprintf(stdout, "can't find orig_sleep():%s\n", dlerror());
             _exit(EXIT_FAILURE);
         }
     }
@@ -595,7 +624,7 @@ void LoadOrigFunctions() {
     if (!orig_poll) {
         orig_poll = dlsym(libc_handle, "poll");
         if (!orig_poll) {
-            fprintf(stderr, "can't find orig_poll():%s\n", dlerror());
+            fprintf(stdout, "can't find orig_poll():%s\n", dlerror());
             _exit(EXIT_FAILURE);
         }
     }
@@ -603,14 +632,14 @@ void LoadOrigFunctions() {
     if (!orig_select) {
         orig_select = dlsym(libc_handle, "select");
         if (!orig_select) {
-            fprintf(stderr, "can't find orig_select():%s\n", dlerror());
+            fprintf(stdout, "can't find orig_select():%s\n", dlerror());
             _exit(EXIT_FAILURE);
         }
     }
 
 
     if(dlclose(libc_handle)) {
-        fprintf(stderr, "can't close handle to libc.so.6: %s\n", dlerror());
+        fprintf(stdout, "can't close handle to libc.so.6: %s\n", dlerror());
         _exit(EXIT_FAILURE);
     }
 }
@@ -627,7 +656,17 @@ pid_t fork() {
     if (ret == 0) {
         int ChildPID = syscall(SYS_gettid);
         //printf("After fork in child: PID = %d\n", ChildPID);
+        #ifndef DISABLE_VT_SOCKET_LAYER
+        pthread_t stackThread;
+        printf ("Initializing TCP-stack for forked child !\n");
+        vtInitializeTCPStack(ChildPID);
+        printf ("Starting virtual socket layer stack-thread for forked child !\n");
+        real_pthread_create( &stackThread, NULL, vtStackThread, NULL);
+        vtAfterForkInChild(ChildPID, ParentPID, stackThread);
+        #else
         vtAfterForkInChild(ChildPID, ParentPID);
+        #endif
+        
     } else {
         //printf("After fork in parent: PID = %d\n", ParentTID);
         //vtForceCompleteBurst(ParentTID, 1, SYS_fork);
@@ -731,16 +770,28 @@ int timerfd_gettime(int fd, struct itimerspec *curr_value) {
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 
     int ret;
+
+
     #ifndef DISABLE_VT_SOCKET_LAYER
         if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
             return orig_accept(sockfd, addr, addrlen);
 
         int ThreadID = syscall(SYS_gettid);
         if (vtIsTCPSocket(ThreadID, sockfd)) {
+            #ifndef DISABLE_LOOKAHEAD
+            s64 bblA = vtGetBBLLookahead((long)*globalCurrBBID);
+            #endif
+
+
             ret = _vaccept(sockfd, addr);
             if(ret) {
                 vtAddSocket(ThreadID, ret, FD_PROTO_TYPE_TCP, 0);
             }
+            
+            #ifndef DISABLE_LOOKAHEAD
+            vtSetLookahead(bblA, LOOKAHEAD_ANCHOR_CURR_TIME);
+            #endif
+
             vtTriggerSyscallFinish(ThreadID);
         } else {
             ret = orig_accept(sockfd, addr, addrlen);
@@ -766,15 +817,27 @@ int accept4(int sockfd, struct sockaddr *addr,
             socklen_t *addrlen, int flags) {
 
     int ret;
+
+
+
     #ifndef DISABLE_VT_SOCKET_LAYER
         if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
             return orig_accept4(sockfd, addr, addrlen, flags);
+        
         int ThreadID = syscall(SYS_gettid);
         if (vtIsTCPSocket(ThreadID, sockfd)) {
+            #ifndef DISABLE_LOOKAHEAD
+            s64 bblA = vtGetBBLLookahead((long)*globalCurrBBID);
+            #endif
             ret = _vaccept(sockfd, addr);
             if(ret) {
                 vtAddSocket(ThreadID, ret, FD_PROTO_TYPE_TCP, 0);
             }
+
+            #ifndef DISABLE_LOOKAHEAD
+            vtSetLookahead(bblA, LOOKAHEAD_ANCHOR_CURR_TIME);
+            #endif
+
             vtTriggerSyscallFinish(ThreadID);
         } else {
             ret = orig_accept4(sockfd, addr, addrlen, flags);
@@ -796,7 +859,7 @@ int accept4(int sockfd, struct sockaddr *addr,
 }
 
 
-#ifndef DISABLE_VT_SOCKET_LAYER
+/*#ifndef DISABLE_VT_SOCKET_LAYER
 ssize_t write(int fd, const void *buf, size_t count) {
     int ThreadID = syscall(SYS_gettid);
     int redirect;
@@ -820,7 +883,7 @@ ssize_t read(int fd, void *buf, size_t count) {
     }
     return ret;
 }
-#endif
+#endif */
 
 //! Overloaded send syscall
 ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
@@ -831,16 +894,25 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
     #endif
     
 
+
     #ifndef DISABLE_VT_SOCKET_LAYER
         if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
             return orig_send(sockfd, buf, len, flags);
         int ThreadID = syscall(SYS_gettid);
         int did_block = 0;
         if (vtIsTCPSocket(ThreadID, sockfd)) {
+            #ifndef DISABLE_LOOKAHEAD
+            s64 bblA = vtGetBBLLookahead((long)*globalCurrBBID);
+            #endif
             ret = _vwrite(sockfd, buf, len, &did_block);
 
-            if (did_block)
+            if (did_block) {
+                #ifndef DISABLE_LOOKAHEAD
+                vtSetLookahead(bblA, LOOKAHEAD_ANCHOR_CURR_TIME);
+                #endif
                 vtTriggerSyscallFinish(ThreadID);
+            }
+
         } else {
             ret = orig_send(sockfd, buf, len, flags);
             #ifndef DISABLE_LOOKAHEAD
@@ -857,7 +929,7 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
 
     #ifndef DISABLE_LOOKAHEAD
     if (len > 0 && ret > 0 && setLA > 0) {
-        payload_hash = GetPayloadHash(buf, ret);
+        payload_hash = GetPacketHash(buf, ret);
         if (payload_hash) {
             vtSetPktSendTime(payload_hash, ret, vtGetCurrentTime());
         }
@@ -884,10 +956,18 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
             return orig_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
         int ThreadID = syscall(SYS_gettid);
         if (vtIsTCPSocket(ThreadID, sockfd)) {
+
+            #ifndef DISABLE_LOOKAHEAD
+            s64 bblA = vtGetBBLLookahead((long)*globalCurrBBID);
+            #endif
             int did_block;
             ret = _vwrite(sockfd, buf, len, &did_block);
-            if (did_block)
+            if (did_block) {
+                #ifndef DISABLE_LOOKAHEAD
+                vtSetLookahead(bblA, LOOKAHEAD_ANCHOR_CURR_TIME);
+                #endif
                 vtTriggerSyscallFinish(ThreadID);
+            }
 
         } else {
             ret = orig_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
@@ -904,7 +984,7 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 
     #ifndef DISABLE_LOOKAHEAD
     if (len > 0 && ret > 0 && setLA > 0) {
-        payload_hash = GetPayloadHash(buf, ret);
+        payload_hash = GetPacketHash(buf, ret);
         if (payload_hash) {
             vtSetPktSendTime(payload_hash, ret, vtGetCurrentTime());
         }
@@ -926,10 +1006,19 @@ ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
         int ThreadID = syscall(SYS_gettid);
         int did_block = 0;
         if (vtIsTCPSocket(ThreadID, sockfd)) {
+
+            #ifndef DISABLE_LOOKAHEAD
+            s64 bblA = vtGetBBLLookahead((long)*globalCurrBBID);
+            #endif
+            
             ret = _vread(sockfd, buf, len, &did_block);
 
-            if (did_block)
+            if (did_block) {
+                #ifndef DISABLE_LOOKAHEAD
+                vtSetLookahead(bblA, LOOKAHEAD_ANCHOR_CURR_TIME);
+                #endif
                 vtTriggerSyscallFinish(ThreadID);
+            }
         } else {
             ret = orig_recv(sockfd, buf, len, flags);
         }
@@ -950,10 +1039,21 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
             return orig_recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
         int ThreadID = syscall(SYS_gettid);
         if (vtIsTCPSocket(ThreadID, sockfd)) {
+
+            #ifndef DISABLE_LOOKAHEAD
+            s64 bblA = vtGetBBLLookahead((long)*globalCurrBBID);
+            #endif
+
             int did_block;
             ret = _vread(sockfd, buf, len, &did_block);
-            if (did_block)
+
+
+            if (did_block) {
+                #ifndef DISABLE_LOOKAHEAD
+                vtSetLookahead(bblA, LOOKAHEAD_ANCHOR_CURR_TIME);
+                #endif
                 vtTriggerSyscallFinish(ThreadID);
+            }
                 
         } else {
             ret = orig_recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
@@ -971,9 +1071,10 @@ int socket(int domain, int type, int protocol) {
     int retFD;
 
     #ifndef DISABLE_VT_SOCKET_LAYER
-        if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
+        if (!vtInitialized || *vtInitialized != 1 || vtIsNetDevInCallback() )
             return orig_socket(domain, type, protocol);
         if ((type & SOCK_STREAM) && (domain == AF_INET) && (protocol == 0) ) {
+            vtMarkTCPStackActive();
             printf ("Adding new vt-tcp-socket !\n");
             retFD = _vsocket(domain, type, protocol);
         } else {
@@ -1019,21 +1120,27 @@ int close(int fd) {
 
     int ThreadPID = syscall(SYS_gettid);
     int isTimer = vtIsTimerFd(ThreadPID, fd);
-    if (vtIsSocketFd(ThreadPID, fd) || isTimer) {
-        vtCloseFd(ThreadPID, fd);
-    }
+    int ret;
 
     if (!isTimer) {
         #ifndef DISABLE_VT_SOCKET_LAYER
             if (vtIsTCPSocket(ThreadPID, fd)) {
-                return _vclose(fd);
+                ret = _vclose(fd);
+            } else {
+                ret = orig_close(fd);
             }
-            return orig_close(fd);
         #else
-            return orig_close(fd);
+            ret = orig_close(fd);
         #endif
-    } else
-        return 0;
+    } else {
+        ret = 0;
+    }
+
+    if (vtIsSocketFd(ThreadPID, fd) || isTimer) {
+        vtCloseFd(ThreadPID, fd);
+    }
+
+    return ret;
 }
 
 
@@ -1044,8 +1151,19 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
             return orig_connect(sockfd, addr, addrlen);
         int ThreadID = syscall(SYS_gettid);
         if (vtIsTCPSocket(ThreadID, sockfd)) {
+
+            #ifndef DISABLE_LOOKAHEAD
+            s64 bblA = vtGetBBLLookahead((long)*globalCurrBBID);
+            #endif
+
             ret = _vconnect(sockfd, addr, addrlen);
+            
+            #ifndef DISABLE_LOOKAHEAD
+            vtSetLookahead(bblA, LOOKAHEAD_ANCHOR_CURR_TIME);
+            #endif
             vtTriggerSyscallFinish(ThreadID);
+            
+
         } else {
             return orig_connect(sockfd, addr, addrlen);
         }
@@ -1852,7 +1970,7 @@ static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
     int ThreadPID = 0;
 
     #ifndef DISABLE_VT_SOCKET_LAYER
-    if (vtIsNetDevInCallback())
+    if (vtInitialized && *vtInitialized == 1 && vtIsNetDevInCallback())
         return 1;
     #endif
     

@@ -106,8 +106,12 @@ static int inet_stream_connect(struct vsocket *sock, const struct sockaddr *addr
             RegisterSysCallWait();
             SocketWrAcquire(sock);
 
+            printf ("Checing if socket connected !\n");
+            fflush(stdout);
             if (sk->sock->sleep_wait_wakeup) {
                 sk->sock->sleep_wait_wakeup = 0;
+                printf ("Socket connect success !\n");
+                fflush(stdout);
                 break;
             }
 

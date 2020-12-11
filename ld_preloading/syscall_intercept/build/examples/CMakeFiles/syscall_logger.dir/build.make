@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept
+CMAKE_SOURCE_DIR = /home/titan/Titan/ld_preloading/syscall_intercept
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/vignesh/Titan/ld_preloading/syscall_intercept/build
+CMAKE_BINARY_DIR = /home/titan/Titan/ld_preloading/syscall_intercept/build
 
 # Include any dependencies generated for this target.
 include examples/CMakeFiles/syscall_logger.dir/depend.make
@@ -59,29 +59,29 @@ include examples/CMakeFiles/syscall_logger.dir/flags.make
 
 examples/CMakeFiles/syscall_logger.dir/syscall_logger.c.o: examples/CMakeFiles/syscall_logger.dir/flags.make
 examples/CMakeFiles/syscall_logger.dir/syscall_logger.c.o: ../examples/syscall_logger.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object examples/CMakeFiles/syscall_logger.dir/syscall_logger.c.o"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_logger.dir/syscall_logger.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_logger.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object examples/CMakeFiles/syscall_logger.dir/syscall_logger.c.o"
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/examples && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_logger.dir/syscall_logger.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_logger.c
 
 examples/CMakeFiles/syscall_logger.dir/syscall_logger.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/syscall_logger.dir/syscall_logger.c.i"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_logger.c > CMakeFiles/syscall_logger.dir/syscall_logger.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/examples && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_logger.c > CMakeFiles/syscall_logger.dir/syscall_logger.c.i
 
 examples/CMakeFiles/syscall_logger.dir/syscall_logger.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/syscall_logger.dir/syscall_logger.c.s"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_logger.c -o CMakeFiles/syscall_logger.dir/syscall_logger.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/examples && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_logger.c -o CMakeFiles/syscall_logger.dir/syscall_logger.c.s
 
 examples/CMakeFiles/syscall_logger.dir/syscall_desc.c.o: examples/CMakeFiles/syscall_logger.dir/flags.make
 examples/CMakeFiles/syscall_logger.dir/syscall_desc.c.o: ../examples/syscall_desc.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object examples/CMakeFiles/syscall_logger.dir/syscall_desc.c.o"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_logger.dir/syscall_desc.c.o   -c /home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object examples/CMakeFiles/syscall_logger.dir/syscall_desc.c.o"
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/examples && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/syscall_logger.dir/syscall_desc.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.c
 
 examples/CMakeFiles/syscall_logger.dir/syscall_desc.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/syscall_logger.dir/syscall_desc.c.i"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.c > CMakeFiles/syscall_logger.dir/syscall_desc.c.i
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/examples && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.c > CMakeFiles/syscall_logger.dir/syscall_desc.c.i
 
 examples/CMakeFiles/syscall_logger.dir/syscall_desc.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/syscall_logger.dir/syscall_desc.c.s"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/vignesh/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.c -o CMakeFiles/syscall_logger.dir/syscall_desc.c.s
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/examples && /usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/titan/Titan/ld_preloading/syscall_intercept/examples/syscall_desc.c -o CMakeFiles/syscall_logger.dir/syscall_desc.c.s
 
 # Object files for target syscall_logger
 syscall_logger_OBJECTS = \
@@ -96,8 +96,8 @@ examples/libsyscall_logger.so: examples/CMakeFiles/syscall_logger.dir/syscall_de
 examples/libsyscall_logger.so: examples/CMakeFiles/syscall_logger.dir/build.make
 examples/libsyscall_logger.so: libsyscall_intercept.so.0.1.0
 examples/libsyscall_logger.so: examples/CMakeFiles/syscall_logger.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/vignesh/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking C shared library libsyscall_logger.so"
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/syscall_logger.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking C shared library libsyscall_logger.so"
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/examples && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/syscall_logger.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 examples/CMakeFiles/syscall_logger.dir/build: examples/libsyscall_logger.so
@@ -105,10 +105,10 @@ examples/CMakeFiles/syscall_logger.dir/build: examples/libsyscall_logger.so
 .PHONY : examples/CMakeFiles/syscall_logger.dir/build
 
 examples/CMakeFiles/syscall_logger.dir/clean:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples && $(CMAKE_COMMAND) -P CMakeFiles/syscall_logger.dir/cmake_clean.cmake
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build/examples && $(CMAKE_COMMAND) -P CMakeFiles/syscall_logger.dir/cmake_clean.cmake
 .PHONY : examples/CMakeFiles/syscall_logger.dir/clean
 
 examples/CMakeFiles/syscall_logger.dir/depend:
-	cd /home/vignesh/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/vignesh/Titan/ld_preloading/syscall_intercept /home/vignesh/Titan/ld_preloading/syscall_intercept/examples /home/vignesh/Titan/ld_preloading/syscall_intercept/build /home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples /home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples/CMakeFiles/syscall_logger.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/titan/Titan/ld_preloading/syscall_intercept/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/titan/Titan/ld_preloading/syscall_intercept /home/titan/Titan/ld_preloading/syscall_intercept/examples /home/titan/Titan/ld_preloading/syscall_intercept/build /home/titan/Titan/ld_preloading/syscall_intercept/build/examples /home/titan/Titan/ld_preloading/syscall_intercept/build/examples/CMakeFiles/syscall_logger.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : examples/CMakeFiles/syscall_logger.dir/depend
 

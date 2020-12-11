@@ -1,4 +1,4 @@
-# Install script for directory: /home/vignesh/Titan/ld_preloading/syscall_intercept
+# Install script for directory: /home/titan/Titan/ld_preloading/syscall_intercept
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,8 +50,8 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
     endif()
   endforeach()
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/x86_64-linux-gnu" TYPE SHARED_LIBRARY FILES
-    "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/libsyscall_intercept.so.0.1.0"
-    "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/libsyscall_intercept.so.0"
+    "/home/titan/Titan/ld_preloading/syscall_intercept/build/libsyscall_intercept.so.0.1.0"
+    "/home/titan/Titan/ld_preloading/syscall_intercept/build/libsyscall_intercept.so.0"
     )
   foreach(file
       "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/x86_64-linux-gnu/libsyscall_intercept.so.0.1.0"
@@ -73,7 +73,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/x86_64-linux-gnu/libsyscall_intercept.so"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/x86_64-linux-gnu" TYPE SHARED_LIBRARY FILES "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/libsyscall_intercept.so")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/x86_64-linux-gnu" TYPE SHARED_LIBRARY FILES "/home/titan/Titan/ld_preloading/syscall_intercept/build/libsyscall_intercept.so")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/x86_64-linux-gnu/libsyscall_intercept.so" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/x86_64-linux-gnu/libsyscall_intercept.so")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -83,26 +83,26 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE FILE FILES "/home/vignesh/Titan/ld_preloading/syscall_intercept/include/libsyscall_intercept_hook_point.h")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE FILE FILES "/home/titan/Titan/ld_preloading/syscall_intercept/include/libsyscall_intercept_hook_point.h")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/x86_64-linux-gnu" TYPE STATIC_LIBRARY FILES "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/libsyscall_intercept.a")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/x86_64-linux-gnu" TYPE STATIC_LIBRARY FILES "/home/titan/Titan/ld_preloading/syscall_intercept/build/libsyscall_intercept.a")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE FILE FILES "/home/vignesh/Titan/ld_preloading/syscall_intercept/include/libsyscall_intercept_hook_point.h")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE FILE FILES "/home/titan/Titan/ld_preloading/syscall_intercept/include/libsyscall_intercept_hook_point.h")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/x86_64-linux-gnu/pkgconfig" TYPE FILE FILES "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/libsyscall_intercept.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/x86_64-linux-gnu/pkgconfig" TYPE FILE FILES "/home/titan/Titan/ld_preloading/syscall_intercept/build/libsyscall_intercept.pc")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/vignesh/Titan/ld_preloading/syscall_intercept/build/doc/cmake_install.cmake")
-  include("/home/vignesh/Titan/ld_preloading/syscall_intercept/build/examples/cmake_install.cmake")
-  include("/home/vignesh/Titan/ld_preloading/syscall_intercept/build/test/cmake_install.cmake")
+  include("/home/titan/Titan/ld_preloading/syscall_intercept/build/doc/cmake_install.cmake")
+  include("/home/titan/Titan/ld_preloading/syscall_intercept/build/examples/cmake_install.cmake")
+  include("/home/titan/Titan/ld_preloading/syscall_intercept/build/test/cmake_install.cmake")
 
 endif()
 
@@ -114,5 +114,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/vignesh/Titan/ld_preloading/syscall_intercept/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/titan/Titan/ld_preloading/syscall_intercept/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
