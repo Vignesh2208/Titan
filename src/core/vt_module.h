@@ -34,6 +34,8 @@ struct dilated_task_struct {
     int pid;
     int syscall_waiting;
     int resumed_by_dilated_timer;
+
+    s64 syscall_wait_return;
     wait_queue_head_t d_task_wqueue;
     struct task_struct * vt_exec_task;
     struct task_struct * base_task;
@@ -84,6 +86,7 @@ typedef struct process_tcp_stack_struct {
     int rx_loop_complete;
     int stack_thread_waiting;
     int exit_status;
+    s64 stack_return_tslice_quanta;
     s64 stack_rtx_send_time;
     struct tracer_struct * associated_tracer;
 } process_tcp_stack;

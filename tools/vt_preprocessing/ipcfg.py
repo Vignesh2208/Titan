@@ -201,6 +201,9 @@ class InterProceduralCFG(object):
                 os.remove(output_file)
             logging.info('Dumping BBL lookahead information to: %s ...',
                          output_file)
+
+            with open(f"{output_file}.readable.json", "w") as f:
+                json.dump(bbl_lookahead_json, f)
             _ = vt_functions.DumpLookahead(
                 bbl_lookahead_dump, output_file, min_bbl_number,
                 max_bbl_number - min_bbl_number + 1)
@@ -232,6 +235,8 @@ class InterProceduralCFG(object):
                 os.remove(output_file)
             logging.info('Dumping Loop lookahead information to: %s ...',
                          output_file)
+            with open(f"{output_file}.readable.json", "w") as f:
+                json.dump(loop_lookahead_json, f)
             _ = vt_functions.DumpLookahead(
                 loop_lookahead_dump, output_file, min_loop_number,
                 max_loop_number - min_loop_number + 1)

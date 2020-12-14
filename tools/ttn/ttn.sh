@@ -27,6 +27,7 @@ usage () {
   echo '-p|--project_name : Name of the project'
   echo '-s|--project_src_dir : Project source directory'
   echo '-a|--arch : project compilation target architecture name'
+  echo '--nic_mbps : modelled nic speed in mbps'
   echo '--cpu_mhz : cpu speed in mhz'
   echo '--ins_cache_size_kb : instruction cache size kb'
   echo '--ins_cache_lines : instruction cache lines'
@@ -102,6 +103,11 @@ case $key in
     ;;
     --cpu_mhz)
     CPU_SPEED_MHZ="$2"
+    shift
+    shift
+    ;;
+    --nic_mbps)
+    NIC_MBPS="$2"
     shift
     shift
     ;;
@@ -216,6 +222,12 @@ fi
 if [ -n "$CPU_SPEED_MHZ" ]
 then
   ARG_BUILDER+=" --cpu_mhz=$CPU_SPEED_MHZ"
+fi
+
+
+if [ -n "$NIC_MBPS" ]
+then
+  ARG_BUILDER+=" --nic_mbps=$NIC_MBPS"
 fi
 
 chmod +x $TITAN_DIR/tools/ttn/ttn.py

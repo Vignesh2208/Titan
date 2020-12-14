@@ -16,13 +16,12 @@
 #define ETHER_TYPE_IPV6  (0x86DD)
 
 
-int GetPacketHash(struct sk_buff *skb) {
+int GetTCPPacketHash(struct sk_buff *skb) {
 
     
-    char * payload = (char *)skb->head;
+    char * payload = (char *)skb->data;
     int size = IP_HDR_LEN + TCP_HDR_LEN;
-    int hash;
-    
+    int hash = 0;
     for(int i = 0; i < size; i++) {
         hash += *payload;
         hash += (hash << 10);
@@ -83,10 +82,8 @@ int IpOutputDaddr(struct sk_buff *skb, uint32_t daddr) {
     ip_send_check(ihdr);
     ip_out_dbg(ihdr);
     
-
-    int payload_hash = GetPacketHash(skb);
-    SetPktSendTimeAPI(payload_hash, IP_HDR_LEN + TCP_HDR_LEN,
-        GetCurrentTimeTracer(GetStackTracerID()));
     
-    return NetDevTransmit(skb, &sin);
+    int payload_hash = GetTCPPacketHash(skb);
+    
+    return NetDevTransmit(skb, &sin, payload_hash, IP_HDR_LEN + TCP_HDR_LEN);
 }

@@ -165,7 +165,7 @@ int MarkStackInActive(int tracerID, int stackID);
 
 int MarkStackRxLoopComplete(int tracerID, int stackID);
 
-int TriggerStackThreadWait(int tracerID, int stackID);
+s64 TriggerStackThreadWait(int tracerID, int stackID);
 
 
 int TriggerStackThreadFinish(int tracerID, int stackID);

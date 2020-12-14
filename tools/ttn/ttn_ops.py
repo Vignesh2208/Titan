@@ -35,6 +35,7 @@ def createOrResetTTNProject(project_name: str, project_src_dir: str,
             c.DATA_CACHE_LINES_KEY: params[c.DATA_CACHE_LINES_KEY],
             c.DATA_CACHE_TYPE_KEY: params[c.DATA_CACHE_TYPE_KEY],
             c.DATA_CACHE_MISS_CYCLES_KEY: params[c.DATA_CACHE_MISS_CYCLES_KEY],
+            c.NIC_SPEED_MBPS_KEY: params[c.NIC_SPEED_MBPS_KEY],
             c.CPU_CYCLE_NS_KEY: params[c.CPU_CYCLE_NS_KEY]
         }
 
@@ -80,6 +81,7 @@ def addProject(project_name: str, project_src_dir: str,
         c.DATA_CACHE_LINES_KEY: params[c.DATA_CACHE_LINES_KEY],
         c.DATA_CACHE_TYPE_KEY: params[c.DATA_CACHE_TYPE_KEY],
         c.DATA_CACHE_MISS_CYCLES_KEY: params[c.DATA_CACHE_MISS_CYCLES_KEY],
+        c.NIC_SPEED_MBPS_KEY: params[c.NIC_SPEED_MBPS_KEY],
         c.CPU_CYCLE_NS_KEY: params[c.CPU_CYCLE_NS_KEY]
     }
     currDB['active'] = project_params.copy()
@@ -113,6 +115,7 @@ def getDefaultProjectParams() -> Dict[str, str]:
         c.DATA_CACHE_SIZE_KEY: c.DEFAULT_DATA_CACHE_SIZE_KB,
         c.DATA_CACHE_LINES_KEY: c.DEFAULT_DATA_CACHE_LINES,
         c.DATA_CACHE_TYPE_KEY: c.DEFAULT_DATA_CACHE_TYPE,
+        c.NIC_SPEED_MBPS_KEY: c.DEFAULT_NIC_SPEED_MBPS,
         c.DATA_CACHE_MISS_CYCLES_KEY: c.DEFAULT_DATA_CACHE_MISS_CYCLES,
         c.CPU_CYCLE_NS_KEY: 1.0
     }
@@ -282,6 +285,8 @@ def displayProject(project_name: str, print_active=False) -> None:
         f'data cache type          : {project_params[c.DATA_CACHE_TYPE_KEY]}')
     logging.info(
         f'cpu cycle per ns         : {project_params[c.CPU_CYCLE_NS_KEY]}')
+    logging.info(
+        f'nic speed mbps           : {project_params[c.NIC_SPEED_MBPS_KEY]}')
 
     project_src_dir = project_params[c.PROJECT_SRC_DIR_KEY]
     if not os.path.exists(

@@ -105,7 +105,7 @@ extern void (*vtInitialize)();
 extern void (*vtYieldVTBurst)(int ThreadID, int save, long syscall_number);
 extern void (*vtForceCompleteBurst)(int ThreadID, int save, long syscall_number);
 
-extern void (*vtTriggerSyscallWait)(int ThreadID, int save);
+extern s64 (*vtTriggerSyscallWait)(int ThreadID, int save);
 extern void (*vtTriggerSyscallFinish)(int ThreadID);
 extern void (*vtSleepForNS)(int ThreadID, s64 duration);
 extern void (*vtGetCurrentTimespec)(struct timespec *ts);

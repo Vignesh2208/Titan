@@ -25,6 +25,6 @@ uint32_t min(uint32_t x, uint32_t y);
 
 
 void RegisterSysCallWait();
-int RegisterStackThreadWait(int tracerID, int stackID);
+s64 RegisterStackThreadWait(int tracerID, int stackID);
 
 #endif

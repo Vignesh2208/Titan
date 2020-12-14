@@ -77,7 +77,7 @@ typedef struct ThreadInfoStruct {
 s64 GetCurrentTime();
 void HandleVTExpEnd(int ThreadID);
 
-void TriggerSyscallWait(int ThreadID, int save);
+s64 TriggerSyscallWait(int ThreadID, int save);
 
 /*** For Socket Handling ***/
 void AddSocket(int ThreadID, int sockFD, int sockFdProtoType, int isNonBlocking);

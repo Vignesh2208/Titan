@@ -159,17 +159,17 @@ void SignalCpuWorkerResume(tracer * curr_tracer);
 
 //! Wakes up all tracees on a timeline which may be in the middle of a virtual time accorded syscall
 /*! \param timelineID Represents the ID of the timeline in question */
-void WakeUpProcessesWaitingOnSyscalls(int timelineID);
+void WakeUpProcessesWaitingOnSyscalls(int timelineID, s64 syscall_wait_return);
 
 
 //! Triggers and waits for stack thread to execute and return
-void TriggerAllStackThreadExecutions(tracer * curr_tracer, int exit_status, int optional_stack_id);
+void TriggerAllStackThreadExecutions(tracer * curr_tracer, s64 curr_tslice_quanta, int exit_status, int optional_stack_id);
 
 //! Resets all rx_loop_complete flags to zero for all stacks aligned on this tracer
 void ResetAllStackRxLoopStatus(tracer * curr_tracer);
 
 
 //! Triggers and waits for stack thread aligned on timeline execute and return
-void TriggerStackThreadExecutionsOn(int timelineID, int exit_status);
+void TriggerStackThreadExecutionsOn(int timelineID, s64 curr_tslice_quanta, int exit_status);
 
 #endif

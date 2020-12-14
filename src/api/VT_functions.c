@@ -366,7 +366,7 @@ int MarkStackRxLoopComplete(int tracerID, int stackID) {
 
 }
 
-int TriggerStackThreadWait(int tracerID, int stackID) {
+s64 TriggerStackThreadWait(int tracerID, int stackID) {
   if (tracerID <= 0 || stackID <= 0) {
     printf ("TriggerStackThreadWait: invalid arguments !\n");
     return -1;

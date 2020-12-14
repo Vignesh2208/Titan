@@ -42,6 +42,7 @@
 #define INS_CACHE_LINES_KEY "INS_CACHE_LINES"
 #define INS_CACHE_TYPE_KEY "INS_CACHE_TYPE"
 #define INS_CACHE_MISS_CYCLES_KEY "INS_CACHE_MISS_CYCLES"
+#define NIC_SPEED_MBPS_KEY "NIC_SPEED_MBPS"
 #define DEFAULT_INS_CACHE_SIZE_KB 32
 #define DEFAULT_INS_CACHE_LINES 32
 #define DEFAULT_INS_CACHE_TYPE "DMA"
@@ -57,6 +58,7 @@
 #define DEFAULT_DATA_CACHE_LINES 32
 #define DEFAULT_DATA_CACHE_TYPE "DMA"
 #define DEFAULT_DATA_CACHE_MISS_CYCLES 100
+#define DEFAULT_NIC_SPEED_MBPS 1000
 #endif
 
 
@@ -127,7 +129,9 @@ int ParseTTNProject(char * project_name) {
     cJSON * ttn_config_projects_json;
     cJSON * ttn_project_params_json;
     cJSON * ttn_project_cpu_cycles_ns;
+    cJSON * ttn_project_nic_speed_mbps;
     char ttn_project_cpu_cycles_ns_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+    char ttn_project_nic_speed_mbps_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
 
     #ifndef DISABLE_LOOKAHEAD
     cJSON * ttn_project_src_dir_json;
@@ -164,6 +168,7 @@ int ParseTTNProject(char * project_name) {
 
     memset(ttn_config_file, 0, MAX_FILE_PATH_LENGTH);
     memset(ttn_project_cpu_cycles_ns_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+    memset(ttn_project_nic_speed_mbps_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
 
     #ifndef DISABLE_INSN_CACHE_SIM
     memset(ttn_project_ins_cache_type_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
@@ -237,6 +242,9 @@ int ParseTTNProject(char * project_name) {
     #endif
     ttn_project_cpu_cycles_ns = cJSON_GetObjectItemCaseSensitive(
       ttn_project_params_json, CPU_CYCLE_NS_KEY);
+
+    ttn_project_nic_speed_mbps = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, NIC_SPEED_MBPS_KEY);
     
     #ifndef DISABLE_INSN_CACHE_SIM
     ttn_project_ins_cache_type = cJSON_GetObjectItemCaseSensitive(
@@ -285,6 +293,9 @@ int ParseTTNProject(char * project_name) {
 
     SetParamConfigFloat("VT_CPU_CYLES_NS", ttn_project_cpu_cycles_ns_string,
       ttn_project_cpu_cycles_ns, DEFAULT_CPU_CYCLES_NS);
+
+    SetParamConfigFloat("VT_NIC_SPEED_MBPS", ttn_project_nic_speed_mbps_string,
+      ttn_project_nic_speed_mbps, DEFAULT_NIC_SPEED_MBPS);
     
     #ifndef DISABLE_LOOKAHEAD
     if (cJSON_IsString(ttn_project_src_dir_json)) {

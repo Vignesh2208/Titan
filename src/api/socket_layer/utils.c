@@ -13,17 +13,22 @@
 
 void RegisterSysCallWait() {
     int ThreadId = syscall(SYS_gettid);
+    s64 ret;
     #ifndef DISABLE_LOOKAHEAD
     /*** For setting lookaheads ***/
     SetLookahead(0, LOOKAHEAD_ANCHOR_EAT);
     #endif
 
-    TriggerSyscallWait(ThreadId, 0);
+    ret = TriggerSyscallWait(ThreadId, 0);
+    long currQuantaUs = (long)(ret / NSEC_PER_US);
+    if (!currQuantaUs)
+        currQuantaUs = 1;
+    SetNetDevCurrTsliceQuantaUs(currQuantaUs);
     NetDevRxLoop();
 }
 
 
-int RegisterStackThreadWait(int tracerID, int stackID) {
+s64 RegisterStackThreadWait(int tracerID, int stackID) {
     return TriggerStackThreadWait(tracerID, stackID);
 }
 

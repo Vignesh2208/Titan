@@ -99,8 +99,7 @@ s64 GetEarliestRtxSendTime() {
             if (earliest_rtx_send_time == 0 ||
                 tsk->retransmit->expires  < earliest_rtx_send_time)
                 earliest_rtx_send_time = tsk->retransmit->expires;
-        }
-        
+        }   
     }
     //pthread_rwlock_unlock(&slock);
     return earliest_rtx_send_time;

@@ -270,6 +270,7 @@ void AddToTracerScheduleQueue(tracer * tracer_entry,
     tracee_dilated_task_struct->lookahead = 0;
     tracee_dilated_task_struct->syscall_waiting = 0;
     tracee_dilated_task_struct->resumed_by_dilated_timer = 0;
+    tracee_dilated_task_struct->syscall_wait_return = 0;
     init_waitqueue_head(&tracee_dilated_task_struct->d_task_wqueue);
     
     BUG_ON(!chaintask[tracer_entry->timeline_assignment]);
@@ -364,8 +365,8 @@ s64 GetPktSendTstamp(tracer * tracer_entry, int payload_hash) {
         curr_pkt_info = (pkt_info *) head->item;
         if (curr_pkt_info && curr_pkt_info->payload_hash == payload_hash) {
             pkt_send_tstamp = curr_pkt_info->pkt_send_tstamp;
-            PDEBUG_I("Found a matching packet for hash: %d, send-timestamp = %llu\n",
-                 payload_hash, pkt_send_tstamp);
+            //PDEBUG_I("Found a matching packet for hash: %d, send-timestamp = %llu\n",
+            //     payload_hash, pkt_send_tstamp);
             removed_elem = llist_remove_at(&tracer_entry->pkt_info_queue, pos);
             if (removed_elem) kfree(removed_elem);
             return pkt_send_tstamp;
@@ -583,7 +584,7 @@ void UpdateAllTracersVirtualTime(int timelineID) {
 }
 
 
-void wake_up_syscall_waiting_processes(tracer * tracer_entry) {
+void wakeUpSyscallWaits(tracer * tracer_entry, s64 syscall_wait_return) {
     if (!tracer_entry)
         return;
 
@@ -599,6 +600,7 @@ void wake_up_syscall_waiting_processes(tracer * tracer_entry) {
                 PDEBUG_V("Waking syscall waiting process: %d\n",
                          curr_elem->curr_task->pid);
                 curr_elem->curr_task->syscall_waiting = 0;
+                curr_elem->curr_task->syscall_wait_return = syscall_wait_return;
                 if (curr_elem == tracer_entry->last_run) {
                     tracer_entry->last_run->quanta_left_from_prev_round = 0;
                     tracer_entry->last_run = NULL;
@@ -611,6 +613,7 @@ void wake_up_syscall_waiting_processes(tracer * tracer_entry) {
                      && curr_elem->curr_task->ready == 0) ||
                     (curr_elem->curr_task->ready == 1
                     && curr_elem->curr_task->syscall_waiting == 0));
+                curr_elem->curr_task->syscall_wait_return = 0;
                 PDEBUG_V("Resuming after waking syscall waiting process: %d\n",
                          curr_elem->curr_task->pid);
             }
@@ -619,7 +622,7 @@ void wake_up_syscall_waiting_processes(tracer * tracer_entry) {
     }
 }
 
-void WakeUpProcessesWaitingOnSyscalls(int timelineID) {
+void WakeUpProcessesWaitingOnSyscalls(int timelineID, s64 syscall_wait_return) {
     llist_elem * head;
     llist * tracer_list;
     tracer * curr_tracer;
@@ -632,15 +635,14 @@ void WakeUpProcessesWaitingOnSyscalls(int timelineID) {
     while (head != NULL) {
         curr_tracer = (tracer*)head->item;
         GetTracerStructWrite(curr_tracer);
-        wake_up_syscall_waiting_processes(curr_tracer);
-
+        wakeUpSyscallWaits(curr_tracer, syscall_wait_return);
         PutTracerStructWrite(curr_tracer);
         head = head->next;
     }
 
 }
 
-void TriggerStackThreadExecutionsOn(int timelineID, int exit_status) {
+void TriggerStackThreadExecutionsOn(int timelineID, s64 curr_tslice_quanta, int exit_status) {
     llist_elem * head;
     llist * tracer_list;
     tracer * curr_tracer;
@@ -653,7 +655,7 @@ void TriggerStackThreadExecutionsOn(int timelineID, int exit_status) {
     while (head != NULL) {
         curr_tracer = (tracer*)head->item;
         GetTracerStructWrite(curr_tracer);
-        TriggerAllStackThreadExecutions(curr_tracer, exit_status, -1);
+        TriggerAllStackThreadExecutions(curr_tracer, curr_tslice_quanta, exit_status, -1);
         PutTracerStructWrite(curr_tracer);
         head = head->next;
     }
@@ -804,7 +806,7 @@ s64 HandleGettimepid(char * write_buffer) {
     return GetCurrentVirtualTime(task);
 }
 
-void TriggerAllStackThreadExecutions(tracer * curr_tracer, int exit_status, int optional_stack_id) {
+void TriggerAllStackThreadExecutions(tracer * curr_tracer, s64 curr_tslice_quanta, int exit_status, int optional_stack_id) {
     process_tcp_stack * curr_stack;
     llist_elem * head;
     
@@ -831,6 +833,7 @@ void TriggerAllStackThreadExecutions(tracer * curr_tracer, int exit_status, int 
             curr_stack->exit_status = exit_status;
             PDEBUG_I("Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Triggering Stack Thread !\n",
                      curr_tracer->tracer_id, curr_stack->id);
+            curr_stack->stack_return_tslice_quanta = curr_tslice_quanta;
             wake_up_interruptible(&curr_tracer->stack_w_queue);
             
         }

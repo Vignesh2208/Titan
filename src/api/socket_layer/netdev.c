@@ -12,6 +12,8 @@
 
 static struct netdev netdev;
 
+static LIST_HEAD(netdev_pkt_queue);
+
 #define NETDEV_STATUS_PROCESS_EXITING -2
 #define NETDEV_STATUS_EXP_EXITING -1
 #define NETDEV_STATUS_NORMAL 0
@@ -31,12 +33,12 @@ void NetDevInit(uint32_t src_ip_addr) {
     if(netdev.raw_sock_fd == -1) {
         //socket creation failed, may be because of non-root privileges
         perror("Netdev: Failed to create raw socket !");
-	netdev.in_callback = 0;
+	    netdev.in_callback = 0;
         exit(1);
     }
     if(setsockopt(netdev.raw_sock_fd, IPPROTO_IP, IP_HDRINCL, val, sizeof(one)) < 0) {
         perror("Netdev: raw socket setsockopt() error !");
-	netdev.in_callback = 0;
+	    netdev.in_callback = 0;
         exit(1);
     }
 
@@ -60,11 +62,14 @@ int GetStackTracerID() {
     return netdev.tracerID;
 }
 
-void SetNetDevStackID(int tracerID, int stackID) {
+void SetNetDevStackID(int tracerID, int stackID, float nicSpeedMps) {
     char uniqueIDStr[100];
     netdev.tracerID = tracerID;
     netdev.stackID = stackID;
     netdev.in_callback = 1;
+    netdev.nicSpeedMbps = nicSpeedMps;
+    netdev.currTsliceQuantaUs = 1;
+    netdev.netDevPktQueueSize = 0;
     memset(uniqueIDStr, 0, 100);
     sprintf(uniqueIDStr, "%d%d", netdev.tracerID, netdev.stackID);
     netdev.uniqueID = atoi(uniqueIDStr);
@@ -78,10 +83,18 @@ int IsNetDevInCallback() {
     return netdev.in_callback;
 }
 
+
+void SetNetDevCurrTsliceQuantaUs(long quantaUs) {
+    //printf ("Setting current tslice US to %ld\n", quantaUs);
+    //printf ("Netdev QLen = %d\n", netdev.netDevPktQueueSize);
+    netdev.currTsliceQuantaUs += quantaUs;
+}
+
 // called when first socket is created inside socket syscall.
 void MarkNetworkStackActive(uint32_t src_ip_addr) {
     NetDevInit(src_ip_addr);
     netdev.in_callback = 1;
+    netdev.netDevPktQueueSize = 0;
     MarkStackActive(netdev.tracerID, netdev.stackID);
     netdev.in_callback = 0;
 }
@@ -97,17 +110,94 @@ void MarkNetworkStackInactive() {
 }
 
 
-int NetDevTransmit(struct sk_buff *skb, struct sockaddr_in * skaddr) {
+int NetDevTransmit(struct sk_buff *skb, struct sockaddr_in * skaddr,
+    int payload_hash, int payload_len) {
     int ret = 0;
     int old_state = netdev.in_callback;
     netdev.in_callback = 1;
     assert(netdev.initialized == 1);
-    if ((ret = sendto (netdev.raw_sock_fd, (char *)skb->data, skb->len, 0, 
+    /*if ((ret = sendto (netdev.raw_sock_fd, (char *)skb->data, skb->len, 0, 
                 skaddr, sizeof (struct sockaddr_in)) < 0)) {
         perror ("Send-to Failed !\n");
-	}
+	}*/
+
+    struct netdev_pkt * new_pkt = malloc(sizeof(struct netdev_pkt));
+    assert(new_pkt != NULL);
+    memset(new_pkt->data, 0, BUFLEN);
+    assert(skb->len <= BUFLEN);
+    memcpy(new_pkt->data, (char *)skb->data, skb->len);
+    memcpy(&new_pkt->sin, skaddr, sizeof(struct sockaddr_in));
+    ListInit(&new_pkt->list);
+    ListAddTail(&new_pkt->list, &netdev_pkt_queue);
+    new_pkt->len = skb->len;
+    new_pkt->payload_hash = payload_hash;
+    new_pkt->payload_len = payload_len;
+    netdev.netDevPktQueueSize ++;
+
     netdev.in_callback = old_state;
-    return ret;
+    return skb->len;
+}
+
+void NetDevSendQueuedPackets() {
+
+    struct netdev_pkt * pkt;
+    struct list_head *item, *tmp;
+    float availQuantaUs = netdev.currTsliceQuantaUs;
+    float currPktUsedQuantaUs = 0;
+    float usedPktQuantaUs = 0;
+    int numQueuedPkts = 0;
+    int ret = 0;
+    int old_state = netdev.in_callback;
+    netdev.in_callback = 1;
+    assert(netdev.initialized == 1);
+    s64 currTime = GetCurrentTimeTracer(GetStackTracerID());
+    list_for_each_safe(item, tmp, &netdev_pkt_queue) {
+        pkt = list_entry(item, struct netdev_pkt, list);
+
+        if (pkt) {
+            currPktUsedQuantaUs = (float)(pkt->len * 8.0) / (netdev.nicSpeedMbps);
+        } else {
+            break;
+        }
+        numQueuedPkts ++;
+
+        if (pkt && availQuantaUs - currPktUsedQuantaUs > 0) {
+            availQuantaUs -= currPktUsedQuantaUs;
+            usedPktQuantaUs += currPktUsedQuantaUs;
+
+            fflush(stdout);
+            SetPktSendTimeAPI(pkt->payload_hash, pkt->payload_len, 
+                currTime + ((int)usedPktQuantaUs)* NSEC_PER_US);
+            if ((ret = sendto (netdev.raw_sock_fd, (char *)pkt->data, pkt->len, 0, 
+                &pkt->sin, sizeof (struct sockaddr_in)) < 0)) {
+                perror ("Send-to Failed !\n");
+	        }
+            netdev.netDevPktQueueSize --;
+            ListDel(&pkt->list);
+            free(pkt);
+        } else {
+            break;
+        }
+
+        
+    }
+
+    if (!numQueuedPkts) {
+        //reset
+        netdev.netDevPktQueueSize = 0;
+        netdev.currTsliceQuantaUs = 0.0;
+    } else {
+        netdev.currTsliceQuantaUs = availQuantaUs;
+    }
+
+    if (netdev.netDevPktQueueSize) {
+        UpdateStackSendRtxTime(netdev.tracerID, netdev.stackID, TimerGetTick());
+    } else {
+        UpdateStackSendRtxTime(netdev.tracerID, netdev.stackID, 0);
+    }
+
+    netdev.in_callback = old_state;
+
 }
 
 static int NetDevReceive(struct sk_buff *skb) {
@@ -135,11 +225,16 @@ void NetDevRxLoop() {
             FreeSkb(skb);
             break;
         } else {
+            //printf ("Received pkt !\n");
+            //fflush(stdout);
             NetDevReceive(skb);
             packet_size = 0;
         }
     }
     
+    NetDevSendQueuedPackets();
+
+
     MarkStackRxLoopComplete(netdev.tracerID, netdev.stackID);
     TimersProcessTick();
     GarbageCollectSockets();
@@ -165,7 +260,7 @@ void ClearInNetDevCallback() {
 
 
 void * StackThread(void *arg) {
-    int ret;
+    s64 ret;
     int exiting = 0;
     int num_rounds = 0;
     while (1) {
@@ -187,6 +282,8 @@ void * StackThread(void *arg) {
                 TriggerStackThreadFinish(netdev.tracerID, netdev.stackID);
                 break;
             } else {
+                //TODO: Update this to get the proper tslice quanta-us
+                SetNetDevCurrTsliceQuantaUs(1);
                 NetDevRxLoop();
             }
         } else if (ret == NETDEV_STATUS_EXP_EXITING) {
@@ -194,6 +291,10 @@ void * StackThread(void *arg) {
             fflush(stdout);
             break;
         } else {
+            long currQuantaUs = (long)(ret / NSEC_PER_US);
+            if (!currQuantaUs)
+                currQuantaUs = 1;
+            SetNetDevCurrTsliceQuantaUs(currQuantaUs);
             NetDevRxLoop();
         }
     }

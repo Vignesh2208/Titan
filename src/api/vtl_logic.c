@@ -44,6 +44,7 @@ int vtInitializationComplete = 0;
 
 #ifndef DISABLE_VT_SOCKET_LAYER
 uint32_t tracerSrcIpAddr = 0;
+float modelledNicSpeedMbps = 1000.0;
 #endif
 int globalTracerID = -1;
 int globalTimelineID = -1;
@@ -75,6 +76,7 @@ s64 GetBBLLookAhead(long bblNumber) {
         (bblNumber > bblLookAheadInfo.lmap.finish_offset))
         return 0;
     return bblLookAheadInfo.lmap.lookahead_values[bblNumber - bblLookAheadInfo.lmap.start_offset];
+    //return 0;
 }
 
 //! Sets the lookahead for a specific loop by estimating the number of iterations it would make
@@ -391,8 +393,8 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);
     specifiedBurstCycles = currBurstCyclesLeft;
 
-    printf ("Resuming from force-complete burst with: %llu cycles\n", specifiedBurstCycles);
-    fflush(stdout); 
+    //printf ("Resuming from force-complete burst with: %llu cycles\n", specifiedBurstCycles);
+    //fflush(stdout); 
 
     if (currBurstCyclesLeft <= 0)
         HandleVTExpEnd(ThreadID);
@@ -603,7 +605,7 @@ void AppFini(int ThreadID) {
 }
 
 //! Called before a syscall which may involve some sleeping/timed wait like select, poll etc
-void TriggerSyscallWait(int ThreadID, int save) {
+s64 TriggerSyscallWait(int ThreadID, int save) {
     ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
     if (!currThreadInfo) return;
 
@@ -614,10 +616,12 @@ void TriggerSyscallWait(int ThreadID, int save) {
     #ifndef DISABLE_LOOKAHEAD
     if  (save) currThreadInfo->stack.currBBID = currBBID;
     #endif
-
-    if (TriggerSyscallWaitAPI() <= 0) HandleVTExpEnd(ThreadID);
+    s64 ret = TriggerSyscallWaitAPI();
+    if (ret <= 0) HandleVTExpEnd(ThreadID);
 
     currThreadInfo->in_callback = FALSE;
+
+    return ret;
 }
 
 //! Called upon return from a syscall which may have involved timed wait like select, poll etc
@@ -768,7 +772,7 @@ int IsTimerArmed(int ThreadID, int fd) {
 
 #ifndef DISABLE_VT_SOCKET_LAYER
 void InitializeTCPStack(int stackID) {
-    SetNetDevStackID(globalTracerID, stackID);
+    SetNetDevStackID(globalTracerID, stackID, modelledNicSpeedMbps);
 }
 
 void MarkTCPStackActive() {
@@ -845,15 +849,24 @@ void InitializeVtManagement() {
 
     timeline_id = -1;
 
+    printf ("Extracting env variables !\n");
+    fflush(stdout);
     if (!GetIntEnvVariable("VT_TRACER_ID", &tracer_id)) {
         printf("Missing Tracer ID !\n");
         exit(EXIT_FAILURE);
     }
 
+    printf ("Extracted tracer-id: %d\n", tracer_id);
+    fflush(stdout);
+
     if (!GetIntEnvVariable("VT_EXP_TYPE", &exp_type)) {
         printf("Missing Exp Type\n");
         exit(EXIT_FAILURE);
     }
+
+
+    printf ("Extracted exp-type: %d\n", exp_type);
+    fflush(stdout);
 
     if (exp_type != EXP_CBE && exp_type != EXP_CS) {
         printf("Unknown Exp Type. Exp Type must be one of EXP_CBE or EXP_CS\n");
@@ -873,11 +886,22 @@ void InitializeVtManagement() {
         printf ("Failed to parse cpu cycles per ns. Using default value: %f\n",
             cpuCyclesPerNs);
 
+    printf ("Extracted cpu-cycles-ns: %d\n", cpuCyclesPerNs);
+    fflush(stdout);
+
     #ifndef DISABLE_VT_SOCKET_LAYER
         if (!GetIntEnvVariable("VT_SOCKET_LAYER_IP", (int *)&tracerSrcIpAddr)) {
             printf("Missing Src-IP-addr\n");
             exit(EXIT_FAILURE);
         }
+
+        if (!GetFloatEnvVariable("VT_NIC_SPEED_MBPS", (float *)&modelledNicSpeedMbps)) {
+            printf("Missing nic speed specification. Using default 1Gbps.\n");
+            modelledNicSpeedMbps = 1000.0;
+        }
+
+        printf ("Extracted socket-layer-ip: %d\n", tracerSrcIpAddr);
+        fflush(stdout);
     #endif
 
     if (cpuCyclesPerNs <= 0)

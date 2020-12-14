@@ -50,6 +50,12 @@ s64 SendToVtModule(unsigned int cmd, ioctl_args *arg) {
     || cmd == VT_GET_TRACER_LOOKAHEAD
     || cmd == VT_GET_TRACER_NEAT_LOOKAHEAD)
     return arg->cmd_value;
+
+  if (cmd == VT_THREAD_STACK_WAIT) {
+    if (ret < 0)
+      return ret;
+    return arg->cmd_value;
+  }
   return ret;
 }
 

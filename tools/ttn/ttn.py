@@ -34,8 +34,9 @@ parser.add_argument('--ins_cache_type', type=str,
 parser.add_argument('--ins_cache_miss_cycles', type=int,
                     default=c.DEFAULT_INS_CACHE_MISS_CYCLES,
                     help='Number of cycles spent in the event of a cache miss')
-
-
+parser.add_argument('--nic_speed_mbps', type=float,
+                    default=c.DEFAULT_NIC_SPEED_MBPS,
+                    help='Nic speed mbps')
 parser.add_argument('--data_cache_size_kb', type=int,
                     default=c.DEFAULT_DATA_CACHE_SIZE_KB,
                     help='Data cache-size in KB')
@@ -86,6 +87,7 @@ def main():
         c.DATA_CACHE_LINES_KEY: args.data_cache_lines,
         c.DATA_CACHE_TYPE_KEY: args.data_cache_type,
         c.DATA_CACHE_MISS_CYCLES_KEY: args.data_cache_miss_cycles,
+        c.NIC_SPEED_MBPS_KEY: args.nic_speed_mbps,
         c.CPU_CYCLE_NS_KEY: float(args.cpu_mhz * 1e6)/float(1e9)
     }
     if args.list:

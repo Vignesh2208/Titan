@@ -23,7 +23,7 @@ void (*vtAppFini)(int ThreadID) = NULL;
 void (*vtInitialize)() = NULL;
 void (*vtYieldVTBurst)(int ThreadID, int save, long syscall_number) = NULL;
 void (*vtForceCompleteBurst)(int ThreadID, int save, long syscall_number) = NULL;
-void (*vtTriggerSyscallWait)(int ThreadID, int save) = NULL;
+s64 (*vtTriggerSyscallWait)(int ThreadID, int save) = NULL;
 void (*vtTriggerSyscallFinish)(int ThreadID) = NULL;
 void (*vtSleepForNS)(int ThreadID, s64 duration) = NULL;
 void (*vtGetCurrentTimespec)(struct timespec *tp) = NULL;
@@ -520,4 +520,7 @@ void InitializeVtlLogic() {
     printf("Now Initializing VT-Management \n");
     fflush(stdout);
     vtInitialize();
+
+    printf("Finished Initializing VT-Management \n");
+    fflush(stdout);
 }

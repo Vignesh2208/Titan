@@ -665,7 +665,7 @@ int PerTimelineWorker(void *data) {
                      "worker process for tracers on timeline %d.\n",
                      timeline_id);
             curr_timeline->status = 1;
-            TriggerStackThreadExecutionsOn(timeline_id, STACK_THREAD_EXP_EXIT);
+            TriggerStackThreadExecutionsOn(timeline_id, 0, STACK_THREAD_EXP_EXIT);
             wake_up_interruptible(&progress_call_proc_wqueue);
             return 0;
         }
@@ -705,8 +705,8 @@ int PerTimelineWorker(void *data) {
         }
 
         UpdateAllTracersVirtualTime(timeline_id);
-        WakeUpProcessesWaitingOnSyscalls(timeline_id);
-        TriggerStackThreadExecutionsOn(timeline_id, STACK_THREAD_CONTINUE);
+        WakeUpProcessesWaitingOnSyscalls(timeline_id, curr_timeline->nxt_round_burst_length);
+        TriggerStackThreadExecutionsOn(timeline_id,  curr_timeline->nxt_round_burst_length, STACK_THREAD_CONTINUE);
         PDEBUG_V("PerTimelineWorker: Finished round for timeline %d\n",
                 timeline_id);
         /* when the first task has started running, signal you are done working,
@@ -831,7 +831,7 @@ void PruneTracerQueue(tracer * curr_tracer, int is_schedule_queue){
                 PopScheduleList(curr_tracer);
 
             // Inform any associated stack threads for this pid that the process has exited
-            TriggerAllStackThreadExecutions(curr_tracer, STACK_THREAD_PROCESS_EXIT, curr_elem->pid); 
+            TriggerAllStackThreadExecutions(curr_tracer, 0, STACK_THREAD_PROCESS_EXIT, curr_elem->pid); 
 
             PutTracerStructWrite(curr_tracer);
             GetTracerStructRead(curr_tracer);

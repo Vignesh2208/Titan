@@ -1265,7 +1265,7 @@ int HandleVtSetEat(unsigned long arg) {
         return -EFAULT;
     }
 
-    if (api_info_tmp.return_value > curr_tracer->earliest_arrival_time)
+    //if (api_info_tmp.return_value > curr_tracer->earliest_arrival_time)
       curr_tracer->earliest_arrival_time = api_info_tmp.return_value;
     return 0;
 
@@ -1523,7 +1523,8 @@ int HandleVtGetTracerLookahead(unsigned long arg, int ignore_eat_anchors) {
     }
 
     if (minStackSendRtxTime > 0 &&
-        minStackSendRtxTime >= curr_tracer->curr_virtual_time)
+        minStackSendRtxTime >= curr_tracer->curr_virtual_time &&
+        min_tracer_lookahead > minStackSendRtxTime)
       min_tracer_lookahead = minStackSendRtxTime;
 
     api_info_tmp.return_value = min_tracer_lookahead;
@@ -1676,6 +1677,7 @@ int HandleVtMarkStackInActive(unsigned long arg) {
   curr_stack->exit_status = 0;
   curr_stack->stack_thread_waiting = 0;
   curr_stack->stack_rtx_send_time = 0;
+  curr_stack->stack_return_tslice_quanta = 0;
   llist_append(&curr_tracer->process_tcp_stacks, curr_stack);
   return 0;
 }
@@ -1828,6 +1830,9 @@ int HandleVtThreadStackWait(unsigned long arg, int finish) {
         curr_stack->stack_thread_waiting == 0 || curr_stack->exit_status > 0);
       PDEBUG_I("VT_THREAD_STACK_WAIT: Tracer: %d, Stack-Thread: %d Resuming!\n",
         tracer_id, stack_id);
+
+      api_info_tmp.return_value = curr_stack->stack_return_tslice_quanta;
+      BUG_ON(copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api)));
       return -1 * curr_stack->exit_status;
     }
     head = head->next;    
