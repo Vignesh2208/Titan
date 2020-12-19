@@ -5,6 +5,7 @@
 #include "wait.h"
 #include "timer.h"
 #include "tcp.h"
+#include "../vtl_logic.h"
 
 static int sock_amount = 0;
 static int fd = 4097;
@@ -363,8 +364,8 @@ int _connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
         print_err("Connect: could not find socket (fd %u)\n", sockfd);
         return -EBADF;
     }
-    printf ("Connecting through vt-tcp !\n");
-    fflush(stdout);
+    //printf ("Connecting through vt-tcp !\n");
+    //fflush(stdout);
     SocketWrAcquire(sock);
     IncSocketRef(sock);
 
@@ -397,8 +398,8 @@ int _write(int sockfd, const void *buf, const unsigned int count, int * did_bloc
         return -EBADF;
     }
 
-    printf ("send through vt-tcp !\n");
-    fflush(stdout);
+    //printf ("send through vt-tcp !\n");
+    //fflush(stdout);
 
     SocketWrAcquire(sock);
     IncSocketRef(sock);
@@ -420,8 +421,8 @@ int _read(int sockfd, void *buf, const unsigned int count, int * did_block) {
         return -EBADF;
     }
 
-    printf ("recv through vt-tcp !\n");
-    fflush(stdout);
+    //printf ("recv through vt-tcp !\n");
+    //fflush(stdout);
 
     SocketWrAcquire(sock);
     IncSocketRef(sock);
@@ -442,8 +443,8 @@ int _close(int sockfd) {
         return -EBADF;
     }
 
-    printf ("close through vt-tcp !\n");
-    fflush(stdout);
+    //printf ("close through vt-tcp !\n");
+    //fflush(stdout);
 
     SocketWrAcquire(sock);
     IncSocketRef(sock);
@@ -455,41 +456,67 @@ int _close(int sockfd) {
 }
 
 //! Polling on a list of socket file descriptors. No timeout support
-int _poll(struct pollfd fds[], nfds_t nfds) {
+int _poll(struct pollfd fds[], nfds_t nfds, int timeout_ms) {
     
     int polled = 0;
+    int timeout = 0;
 
-    for (int i = 0; i < nfds; i++) {
-        struct vsocket *sock;
-        struct pollfd *poll = &fds[i];
-        if ((sock = GetSocket(poll->fd)) == NULL) {
-            print_err("Poll: could not find socket (fd %u)\n", poll->fd);
-            poll->revents |= POLLNVAL;
-            return -1;
-        }
-        SocketRdAcquire(sock);
-        IncSocketRef(sock);
-        poll->revents = 0;
-        if ((poll->events & POLLIN) || (poll->events & POLLRDNORM)) {
-            poll->revents = sock->sk->poll_events & (poll->events | POLLHUP | POLLERR | POLLNVAL);
-        }
+    s64 start_time = TimerGetTick();
+    if (timeout_ms == 0)
+        timeout = 1;
 
-        if ((poll->events & POLLOUT) || (poll->events & POLLWRNORM)) {
-            if (sock->rcv_buf_size - tcp_sk(sock->sk)->rcv_queue_size > 0) {
-                // there is some space left in write buffer
-                poll->revents |= ((POLLOUT | POLLWRNORM) & (poll->events));
+    do {
+        polled = 0;
+        for (int i = 0; i < nfds; i++) {
+            struct vsocket *sock;
+            struct pollfd *poll = &fds[i];
+            if ((sock = GetSocket(poll->fd)) == NULL) {
+                print_err("Poll: could not find socket (fd %u)\n", poll->fd);
+                poll->revents |= POLLNVAL;
+                return -1;
             }
-            if (sock->sk->poll_events & POLLOUT) {
-                    poll->revents |= sock->sk->poll_events;
+            SocketRdAcquire(sock);
+            IncSocketRef(sock);
+            poll->revents = 0;
+            if ((poll->events & POLLIN) || (poll->events & POLLRDNORM)) {
+                poll->revents = sock->sk->poll_events & (poll->events | POLLHUP | POLLERR | POLLNVAL);
+            }
+
+            if ((poll->events & POLLOUT) || (poll->events & POLLWRNORM)) {
+                if (sock->rcv_buf_size - tcp_sk(sock->sk)->rcv_queue_size > 0) {
+                    // there is some space left in write buffer
+                    poll->revents |= ((POLLOUT | POLLWRNORM) & (poll->events));
+                }
+                if (sock->sk->poll_events & POLLOUT) {
+                        poll->revents |= sock->sk->poll_events;
+                }
+            }
+            DecSocketRef(sock);
+            SocketRelease(sock);
+
+            if (poll->revents > 0) {
+                polled++;
             }
         }
-        DecSocketRef(sock);
-        SocketRelease(sock);
 
-        if (poll->revents > 0) {
-            polled++;
+        if (!polled && !timeout) {
+            if (timeout_ms > 0) {
+                if (TimerGetTick() - start_time >= timeout_ms * NSEC_PER_MS)
+                    timeout = 1;
+            } else if (timeout_ms < 0)
+                timeout = 0;
+
+            if (!timeout) {
+                printf ("Poll registering syscall-wait !\n");
+                fflush(stdout);
+                RegisterSysCallWait();
+            }
         }
-    }
+
+    } while (polled == 0 && timeout == 0);
+    
+    if (timeout && !polled)
+        return -1;
 
     return polled;
 }

@@ -144,7 +144,7 @@ extern int (*_vconnect)(int sockfd, const struct sockaddr *addr, socklen_t addrl
 extern int (*_vwrite)(int sockfd, const void *buf, const unsigned int count, int *did_block);
 extern int (*_vread)(int sockfd, void *buf, const unsigned int count, int *did_block);
 extern int (*_vclose)(int sockfd);
-extern int (*_vpoll)(struct pollfd fds[], nfds_t nfds);
+extern int (*_vpoll)(struct pollfd fds[], nfds_t nfds, int timeout_ms);
 extern int (*_vgetsockopt)(int fd, int level, int optname, void *optval, socklen_t *optlen);
 extern int (*_vsetsockopt)(int sockfd, int level, int option_name,
                     const void *option_value, socklen_t option_len);

@@ -87,6 +87,11 @@ int IsNetDevInCallback() {
 void SetNetDevCurrTsliceQuantaUs(long quantaUs) {
     //printf ("Setting current tslice US to %ld\n", quantaUs);
     //printf ("Netdev QLen = %d\n", netdev.netDevPktQueueSize);
+
+    if (quantaUs == 0) {
+        printf ("Setting quantaUS to zero !\n");
+        fflush(stdout);
+    }
     netdev.currTsliceQuantaUs += quantaUs;
 }
 
@@ -134,6 +139,9 @@ int NetDevTransmit(struct sk_buff *skb, struct sockaddr_in * skaddr,
     new_pkt->payload_len = payload_len;
     netdev.netDevPktQueueSize ++;
 
+    //printf ("Queuing new pkt of length: %d\n", new_pkt->len);
+    //fflush(stdout);
+
     netdev.in_callback = old_state;
     return skb->len;
 }
@@ -151,6 +159,8 @@ void NetDevSendQueuedPackets() {
     netdev.in_callback = 1;
     assert(netdev.initialized == 1);
     s64 currTime = GetCurrentTimeTracer(GetStackTracerID());
+
+    
     list_for_each_safe(item, tmp, &netdev_pkt_queue) {
         pkt = list_entry(item, struct netdev_pkt, list);
 
@@ -159,14 +169,19 @@ void NetDevSendQueuedPackets() {
         } else {
             break;
         }
+
+        //printf ("Attempting to process any queued pkts: availQuantaUs: %f, currPktQuanta: %f, Pkt-len = %d !\n",
+        //    availQuantaUs, currPktUsedQuantaUs, pkt->len);
+        //fflush(stdout);
         numQueuedPkts ++;
 
         if (pkt && availQuantaUs - currPktUsedQuantaUs > 0) {
             availQuantaUs -= currPktUsedQuantaUs;
             usedPktQuantaUs += currPktUsedQuantaUs;
 
-            fflush(stdout);
-            SetPktSendTimeAPI(pkt->payload_hash, pkt->payload_len, 
+            //printf ("Sending new pkt !\n");
+            //fflush(stdout);
+            SetPktSendTimeAPI(netdev.tracerID, pkt->payload_hash, pkt->payload_len, 
                 currTime + ((int)usedPktQuantaUs)* NSEC_PER_US);
             if ((ret = sendto (netdev.raw_sock_fd, (char *)pkt->data, pkt->len, 0, 
                 &pkt->sin, sizeof (struct sockaddr_in)) < 0)) {
@@ -264,7 +279,11 @@ void * StackThread(void *arg) {
     int exiting = 0;
     int num_rounds = 0;
     while (1) {
+        //printf ("Entering register stack thread wait !\n");
+        //fflush(stdout);
         ret = RegisterStackThreadWait(netdev.tracerID, netdev.stackID);
+        //printf ("Resuming from register stack thread wait: %d!\n", ret);
+        //fflush(stdout);
         if (exiting || netdev.exiting || ret == NETDEV_STATUS_PROCESS_EXITING) {
             if (!exiting) {
                 printf ("Detected process exit for stack thread with id: %d!\n", netdev.stackID);
@@ -295,6 +314,7 @@ void * StackThread(void *arg) {
             if (!currQuantaUs)
                 currQuantaUs = 1;
             SetNetDevCurrTsliceQuantaUs(currQuantaUs);
+            SetNetDevCurrTsliceQuantaUs(1);
             NetDevRxLoop();
         }
     }

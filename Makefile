@@ -59,7 +59,7 @@ PHONY += build
 build: build_api build_intercept build_core
 
 PHONY += install
-install: install_api install_intercept install_core install_tracer install_scripts
+install: install_api install_intercept install_core install_tracer
 
 PHONY += build_intercept
 build_intercept: build_api

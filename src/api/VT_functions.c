@@ -124,14 +124,14 @@ int AddToTracerSchQueue(int tracer_id) {
   return SendToVtModule(VT_ADD_TO_SQ, &arg);
 }
 
-int SetPktSendTimeAPI(int payload_hash, int payload_len, s64 send_tstamp) {
+int SetPktSendTimeAPI(int tracer_id, int payload_hash, int payload_len, s64 send_tstamp) {
   if (payload_hash < 0 || send_tstamp <= 0) {
   printf("SetPktSendTimeAPI: incorrect parameters\n");
   return -1;
   }
   ioctl_args arg;
   InitIoctlArg(&arg);
-  sprintf(arg.cmd_buf, "%d,%d,", payload_hash, payload_len);
+  sprintf(arg.cmd_buf, "%d,%d,%d,", tracer_id, payload_hash, payload_len);
   arg.cmd_value = send_tstamp;
   //printf("Invoking VT_SET_PACKET_SEND_TIME for hash: %d, tstamp: %llu\n", payload_hash, send_tstamp); 
   return SendToVtModule(VT_SET_PACKET_SEND_TIME, &arg);

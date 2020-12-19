@@ -84,10 +84,13 @@ void SetLoopLookahead(int initValue, int finalValue, int stepValue, int loopDept
     //printf("SetLoopLookahead, return address: %p, currBBID: %llu, currLoopID: %llu\n",
     //    __builtin_return_address(0), currBBID, currLoopID);
     
-    /*printf("Called SetLoopLookahead: init: %d, final: %d, step: %d, loopDepth: %d\n",
-        initValue, finalValue, stepValue, loopDepth);
+    int origLoopDepth = loopDepth;
+
     if (!vtInitializationComplete)
         return;
+
+    //printf("Init called SetLoopLookahead: init: %d, final: %d, step: %d, loopDepth: %d\n",
+    //    initValue, finalValue, stepValue, origLoopDepth);
 
     ThreadInfo * currThreadInfo;
     int ThreadID;
@@ -119,7 +122,7 @@ void SetLoopLookahead(int initValue, int finalValue, int stepValue, int loopDept
         }
 	
     } else if (loopDepth > 0 && loopDepth < MAX_LOOP_DEPTH) {	
-        for (int i = 0; i < loopDepth; i++) {
+        /*for (int i = 0; i < loopDepth; i++) {
             if (!currThreadInfo->loopRunTime[i].entered || 
                 !currThreadInfo->loopRunTime[i].numIterations) {
                 cumulativeIterations = 1;
@@ -129,21 +132,34 @@ void SetLoopLookahead(int initValue, int finalValue, int stepValue, int loopDept
                 cumulativeIterations = cumulativeIterations * currThreadInfo->loopRunTime[i].numIterations;
             }
         }
+
 	    numIterations = cumulativeIterations * numIterations;
+        */
+
+       numIterations = currThreadInfo->loopRunTime[loopDepth-1].numIterations * numIterations;
     }
 
     if (loopDepth < 0 || loopDepth >= MAX_LOOP_DEPTH || 
         !currThreadInfo->loopRunTime[loopDepth].entered) {
-    	s64 loop_lookahead = GetLoopLookAhead((long)currLoopID)*numIterations;
-    	SetLookahead(loop_lookahead + GetCurrentTime(), LOOKAHEAD_ANCHOR_NONE);
+    	s64 loop_lookahead_ns = GetLoopLookAhead((long)currLoopID)*numIterations;
+        loop_lookahead_ns = (s64)((loop_lookahead_ns)/cpuCyclesPerNs);
+
+        printf("Called SetLoopLookahead: init: %d, final: %d, step: %d, "
+               "loopDepth: %d, cumulative-num-iterations: %d, look-ahead-ns: %lld\n",
+               initValue, finalValue, stepValue, origLoopDepth, numIterations,
+               loop_lookahead_ns);
+
+        if (loop_lookahead_ns)
+    	    SetLookahead(loop_lookahead_ns + GetCurrentTime(), LOOKAHEAD_ANCHOR_NONE);
 
     }
 
     if (loopDepth >= 0 && loopDepth < MAX_LOOP_DEPTH && 
         !currThreadInfo->loopRunTime[loopDepth].entered) {
     	currThreadInfo->loopRunTime[loopDepth].entered = 1;
-    	currThreadInfo->loopRunTime[loopDepth].numIterations = origNumIterations;
-    }*/
+    	//currThreadInfo->loopRunTime[loopDepth].numIterations = origNumIterations;
+        currThreadInfo->loopRunTime[loopDepth].numIterations = numIterations;
+    }
 
 }
 
@@ -252,7 +268,7 @@ void GetCurrentTimeval(struct timeval * tv) {
 #ifndef DISABLE_LOOKAHEAD
 //! Sets packet send time for a specific packet
 void SetPktSendTime(int payloadHash, int payloadLen, s64 pktSendTimeStamp) {
-    SetPktSendTimeAPI(payloadHash, payloadLen, pktSendTimeStamp);
+    SetPktSendTimeAPI(globalTracerID, payloadHash, payloadLen, pktSendTimeStamp);
  
 }
 
@@ -575,6 +591,10 @@ void AppFini(int ThreadID) {
     printf("Finishing Process: %d\n", ThreadID);
     fflush(stdout);
 
+    #ifndef DISABLE_VT_SOCKET_LAYER
+    MarkNetDevExiting();
+    #endif
+
     if (!expStopping) FinishBurstAndDiscard();  
 
     while(llist_size(&thread_info_list)) {
@@ -582,8 +602,8 @@ void AppFini(int ThreadID) {
        if (currThreadInfo) {
            CleanupThreadInfo(currThreadInfo);
            hmap_remove_abs(&thread_info_map, currThreadInfo->pid);
-       if (currThreadInfo->pid == ThreadID)
-            currThreadInfo->in_callback = FALSE;
+            if (currThreadInfo->pid == ThreadID)
+                currThreadInfo->in_callback = FALSE;
             free(currThreadInfo);
        }
     }
@@ -593,9 +613,10 @@ void AppFini(int ThreadID) {
 
     #ifndef DISABLE_VT_SOCKET_LAYER
     printf ("Waiting for stack-thread to exit ...\n");
-    MarkNetDevExiting();
+    fflush(stdout);
     pthread_join(stackThread, NULL);
     printf ("Exiting ...\n");
+    fflush(stdout);
     #endif
 
     #ifndef DISABLE_LOOKAHEAD
@@ -667,6 +688,8 @@ void handleVtCallback() {
         #endif
 
         #ifndef DISABLE_VT_SOCKET_LAYER
+        double quantaNs = (double)specifiedBurstCycles / (double)cpuCyclesPerNs;
+        SetNetDevCurrTsliceQuantaUs((long)quantaNs/NSEC_PER_US);
         RunTCPStackRxLoop();
         #endif
         
@@ -886,7 +909,7 @@ void InitializeVtManagement() {
         printf ("Failed to parse cpu cycles per ns. Using default value: %f\n",
             cpuCyclesPerNs);
 
-    printf ("Extracted cpu-cycles-ns: %d\n", cpuCyclesPerNs);
+    printf ("Extracted cpu-cycles-ns: %f\n", cpuCyclesPerNs);
     fflush(stdout);
 
     #ifndef DISABLE_VT_SOCKET_LAYER

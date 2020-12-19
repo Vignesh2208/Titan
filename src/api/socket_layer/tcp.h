@@ -23,7 +23,7 @@
 #define TCP_OPT_MSS 2
 
 
-#define TCP_2MSL 600
+#define TCP_2MSL 60
 #define TCP_USER_TIMEOUT 180000
 
 #define tcp_sk(sk) ((struct tcp_sock *)sk)

@@ -831,8 +831,8 @@ void TriggerAllStackThreadExecutions(tracer * curr_tracer, s64 curr_tslice_quant
         if (curr_stack->stack_thread_waiting) {
             curr_stack->stack_thread_waiting = 0;
             curr_stack->exit_status = exit_status;
-            PDEBUG_I("Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Triggering Stack Thread !\n",
-                     curr_tracer->tracer_id, curr_stack->id);
+            //PDEBUG_I("Timeline Worker: Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Triggering Stack Thread. Exit status = %d !\n",
+            //         curr_tracer->tracer_id, curr_stack->id, exit_status);
             curr_stack->stack_return_tslice_quanta = curr_tslice_quanta;
             wake_up_interruptible(&curr_tracer->stack_w_queue);
             
@@ -840,12 +840,12 @@ void TriggerAllStackThreadExecutions(tracer * curr_tracer, s64 curr_tslice_quant
 
         
         if (curr_stack->exit_status != STACK_THREAD_EXP_EXIT) {
-            PDEBUG_I("Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Entering Wait !\n",
-                    curr_tracer->tracer_id, curr_stack->id);
+            //PDEBUG_I("Timeline Worker: Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Entering Wait !\n",
+            //        curr_tracer->tracer_id, curr_stack->id);
             wait_event_interruptible(curr_tracer->stack_w_queue,
                 curr_stack->stack_thread_waiting == 1);
-            PDEBUG_I("Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Resuming from Wait !\n",
-                    curr_tracer->tracer_id, curr_stack->id);
+            //PDEBUG_I("Timeline Worker: Trigger stack thread exec: Tracer: %d, Stack-Thread: %d Resuming from Wait !\n",
+            //        curr_tracer->tracer_id, curr_stack->id);
         } else {
             // this stack-thread is exiting permanently
             curr_stack->active = 0; 

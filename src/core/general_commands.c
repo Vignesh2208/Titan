@@ -1058,6 +1058,8 @@ int HandleVtSetPacketSendTime(unsigned long arg, struct dilated_task_struct * di
     int num_integer_args;
     int api_integer_args[MAX_API_ARGUMENT_SIZE];
     int payload_hash, payload_len;
+    int tracer_id;
+    tracer * curr_tracer;
 
     memset(api_info_tmp.api_argument, 0, sizeof(char) * MAX_API_ARGUMENT_SIZE);
     memset(api_integer_args, 0, sizeof(int) * MAX_API_ARGUMENT_SIZE);
@@ -1076,11 +1078,6 @@ int HandleVtSetPacketSendTime(unsigned long arg, struct dilated_task_struct * di
         return 0;
     }
 
-    if (!dilated_task) {
-        PDEBUG_I("VT_SET_PACKET_SEND_TIME: No associated dilated task !\n");
-        return -EFAULT;
-    }
-
     api_info = (invoked_api *)arg;
     if (!api_info) return -EFAULT;
     if (copy_from_user(&api_info_tmp, api_info, sizeof(invoked_api))) {
@@ -1089,17 +1086,25 @@ int HandleVtSetPacketSendTime(unsigned long arg, struct dilated_task_struct * di
     num_integer_args = ConvertStringToArray(
       api_info_tmp.api_argument, api_integer_args, MAX_API_ARGUMENT_SIZE);
 
-    if (num_integer_args <= 1) {
+    if (num_integer_args <= 2) {
         PDEBUG_I("VT_SET_PACKET_SEND_TIME: Not enough arguments !");
         return -EFAULT;
     }
     
+    tracer_id = api_integer_args[0];
+    payload_hash = api_integer_args[1];
+    payload_len = api_integer_args[2];
+
+    curr_tracer = hmap_get_abs(&get_tracer_by_id, tracer_id);
+    if (!curr_tracer) {
+      PDEBUG_I("VT_SET_PACKET_SEND_TIME: Tracer : %d, not registered\n", tracer_id);
+      return -EFAULT;
+    }
     
-    payload_hash = api_integer_args[0];
-    payload_len = api_integer_args[1];
+    
     //PDEBUG_I("VT_SET_PACKET_SEND_TIME: Entered for payload_hash: %d, payload_len = %d, at time: %llu\n",
     //    payload_hash, payload_len, dilated_task->associated_tracer->curr_virtual_time);
-    AddToPktInfoQueue(dilated_task->associated_tracer, payload_hash, payload_len, api_info_tmp.return_value);
+    AddToPktInfoQueue(curr_tracer, payload_hash, payload_len, api_info_tmp.return_value);
     
     return 0;
 
@@ -1265,7 +1270,7 @@ int HandleVtSetEat(unsigned long arg) {
         return -EFAULT;
     }
 
-    //if (api_info_tmp.return_value > curr_tracer->earliest_arrival_time)
+    if (api_info_tmp.return_value > curr_tracer->earliest_arrival_time)
       curr_tracer->earliest_arrival_time = api_info_tmp.return_value;
     return 0;
 
@@ -1410,10 +1415,12 @@ int HandleVtSetProcessLookahead(unsigned long arg, struct dilated_task_struct * 
     }*/
 
     if (new_process_lookahead >= curr_process_lookahead) {
-	      /*PDEBUG_A("VT_SET_PROCESS_LOOKAHEAD: Tracer: %d, New: %llu, Curr: %llu\n", 
-          dilated_task->associated_tracer_id,
-          new_process_lookahead,
-          curr_process_lookahead);*/
+
+        /*if (lookahead_anchor_type == LOOKAHEAD_ANCHOR_NONE)
+          PDEBUG_A("VT_SET_PROCESS_LOOKAHEAD: Tracer: %d, New: %llu, Curr: %llu\n", 
+            dilated_task->associated_tracer_id,
+            new_process_lookahead,
+            curr_process_lookahead);*/
         dilated_task->bulk_lookahead_expiry_time = bulk_lookahead_expiry_time;
         dilated_task->lookahead_anchor_type = lookahead_anchor_type;
     }
@@ -1524,8 +1531,12 @@ int HandleVtGetTracerLookahead(unsigned long arg, int ignore_eat_anchors) {
 
     if (minStackSendRtxTime > 0 &&
         minStackSendRtxTime >= curr_tracer->curr_virtual_time &&
-        min_tracer_lookahead > minStackSendRtxTime)
+        ((min_tracer_lookahead == 0) ||
+        min_tracer_lookahead > minStackSendRtxTime))
       min_tracer_lookahead = minStackSendRtxTime;
+
+    if (min_tracer_lookahead > 0 && min_tracer_lookahead < curr_tracer->curr_virtual_time)
+      min_tracer_lookahead = curr_tracer->curr_virtual_time;
 
     api_info_tmp.return_value = min_tracer_lookahead;
     BUG_ON(copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api)));
@@ -1810,8 +1821,8 @@ int HandleVtThreadStackWait(unsigned long arg, int finish) {
   while (head != NULL) {
     curr_stack = (process_tcp_stack *)head->item;
     if (curr_stack && curr_stack->id == stack_id) {
-      PDEBUG_I("VT_THREAD_STACK_WAIT: Tracer: %d, Stack-Thread: %d Entering Wait !\n",
-        tracer_id, stack_id);
+      //PDEBUG_I("VT_THREAD_STACK_WAIT: Tracer: %d, Stack-Thread: %d Entering Wait !\n",
+      //  tracer_id, stack_id);
       curr_stack->stack_thread_waiting = 1;
       if (finish) {
         // Handling VT_STACK_THREAD_FINISH
@@ -1828,8 +1839,8 @@ int HandleVtThreadStackWait(unsigned long arg, int finish) {
 
       wait_event_interruptible(curr_tracer->stack_w_queue,
         curr_stack->stack_thread_waiting == 0 || curr_stack->exit_status > 0);
-      PDEBUG_I("VT_THREAD_STACK_WAIT: Tracer: %d, Stack-Thread: %d Resuming!\n",
-        tracer_id, stack_id);
+      //PDEBUG_I("VT_THREAD_STACK_WAIT: Tracer: %d, Stack-Thread: %d Resuming!\n",
+      //  tracer_id, stack_id);
 
       api_info_tmp.return_value = curr_stack->stack_return_tslice_quanta;
       BUG_ON(copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api)));
@@ -1865,7 +1876,7 @@ int HandleVtUpdateStackRtxSendTime(unsigned long arg) {
           "VT_UPDATE_STACK_RTX_SEND_TIME: Operation cannot be performed when experiment is "
           "not initialized !\n");
       return -EFAULT;
-        }
+  }
 
 
 

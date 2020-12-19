@@ -70,7 +70,7 @@ int (*_vconnect)(int sockfd, const struct sockaddr *addr, socklen_t addrlen) = N
 int (*_vwrite)(int sockfd, const void *buf, const unsigned int count, int *did_block) = NULL;
 int (*_vread)(int sockfd, void *buf, const unsigned int count, int *did_block) = NULL;
 int (*_vclose)(int sockfd) = NULL;
-int (*_vpoll)(struct pollfd fds[], nfds_t nfds) = NULL;
+int (*_vpoll)(struct pollfd fds[], nfds_t nfds, int timeout_ms) = NULL;
 int (*_vgetsockopt)(int fd, int level, int optname, void *optval, socklen_t *optlen) = NULL;
 int (*_vsetsockopt)(int sockfd, int level, int option_name,
                     const void *option_value, socklen_t option_len) = NULL;

@@ -125,6 +125,7 @@ int TcpDataQueue(struct tcp_sock *tsk, struct tcphdr *th, struct sk_buff *skb) {
         tsk->rcv_queue_size += skb->dlen;
         tsk->chk_pt_rcv_queue_size += skb->dlen;
 
+        //printf ("There is data to read for socket: %d\n", sock->fd);
         // There is new data for user to read
         sk->poll_events |= (POLLIN | POLLPRI | POLLRDNORM | POLLRDBAND);
         tsk->sk.ops->recv_notify(&tsk->sk);

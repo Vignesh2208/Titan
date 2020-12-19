@@ -78,6 +78,7 @@ s64 GetCurrentTime();
 void HandleVTExpEnd(int ThreadID);
 
 s64 TriggerSyscallWait(int ThreadID, int save);
+void TriggerSyscallFinish(int ThreadID);
 
 /*** For Socket Handling ***/
 void AddSocket(int ThreadID, int sockFD, int sockFdProtoType, int isNonBlocking);

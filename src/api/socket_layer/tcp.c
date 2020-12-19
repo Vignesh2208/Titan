@@ -93,8 +93,9 @@ out:
 void TcpClearListenQueue(struct tcp_sock *tsk) {
 	struct tcp_sock *ltsk;
     
-    if (ListEmpty(&tsk->listen_queue))
+    if (ListEmpty(&tsk->listen_queue)) {
         return;
+    }
 
     while (!ListEmpty(&tsk->listen_queue)) {
 		ltsk = list_first_entry(&tsk->listen_queue, struct tcp_sock, list);
@@ -151,10 +152,14 @@ void TCPIn(struct sk_buff *skb) {
     TcpInitSegment(th, iph, skb);
     sk = InetLookup(skb, iph->saddr, iph->daddr, th->sport, th->dport);
     if (sk == NULL) {
-        print_err("No TCP socket for sport %d dport %d\n",
-                  th->sport, th->dport);
+        printf("No TCP socket for sport %d dport %d. Dropping !\n",
+                th->sport, th->dport);
+        fflush(stdout);
         FreeSkb(skb);
         return;
+    } else {
+        //printf ("Rx packet for socket: %d\n", sk->sock->fd);
+        //fflush(stdout);
     }
 
     SocketWrAcquire(sk->sock);
@@ -225,7 +230,8 @@ static uint16_t GeneratePort() {
     /* TODO:: Generate a proper port */
     static int port = 40000;
     //pthread_rwlock_wrlock(&tcplock);
-    int copy =  ++port + (TimerGetTick() % 10000);
+    //int copy =  ++port + (TimerGetTick() % 10000);
+    int copy = ++port;
     //pthread_rwlock_unlock(&tcplock);
 
     return copy;
@@ -249,6 +255,7 @@ int TcpV4Connect(struct vsock *sk, const struct sockaddr *addr, int addrlen, int
     sk->sport = GeneratePort();
     sk->daddr = ntohl(daddr);
     sk->saddr = tcplayer.src_ip_addr; 
+    printf ("Connecting .. Socket: %d, src-port: %d\n", sk->sock->fd, sk->sport);
     // this sets all the tcb values and sends a syn
     return TcpConnect(sk);
 }
@@ -357,6 +364,7 @@ int TcpClose(struct vsock *sk) {
     switch (sk->state) {
     /* Respond with "error:  connection closing". */
     case TCP_CLOSE:
+        return TcpDone(sk, 0);
     case TCP_CLOSING:
     case TCP_LAST_ACK:
     case TCP_TIME_WAIT:
@@ -368,7 +376,6 @@ int TcpClose(struct vsock *sk) {
         TcpClearListenQueue(tcpsk(sk));
     case TCP_SYN_SENT:
     case TCP_SYN_RECEIVED:
-        printf ("ABORTING tcp connection! state: %d, fd = %d\n", sk->state, sk->sock->fd);
         return TcpDone(sk, -ECONNABORTED);
     case TCP_ESTABLISHED:
         /* Queue this until all preceding SENDs have been segmentized, then
@@ -534,9 +541,10 @@ void TcpRtt(struct tcp_sock *tsk) {
         return;
     }
 
-    s64 rtt_ns = TimerGetTick() - (tsk->retransmit->expires - (tsk->rto * NS_PER_MS));
+    //s64 rtt_ns = TimerGetTick() - (tsk->retransmit->expires - (tsk->rto * NS_PER_MS));
 
-    printf ("TCP rtt_ns = %llu\n", rtt_ns);
+    //printf ("TCP rtt_ns = %llu\n", rtt_ns);
+    
     /*
     // tsk->retransmit->expires - tsk->rto represents timer_tick at which the retransmit
     // timer was started i.e time right after a segment is sent.

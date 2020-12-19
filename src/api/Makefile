@@ -44,6 +44,7 @@ build_api:
 	${API_DIR}/socket_layer/utils.c \
 	${API_DIR}/socket_layer/skbuff.c \
 	${API_DIR}/socket_layer/timer.c \
+	${API_DIR}/mpi_lib/vtmpi.c \
 	$(BUILD_CONFIG_FLAGS)
 
 	@$(CC) -g -w -shared -o ${API_DIR}/build/lib/libvtllogic.so \
@@ -64,6 +65,7 @@ build_api:
 	${API_DIR}/utils.o \
 	${API_DIR}/skbuff.o \
 	${API_DIR}/timer.o \
+	${API_DIR}/vtmpi.o \
 	-lpthread	
 
 	@$(CHMOD) 777 ${API_DIR}/build/lib/libvtllogic.so
@@ -75,6 +77,7 @@ install:
 	@$(CP) ${API_DIR}/build/lib/libvtllogic.so /usr/lib > /dev/null
 	@$(CP) ${API_DIR}/build/lib/libvtapi.so /usr/lib > /dev/null
 	@$(CP) ${API_DIR}/VT_functions.h /usr/local/include > /dev/null
+	@$(CP) ${API_DIR}/mpi_lib/vtmpi.h /usr/local/include > /dev/null
 	@$(CP) ${API_DIR}/utility_functions.h /usr/local/include > /dev/null
 
 .PHONY: clean
@@ -85,5 +88,6 @@ clean:
 	@$(RM) -f /usr/lib/libvtllogic.so > /dev/null
 	@$(RM) -f /usr/local/include/VT_functions.h > /dev/null
 	@$(RM) -f /usr/local/include/utility_functions.h > /dev/null
+	@$(RM) -f /usr/local/include/vtmpi.h > /dev/null
 	@$(RM) -rf ${API_DIR}/build
 	@$(RM) -f *.o

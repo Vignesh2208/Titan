@@ -126,7 +126,7 @@ s64 MarkBurstComplete(int signal_syscall_finish);
 s64 TriggerSyscallWaitAPI(void);
 
 //! Sets the packet send time before the packet is sent out
-int SetPktSendTimeAPI(int payload_hash, int payload_len, s64 send_tstamp);
+int SetPktSendTimeAPI(int tracer_id, int payload_hash, int payload_len, s64 send_tstamp);
 
 
 //! Gets the packet send time given its hash. This API could be used by a network

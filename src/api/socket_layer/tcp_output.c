@@ -627,8 +627,8 @@ int TcpQueueFin(struct vsock *sk) {
     th->fin = 1;
     th->ack = 1;
 
-    printf ("Queuing fin \n");
-    fflush(stdout);
+    //printf ("Queuing fin \n");
+    //fflush(stdout);
 
     tcpsock_dbg("Queueing fin", sk);
     

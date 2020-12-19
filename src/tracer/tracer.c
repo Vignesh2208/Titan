@@ -35,6 +35,8 @@
 
 #define CPU_CYCLE_NS_KEY "CPU_CYCLES_NS"
 #define DEFAULT_CPU_CYCLES_NS 1.0
+#define NIC_SPEED_MBPS_KEY "NIC_SPEED_MBPS"
+#define DEFAULT_NIC_SPEED_MBPS 1000
 
 
 #ifndef DISABLE_INSN_CACHE_SIM
@@ -42,7 +44,7 @@
 #define INS_CACHE_LINES_KEY "INS_CACHE_LINES"
 #define INS_CACHE_TYPE_KEY "INS_CACHE_TYPE"
 #define INS_CACHE_MISS_CYCLES_KEY "INS_CACHE_MISS_CYCLES"
-#define NIC_SPEED_MBPS_KEY "NIC_SPEED_MBPS"
+
 #define DEFAULT_INS_CACHE_SIZE_KB 32
 #define DEFAULT_INS_CACHE_LINES 32
 #define DEFAULT_INS_CACHE_TYPE "DMA"
@@ -58,7 +60,6 @@
 #define DEFAULT_DATA_CACHE_LINES 32
 #define DEFAULT_DATA_CACHE_TYPE "DMA"
 #define DEFAULT_DATA_CACHE_MISS_CYCLES 100
-#define DEFAULT_NIC_SPEED_MBPS 1000
 #endif
 
 
@@ -240,6 +241,7 @@ int ParseTTNProject(char * project_name) {
     ttn_project_src_dir_json = cJSON_GetObjectItemCaseSensitive(
       ttn_project_params_json, PROJECT_SRC_DIR_KEY);
     #endif
+    
     ttn_project_cpu_cycles_ns = cJSON_GetObjectItemCaseSensitive(
       ttn_project_params_json, CPU_CYCLE_NS_KEY);
 

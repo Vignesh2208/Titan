@@ -90,7 +90,7 @@ int _connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 int _write(int sockfd, const void *buf, const unsigned int count, int *did_block);
 int _read(int sockfd, void *buf, const unsigned int count, int * did_block);
 int _close(int sockfd);
-int _poll(struct pollfd fds[], nfds_t nfds);
+int _poll(struct pollfd fds[], nfds_t nfds, int timeout_ms);
 int _fcntl(int fildes, int cmd, ...);
 int _getsockopt(int fd, int level, int optname, void *optval, socklen_t *optlen);
 int _setsockopt(int sockfd, int level, int option_name,
