@@ -66,7 +66,7 @@ build_api:
 	${API_DIR}/skbuff.o \
 	${API_DIR}/timer.o \
 	${API_DIR}/vtmpi.o \
-	-lpthread	
+	-lpthread -lm
 
 	@$(CHMOD) 777 ${API_DIR}/build/lib/libvtllogic.so
 	@$(CHMOD) +x setup.py

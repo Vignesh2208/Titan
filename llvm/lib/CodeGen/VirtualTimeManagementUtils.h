@@ -64,14 +64,23 @@ namespace llvm {
   class TargetMachineSpecificInfo {
     private:
       MachineSpecificConfig * machineConfig;
+      std::string timingModel;
+      int modelledProcessorRobSize;
+      int modelledProcessorDispatchUnits;
 
     public:
       TargetMachineSpecificInfo(
         std::string MachineArchName,
-        std::string MachineTimingInfoFile) {
+        std::string MachineTimingInfoFile, 
+	std::string timingModel,
+	int modelledProcessorRobSize,
+      	int modelledProcessorDispatchUnits) {
           machineConfig = new MachineSpecificConfig(
             MachineArchName, MachineTimingInfoFile);
           machineConfig->Initialize();
+	this->timingModel = timingModel;
+	this->modelledProcessorRobSize = modelledProcessorRobSize;
+	this->modelledProcessorDispatchUnits = modelledProcessorDispatchUnits;
       };
 
       std::pair<unsigned long, unsigned long> GetMBBCompletionCycles(

@@ -34,32 +34,37 @@
 #endif
 
 #define CPU_CYCLE_NS_KEY "CPU_CYCLES_NS"
+#define TIMING_MODEL_KEY "TIMING_MODEL"
 #define DEFAULT_CPU_CYCLES_NS 1.0
 #define NIC_SPEED_MBPS_KEY "NIC_SPEED_MBPS"
 #define DEFAULT_NIC_SPEED_MBPS 1000
+#define DEFAULT_TIMING_MODEL "EMPIRICAL"
 
 
 #ifndef DISABLE_INSN_CACHE_SIM
-#define INS_CACHE_SIZE_KEY "INS_CACHE_SIZE_KB"
-#define INS_CACHE_LINES_KEY "INS_CACHE_LINES"
-#define INS_CACHE_TYPE_KEY "INS_CACHE_TYPE"
-#define INS_CACHE_MISS_CYCLES_KEY "INS_CACHE_MISS_CYCLES"
-
-#define DEFAULT_INS_CACHE_SIZE_KB 32
-#define DEFAULT_INS_CACHE_LINES 32
-#define DEFAULT_INS_CACHE_TYPE "DMA"
-#define DEFAULT_INS_CACHE_MISS_CYCLES 100
+#define L1_INS_CACHE_SIZE_KEY "L1_INS_CACHE_SIZE_KB"
+#define L1_INS_CACHE_LINES_SIZE_KEY "L1_INS_CACHE_LINE_SIZE"
+#define L1_INS_CACHE_REPLACEMENT_POLICY_KEY "L1_INS_CACHE_REPLACEMENT_POLICY"
+#define L1_INS_CACHE_MISS_CYCLES_KEY "L1_INS_CACHE_MISS_CYCLES"
+#define L1_INS_CACHE_ASSOCIATIVITY_KEY "L1_INS_CACHE_ASSOCIATIVITY"
+#define DEFAULT_L1_INS_CACHE_SIZE_KB 32
+#define DEFAULT_L1_INS_CACHE_LINE_SIZE_BYTES 64
+#define DEFAULT_L1_INS_CACHE_REPLACEMENT_POLICY "LRU"
+#define DEFAULT_L1_INS_CACHE_MISS_CYCLES 100
+#define DEFAULT_L1_INS_CACHE_ASSOCIATIVITY 1
 #endif
 
 #ifndef DISABLE_DATA_CACHE_SIM
-#define DATA_CACHE_SIZE_KEY "DATA_CACHE_SIZE_KB"
-#define DATA_CACHE_LINES_KEY "DATA_CACHE_LINES"
-#define DATA_CACHE_TYPE_KEY "DATA_CACHE_TYPE"
-#define DATA_CACHE_MISS_CYCLES_KEY "DATA_CACHE_MISS_CYCLES"
-#define DEFAULT_DATA_CACHE_SIZE_KB 32
-#define DEFAULT_DATA_CACHE_LINES 32
-#define DEFAULT_DATA_CACHE_TYPE "DMA"
-#define DEFAULT_DATA_CACHE_MISS_CYCLES 100
+#define L1_DATA_CACHE_SIZE_KEY "L1_DATA_CACHE_SIZE_KB"
+#define L1_DATA_CACHE_LINES_SIZE_KEY "L1_DATA_CACHE_LINE_SIZE"
+#define L1_DATA_CACHE_REPLACEMENT_POLICY_KEY "L1_DATA_CACHE_REPLACEMENT_POLICY"
+#define L1_DATA_CACHE_MISS_CYCLES_KEY "L1_DATA_CACHE_MISS_CYCLES"
+#define L1_DATA_CACHE_ASSOCIATIVITY_KEY "L1_DATA_CACHE_ASSOCIATIVITY"
+#define DEFAULT_L1_DATA_CACHE_SIZE_KB 32
+#define DEFAULT_L1_DATA_CACHE_LINE_SIZE_BYTES 64
+#define DEFAULT_L1_DATA_CACHE_REPLACEMENT_POLICY "LRU"
+#define DEFAULT_L1_DATA_CACHE_MISS_CYCLES 100
+#define DEFAULT_L1_DATA_CACHE_ASSOCIATIVITY 1
 #endif
 
 
@@ -131,8 +136,10 @@ int ParseTTNProject(char * project_name) {
     cJSON * ttn_project_params_json;
     cJSON * ttn_project_cpu_cycles_ns;
     cJSON * ttn_project_nic_speed_mbps;
+    cJSON * ttn_project_timing_model;
     char ttn_project_cpu_cycles_ns_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
     char ttn_project_nic_speed_mbps_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+    char ttn_project_timing_model_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
 
     #ifndef DISABLE_LOOKAHEAD
     cJSON * ttn_project_src_dir_json;
@@ -145,10 +152,12 @@ int ParseTTNProject(char * project_name) {
     cJSON * ttn_project_ins_cache_miss_cycles;
     cJSON * ttn_project_ins_cache_lines;
     cJSON * ttn_project_ins_cache_size_kb;
+    cJSON * ttn_project_ins_cache_assoc;
     char ttn_project_ins_cache_type_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
     char ttn_project_ins_cache_miss_cycles_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
     char ttn_project_ins_cache_lines_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
     char ttn_project_ins_cache_size_kb_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+    char ttn_project_ins_cache_assoc_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
     #endif
 
     #ifndef DISABLE_DATA_CACHE_SIM
@@ -156,10 +165,12 @@ int ParseTTNProject(char * project_name) {
     cJSON * ttn_project_data_cache_miss_cycles;
     cJSON * ttn_project_data_cache_lines;
     cJSON * ttn_project_data_cache_size_kb;
+    cJSON * ttn_project_data_cache_assoc;
     char ttn_project_data_cache_type_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
     char ttn_project_data_cache_miss_cycles_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
     char ttn_project_data_cache_lines_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
     char ttn_project_data_cache_size_kb_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
+    char ttn_project_data_cache_assoc_string[MAX_CONFIG_PARAM_VALUE_STRING_SIZE];
     #endif
 
     int status = 0;
@@ -170,12 +181,14 @@ int ParseTTNProject(char * project_name) {
     memset(ttn_config_file, 0, MAX_FILE_PATH_LENGTH);
     memset(ttn_project_cpu_cycles_ns_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
     memset(ttn_project_nic_speed_mbps_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+    memset(ttn_project_timing_model_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
 
     #ifndef DISABLE_INSN_CACHE_SIM
     memset(ttn_project_ins_cache_type_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
     memset(ttn_project_ins_cache_miss_cycles_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
     memset(ttn_project_ins_cache_lines_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
     memset(ttn_project_ins_cache_size_kb_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+    memset(ttn_project_ins_cache_assoc_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
     #endif
 
     #ifndef DISABLE_DATA_CACHE_SIM
@@ -183,6 +196,7 @@ int ParseTTNProject(char * project_name) {
     memset(ttn_project_data_cache_miss_cycles_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
     memset(ttn_project_data_cache_lines_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
     memset(ttn_project_data_cache_size_kb_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
+    memset(ttn_project_data_cache_assoc_string, 0, MAX_CONFIG_PARAM_VALUE_STRING_SIZE);
     #endif
 
     #ifndef DISABLE_LOOKAHEAD
@@ -247,50 +261,63 @@ int ParseTTNProject(char * project_name) {
 
     ttn_project_nic_speed_mbps = cJSON_GetObjectItemCaseSensitive(
       ttn_project_params_json, NIC_SPEED_MBPS_KEY);
+
+    ttn_project_timing_model = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, TIMING_MODEL_KEY);
     
     #ifndef DISABLE_INSN_CACHE_SIM
     ttn_project_ins_cache_type = cJSON_GetObjectItemCaseSensitive(
-      ttn_project_params_json, INS_CACHE_SIZE_KEY);
+      ttn_project_params_json, L1_INS_CACHE_SIZE_KEY);
     ttn_project_ins_cache_miss_cycles = cJSON_GetObjectItemCaseSensitive(
-      ttn_project_params_json, INS_CACHE_MISS_CYCLES_KEY);
+      ttn_project_params_json, L1_INS_CACHE_MISS_CYCLES_KEY);
     ttn_project_ins_cache_lines = cJSON_GetObjectItemCaseSensitive(
-      ttn_project_params_json, INS_CACHE_LINES_KEY);
+      ttn_project_params_json, L1_INS_CACHE_LINES_SIZE_KEY);
     ttn_project_ins_cache_size_kb = cJSON_GetObjectItemCaseSensitive(
-      ttn_project_params_json, INS_CACHE_SIZE_KEY);
-    SetParamConfigInt("VT_INS_CACHE_MISS_CYCLES",
+      ttn_project_params_json, L1_INS_CACHE_SIZE_KEY);
+    ttn_project_ins_cache_assoc = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, L1_INS_CACHE_ASSOCIATIVITY_KEY);
+    SetParamConfigInt("VT_L1_INS_CACHE_MISS_CYCLES",
       ttn_project_ins_cache_miss_cycles_string,
-      ttn_project_ins_cache_miss_cycles, DEFAULT_INS_CACHE_MISS_CYCLES);
-    SetParamConfigInt("VT_INS_CACHE_LINES", ttn_project_ins_cache_lines_string,
-      ttn_project_ins_cache_lines, DEFAULT_INS_CACHE_LINES);
-    SetParamConfigInt("VT_INS_CACHE_SIZE_KB",
+      ttn_project_ins_cache_miss_cycles, DEFAULT_L1_INS_CACHE_MISS_CYCLES);
+    SetParamConfigInt("VT_L1_INS_CACHE_LINES", ttn_project_ins_cache_lines_string,
+      ttn_project_ins_cache_lines, DEFAULT_L1_INS_CACHE_LINE_SIZE_BYTES);
+    SetParamConfigInt("VT_L1_INS_CACHE_SIZE_KB",
       ttn_project_ins_cache_size_kb_string,
-      ttn_project_ins_cache_size_kb, DEFAULT_INS_CACHE_SIZE_KB);
-    SetParamConfigString("VT_INS_CACHE_TYPE",
+      ttn_project_ins_cache_size_kb, DEFAULT_L1_INS_CACHE_SIZE_KB);
+    SetParamConfigInt("VT_L1_INS_CACHE_ASSOC",
+      ttn_project_ins_cache_assoc_string,
+      ttn_project_ins_cache_assoc, DEFAULT_L1_INS_CACHE_ASSOCIATIVITY);
+    SetParamConfigString("VT_L1_INS_CACHE_REPLACEMENT_POLICY",
       ttn_project_ins_cache_type_string,
-      ttn_project_ins_cache_type, DEFAULT_INS_CACHE_TYPE);
+      ttn_project_ins_cache_type, DEFAULT_L1_INS_CACHE_REPLACEMENT_POLICY);
     #endif
 
     #ifndef DISABLE_DATA_CACHE_SIM
     ttn_project_data_cache_type = cJSON_GetObjectItemCaseSensitive(
-      ttn_project_params_json, DATA_CACHE_TYPE_KEY);
+      ttn_project_params_json, L1_DATA_CACHE_REPLACEMENT_POLICY_KEY);
     ttn_project_data_cache_miss_cycles = cJSON_GetObjectItemCaseSensitive(
-      ttn_project_params_json, DATA_CACHE_MISS_CYCLES_KEY);
+      ttn_project_params_json, L1_DATA_CACHE_MISS_CYCLES_KEY);
     ttn_project_data_cache_lines = cJSON_GetObjectItemCaseSensitive(
-      ttn_project_params_json, DATA_CACHE_LINES_KEY);
+      ttn_project_params_json, L1_DATA_CACHE_LINES_SIZE_KEY);
     ttn_project_data_cache_size_kb = cJSON_GetObjectItemCaseSensitive(
-      ttn_project_params_json, DATA_CACHE_SIZE_KEY);
-    SetParamConfigInt("VT_DATA_CACHE_MISS_CYCLES",
+      ttn_project_params_json, L1_DATA_CACHE_SIZE_KEY);
+    ttn_project_data_cache_assoc = cJSON_GetObjectItemCaseSensitive(
+      ttn_project_params_json, L1_DATA_CACHE_ASSOCIATIVITY_KEY);
+    SetParamConfigInt("VT_L1_DATA_CACHE_MISS_CYCLES",
       ttn_project_data_cache_miss_cycles_string,
-      ttn_project_data_cache_miss_cycles, DEFAULT_DATA_CACHE_MISS_CYCLES);
-    SetParamConfigInt("VT_DATA_CACHE_LINES",
+      ttn_project_data_cache_miss_cycles, DEFAULT_L1_DATA_CACHE_MISS_CYCLES);
+    SetParamConfigInt("VT_L1_DATA_CACHE_LINES",
       ttn_project_data_cache_lines_string,
-      ttn_project_data_cache_lines, DEFAULT_DATA_CACHE_LINES);
-    SetParamConfigInt("VT_DATA_CACHE_SIZE_KB",
+      ttn_project_data_cache_lines, DEFAULT_L1_DATA_CACHE_LINE_SIZE_BYTES);
+    SetParamConfigInt("VT_L1_DATA_CACHE_SIZE_KB",
       ttn_project_data_cache_size_kb_string,
-      ttn_project_data_cache_size_kb, DEFAULT_DATA_CACHE_SIZE_KB);    
-    SetParamConfigString("VT_DATA_CACHE_TYPE",
+      ttn_project_data_cache_size_kb, DEFAULT_L1_DATA_CACHE_SIZE_KB); 
+    SetParamConfigInt("VT_L1_DATA_CACHE_ASSOC",
+      ttn_project_data_cache_assoc_string,
+      ttn_project_data_cache_assoc, DEFAULT_L1_DATA_CACHE_ASSOCIATIVITY);   
+    SetParamConfigString("VT_L1_DATA_CACHE_REPLACEMENT_POLICY",
       ttn_project_data_cache_type_string,
-      ttn_project_data_cache_type, DEFAULT_DATA_CACHE_TYPE);
+      ttn_project_data_cache_type, DEFAULT_L1_DATA_CACHE_REPLACEMENT_POLICY);
     #endif
 
     SetParamConfigFloat("VT_CPU_CYLES_NS", ttn_project_cpu_cycles_ns_string,
@@ -298,6 +325,10 @@ int ParseTTNProject(char * project_name) {
 
     SetParamConfigFloat("VT_NIC_SPEED_MBPS", ttn_project_nic_speed_mbps_string,
       ttn_project_nic_speed_mbps, DEFAULT_NIC_SPEED_MBPS);
+
+    SetParamConfigString("VT_TIMING_MODEL",
+      ttn_project_timing_model_string,
+      ttn_project_timing_model, DEFAULT_TIMING_MODEL);
     
     #ifndef DISABLE_LOOKAHEAD
     if (cJSON_IsString(ttn_project_src_dir_json)) {
@@ -649,6 +680,8 @@ int main(int argc, char * argv[]) {
   // TODO: Think of a more gracefull way to do this.
   printf("Tracer: %d >> Resumed. Waiting for processes to finish ...\n", tracer_id);
   fflush(stdout);
+
+  usleep(2000000);
 
   kill(controlled_pid, SIGKILL);
   

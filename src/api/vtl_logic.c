@@ -6,6 +6,7 @@
 #include "utility_functions.h"
 #include "vtl_logic.h"
 #include "fd_handling.h"
+#include "cache_simulation.h"
 
 #include "socket_layer/netdev.h"
 #include "socket_layer/socket.h"
@@ -26,13 +27,16 @@
 s64 currBurstCyclesLeft = 0;
 s64 specifiedBurstCycles = 0;
 
+#ifdef COLLECT_STATS
+s64 totalExecBinaryInstructions = 0;
+s64 totalExecVTLInstructions = 0;
+#endif
+
 #ifndef DISABLE_LOOKAHEAD
 s64 currBBID = 0;
 s64 currLoopID = 0;
 struct lookahead_info bblLookAheadInfo = {.mapped_memblock = NULL, .mapped_memblock_length = 0, .lmap = NULL};
 struct lookahead_info loopLookAheadInfo = {.mapped_memblock = NULL, .mapped_memblock_length = 0, .lmap = NULL};
-
-
 #endif
 
 #ifndef DISABLE_INSN_CACHE_SIM
@@ -225,9 +229,23 @@ void SleepForNS(int ThreadID, int64_t duration) {
 	HandleVTExpEnd(ThreadID);
     }
 
+
     currBurstCyclesLeft = MarkBurstComplete(1);
     currBurstCyclesLeft = (s64)(currBurstCyclesLeft*cpuCyclesPerNs);
-    currActiveThreadID = syscall(SYS_gettid);
+    int myThreadID = syscall(SYS_gettid);
+
+    if (currActiveThreadID != myThreadID) { // There was a context switch
+        #ifndef DISABLE_DATA_CACHE_SIM
+        flushDataCache();
+        #endif
+
+        #ifndef DISABLE_INSN_CACHE_SIM
+        flushInsCache();
+        #endif
+    }
+    currActiveThreadID = myThreadID;
+    
+    
     specifiedBurstCycles = currBurstCyclesLeft;
     if (currBurstCyclesLeft <= 0) {
 	printf ("VT-sleep-for exiting after resume !\n");
@@ -292,6 +310,23 @@ void HandleVTExpEnd(int ThreadID) {
     printf("\n");
     printf("------------------------- ACTUAL STDOUT FROM EXECUTABLE ENDED -----------------------------\n");
     printf("\n");
+    
+    #ifndef DISABLE_DATA_CACHE_SIM
+    printDataCacheStats();
+    cleanupDataCache();
+    #endif
+
+    #ifdef COLLECT_STATS
+    if (totalExecBinaryInstructions > 0) {
+	    printf ("VTL-Overhead: %f\n",  
+            (float)totalExecBinaryInstructions/(float)totalExecVTLInstructions); 
+        fflush(stdout);
+    }
+    printf ("totalExecBinaryInstructions = %llu\n", totalExecBinaryInstructions);
+    printf ("totalExecVTLInstructions = %llu\n", totalExecVTLInstructions);
+    fflush(stdout);
+    #endif
+
     printf("Process: %d exiting VT experiment !\n", ThreadID);
     fflush(stdout);
     expStopping = 1;
@@ -303,6 +338,13 @@ void HandleVTExpEnd(int ThreadID) {
     if (bblLookAheadInfo.lmap.number_of_values)
         CleanLookaheadInfo(&bblLookAheadInfo);
     #endif
+
+    #ifndef DISABLE_INSN_CACHE_SIM
+    printInsnCacheStats();
+    cleanupInsCache();
+    #endif
+
+
 
     exit(0);
 }
@@ -404,7 +446,19 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     #endif
 
     currBurstCyclesLeft = MarkBurstComplete(0);
-    currActiveThreadID = syscall(SYS_gettid);
+    int myThreadID = syscall(SYS_gettid);
+
+    if (currActiveThreadID != myThreadID) { // There was a context switch
+        #ifndef DISABLE_DATA_CACHE_SIM
+        flushDataCache();
+        #endif
+
+        #ifndef DISABLE_INSN_CACHE_SIM
+        flushInsCache();
+        #endif
+    }
+    currActiveThreadID = myThreadID;
+
     if (currBurstCyclesLeft)
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);
     specifiedBurstCycles = currBurstCyclesLeft;
@@ -445,7 +499,18 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     #endif
     
     currBurstCyclesLeft = FinishBurst();
-    currActiveThreadID = syscall(SYS_gettid);
+    int myThreadID = syscall(SYS_gettid);
+    if (currActiveThreadID != myThreadID) { // There was a context switch
+        #ifndef DISABLE_DATA_CACHE_SIM
+        flushDataCache();
+        #endif
+
+        #ifndef DISABLE_INSN_CACHE_SIM
+        flushInsCache();
+        #endif
+    }
+    currActiveThreadID = myThreadID;
+
     if (currBurstCyclesLeft)
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);
 
@@ -501,7 +566,21 @@ void AfterForkInChild(int ThreadID, int ParentProcessID) {
     //fflush(stdout);
 
     AddToTracerSchQueue(globalTracerID);
+
+
+    
     currActiveThreadID = syscall(SYS_gettid);
+    // There was a context switch
+    #ifndef DISABLE_DATA_CACHE_SIM
+    loadDataCacheParams();
+    flushDataCache();
+    #endif
+
+    #ifndef DISABLE_INSN_CACHE_SIM
+    loadInsnCacheParams();
+    flushInsCache();
+    #endif
+    
     SignalBurstCompletion(currThreadInfo, 1);
 
     if (ParentProcessID != ThreadID) {
@@ -595,6 +674,14 @@ void AppFini(int ThreadID) {
     MarkNetDevExiting();
     #endif
 
+    #ifndef DISABLE_INSN_CACHE_SIM
+    printInsnCacheStats();
+    #endif
+
+    #ifndef DISABLE_DATA_CACHE_SIM
+    printDataCacheStats();
+    #endif
+
     if (!expStopping) FinishBurstAndDiscard();  
 
     while(llist_size(&thread_info_list)) {
@@ -619,9 +706,22 @@ void AppFini(int ThreadID) {
     fflush(stdout);
     #endif
 
+
+
     #ifndef DISABLE_LOOKAHEAD
     CleanLookaheadInfo(&bblLookAheadInfo);
     CleanLookaheadInfo(&loopLookAheadInfo);
+    #endif
+
+    #ifdef COLLECT_STATS
+    if (totalExecBinaryInstructions > 0) {
+	    printf ("VTL-Overhead: %f\n", 
+            (float)totalExecBinaryInstructions/(float)totalExecVTLInstructions); 
+        fflush(stdout);
+    }
+    printf ("totalExecBinaryInstructions = %llu\n", totalExecBinaryInstructions);
+    printf ("totalExecVTLInstructions = %llu\n", totalExecVTLInstructions);
+    fflush(stdout);
     #endif
 }
 
@@ -656,7 +756,19 @@ void TriggerSyscallFinish(int ThreadID) {
     currThreadInfo->in_callback = TRUE;
     
     currBurstCyclesLeft = MarkBurstComplete(1);
-    currActiveThreadID = syscall(SYS_gettid);
+
+    int myThreadID = syscall(SYS_gettid);
+    if (currActiveThreadID != myThreadID) { // There was a context switch
+        #ifndef DISABLE_DATA_CACHE_SIM
+        flushDataCache();
+        #endif
+
+        #ifndef DISABLE_INSN_CACHE_SIM
+        flushInsCache();
+        #endif
+    }
+    currActiveThreadID = myThreadID;
+
     if (currBurstCyclesLeft)
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);
 
@@ -692,6 +804,7 @@ void handleVtCallback() {
         SetNetDevCurrTsliceQuantaUs((long)quantaNs/NSEC_PER_US);
         RunTCPStackRxLoop();
         #endif
+
         
         SignalBurstCompletion(currThreadInfo, 1);
         currThreadInfo->in_callback = FALSE;

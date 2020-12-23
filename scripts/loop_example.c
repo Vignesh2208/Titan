@@ -39,6 +39,7 @@ struct temp_struct {
 int main(int argc, char *argv[]) {
     int i;
     i = 0;
+    int b[100];
     struct temp_struct a[100];
     if (argc != 4) {
         fprintf(stderr, "%s init max step\n",
@@ -50,12 +51,19 @@ int main(int argc, char *argv[]) {
     int max = atoi(argv[2]);
     int step = atoi(argv[3]);
     int counter = 0;
-    for(i = 0; i < 99; i++) {
+    for(i = 0; i < 10; i++) {
         a[i].x = i;
-        //printf("a[i].x = %c, &a[i].x = %p\n", a[i].x, (void *)&a[i].x);
+        printf("Accessing &a[%d].x = %p\n", i, (void *)&a[i].x);
+        b[i] = i;
+        printf ("Accessing &b[%d] = %p\n", i, (void *)&b[i]);
         //printf("a[i+1].x = %c, &a[i+1].x = %p\n", a[i+1].x, (void *)&a[i+1].x);
     }
    
+    for(i = 0; i < 10; i++) {
+        printf("a[%d].x = %c\n", i, a[i].x);
+        printf ("b[%d] = %p\n", i, b[i]);
+        //printf("a[i+1].x = %c, &a[i+1].x = %p\n", a[i+1].x, (void *)&a[i+1].x);
+    }
    
     print_elapsed_time(0);
     /*for(i = init; i >= max; i-=1) {
@@ -83,7 +91,7 @@ int main(int argc, char *argv[]) {
         
     }*/
 
-    for(i= init; i < max; i++) {	
+    /*for(i= init; i < max; i++) {	
         for(int j = 0; j < max; j+=2) {
             for (int k = 3; k < max; k++) {
                 //if (counter < 100)
@@ -99,7 +107,7 @@ int main(int argc, char *argv[]) {
         //counter ++;
         //print_elapsed_time(i);
         
-    }
+    }*/
 
 
     print_elapsed_time(0);

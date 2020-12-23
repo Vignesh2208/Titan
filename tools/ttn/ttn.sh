@@ -29,14 +29,19 @@ usage () {
   echo '-a|--arch : project compilation target architecture name'
   echo '--nic_mbps : modelled nic speed in mbps'
   echo '--cpu_mhz : cpu speed in mhz'
-  echo '--ins_cache_size_kb : instruction cache size kb'
-  echo '--ins_cache_lines : instruction cache lines'
-  echo '--ins_cache_type : instruction cache type'
-  echo '--ins_cache_miss_cycles : instruction cache number of cycles per miss'
-  echo '--data_cache_size_kb : data cache size kb'
-  echo '--data_cache_lines : data cache lines'
-  echo '--data_cache_type : data cache type'
-  echo '--data_cache_miss_cycles : data cache number of cycles per miss'
+  echo '--l1_ins_cache_size_kb : l1-instruction cache size kb'
+  echo '--l1_ins_cache_lines : l1-instruction cache line size (bytes)'
+  echo '--l1_ins_cache_policy : l1-instruction cache replacement policy (random or lru)'
+  echo '--l1_ins_cache_miss_cycles : l1-instruction cache number of cycles per miss'
+  echo '--l1_ins_cache_assoc : l1-instruction cache associativity'
+  echo '--l1_data_cache_size_kb : l1-data cache size kb'
+  echo '--l1_data_cache_lines : l1-data cache line size (bytes)'
+  echo '--l1_data_cache_policy : l1-data cache replacement policy (random or lru)'
+  echo '--l1_data_cache_miss_cycles : l1-data cache number of cycles per miss'
+  echo '--l1_data_cache_assoc : l1-data cache associativity'
+  echo '--timing_model : timing model: NONE (default), EMPIRICAL or ANALYTICAL'
+  echo '--rob_size : re-order buffer size of modelled processor'
+  echo '--dispatch_units : number of instruction dispatch units of modelled processor'
 }
 CMD=""
 ARG_BUILDER=""
@@ -61,43 +66,53 @@ case $key in
     shift
     shift
     ;;
-    --ins_cache_size_kb)
-    INS_CACHE_SIZE_KB="$2"
+    --l1_ins_cache_size_kb)
+    L1_INS_CACHE_SIZE_KB="$2"
     shift
     shift
     ;;
-    --ins_cache_lines)
-    INS_CACHE_LINES="$2"
+    --l1_ins_cache_lines)
+    L1_INS_CACHE_LINES="$2"
     shift
     shift
     ;;
-    --ins_cache_type)
-    INS_CACHE_TYPE="$2"
+    --l1_ins_cache_policy)
+    L1_INS_CACHE_REPLACEMENT_POLICY="$2"
     shift
     shift
     ;;
-    --ins_cache_miss_cycles)
-    INS_CACHE_MISS_CYCLES="$2"
+    --l1_ins_cache_miss_cycles)
+    L1_INS_CACHE_MISS_CYCLES="$2"
     shift
     shift
     ;;
-    --data_cache_size_kb)
-    DATA_CACHE_SIZE_KB="$2"
+    --l1_ins_cache_assoc)
+    L1_INS_CACHE_ASSOC="$2"
     shift
     shift
     ;;
-    --data_cache_lines)
-    DATA_CACHE_LINES="$2"
+    --l1_data_cache_size_kb)
+    L1_DATA_CACHE_SIZE_KB="$2"
     shift
     shift
     ;;
-    --data_cache_type)
-    DATA_CACHE_TYPE="$2"
+    --l1_data_cache_lines)
+    L1_DATA_CACHE_LINES="$2"
     shift
     shift
     ;;
-    --data_cache_miss_cycles)
-    DATA_CACHE_MISS_CYCLES="$2"
+    --l1_data_cache_policy)
+    L1_DATA_CACHE_REPLACEMENT_POLICY="$2"
+    shift
+    shift
+    ;;
+    --l1_data_cache_miss_cycles)
+    L1_DATA_CACHE_MISS_CYCLES="$2"
+    shift
+    shift
+    ;;
+    --l1_data_cache_assoc)
+    L1_DATA_CACHE_ASSOC="$2"
     shift
     shift
     ;;
@@ -108,6 +123,21 @@ case $key in
     ;;
     --nic_mbps)
     NIC_MBPS="$2"
+    shift
+    shift
+    ;;
+    --timing_model)
+    TIMING_MODEL="$2"
+    shift
+    shift
+    ;;
+    --rob_size)
+    ROB_SIZE="$2"
+    shift
+    shift
+    ;;
+    --dispatch_units)
+    NUM_DISPATCH_UNITS="$2"
     shift
     shift
     ;;
@@ -179,49 +209,76 @@ then
   ARG_BUILDER+=" --arch=$PROJECT_ARCH"
 fi
 
-if [ -n "$INS_CACHE_SIZE_KB" ]
+if [ -n "$L1_INS_CACHE_SIZE_KB" ]
 then
-  ARG_BUILDER+=" --ins_cache_size_kb=$INS_CACHE_SIZE_KB"
+  ARG_BUILDER+=" --l1_ins_cache_size_kb=$L1_INS_CACHE_SIZE_KB"
 fi
 
-if [ -n "$INS_CACHE_LINES" ]
+if [ -n "$L1_INS_CACHE_LINES" ]
 then
-  ARG_BUILDER+=" --ins_cache_lines=$INS_CACHE_LINES"
+  ARG_BUILDER+=" --l1_ins_cache_lines=$L1_INS_CACHE_LINES"
 fi
 
-if [ -n "$INS_CACHE_TYPE" ]
+if [ -n "$L1_INS_CACHE_REPLACEMENT_POLICY" ]
 then
-  ARG_BUILDER+=" --ins_cache_type=$INS_CACHE_TYPE"
+  ARG_BUILDER+=" --l1_ins_cache_policy=$L1_INS_CACHE_REPLACEMENT_POLICY"
 fi
 
-if [ -n "$INS_CACHE_MISS_CYCLES" ]
+if [ -n "$L1_INS_CACHE_MISS_CYCLES" ]
 then
-  ARG_BUILDER+=" --ins_cache_miss_cycles=$INS_CACHE_MISS_CYCLES"
+  ARG_BUILDER+=" --l1_ins_cache_miss_cycles=$L1_INS_CACHE_MISS_CYCLES"
 fi
 
-if [ -n "$DATA_CACHE_SIZE_KB" ]
+
+if [ -n "$L1_INS_CACHE_ASSOC" ]
 then
-  ARG_BUILDER+=" --data_cache_size_kb=$DATA_CACHE_SIZE_KB"
+  ARG_BUILDER+=" --l1_ins_cache_assoc=$L1_INS_CACHE_ASSOC"
 fi
 
-if [ -n "$DATA_CACHE_LINES" ]
+if [ -n "$L1_DATA_CACHE_SIZE_KB" ]
 then
-  ARG_BUILDER+=" --data_cache_lines=$DATA_CACHE_LINES"
+  ARG_BUILDER+=" --l1_data_cache_size_kb=$L1_DATA_CACHE_SIZE_KB"
 fi
 
-if [ -n "$DATA_CACHE_TYPE" ]
+if [ -n "$L1_DATA_CACHE_LINES" ]
 then
-  ARG_BUILDER+=" --data_cache_type=$DATA_CACHE_TYPE"
+  ARG_BUILDER+=" --l1_data_cache_lines=$L1_DATA_CACHE_LINES"
 fi
 
-if [ -n "$DATA_CACHE_MISS_CYCLES" ]
+if [ -n "$L1_DATA_CACHE_REPLACEMENT_POLICY" ]
 then
-  ARG_BUILDER+=" --data_cache_miss_cycles=$DATA_CACHE_MISS_CYCLES"
+  ARG_BUILDER+=" --l1_data_cache_policy=$L1_DATA_CACHE_REPLACEMENT_POLICY"
+fi
+
+if [ -n "$L1_DATA_CACHE_MISS_CYCLES" ]
+then
+  ARG_BUILDER+=" --l1_data_cache_miss_cycles=$L1_DATA_CACHE_MISS_CYCLES"
+fi
+
+if [ -n "$L1_DATA_CACHE_ASSOC" ]
+then
+  ARG_BUILDER+=" --l1_data_cache_assoc=$L1_DATA_CACHE_ASSOC"
 fi
 
 if [ -n "$CPU_SPEED_MHZ" ]
 then
   ARG_BUILDER+=" --cpu_mhz=$CPU_SPEED_MHZ"
+fi
+
+
+if [ -n "$TIMING_MODEL" ]
+then
+  ARG_BUILDER+=" --timing_model=$TIMING_MODEL"
+fi
+
+if [ -n "$ROB_SIZE" ]
+then
+  ARG_BUILDER+=" --rob_size=$ROB_SIZE"
+fi
+
+if [ -n "$NUM_DISPATCH_UNITS" ]
+then
+  ARG_BUILDER+=" --dispatch_units=$NUM_DISPATCH_UNITS"
 fi
 
 

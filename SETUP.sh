@@ -84,6 +84,8 @@ patch_llvm_project () {
     DISABLE_INSN_CACHE_SIM=$(grep -nr "DISABLE_INSN_CACHE_SIM" $TITAN_SOURCE_DIR/CONFIG | awk -F "=" '{print $2}')
     DISABLE_DATA_CACHE_SIM=$(grep -nr "DISABLE_DATA_CACHE_SIM" $TITAN_SOURCE_DIR/CONFIG | awk -F "=" '{print $2}')
     DISABLE_VTL=$(grep -nr "DISABLE_VTL" $TITAN_SOURCE_DIR/CONFIG | awk -F "=" '{print $2}')
+    COLLECT_STATS=$(grep -nr "COLLECT_STATS" $TITAN_SOURCE_DIR/CONFIG | awk -F "=" '{print $2}')
+
 
     find $TITAN_LLVM_SOURCE_DIR -name \* -type f ! -path "*.sh" ! -path "*Makefile*" -print \
         | sed -e "s/^${TITAN_LLVM_SOURCE_DIR//\//\\/}//" \
@@ -121,6 +123,10 @@ patch_llvm_project () {
 
             if [ $DISABLE_DATA_CACHE_SIM == "yes" ]; then
                 sed -i 's/#undef DISABLE_DATA_CACHE_SIM/#define DISABLE_DATA_CACHE_SIM/g' $DST_FILE
+            fi
+
+            if [ $COLLECT_STATS == "yes" ]; then
+                sed -i 's/#undef COLLECT_STATS/#define COLLECT_STATS/g' $DST_FILE
             fi
 
         fi 

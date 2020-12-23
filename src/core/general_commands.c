@@ -1245,10 +1245,6 @@ int HandleVtSetEat(unsigned long arg) {
         return -EFAULT;
           }
 
-    /*if (experiment_type != EXP_CS) {
-        PDEBUG_I("VT_SET_EAT: Operation cannot be performed for EXP_CBE!\n");
-        return -EFAULT;
-    }*/
 
     api_info = (invoked_api *)arg;
     if (!api_info) return -EFAULT;
@@ -1302,12 +1298,7 @@ int HandleVtGetEat(unsigned long arg, struct dilated_task_struct * dilated_task)
     if (!api_info) return -EFAULT;
 
     BUG_ON(!dilated_task->associated_tracer);
-
-    /*if (experiment_type != EXP_CS) {
-        api_info_tmp.return_value = dilated_task->associated_tracer->curr_virtual_time;
-        BUG_ON(copy_to_user(api_info, &api_info_tmp, sizeof(invoked_api)));
-        return 0;
-    } */       
+      
 
     if (dilated_task->associated_tracer->earliest_arrival_time <
         dilated_task->associated_tracer->curr_virtual_time) {
@@ -1362,11 +1353,6 @@ int HandleVtSetProcessLookahead(unsigned long arg, struct dilated_task_struct * 
         return -EFAULT;
           }
 
-    /*if (experiment_type != EXP_CS) {
-        PDEBUG_I("VT_SET_PROCESS_LOOKAHEAD: Operation cannot be performed for EXP_CBE!\n");
-        return -EFAULT;
-    }*/
-
     if (!dilated_task) {
         PDEBUG_I("VT_SET_PROCESS_LOOKAHEAD: Only a dilated process can SET_PROCESS_LOOKAHEAD!\n");
         return -EFAULT;
@@ -1402,25 +1388,8 @@ int HandleVtSetProcessLookahead(unsigned long arg, struct dilated_task_struct * 
     }
     curr_process_lookahead = GetProcessCurrLookahead(dilated_task);
 
-    /*if (lookahead_anchor_type == LOOKAHEAD_ANCHOR_NONE) {
-      PDEBUG_A(
-        "VT_SET_PROCESS_LOOKAHEAD: ANCHOR_NONE_REQUEST: New: %llu, Curr: %llu\n",
-        new_process_lookahead, curr_process_lookahead);
-    }
-
-    if (lookahead_anchor_type == LOOKAHEAD_ANCHOR_EAT) {
-      PDEBUG_A(
-        "VT_SET_PROCESS_LOOKAHEAD: ANCHOR_EAT_REQUEST: New: %llu, Curr: %llu\n",
-        new_process_lookahead, curr_process_lookahead);
-    }*/
 
     if (new_process_lookahead >= curr_process_lookahead) {
-
-        /*if (lookahead_anchor_type == LOOKAHEAD_ANCHOR_NONE)
-          PDEBUG_A("VT_SET_PROCESS_LOOKAHEAD: Tracer: %d, New: %llu, Curr: %llu\n", 
-            dilated_task->associated_tracer_id,
-            new_process_lookahead,
-            curr_process_lookahead);*/
         dilated_task->bulk_lookahead_expiry_time = bulk_lookahead_expiry_time;
         dilated_task->lookahead_anchor_type = lookahead_anchor_type;
     }

@@ -27,16 +27,25 @@ def createOrResetTTNProject(project_name: str, project_src_dir: str,
             c.PROJECT_ARCH_NAME: params[c.PROJECT_ARCH_NAME],
             c.PROJECT_ARCH_TIMINGS_PATH_KEY: getInsnTimingsPath(
                 params[c.PROJECT_ARCH_NAME]),
-            c.INS_CACHE_SIZE_KEY: params[c.INS_CACHE_SIZE_KEY],
-            c.INS_CACHE_LINES_KEY: params[c.INS_CACHE_LINES_KEY],
-            c.INS_CACHE_TYPE_KEY: params[c.INS_CACHE_TYPE_KEY],
-            c.INS_CACHE_MISS_CYCLES_KEY: params[c.INS_CACHE_MISS_CYCLES_KEY],
-            c.DATA_CACHE_SIZE_KEY: params[c.DATA_CACHE_SIZE_KEY],
-            c.DATA_CACHE_LINES_KEY: params[c.DATA_CACHE_LINES_KEY],
-            c.DATA_CACHE_TYPE_KEY: params[c.DATA_CACHE_TYPE_KEY],
-            c.DATA_CACHE_MISS_CYCLES_KEY: params[c.DATA_CACHE_MISS_CYCLES_KEY],
+
+            c.L1_INS_CACHE_SIZE_KEY: params[c.L1_INS_CACHE_SIZE_KEY],
+            c.L1_INS_CACHE_LINES_SIZE_KEY: params[c.L1_INS_CACHE_LINES_SIZE_KEY],
+            c.L1_INS_CACHE_REPLACEMENT_POLICY_KEY: params[c.L1_INS_CACHE_REPLACEMENT_POLICY_KEY],
+            c.L1_INS_CACHE_MISS_CYCLES_KEY: params[c.L1_INS_CACHE_MISS_CYCLES_KEY],
+            c.L1_INS_CACHE_ASSOCIATIVITY_KEY: params[c.L1_INS_CACHE_ASSOCIATIVITY_KEY],
+
+            c.L1_DATA_CACHE_SIZE_KEY: params[c.L1_DATA_CACHE_SIZE_KEY],
+            c.L1_DATA_CACHE_LINES_SIZE_KEY: params[c.L1_DATA_CACHE_LINES_SIZE_KEY],
+            c.L1_DATA_CACHE_REPLACEMENT_POLICY_KEY: params[c.L1_DATA_CACHE_REPLACEMENT_POLICY_KEY],
+            c.L1_DATA_CACHE_MISS_CYCLES_KEY: params[c.L1_DATA_CACHE_MISS_CYCLES_KEY],
+            c.L1_DATA_CACHE_ASSOCIATIVITY_KEY: params[c.L1_DATA_CACHE_ASSOCIATIVITY_KEY],
+
             c.NIC_SPEED_MBPS_KEY: params[c.NIC_SPEED_MBPS_KEY],
-            c.CPU_CYCLE_NS_KEY: params[c.CPU_CYCLE_NS_KEY]
+            c.CPU_CYCLE_NS_KEY: params[c.CPU_CYCLE_NS_KEY],
+
+            c.TIMING_MODEL_KEY: params[c.TIMING_MODEL_KEY],
+            c.ROB_SIZE_KEY: params[c.ROB_SIZE_KEY],
+            c.DISPATCH_UNITS_KEY: params[c.DISPATCH_UNITS_KEY]
         }
 
     if (reset or
@@ -73,16 +82,21 @@ def addProject(project_name: str, project_src_dir: str,
         c.PROJECT_CLANG_LOCK_KEY: f'{project_src_dir}/clang_lock',
         c.PROJECT_ARCH_NAME: params[c.PROJECT_ARCH_NAME],
         c.PROJECT_ARCH_TIMINGS_PATH_KEY: getInsnTimingsPath(params[c.PROJECT_ARCH_NAME]),
-        c.INS_CACHE_SIZE_KEY: params[c.INS_CACHE_SIZE_KEY],
-        c.INS_CACHE_LINES_KEY: params[c.INS_CACHE_LINES_KEY],
-        c.INS_CACHE_TYPE_KEY: params[c.INS_CACHE_TYPE_KEY],
-        c.INS_CACHE_MISS_CYCLES_KEY: params[c.INS_CACHE_MISS_CYCLES_KEY],
-        c.DATA_CACHE_SIZE_KEY: params[c.DATA_CACHE_SIZE_KEY],
-        c.DATA_CACHE_LINES_KEY: params[c.DATA_CACHE_LINES_KEY],
-        c.DATA_CACHE_TYPE_KEY: params[c.DATA_CACHE_TYPE_KEY],
-        c.DATA_CACHE_MISS_CYCLES_KEY: params[c.DATA_CACHE_MISS_CYCLES_KEY],
+        c.L1_INS_CACHE_SIZE_KEY: params[c.L1_INS_CACHE_SIZE_KEY],
+        c.L1_INS_CACHE_LINES_SIZE_KEY: params[c.L1_INS_CACHE_LINES_SIZE_KEY],
+        c.L1_INS_CACHE_REPLACEMENT_POLICY_KEY: params[c.L1_INS_CACHE_REPLACEMENT_POLICY_KEY],
+        c.L1_INS_CACHE_MISS_CYCLES_KEY: params[c.L1_INS_CACHE_MISS_CYCLES_KEY],
+        c.L1_INS_CACHE_ASSOCIATIVITY_KEY: params[c.L1_INS_CACHE_ASSOCIATIVITY_KEY],
+        c.L1_DATA_CACHE_SIZE_KEY: params[c.L1_DATA_CACHE_SIZE_KEY],
+        c.L1_DATA_CACHE_LINES_SIZE_KEY: params[c.L1_DATA_CACHE_LINES_SIZE_KEY],
+        c.L1_DATA_CACHE_REPLACEMENT_POLICY_KEY: params[c.L1_DATA_CACHE_REPLACEMENT_POLICY_KEY],
+        c.L1_DATA_CACHE_MISS_CYCLES_KEY: params[c.L1_DATA_CACHE_MISS_CYCLES_KEY],
+        c.L1_DATA_CACHE_ASSOCIATIVITY_KEY: params[c.L1_DATA_CACHE_ASSOCIATIVITY_KEY],
         c.NIC_SPEED_MBPS_KEY: params[c.NIC_SPEED_MBPS_KEY],
-        c.CPU_CYCLE_NS_KEY: params[c.CPU_CYCLE_NS_KEY]
+        c.CPU_CYCLE_NS_KEY: params[c.CPU_CYCLE_NS_KEY],
+        c.TIMING_MODEL_KEY: params[c.TIMING_MODEL_KEY],
+        c.ROB_SIZE_KEY: params[c.ROB_SIZE_KEY],
+        c.DISPATCH_UNITS_KEY: params[c.DISPATCH_UNITS_KEY]
     }
     currDB['active'] = project_params.copy()
     currDB['projects'][project_name] = project_params.copy()
@@ -108,16 +122,21 @@ def getDefaultProjectParams() -> Dict[str, str]:
         c.PROJECT_ARCH_NAME: c.DEFAULT_PROJECT_ARCH,
         c.PROJECT_ARCH_TIMINGS_PATH_KEY: getInsnTimingsPath(
             c.DEFAULT_PROJECT_ARCH),
-        c.INS_CACHE_SIZE_KEY: c.DEFAULT_INS_CACHE_SIZE_KB,
-        c.INS_CACHE_LINES_KEY: c.DEFAULT_INS_CACHE_LINES,
-        c.INS_CACHE_TYPE_KEY: c.DEFAULT_INS_CACHE_TYPE,
-        c.INS_CACHE_MISS_CYCLES_KEY: c.DEFAULT_INS_CACHE_MISS_CYCLES,
-        c.DATA_CACHE_SIZE_KEY: c.DEFAULT_DATA_CACHE_SIZE_KB,
-        c.DATA_CACHE_LINES_KEY: c.DEFAULT_DATA_CACHE_LINES,
-        c.DATA_CACHE_TYPE_KEY: c.DEFAULT_DATA_CACHE_TYPE,
+        c.L1_INS_CACHE_SIZE_KEY: c.DEFAULT_L1_INS_CACHE_SIZE_KB,
+        c.L1_INS_CACHE_LINES_SIZE_KEY: c.DEFAULT_L1_INS_CACHE_LINE_SIZE_BYTES,
+        c.L1_INS_CACHE_REPLACEMENT_POLICY_KEY: c.DEFAULT_L1_INS_CACHE_REPLACEMENT_POLICY,
+        c.L1_INS_CACHE_MISS_CYCLES_KEY: c.DEFAULT_L1_INS_CACHE_MISS_CYCLES,
+        c.L1_INS_CACHE_ASSOCIATIVITY_KEY: c.DEFAULT_L1_INS_CACHE_ASSOCIATIVITY,
+        c.L1_DATA_CACHE_SIZE_KEY: c.DEFAULT_L1_DATA_CACHE_SIZE_KB,
+        c.L1_DATA_CACHE_LINES_SIZE_KEY: c.DEFAULT_L1_DATA_CACHE_LINE_SIZE_BYTES,
+        c.L1_DATA_CACHE_REPLACEMENT_POLICY_KEY: c.DEFAULT_L1_DATA_CACHE_REPLACEMENT_POLICY,
+        c.L1_DATA_CACHE_ASSOCIATIVITY_KEY: c.DEFAULT_L1_DATA_CACHE_ASSOCIATIVITY,
         c.NIC_SPEED_MBPS_KEY: c.DEFAULT_NIC_SPEED_MBPS,
-        c.DATA_CACHE_MISS_CYCLES_KEY: c.DEFAULT_DATA_CACHE_MISS_CYCLES,
-        c.CPU_CYCLE_NS_KEY: 1.0
+        c.L1_DATA_CACHE_MISS_CYCLES_KEY: c.DEFAULT_L1_DATA_CACHE_MISS_CYCLES,
+        c.CPU_CYCLE_NS_KEY: 1.0,
+        c.TIMING_MODEL_KEY: c.DEFAULT_TIMING_MODEL,
+        c.ROB_SIZE_KEY: c.DEFAULT_ROB_SIZE,
+        c.DISPATCH_UNITS_KEY: c.DEFAULT_NUM_DISPATCH_UNITS
     }
     return project_params
 
@@ -262,32 +281,41 @@ def displayProject(project_name: str, print_active=False) -> None:
 
     logging.info('General params:')
     logging.info(
-        f'project name             : {project_params[c.PROJECT_NAME_KEY]}')
+        f'project name                              : {project_params[c.PROJECT_NAME_KEY]}')
     logging.info(
-        f'project src directory    : {project_params[c.PROJECT_SRC_DIR_KEY]}')
+        f'project src directory                     : {project_params[c.PROJECT_SRC_DIR_KEY]}')
     logging.info(
-        f'project architecture     : {project_params[c.PROJECT_ARCH_NAME]}')
+        f'project architecture                      : {project_params[c.PROJECT_ARCH_NAME]}')
     logging.info(
-        f'ins cache size kb        : {project_params[c.INS_CACHE_SIZE_KEY]}')
+        f'l1-ins cache size kb                      : {project_params[c.L1_INS_CACHE_SIZE_KEY]}')
     logging.info(
-        f'ins cache lines          : {project_params[c.INS_CACHE_LINES_KEY]}')
+        f'l1-ins cache line size (bytes)            : {project_params[c.L1_INS_CACHE_LINES_SIZE_KEY]}')
     logging.info(
-        f'ins cache miss cycles    : {project_params[c.INS_CACHE_MISS_CYCLES_KEY]}')
+        f'l1-ins cache miss cycles                  : {project_params[c.L1_INS_CACHE_MISS_CYCLES_KEY]}')
     logging.info(
-        f'ins cache type           : {project_params[c.INS_CACHE_TYPE_KEY]}')
+        f'l1-ins cache associativity                : {project_params[c.L1_INS_CACHE_ASSOCIATIVITY_KEY]}')
     logging.info(
-        f'data cache size kb       : {project_params[c.DATA_CACHE_SIZE_KEY]}')
+        f'l1-ins cache policy                       : {project_params[c.L1_INS_CACHE_REPLACEMENT_POLICY_KEY]}')
     logging.info(
-        f'data cache lines         : {project_params[c.DATA_CACHE_LINES_KEY]}')
+        f'l1-data cache size kb                     : {project_params[c.L1_DATA_CACHE_SIZE_KEY]}')
     logging.info(
-        f'data cache miss cycles   : {project_params[c.DATA_CACHE_MISS_CYCLES_KEY]}')
+        f'l1-data cache line size (bytes)           : {project_params[c.L1_DATA_CACHE_LINES_SIZE_KEY]}')
     logging.info(
-        f'data cache type          : {project_params[c.DATA_CACHE_TYPE_KEY]}')
+        f'l1-data cache miss cycles                 : {project_params[c.L1_DATA_CACHE_MISS_CYCLES_KEY]}')
     logging.info(
-        f'cpu cycle per ns         : {project_params[c.CPU_CYCLE_NS_KEY]}')
+        f'l1-data cache policy                      : {project_params[c.L1_DATA_CACHE_REPLACEMENT_POLICY_KEY]}')
     logging.info(
-        f'nic speed mbps           : {project_params[c.NIC_SPEED_MBPS_KEY]}')
-
+        f'l1-data cache associativity               : {project_params[c.L1_DATA_CACHE_ASSOCIATIVITY_KEY]}')
+    logging.info(
+        f'cpu num-cycles per ns                     : {project_params[c.CPU_CYCLE_NS_KEY]}')
+    logging.info(
+        f'nic speed mbps                            : {project_params[c.NIC_SPEED_MBPS_KEY]}')
+    logging.info(
+        f'timing model                              : {project_params[c.TIMING_MODEL_KEY]}')
+    logging.info(
+        f're-order buffer size                      : {project_params[c.ROB_SIZE_KEY]}')
+    logging.info(
+        f'num dispatch units                        : {project_params[c.DISPATCH_UNITS_KEY]}')
     project_src_dir = project_params[c.PROJECT_SRC_DIR_KEY]
     if not os.path.exists(
             f'{project_src_dir}/{c.TTN_FOLDER_NAME}/clang_init_params.json'):

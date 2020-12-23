@@ -16,41 +16,56 @@ parser = argparse.ArgumentParser(description='sets up/initializes a new '
                                              'compilation with clang-vt')
 parser.add_argument('--project_name', type=str, default=c.DEFAULT_PROJECT_NAME,
                     help='Name of the project')
-parser.add_argument('--arch', type=str, default=c.DEFAULT_PROJECT_ARCH,
+parser.add_argument('--arch', type=str, default=c.NO_ARCH,
                     help='Machine architecture type for project compilation')
 parser.add_argument('--project_src_dir', type=str,
                     default=c.DEFAULT_PROJECT_SRC_DIR,
                     help='Directory containing project source')
 
-parser.add_argument('--ins_cache_size_kb', type=int,
-                    default=c.DEFAULT_INS_CACHE_SIZE_KB,
+parser.add_argument('--l1_ins_cache_size_kb', type=int,
+                    default=c.DEFAULT_L1_INS_CACHE_SIZE_KB,
                     help='Instruction cache-size in KB')
-parser.add_argument('--ins_cache_lines', type=int,
-                    default=c.DEFAULT_INS_CACHE_LINES,
+parser.add_argument('--l1_ins_cache_lines', type=int,
+                    default=c.DEFAULT_L1_INS_CACHE_LINE_SIZE_BYTES,
                     help='Number of instruction cache-lines')
-parser.add_argument('--ins_cache_type', type=str,
-                    default=c.DEFAULT_INS_CACHE_TYPE,
+parser.add_argument('--l1_ins_cache_policy', type=str,
+                    default=c.DEFAULT_L1_INS_CACHE_REPLACEMENT_POLICY,
                     help='Instruction cache type')
-parser.add_argument('--ins_cache_miss_cycles', type=int,
-                    default=c.DEFAULT_INS_CACHE_MISS_CYCLES,
+parser.add_argument('--l1_ins_cache_miss_cycles', type=int,
+                    default=c.DEFAULT_L1_INS_CACHE_MISS_CYCLES,
                     help='Number of cycles spent in the event of a cache miss')
+parser.add_argument('--l1_ins_cache_assoc', type=int,
+                    default=c.DEFAULT_L1_INS_CACHE_ASSOCIATIVITY,
+                    help='L1 ins cache associativity')
+parser.add_argument('--l1_data_cache_size_kb', type=int,
+                    default=c.DEFAULT_L1_DATA_CACHE_SIZE_KB,
+                    help='Data cache-size in KB')
+parser.add_argument('--l1_data_cache_lines', type=int,
+                    default=c.DEFAULT_L1_DATA_CACHE_LINE_SIZE_BYTES,
+                    help='Number of data cache-lines')
+parser.add_argument('--l1_data_cache_policy', type=str,
+                    default=c.DEFAULT_L1_DATA_CACHE_REPLACEMENT_POLICY,
+                    help='Data cache type')
+parser.add_argument('--l1_data_cache_miss_cycles', type=int,
+                    default=c.DEFAULT_L1_DATA_CACHE_MISS_CYCLES,
+                    help='Number of cycles spent in the event of a cache miss')
+parser.add_argument('--l1_data_cache_assoc', type=int,
+                    default=c.DEFAULT_L1_DATA_CACHE_ASSOCIATIVITY,
+                    help='L1 data cache associativity')
+parser.add_argument('--cpu_mhz', type=float, default=1000.0,
+                    help='Speed of cpu in mhz. (Default 1GHz)')
 parser.add_argument('--nic_speed_mbps', type=float,
                     default=c.DEFAULT_NIC_SPEED_MBPS,
                     help='Nic speed mbps')
-parser.add_argument('--data_cache_size_kb', type=int,
-                    default=c.DEFAULT_DATA_CACHE_SIZE_KB,
-                    help='Data cache-size in KB')
-parser.add_argument('--data_cache_lines', type=int,
-                    default=c.DEFAULT_DATA_CACHE_LINES,
-                    help='Number of data cache-lines')
-parser.add_argument('--data_cache_type', type=str,
-                    default=c.DEFAULT_DATA_CACHE_TYPE,
-                    help='Data cache type')
-parser.add_argument('--data_cache_miss_cycles', type=int,
-                    default=c.DEFAULT_DATA_CACHE_MISS_CYCLES,
-                    help='Number of cycles spent in the event of a cache miss')
-parser.add_argument('--cpu_mhz', type=float, default=1000.0,
-                    help='Speed of cpu in mhz. (Default 1GHz)')
+parser.add_argument('--rob_size', type=int,
+                    default=c.DEFAULT_ROB_SIZE,
+                    help='Re-order buffer size of processor')
+parser.add_argument('--dispatch_units', type=int,
+                    default=c.DEFAULT_NUM_DISPATCH_UNITS,
+                    help='Number of instruction dispatch units of processor')
+parser.add_argument('--timing_model', type=str,
+                    default=c.DEFAULT_TIMING_MODEL,
+                    help='Timing model used: NONE or EMPIRICAL or ANALYTICAL')
 
 parser.add_argument(
     '--init', help='Initializes ttn. This is run automatically during '
@@ -79,14 +94,23 @@ def main():
         c.PROJECT_ARCH_NAME: "NONE" if args.arch == "ARCH_NONE" else args.arch,
         c.PROJECT_NAME_KEY: args.project_name,
         c.PROJECT_SRC_DIR_KEY: args.project_src_dir,
-        c.INS_CACHE_SIZE_KEY: args.ins_cache_size_kb,
-        c.INS_CACHE_LINES_KEY: args.ins_cache_lines,
-        c.INS_CACHE_TYPE_KEY: args.ins_cache_type,
-        c.INS_CACHE_MISS_CYCLES_KEY: args.ins_cache_miss_cycles,
-        c.DATA_CACHE_SIZE_KEY: args.data_cache_size_kb,
-        c.DATA_CACHE_LINES_KEY: args.data_cache_lines,
-        c.DATA_CACHE_TYPE_KEY: args.data_cache_type,
-        c.DATA_CACHE_MISS_CYCLES_KEY: args.data_cache_miss_cycles,
+
+        c.L1_INS_CACHE_SIZE_KEY: args.l1_ins_cache_size_kb,
+        c.L1_INS_CACHE_LINES_SIZE_KEY: args.l1_ins_cache_lines,
+        c.L1_INS_CACHE_REPLACEMENT_POLICY_KEY: args.l1_ins_cache_policy,
+        c.L1_INS_CACHE_MISS_CYCLES_KEY: args.l1_ins_cache_miss_cycles,
+        c.L1_INS_CACHE_ASSOCIATIVITY_KEY: args.l1_ins_cache_assoc,
+
+        c.L1_DATA_CACHE_SIZE_KEY: args.l1_data_cache_size_kb,
+        c.L1_DATA_CACHE_LINES_SIZE_KEY: args.l1_data_cache_lines,
+        c.L1_DATA_CACHE_REPLACEMENT_POLICY_KEY: args.l1_data_cache_policy,
+        c.L1_DATA_CACHE_MISS_CYCLES_KEY: args.l1_data_cache_miss_cycles,
+        c.L1_DATA_CACHE_ASSOCIATIVITY_KEY: args.l1_ins_cache_assoc,
+
+        c.TIMING_MODEL_KEY: args.timing_model,
+        c.ROB_SIZE_KEY: args.rob_size,
+        c.DISPATCH_UNITS_KEY: args.dispatch_units,
+
         c.NIC_SPEED_MBPS_KEY: args.nic_speed_mbps,
         c.CPU_CYCLE_NS_KEY: float(args.cpu_mhz * 1e6)/float(1e9)
     }

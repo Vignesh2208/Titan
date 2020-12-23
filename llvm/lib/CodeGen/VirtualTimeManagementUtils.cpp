@@ -2,7 +2,6 @@
 #include "llvm/CodeGen/TargetInstrInfo.h"
 #include <cmath>
 
-#define NUM_EXEC_UNITS 8
 
 using namespace llvm;
 
@@ -102,12 +101,12 @@ float MachineSpecificConfig::GetInsnCompletionCycles(std::string insnName) {
         return 1.0;
     float avgCpuCycles = machineInsPrefixTree->getAvgCpuCycles(insnName);
     if (avgCpuCycles < 1.0) {
-	    // We don't have the info right now. Simply treat it as unit latency because that seems to work best
+	// We don't have the info right now. Simply treat it as unit latency because that seems to work best
         return 1.0;
     }
 
-    outs () << "Requested insnName: " << insnName << " avg cpu cycles: "
-            << avgCpuCycles << "\n";
+    //outs () << "Requested insnName: " << insnName << " avg cpu cycles: "
+    //        << avgCpuCycles << "\n";
 
     
     return avgCpuCycles;
@@ -121,13 +120,7 @@ std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBComplet
     float mbbCompletionCycles = 0;
     float totalMbbCompletionCycles = 0;
     unsigned long InstrCount = 0;
-    bool skip = false;
-    float execUnitPressure[NUM_EXEC_UNITS];
-    int bestExecUnit = 0;
-
-    for (int i = 0; i < NUM_EXEC_UNITS; i++)
-	execUnitPressure[i] = 0.0;
-    
+    bool skip = false;   
 
     for (MachineBasicBlock::instr_iterator Iter = mbb->instr_begin(),
         E = mbb->instr_end(); Iter != E; Iter++) {
@@ -168,16 +161,10 @@ std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBComplet
         }
 
         if (!MI.isMetaInstruction() && !skip) {
-            bestExecUnit = 0;
-            for (int i = 0; i < NUM_EXEC_UNITS; i++) {
-                if (execUnitPressure[i] < execUnitPressure[bestExecUnit]) {
-                    bestExecUnit = i;
-                }
-            }
+
             mbbCompletionCycles = machineConfig->GetInsnCompletionCycles(
                 TII.getName(MI.getOpcode())); 
             totalMbbCompletionCycles += mbbCompletionCycles;
-            execUnitPressure[bestExecUnit] += mbbCompletionCycles;
             InstrCount ++;
         }
     }
@@ -190,8 +177,11 @@ std::pair<unsigned long, unsigned long> TargetMachineSpecificInfo::GetMBBComplet
     if (InstrCount < 1)
 	    InstrCount = 1;
 
-    totalMbbCompletionCycles = totalMbbCompletionCycles / (1.0 * sqrt(std::min((int)InstrCount, 512)));
-    //totalMbbCompletionCycles += float(InstrCount) / NUM_EXEC_UNITS;
+    if (this->timingModel == "EMPIRICAL")
+    	totalMbbCompletionCycles = totalMbbCompletionCycles / (1.0 * sqrt(std::min((int)InstrCount, this->modelledProcessorRobSize)));
+    else if (this->timingModel == "ANALYTICAL")
+	    totalMbbCompletionCycles = totalMbbCompletionCycles / this->modelledProcessorDispatchUnits;
+
     if (totalMbbCompletionCycles < 1)
 	    totalMbbCompletionCycles = 1;
     

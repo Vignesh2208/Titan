@@ -187,6 +187,20 @@ void VirtualTimeManager::createExternDefinitions(Module &M, bool ContainsMain) {
     gVar->setAlignment(8);
     #endif
 
+    #ifdef COLLECT_STATS
+    // VT_TOTAL_EXEC_BINARY_INSTRUCTIONS
+    M.getOrInsertGlobal(VT_TOTAL_EXEC_BINARY_INSTRUCTIONS, Type::getInt64Ty(Ctx));
+    gVar = M.getNamedGlobal(VT_TOTAL_EXEC_BINARY_INSTRUCTIONS);
+    gVar->setLinkage(GlobalValue::ExternalLinkage);
+    gVar->setAlignment(8);
+
+    // VT_TOTAL_EXEC_VTL_INSTRUCTIONS
+    M.getOrInsertGlobal(VT_TOTAL_EXEC_VTL_INSTRUCTIONS, Type::getInt64Ty(Ctx));
+    gVar = M.getNamedGlobal(VT_TOTAL_EXEC_VTL_INSTRUCTIONS);
+    gVar->setLinkage(GlobalValue::ExternalLinkage);
+    gVar->setAlignment(8);
+    #endif
+
     // VT_CALLBACK_FUNC
     auto Type = FunctionType::get(Type::getVoidTy(Ctx), false);
     Function::Create(Type, GlobalValue::ExternalLinkage, VT_CALLBACK_FUNC, &M);  
@@ -241,6 +255,10 @@ bool VirtualTimeManager::doInitialization(Module& M) {
 	return false;
     #endif
 
+    std::string ttnProjectTimingModel = "EMPIRICAL";
+    int ttnProjectRobSize = 1024;
+    int ttnProjectNumDispatchUnits = 8;
+
     #ifndef DISABLE_LOOKAHEAD
     
     const char *homedir;
@@ -249,6 +267,8 @@ bool VirtualTimeManager::doInitialization(Module& M) {
     }
     std::string home(homedir);
     std::string ttnProjectsDBPath = home + "/.ttn/projects.db";
+    
+
     if (access( ttnProjectsDBPath.c_str(), F_OK ) != -1) {
         auto Text = llvm::MemoryBuffer::getFileAsStream(
             ttnProjectsDBPath);
@@ -262,6 +282,12 @@ bool VirtualTimeManager::doInitialization(Module& M) {
                     TTN_PROJECTS_ACTIVE_KEY);
                 projectArchName = O->getString(
                     TTN_PROJECTS_PROJECT_ARCH_NAME_KEY).getValue();
+		ttnProjectTimingModel = O->getString(
+                    TTN_PROJECTS_PROJECT_TIMING_MODEL_KEY).getValue();
+		ttnProjectRobSize = O->getInteger(
+                    TTN_PROJECTS_PROJECT_ROB_SIZE_KEY).getValue();
+		ttnProjectNumDispatchUnits = O->getInteger(
+                    TTN_PROJECTS_PROJECT_DISPATCH_UNITS_KEY).getValue();
                 projectArchTimingsPath = O->getString(
                     TTN_PROJECTS_PROJECT_ARCH_TIMINGS_PATH_KEY).getValue();
                 clangLockFilePath = O->getString(
@@ -332,6 +358,12 @@ bool VirtualTimeManager::doInitialization(Module& M) {
                     TTN_PROJECTS_PROJECT_ARCH_NAME_KEY).getValue();
                 projectArchTimingsPath = O->getString(
                     TTN_PROJECTS_PROJECT_ARCH_TIMINGS_PATH_KEY).getValue();
+		ttnProjectTimingModel = O->getString(
+                    TTN_PROJECTS_PROJECT_TIMING_MODEL_KEY).getValue();
+		ttnProjectRobSize = O->getInteger(
+                    TTN_PROJECTS_PROJECT_ROB_SIZE_KEY).getValue();
+		ttnProjectNumDispatchUnits = O->getInteger(
+                    TTN_PROJECTS_PROJECT_DISPATCH_UNITS_KEY).getValue();
             } else {
                 outs() << "WARN: Parse ERROR: Ignoring ttnProjectsDB ... \n";
             }
@@ -341,10 +373,14 @@ bool VirtualTimeManager::doInitialization(Module& M) {
 
     outs() << "Project Arch Name: " << projectArchName << "\n";
     outs() << "Project Arch Timings Path: " << projectArchTimingsPath << "\n";
+    outs() << "Using Processor timing model: " << ttnProjectTimingModel << "\n";
+    outs() << "Modelled Processor Rob Size: " << ttnProjectRobSize << "\n";
+    outs() << "Modelled Processor Dispatch units: " << ttnProjectNumDispatchUnits << "\n";
 
     outs() << "Initializing target machine timing information ... " << "\n";
     targetMachineSpecificInfo = new TargetMachineSpecificInfo(
-        projectArchName, projectArchTimingsPath);
+        projectArchName, projectArchTimingsPath, ttnProjectTimingModel,
+	ttnProjectRobSize, ttnProjectNumDispatchUnits);
     outs() << "INFO: Inserting Virtual time specific code ...\n";
     return false;
 }
@@ -590,6 +626,12 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
     llvm::Module &M = const_cast<Module &>(*MMI->getModule());
     auto ret = targetMachineSpecificInfo->GetMBBCompletionCycles(origMBB, TII);
     long bblCyclesConsumed = (long)ret.first;
+    long vtlLength = 0;
+
+    #ifdef COLLECT_STATS
+    
+    long instrCount = (long)ret.second;
+    #endif
     
     bool isR10Alive = origMBB->isLiveIn(X86::R10) | origMBB->isLiveIn(X86::R10D) | origMBB->isLiveIn(X86::R10W) | origMBB->isLiveIn(X86::R10B);
 
@@ -617,8 +659,8 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
     #endif
 
     if (!isR10Alive) {
-	secondRegister = X86::R10;
-	isSecondRegisterLive = false;
+        secondRegister = X86::R10;
+        isSecondRegisterLive = false;
     } /*else if (!isR13Alive) {
 	secondRegister = X86::R13;
 	isSecondRegisterLive = false;
@@ -634,18 +676,24 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
     // origMBB:
     // restore eflags register
     // popf
-    if (isFlagsAlive)
-    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POPF64));
+    if (isFlagsAlive) {
+        llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::POPF64));
+        vtlLength += 2;
+    }
 
     // pop %r11
-    if (isR11Alive || force)
-    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::POP64r)).addReg(X86::R11);
+    if (isR11Alive || force) {
+        llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+            TII.get(X86::POP64r)).addReg(X86::R11);
+        vtlLength += 2;
+    }
 
     // pop secondRegister
-    if (isSecondRegisterLive || force)
-    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
-        TII.get(X86::POP64r)).addReg(secondRegister);
+    if (isSecondRegisterLive || force) {
+        llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+            TII.get(X86::POP64r)).addReg(secondRegister);
+        vtlLength += 2;
+    }
     
 
     #ifdef DISABLE_INSN_CACHE_SIM
@@ -653,6 +701,7 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
     llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
         TII.get(X86::CALL64pcrel32)).addGlobalAddress(
             M.getNamedValue(VT_STUB_FUNC));
+    vtlLength ++;
     #endif
 
 
@@ -670,6 +719,7 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
                 .addGlobalAddress(
                     M.getNamedValue(VT_CURR_LOOP_ID_VAR), 0,
                         MO_GOTPCREL).addReg(0);
+        vtlLength += 2;
     }
     
 
@@ -683,6 +733,7 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
             .addReg(secondRegister).addReg(X86::RIP).addImm(1).addReg(0)
             .addGlobalAddress(
                 M.getNamedValue(VT_CURR_BBID_VAR), 0, MO_GOTPCREL).addReg(0);
+    vtlLength += 2;
     #endif
 
     #ifndef DISABLE_INSN_CACHE_SIM
@@ -697,6 +748,8 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
         .addReg(secondRegister).addReg(X86::RIP).addImm(1).addReg(0)
         .addGlobalAddress(
             M.getNamedValue(VT_CURR_BBL_INSN_CACHE_MISS_PENALTY), 0, MO_GOTPCREL).addReg(0);
+    
+    vtlLength += 2;
     #endif
 
     // movq %r11 %(secondRegister)
@@ -721,7 +774,55 @@ void VirtualTimeManager::__insertVtlLogic(MachineFunction &MF,
             .addReg(0).addGlobalAddress(
                 M.getNamedValue(VT_CYCLES_COUNTER_VAR), 0, MO_GOTPCREL).addReg(0);
 
+    vtlLength += 4;
 
+
+    #ifdef COLLECT_STATS
+    // movq %r11 %(secondRegister)
+    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64mr))
+            .addReg(secondRegister).addImm(1).addReg(0).addImm(0).addReg(0)
+            .addReg(X86::R11);
+
+    // addq	instrCount, %r11
+    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+        TII.get(X86::ADD64ri8)).addDef(X86::R11).addReg(X86::R11)
+            .addImm(instrCount);
+
+
+    // movq (secondRegister) %r11
+    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+        TII.get(X86::MOV64rm)).addDef(X86::R11).addReg(secondRegister)
+            .addImm(1).addReg(0).addImm(0).addReg(0);
+
+    // movq VT_TOTAL_EXEC_BINARY_INSTRUCTIONS@GOTPCREL(%rip) secondRegister
+    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+        TII.get(X86::MOV64rm)).addReg(secondRegister).addReg(X86::RIP).addImm(1)
+            .addReg(0).addGlobalAddress(
+                M.getNamedValue(VT_TOTAL_EXEC_BINARY_INSTRUCTIONS), 0, MO_GOTPCREL).addReg(0);
+
+
+    // movq %r11 %(secondRegister)
+    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(), TII.get(X86::MOV64mr))
+            .addReg(secondRegister).addImm(1).addReg(0).addImm(0).addReg(0)
+            .addReg(X86::R11);
+
+    // addq  vtlLength, %r11
+    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+        TII.get(X86::ADD64ri8)).addDef(X86::R11).addReg(X86::R11)
+            .addImm(vtlLength);
+
+
+    // movq (secondRegister) %r11
+    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+        TII.get(X86::MOV64rm)).addDef(X86::R11).addReg(secondRegister)
+            .addImm(1).addReg(0).addImm(0).addReg(0);
+
+    // movq VT_TOTAL_EXEC_VTL_INSTRUCTIONS@GOTPCREL(%rip) secondRegister
+    llvm::BuildMI(*origMBB, origMBB->begin(), DebugLoc(),
+        TII.get(X86::MOV64rm)).addReg(secondRegister).addReg(X86::RIP).addImm(1)
+            .addReg(0).addGlobalAddress(
+                M.getNamedValue(VT_TOTAL_EXEC_VTL_INSTRUCTIONS), 0, MO_GOTPCREL).addReg(0);
+    #endif
 
     // push secondRegister
     if (isSecondRegisterLive || force)
