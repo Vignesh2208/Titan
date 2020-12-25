@@ -12,8 +12,11 @@ DISABLE_INSN_CACHE_SIM=yes
 # inserted by the compiler. Set no to enable data cache simulation. Set yes to disable it.
 DISABLE_DATA_CACHE_SIM=no
 
+
 DISABLE_VTL=no
+
 
 DISABLE_VT_SOCKET_LAYER=no
 
-COLLECT_STATS=yes
+
+COLLECT_STATS=no

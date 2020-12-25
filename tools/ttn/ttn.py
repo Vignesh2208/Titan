@@ -105,7 +105,7 @@ def main():
         c.L1_DATA_CACHE_LINES_SIZE_KEY: args.l1_data_cache_lines,
         c.L1_DATA_CACHE_REPLACEMENT_POLICY_KEY: args.l1_data_cache_policy,
         c.L1_DATA_CACHE_MISS_CYCLES_KEY: args.l1_data_cache_miss_cycles,
-        c.L1_DATA_CACHE_ASSOCIATIVITY_KEY: args.l1_ins_cache_assoc,
+        c.L1_DATA_CACHE_ASSOCIATIVITY_KEY: args.l1_data_cache_assoc,
 
         c.TIMING_MODEL_KEY: args.timing_model,
         c.ROB_SIZE_KEY: args.rob_size,

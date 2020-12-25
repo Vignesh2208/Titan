@@ -6,6 +6,8 @@
 
 u64_t U64MAX = 0xFFFFFFFFFFFFFFFF;
 
+extern s64 currBurstCyclesLeft;
+
 #define BIT_MASK(end, start)  ~(U64MAX << (end - start + 1));
 
 #define NUM_BITS(x) log2(x)
@@ -114,36 +116,111 @@ void dataReadCacheCallback(u64_t address, int size_bytes) {
     int set_idx = (address & dataCache.set_mask) >> dataCache.set_start_bit;
     int line_idx = set_idx * dataCache.associativity;
     s64 tag = (address & dataCache.tag_mask);
-
-    assert(set_idx >= 0 && set_idx < dataCache.num_sets);
+    int lru_idx = line_idx;
     dataCache.num_accesses ++;
+
+    if (dataCache.associativity == 1) {
+        if (cacheLineMeta[line_idx].tag == tag &&
+            cacheLineMeta[line_idx].valid) {
+            return;
+        }
+        cacheLineMeta[line_idx].tag = tag;
+        cacheLineMeta[line_idx].valid = 1;
+        dataCache.num_misses ++;
+        if (dataCache.is_timing_model_analytic) {
+            currBurstCyclesLeft -= dataCache.miss_cycles;
+        }
+        return;
+    }
 
     if (dataCache.associativity == 2) {
         if (cacheLineMeta[line_idx].tag == tag &&
             cacheLineMeta[line_idx].valid) {
-            cacheSetMeta[set_idx].lru_idx = line_idx + 1;
+            cacheLineMeta[line_idx].access_time = dataCache.num_accesses;
             return;
         }
 
         if (cacheLineMeta[line_idx + 1].tag == tag &&
             cacheLineMeta[line_idx + 1].valid) {
-            cacheSetMeta[set_idx].lru_idx = line_idx;
+            cacheLineMeta[line_idx + 1].access_time = dataCache.num_accesses;
             return;
         }
 
         // its a miss
-        if (line_idx == cacheSetMeta[set_idx].lru_idx) {
-            cacheLineMeta[line_idx].tag = tag;
-            cacheLineMeta[line_idx].valid = 1;
-            cacheSetMeta[set_idx].lru_idx = line_idx + 1;
-        } else {
-            cacheLineMeta[line_idx + 1].tag = tag;
-            cacheLineMeta[line_idx + 1].valid = 1;
-            cacheSetMeta[set_idx].lru_idx = line_idx;
-        }
+        
+
+        if (cacheLineMeta[line_idx + 1].access_time <
+            cacheLineMeta[lru_idx].access_time)
+            lru_idx = line_idx + 1;
+
+        cacheLineMeta[lru_idx].tag = tag;
+        cacheLineMeta[lru_idx].valid = 1;
+        cacheLineMeta[lru_idx].access_time = dataCache.num_accesses;
         dataCache.num_misses ++;
+        if (dataCache.is_timing_model_analytic) {
+            currBurstCyclesLeft -= dataCache.miss_cycles;
+        }
         return;
     }
+
+    if (dataCache.associativity % 4 == 0) {
+        int i = line_idx;
+
+        // loop unrolling makes it a bit faster
+        do {
+            if (cacheLineMeta[i].tag == tag &&
+                cacheLineMeta[i].valid) {
+                cacheLineMeta[i].access_time = dataCache.num_accesses;
+                return;
+            }
+            if (cacheLineMeta[i + 1].tag == tag &&
+                cacheLineMeta[i + 1].valid) {
+                cacheLineMeta[i + 1].access_time = dataCache.num_accesses;
+                return;
+            }
+            if (cacheLineMeta[i + 2].tag == tag &&
+                cacheLineMeta[i + 2].valid) {
+                cacheLineMeta[i + 2].access_time = dataCache.num_accesses;
+                return;
+            }
+            if (cacheLineMeta[i + 3].tag == tag &&
+                cacheLineMeta[i + 3].valid) {
+                cacheLineMeta[i + 3].access_time = dataCache.num_accesses;
+                return;
+            }
+            i += 4;
+
+        } while (i < dataCache.associativity + line_idx);
+
+        // its a miss
+        goto miss;
+    }
+
+    // handle other associativities here
+    for (int i = line_idx; i < dataCache.associativity + line_idx; i++) {
+        if (cacheLineMeta[i].tag == tag &&
+            cacheLineMeta[i].valid) {
+            cacheLineMeta[i].access_time = dataCache.num_accesses;
+            return;
+        }
+    }
+
+    miss:
+    for (int i = line_idx + 1; i < dataCache.associativity + line_idx; i++) {
+        if (cacheLineMeta[i].access_time < cacheLineMeta[lru_idx].access_time)
+            lru_idx = i;
+    }
+
+    cacheLineMeta[lru_idx].tag = tag;
+    cacheLineMeta[lru_idx].valid = 1;
+    cacheLineMeta[lru_idx].access_time = dataCache.num_accesses;
+    dataCache.num_misses ++;
+
+    if (dataCache.is_timing_model_analytic) {
+        currBurstCyclesLeft -= dataCache.miss_cycles;
+    }
+
+
 }
 
 //! Invoked before write accesses to memory. The write memory address is passed
@@ -153,41 +230,115 @@ void dataReadCacheCallback(u64_t address, int size_bytes) {
 void dataWriteCacheCallback(u64_t address, int size_bytes) {
     //printf("DataWriteCacheCallback: address: %p, size: %d\n", (void *)address,
     //    size_bytes);
+
+    // TODO: Handle dirty writes. For now, identical to dataReadCacheCallback.
     if (dataCache.initialization_status != 1)
         return;
 
     int set_idx = (address & dataCache.set_mask) >> dataCache.set_start_bit;
     int line_idx = set_idx * dataCache.associativity;
+    int lru_idx = line_idx;
     s64 tag = (address & dataCache.tag_mask);
-
-    assert(set_idx >= 0 && set_idx < dataCache.num_sets);
     dataCache.num_accesses ++;
+
+    if (dataCache.associativity == 1) {
+        if (cacheLineMeta[line_idx].tag == tag &&
+            cacheLineMeta[line_idx].valid) {
+            return;
+        }
+        cacheLineMeta[line_idx].tag = tag;
+        cacheLineMeta[line_idx].valid = 1;
+        dataCache.num_misses ++;
+        if (dataCache.is_timing_model_analytic) {
+            currBurstCyclesLeft -= dataCache.miss_cycles;
+        }
+        return;
+    }
 
     if (dataCache.associativity == 2) {
         if (cacheLineMeta[line_idx].tag == tag &&
             cacheLineMeta[line_idx].valid) {
-            cacheSetMeta[set_idx].lru_idx = line_idx + 1;
+            cacheLineMeta[line_idx].access_time = dataCache.num_accesses;
             return;
         }
 
         if (cacheLineMeta[line_idx + 1].tag == tag &&
             cacheLineMeta[line_idx + 1].valid) {
-            cacheSetMeta[set_idx].lru_idx = line_idx;
+            cacheLineMeta[line_idx + 1].access_time = dataCache.num_accesses;
             return;
         }
 
         // its a miss
-        if (line_idx == cacheSetMeta[set_idx].lru_idx) {
-            cacheLineMeta[line_idx].tag = tag;
-            cacheLineMeta[line_idx].valid = 1;
-            cacheSetMeta[set_idx].lru_idx = line_idx + 1;
-        } else {
-            cacheLineMeta[line_idx + 1].tag = tag;
-            cacheLineMeta[line_idx + 1].valid = 1;
-            cacheSetMeta[set_idx].lru_idx = line_idx;
-        }
+
+        if (cacheLineMeta[line_idx + 1].access_time <
+            cacheLineMeta[lru_idx].access_time)
+            lru_idx = line_idx + 1;
+
+        cacheLineMeta[lru_idx].tag = tag;
+        cacheLineMeta[lru_idx].valid = 1;
+        cacheLineMeta[lru_idx].access_time = dataCache.num_accesses;
         dataCache.num_misses ++;
+        if (dataCache.is_timing_model_analytic) {
+            currBurstCyclesLeft -= dataCache.miss_cycles;
+        }
         return;
+    }
+
+    if (dataCache.associativity % 4 == 0) {
+        int i = line_idx;
+
+        // loop unrolling makes it a bit faster
+        do {
+            if (cacheLineMeta[i].tag == tag &&
+                cacheLineMeta[i].valid) {
+                cacheLineMeta[i].access_time = dataCache.num_accesses;
+                return;
+            }
+            if (cacheLineMeta[i + 1].tag == tag &&
+                cacheLineMeta[i + 1].valid) {
+                cacheLineMeta[i + 1].access_time = dataCache.num_accesses;
+                return;
+            }
+            if (cacheLineMeta[i + 2].tag == tag &&
+                cacheLineMeta[i + 2].valid) {
+                cacheLineMeta[i + 2].access_time = dataCache.num_accesses;
+                return;
+            }
+            if (cacheLineMeta[i + 3].tag == tag &&
+                cacheLineMeta[i + 3].valid) {
+                cacheLineMeta[i + 3].access_time = dataCache.num_accesses;
+                return;
+            }
+            i += 4;
+
+        } while (i < dataCache.associativity + line_idx);
+
+        // its a miss
+        goto miss;
+    }
+
+    // handle other associativities here
+    for (int i = line_idx; i < dataCache.associativity + line_idx; i++) {
+        if (cacheLineMeta[i].tag == tag &&
+            cacheLineMeta[i].valid) {
+            cacheLineMeta[i].access_time = dataCache.num_accesses;
+            return;
+        }
+    }
+
+    miss:
+    for (int i = line_idx + 1; i < dataCache.associativity + line_idx; i++) {
+        if (cacheLineMeta[i].access_time < cacheLineMeta[lru_idx].access_time)
+            lru_idx = i;
+    }
+
+    cacheLineMeta[lru_idx].tag = tag;
+    cacheLineMeta[lru_idx].valid = 1;
+    cacheLineMeta[lru_idx].access_time = dataCache.num_accesses;
+    dataCache.num_misses ++;
+
+    if (dataCache.is_timing_model_analytic) {
+        currBurstCyclesLeft -= dataCache.miss_cycles;
     }
 
 }
