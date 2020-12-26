@@ -19,7 +19,7 @@ BBL_EXIT_NODE = '__BBL_{bbl_number}_EXIT'
 BBL_CALLSITE_ENTRY_NODE = '__BBL_{bbl_number}_CALLSITE_ENTRY_{call_site_number}_CALLED_FN_{called_fn}'
 BBL_CALLSITE_RETURN_NODE = '__BBL_{bbl_number}_CALLSITE_RETURN_{call_site_number}_CALLED_FN_{called_fn}'
 
-PKT_SEND_CALL_SITES = ['send', 'sendto', 'sendmsg', 'write', 'connect', 'read', '__unknown__',
+PKT_SEND_CALL_SITES = ['send', 'sendto', 'sendmsg', 'write', 'connect', '__unknown__',
     'MPI_Send', 'MPI_Init', 'MPI_Finalize']
 
 CLANG_ARTIFACTS_EXTENSION = 'artifacts.json'

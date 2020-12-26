@@ -91,7 +91,10 @@ void SetNetDevCurrTsliceQuantaUs(long quantaUs) {
     if (quantaUs == 0) {
         printf ("Setting quantaUS to zero !\n");
         fflush(stdout);
-    }
+    } /*else {
+        printf ("Setting quantaUS to %ld !\n", quantaUs);
+        fflush(stdout);
+    }*/
     netdev.currTsliceQuantaUs += quantaUs;
 }
 
@@ -247,12 +250,11 @@ void NetDevRxLoop() {
         }
     }
     
-    NetDevSendQueuedPackets();
-
-
-    MarkStackRxLoopComplete(netdev.tracerID, netdev.stackID);
     TimersProcessTick();
     GarbageCollectSockets();
+    NetDevSendQueuedPackets();
+
+    MarkStackRxLoopComplete(netdev.tracerID, netdev.stackID);
     // Update stack retransmit lookahead here as well
     //UpdateStackSendRtxTime(netdev.tracerID, netdev.stackID,
     //    GetEarliestRtxSendTime());
@@ -314,7 +316,6 @@ void * StackThread(void *arg) {
             if (!currQuantaUs)
                 currQuantaUs = 1;
             SetNetDevCurrTsliceQuantaUs(currQuantaUs);
-            SetNetDevCurrTsliceQuantaUs(1);
             NetDevRxLoop();
         }
     }

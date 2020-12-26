@@ -1499,7 +1499,6 @@ int HandleVtGetTracerLookahead(unsigned long arg, int ignore_eat_anchors) {
     }
 
     if (minStackSendRtxTime > 0 &&
-        minStackSendRtxTime >= curr_tracer->curr_virtual_time &&
         ((min_tracer_lookahead == 0) ||
         min_tracer_lookahead > minStackSendRtxTime))
       min_tracer_lookahead = minStackSendRtxTime;

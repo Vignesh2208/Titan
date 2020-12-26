@@ -467,8 +467,8 @@ static void *TcpRetransmissionTimeout(void *arg) {
         tsk->rto = tsk->rto * 2;
         tsk->backoff++;
 
-        //printf ("tcp-rto: snd_una: %u, rto: %u, backoff: %u\n", tcb->snd_una, tsk->rto, tsk->backoff);
-
+        printf ("tcp-rto: snd_una: %u, rto: %u, backoff: %u\n", tcb->snd_una, tsk->rto, tsk->backoff);
+        fflush(stdout);
 
         tsk->retransmit = TimerAdd(tsk->rto, &TcpRetransmissionTimeout, tsk);
 
