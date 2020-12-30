@@ -82,8 +82,10 @@ void TimerOneshot(uint32_t expire_ms, void *(*handler)(void *), void *arg) {
 
 struct timer *TimerAdd(uint32_t expire_ms, void *(*handler)(void *), void *arg) {
     struct timer *t = TimerAlloc();
+    s64 expires_ns = expire_ms;
+    expires_ns = expires_ns * NS_PER_MS;
     t->refcnt = 1;
-    t->expires = GetCurrentTimeTracer(GetStackTracerID()) + expire_ms * NS_PER_MS;
+    t->expires = GetCurrentTimeTracer(GetStackTracerID()) + expires_ns;
     t->cancelled = 0;
     t->handler = handler;
     t->arg = arg;
