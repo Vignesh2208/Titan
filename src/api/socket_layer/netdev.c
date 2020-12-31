@@ -88,13 +88,6 @@ void SetNetDevCurrTsliceQuantaUs(long quantaUs) {
     //printf ("Setting current tslice US to %ld\n", quantaUs);
     //printf ("Netdev QLen = %d\n", netdev.netDevPktQueueSize);
 
-    if (quantaUs == 0) {
-        printf ("Setting quantaUS to zero !\n");
-        fflush(stdout);
-    } /*else {
-        printf ("Setting quantaUS to %ld !\n", quantaUs);
-        fflush(stdout);
-    }*/
     netdev.currTsliceQuantaUs += quantaUs;
 }
 

@@ -1,6 +1,7 @@
 #include "vt_module.h"
 #include "dilated_timer.h"
 #include "common.h"
+#include "utils.h"
 #include "sync_experiment.h"
 #include "general_commands.h"
 
@@ -39,6 +40,7 @@ wait_queue_head_t * syscall_wait_wqueue;
 static struct proc_dir_entry *dilation_file;
 timeline * timeline_info;
 struct task_struct *loop_task;
+int loop_task_pid;
 struct task_struct ** chaintask;
 struct DilatedTimerTimelineBase ** globalDilatedTimerTimelineBases;
 
@@ -76,6 +78,7 @@ Gets the PID of our synchronizer spinner task (only in 64 bit)
 ***/
 int GetSpinnerPid(struct subprocess_info *info, struct cred *new) {
   loop_task = current;
+  loop_task_pid = current->pid;
   printk(KERN_INFO "Titan: Loop Task Started. Pid: %d\n", current->pid);
   return loop_task->pid;
 }
@@ -338,7 +341,11 @@ void __exit my_module_exit(void) {
 
   /* Kill the looping task */
 #ifdef __x86_64
-  if (loop_task != NULL) SendSignalToProcess(loop_task, SIGKILL);
+  if (loop_task != NULL && loop_task_pid > 0) {
+    struct task_struct * tsk = FindTaskByPid(loop_task_pid);
+    if (tsk)
+      SendSignalToProcess(tsk, SIGKILL);
+  }
 #endif
   PDEBUG_A("MODULE UNLOADED\n");
 }
