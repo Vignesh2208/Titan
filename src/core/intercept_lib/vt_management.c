@@ -66,7 +66,7 @@ void (*vtCloseFd)(int ThreadID, int fd) = NULL;
 
 /** Virtual TCP socket layer ***/
 int (*_vsocket)(int domain, int type, int protocol) = NULL;
-int (*_vconnect)(int sockfd, const struct sockaddr *addr, socklen_t addrlen) = NULL;
+int (*_vconnect)(int sockfd, const struct sockaddr *addr, socklen_t addrlen, int * did_block) = NULL;
 int (*_vwrite)(int sockfd, const void *buf, const unsigned int count, int *did_block) = NULL;
 int (*_vread)(int sockfd, void *buf, const unsigned int count, int *did_block) = NULL;
 int (*_vclose)(int sockfd) = NULL;
@@ -80,7 +80,7 @@ int (*_vgetsockname)(int socket, struct sockaddr *restrict addr,
                     socklen_t *restrict address_len) = NULL;
 int (*_vlisten)(int socket, int backlog) = NULL;
 int (*_vbind)(int socket, struct sockaddr *skaddr) = NULL;
-int (*_vaccept)(int socket, struct sockaddr *skaddr) = NULL;
+int (*_vaccept)(int socket, struct sockaddr *skaddr, int * did_block) = NULL;
 
 
 #ifndef DISABLE_VT_SOCKET_LAYER

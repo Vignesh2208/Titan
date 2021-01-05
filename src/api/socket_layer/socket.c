@@ -95,14 +95,22 @@ s64 GetEarliestRtxSendTime() {
     
     list_for_each(item, &sockets) {
         sock = list_entry(item, struct vsocket, list);
-        tsk = tcp_sk(sock);
-        if (tsk && tsk->retransmit && tsk->retransmit->expires > 0) {
+
+        if (sock == NULL || sock->sk == NULL || sock->sched_for_delete)
+            continue;
+
+        tsk = tcp_sk(sock->sk);
+        if (tsk && tsk->retransmit != NULL && tsk->retransmit->expires > 0) {
             if (earliest_rtx_send_time == 0 ||
                 tsk->retransmit->expires  < earliest_rtx_send_time)
                 earliest_rtx_send_time = tsk->retransmit->expires;
         }   
     }
     //pthread_rwlock_unlock(&slock);
+
+    if (earliest_rtx_send_time < TimerGetTick())
+        return 0;
+        
     return earliest_rtx_send_time;
 }
 
@@ -357,7 +365,7 @@ abort_socket:
 
 //! Initiates a connect operation on the provided socket file-descriptor to a remote
 //  host which is presumably listening on the specified addr.
-int _connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
+int _connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen, int * did_block) {
     struct vsocket *sock;
 
     if ((sock = GetSocket(sockfd)) == NULL) {
@@ -369,7 +377,7 @@ int _connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     SocketWrAcquire(sock);
     IncSocketRef(sock);
 
-    int rc = sock->ops->connect(sock, addr, addrlen, 0);
+    int rc = sock->ops->connect(sock, addr, addrlen, 0, did_block);
     switch (rc) {
     case -EINVAL:
     case -EAFNOSUPPORT:
@@ -743,7 +751,7 @@ out:
 //  has been established from a remote client. It returns a new vsocket describing
 //  the connection. If the socket is closed before this function returns, then
 //  a null pointer is returned.
-int _accept(int sockfd, struct sockaddr *skaddr) {
+int _accept(int sockfd, struct sockaddr *skaddr, int * did_block) {
 	struct vsocket *newsock = NULL;
     struct vsocket *sock;
     int err = 0;
@@ -762,7 +770,7 @@ int _accept(int sockfd, struct sockaddr *skaddr) {
     IncSocketRef(sock);
     print_debug ("Invoking InetAccept !\n");
 	if (sock->ops)
-		newsock = sock->ops->accept(sock, &err, skaddr);
+		newsock = sock->ops->accept(sock, &err, skaddr, did_block);
     DecSocketRef(sock);
 	SocketRelease(sock);
 

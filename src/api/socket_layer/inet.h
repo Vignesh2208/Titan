@@ -31,7 +31,7 @@ int InetGetSockName(struct vsocket *sock, struct sockaddr *restrict address,
 
 int InetListen(struct vsocket * sock, int backlog);
 int InetBind(struct vsocket * sock, const struct sockaddr * sockaddr);
-struct vsocket * InetAccept(struct vsocket *sock, int * err, struct sockaddr *skaddr);
+struct vsocket * InetAccept(struct vsocket *sock, int * err, struct sockaddr *skaddr, int * did_block);
 
 struct vsock *InetLookup(struct sk_buff *skb, uint32_t saddr, uint32_t daddr,
                          uint16_t sport, uint16_t dport);

@@ -258,7 +258,7 @@ int TcpChecksum(struct tcp_sock *sock, struct tcphdr *thdr);
 void TcpSelectInitialWindow(uint32_t *rcv_wnd);
 
 int TcpListen(struct vsock *sk, int backlog);
-struct vsock *TcpAccept(struct vsock *sk);
+struct vsock *TcpAccept(struct vsock *sk, int * did_block);
 
 int GenerateISS();
 struct vsock *TcpAllocSock();

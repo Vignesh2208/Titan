@@ -54,4 +54,5 @@ int MPI_Get_processor_name(char *name, int *resultlen);
 int MPI_Send(void *buf, int count, int datatype, int dest, int tag, int MPI_comm);
 int MPI_Recv(void *buf, int count, int datatype, int source, int tag, int MPI_comm, void *status);
 int MPI_Finalize();
+int MPI_Bcast(void *buffer, int count, int datatype, int root, int MPI_comm);
 double MPI_Wtime();

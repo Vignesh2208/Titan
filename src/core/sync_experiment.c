@@ -126,9 +126,9 @@ void WaitForAllProcessesResumedFromDilatedTimers(int timelineID) {
 
     while (head != NULL) {
         curr_tracer = (tracer*)head->item;
-        GetTracerStructWrite(curr_tracer);
+        //GetTracerStructWrite(curr_tracer);
         WaitForAllProcessesResumedFromDilatedTimersOn(curr_tracer);
-        PutTracerStructWrite(curr_tracer);
+        //PutTracerStructWrite(curr_tracer);
         head = head->next;
     }
 }
@@ -830,10 +830,10 @@ void PruneTracerQueue(tracer * curr_tracer, int is_schedule_queue){
             else
                 PopScheduleList(curr_tracer);
 
+            PutTracerStructWrite(curr_tracer);
+
             // Inform any associated stack threads for this pid that the process has exited
             TriggerAllStackThreadExecutions(curr_tracer, 0, STACK_THREAD_PROCESS_EXIT, curr_elem->pid); 
-
-            PutTracerStructWrite(curr_tracer);
             GetTracerStructRead(curr_tracer);
             
         } else {

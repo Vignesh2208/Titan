@@ -21,7 +21,7 @@ struct net_ops {
     
 	int (*set_port)(struct vsock *sk, unsigned short port);
 	int (*listen)(struct vsock *sk, int backlog);
-	struct vsock *(*accept)(struct vsock * sk);
+	struct vsock *(*accept)(struct vsock * sk, int * did_block);
 };
 
 struct vsock {

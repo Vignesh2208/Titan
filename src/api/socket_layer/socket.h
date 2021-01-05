@@ -45,7 +45,7 @@ struct vsock_type {
 
 struct vsock_ops {
     int (*connect) (struct vsocket *sock, const struct sockaddr *addr,
-                    int addr_len, int flags);
+                    int addr_len, int flags, int * did_block);
     int (*write) (struct vsocket *sock, const void *buf, int len, int * did_block);
     int (*read) (struct vsocket *sock, void *buf, int len, int * did_block);
     int (*close) (struct vsocket *sock);
@@ -57,7 +57,7 @@ struct vsock_ops {
     int (*getsockname) (struct vsocket *sock, struct sockaddr *restrict addr,
                         socklen_t *restrict address_len);
     struct vsocket * (*accept)(struct vsocket *sock, int * err,
-                               struct sockaddr *skaddr);
+                               struct sockaddr *skaddr, int * did_block);
 	int (*listen)(struct vsocket * sock, int backlog);
 	int (*bind)(struct vsocket * sock, const struct sockaddr * sockaddr);
 };
@@ -86,7 +86,7 @@ struct vsocket {
 };
 
 int _socket(int domain, int type, int protocol);
-int _connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+int _connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen, int * did_block);
 int _write(int sockfd, const void *buf, const unsigned int count, int *did_block);
 int _read(int sockfd, void *buf, const unsigned int count, int * did_block);
 int _close(int sockfd);
@@ -99,7 +99,7 @@ int _getpeername(int socket, struct sockaddr *restrict addr, socklen_t *restrict
 int _getsockname(int socket, struct sockaddr *restrict addr, socklen_t *restrict address_len);
 int _listen(int socket, int backlog);
 int _bind(int socket, const struct sockaddr *skaddr);
-int _accept(int socket, struct sockaddr *skaddr) ;
+int _accept(int socket, struct sockaddr *skaddr, int * did_block) ;
 
 struct vsocket *SocketLookup(uint32_t saddr, uint32_t daddr,
                               uint16_t sport, uint16_t dport);

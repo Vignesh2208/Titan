@@ -140,7 +140,7 @@ extern int (*vtComputeClosestTimerExpiryForPoll)(int ThreadID,
 
 /** Virtual TCP socket layer ***/
 extern int (*_vsocket)(int domain, int type, int protocol);
-extern int (*_vconnect)(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+extern int (*_vconnect)(int sockfd, const struct sockaddr *addr, socklen_t addrlen, int * did_block);
 extern int (*_vwrite)(int sockfd, const void *buf, const unsigned int count, int *did_block);
 extern int (*_vread)(int sockfd, void *buf, const unsigned int count, int *did_block);
 extern int (*_vclose)(int sockfd);
@@ -156,7 +156,7 @@ extern int (*_vlisten)(int socket, int backlog);
 
 
 extern int (*_vbind)(int socket, const struct sockaddr *skaddr);
-extern int (*_vaccept)(int socket, struct sockaddr *skaddr);
+extern int (*_vaccept)(int socket, struct sockaddr *skaddr, int * did_block);
 
 
 #ifndef DISABLE_VT_SOCKET_LAYER
@@ -770,7 +770,7 @@ int timerfd_gettime(int fd, struct itimerspec *curr_value) {
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 
     int ret;
-
+    int did_block = 0;
 
     #ifndef DISABLE_VT_SOCKET_LAYER
         if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
@@ -783,7 +783,7 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
             #endif
 
 
-            ret = _vaccept(sockfd, addr);
+            ret = _vaccept(sockfd, addr, &did_block);
             if(ret) {
                 vtAddSocket(ThreadID, ret, FD_PROTO_TYPE_TCP, 0);
             }
@@ -792,7 +792,8 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
             vtSetLookahead(bblA, LOOKAHEAD_ANCHOR_CURR_TIME);
             #endif
 
-            vtTriggerSyscallFinish(ThreadID);
+            if (did_block)
+                vtTriggerSyscallFinish(ThreadID);
         } else {
             ret = orig_accept(sockfd, addr, addrlen);
             if(ret) {
@@ -817,7 +818,7 @@ int accept4(int sockfd, struct sockaddr *addr,
             socklen_t *addrlen, int flags) {
 
     int ret;
-
+    int did_block = 0;
 
 
     #ifndef DISABLE_VT_SOCKET_LAYER
@@ -829,7 +830,7 @@ int accept4(int sockfd, struct sockaddr *addr,
             #ifndef DISABLE_LOOKAHEAD
             s64 bblA = vtGetBBLLookahead((long)*globalCurrBBID);
             #endif
-            ret = _vaccept(sockfd, addr);
+            ret = _vaccept(sockfd, addr, &did_block);
             if(ret) {
                 vtAddSocket(ThreadID, ret, FD_PROTO_TYPE_TCP, 0);
             }
@@ -838,7 +839,8 @@ int accept4(int sockfd, struct sockaddr *addr,
             vtSetLookahead(bblA, LOOKAHEAD_ANCHOR_CURR_TIME);
             #endif
 
-            vtTriggerSyscallFinish(ThreadID);
+            if (did_block)
+                vtTriggerSyscallFinish(ThreadID);
         } else {
             ret = orig_accept4(sockfd, addr, addrlen, flags);
             if(ret) {
@@ -1146,6 +1148,7 @@ int close(int fd) {
 
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     int ret;
+    int did_block = 0;
     #ifndef DISABLE_VT_SOCKET_LAYER
         if (vtIsNetDevInCallback() || !vtInitialized || *vtInitialized != 1)
             return orig_connect(sockfd, addr, addrlen);
@@ -1156,11 +1159,13 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
             s64 bblA = vtGetBBLLookahead((long)*globalCurrBBID);
             #endif
 
-            ret = _vconnect(sockfd, addr, addrlen);
+            ret = _vconnect(sockfd, addr, addrlen, &did_block);
             
             #ifndef DISABLE_LOOKAHEAD
             vtSetLookahead(bblA, LOOKAHEAD_ANCHOR_CURR_TIME);
             #endif
+
+            if (did_block)
             vtTriggerSyscallFinish(ThreadID);
             
 

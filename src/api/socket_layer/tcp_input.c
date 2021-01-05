@@ -532,7 +532,7 @@ static int TcpSynSent(struct tcp_sock *tsk, struct sk_buff *skb, struct tcphdr *
 
         /* RFC 6298: Sender SHOULD set RTO <- 1 second */
 
-        tsk->rto = 1000;
+        tsk->rto = 200;
         // directly send ack because socket book-keeping is upto date.
         // Send ack with seq=snd.nxt (=client.iss + 1), ack_seq=rcv.nxt (=server.iss + 1)
         // this ack will be processed in step-5 of TcpInputState function

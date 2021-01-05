@@ -634,9 +634,9 @@ void WakeUpProcessesWaitingOnSyscalls(int timelineID, s64 syscall_wait_return) {
 
     while (head != NULL) {
         curr_tracer = (tracer*)head->item;
-        GetTracerStructWrite(curr_tracer);
+        //GetTracerStructWrite(curr_tracer);
         wakeUpSyscallWaits(curr_tracer, syscall_wait_return);
-        PutTracerStructWrite(curr_tracer);
+        //PutTracerStructWrite(curr_tracer);
         head = head->next;
     }
 
@@ -654,9 +654,9 @@ void TriggerStackThreadExecutionsOn(int timelineID, s64 curr_tslice_quanta, int 
 
     while (head != NULL) {
         curr_tracer = (tracer*)head->item;
-        GetTracerStructWrite(curr_tracer);
+        //GetTracerStructWrite(curr_tracer);
         TriggerAllStackThreadExecutions(curr_tracer, curr_tslice_quanta, exit_status, -1);
-        PutTracerStructWrite(curr_tracer);
+        //PutTracerStructWrite(curr_tracer);
         head = head->next;
     }
 

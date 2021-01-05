@@ -204,7 +204,8 @@ void NetDevSendQueuedPackets() {
     if (netdev.netDevPktQueueSize) {
         UpdateStackSendRtxTime(netdev.tracerID, netdev.stackID, TimerGetTick());
     } else {
-        UpdateStackSendRtxTime(netdev.tracerID, netdev.stackID, 0);
+        //UpdateStackSendRtxTime(netdev.tracerID, netdev.stackID, 0);
+        UpdateStackSendRtxTime(netdev.tracerID, netdev.stackID, GetEarliestRtxSendTime());
     }
 
     netdev.in_callback = old_state;
@@ -254,8 +255,8 @@ void NetDevRxLoop() {
     
 
     if (!NumActiveSockets()) {
-        MarkNetworkStackInactive();
         TimersCleanup();
+        MarkNetworkStackInactive();
     }
     netdev.in_callback = 0;
 }

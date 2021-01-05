@@ -49,10 +49,11 @@ int TcpListen(struct vsock *sk, int backlog) {
 }
 
 //! Wait until the accept syscall request has been successfully served.
-int TcpWaitAccept(struct tcp_sock *tsk) {
+int TcpWaitAccept(struct tcp_sock *tsk, int * did_block) {
     print_debug ("Entering tcp wait accept !\n");
 
     do {
+        *did_block = 1;
         SocketRelease(tsk->sk.sock);
         RegisterSysCallWait();
         SocketWrAcquire(tsk->sk.sock);
@@ -69,12 +70,12 @@ int TcpWaitAccept(struct tcp_sock *tsk) {
 //! Block until the accept syscall request is successfully served. This
 //  syscall may also be interrupted by close syscall i.e when this socket is
 //  closed, this must prematurely return NULL.
-struct vsock *TcpAccept(struct vsock *sk) {
+struct vsock *TcpAccept(struct vsock *sk, int * did_block) {
 	struct tcp_sock *tsk = tcpsk(sk);
 	struct tcp_sock *newtsk = NULL;
-    
+    *did_block = 0;
 	while (ListEmpty(&tsk->accept_queue)) {
-		if (TcpWaitAccept(tsk) < 0)
+		if (TcpWaitAccept(tsk, did_block) < 0)
 			goto out;
         if (tsk->accept_err || sk->err < 0)
             return NULL;
@@ -195,6 +196,7 @@ void TcpInitSock(struct tcp_sock * tsk) {
     tsk->trigger_rcv_ack = 0;
     tsk->sk.proto_sock = tsk;
     tsk->rto = 200;
+    tsk->accept_backlog = 0;
     tsk->send_queue_size = 0;
     tsk->chk_pt_rcv_queue_size = 0;
     tsk->chk_pt_send_queue_size = 0;

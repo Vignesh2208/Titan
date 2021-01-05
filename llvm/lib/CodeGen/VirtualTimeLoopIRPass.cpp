@@ -241,9 +241,9 @@ bool VirtualTimeLoopIRPass::arePerfectlyNested(Loop &OuterLoop, Loop &InnerLoop,
  
    if (!containsOnlySafeInstructions(*OuterLoopHeader) ||
        //!containsOnlySafeInstructions(*OuterLoopLatch) ||
-       (InnerLoopPreHeader != OuterLoopHeader &&
-        !(InnerLoop.getSubLoops().size() == 0) && !containsOnlySafeInstructions(*InnerLoopPreHeader)) ||
-       !containsOnlySafeInstructions(*InnerLoop.getExitBlock())) {
+       (InnerLoopPreHeader != OuterLoopHeader && !(InnerLoop.getSubLoops().size() == 0) && !containsOnlySafeInstructions(*InnerLoopPreHeader))
+       //|| !containsOnlySafeInstructions(*InnerLoop.getExitBlock())
+     ) {
      LLVM_DEBUG(dbgs() << "Not perfectly nested: code surrounding inner loop is "
                           "unsafe\n";);
      return false;

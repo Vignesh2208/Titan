@@ -794,7 +794,7 @@ int HandleVtSetRunnable(unsigned long arg, struct dilated_task_struct * dilated_
 		    wake_up_interruptible(
 		      &syscall_wait_wqueue[curr_tracer->timeline_assignment]);
 	    else {
-		wake_up_interruptible(&dilated_task->d_task_wqueue);
+		    wake_up_interruptible(&dilated_task->d_task_wqueue);
 	    }
       }
       PDEBUG_V(
@@ -1386,9 +1386,9 @@ int HandleVtSetProcessLookahead(unsigned long arg, struct dilated_task_struct * 
         dilated_task->associated_tracer->earliest_arrival_time = dilated_task->associated_tracer->curr_virtual_time;
       new_process_lookahead = dilated_task->associated_tracer->earliest_arrival_time + bulk_lookahead_expiry_time;
     }
+
+
     curr_process_lookahead = GetProcessCurrLookahead(dilated_task);
-
-
     if (new_process_lookahead >= curr_process_lookahead) {
         dilated_task->bulk_lookahead_expiry_time = bulk_lookahead_expiry_time;
         dilated_task->lookahead_anchor_type = lookahead_anchor_type;

@@ -7,8 +7,8 @@
 
 extern struct net_ops tcp_ops;
 
-static int inet_stream_connect(struct vsocket *sock, const struct sockaddr *addr,
-                               int addr_len, int flags);
+static int InetStreamConnect(struct vsocket *sock, const struct sockaddr *addr,
+                               int addr_len, int flags, int * did_block);
 
 static int INET_OPS = 1;
 
@@ -17,7 +17,7 @@ struct net_family inet = {
 };
 
 static struct vsock_ops inet_stream_ops = {
-    .connect = &inet_stream_connect,
+    .connect = &InetStreamConnect,
     .write = &InetWrite,
     .read = &InetRead,
     .close = &InetClose,
@@ -62,8 +62,8 @@ int InetCreate(struct vsocket *sock, int protocol) {
     return 0;
 }
 
-static int inet_stream_connect(struct vsocket *sock, const struct sockaddr *addr,
-                        int addr_len, int flags) {
+static int InetStreamConnect(struct vsocket *sock, const struct sockaddr *addr,
+                        int addr_len, int flags, int * did_block) {
     struct vsock *sk = sock->sk;
     int rc = 0;
     
@@ -97,11 +97,13 @@ static int inet_stream_connect(struct vsocket *sock, const struct sockaddr *addr
         sk->err = -EINPROGRESS;
 
         if (sock->flags & O_NONBLOCK) {
+            *did_block = 0;
             goto out;
         }
 
         
         do {
+            *did_block = 1;
             SocketRelease(sock);
             RegisterSysCallWait();
             SocketWrAcquire(sock);
@@ -226,7 +228,7 @@ int InetGetSockName(struct vsocket *sock, struct sockaddr *restrict address,
     return 0;
 }
 
-struct vsocket * InetAccept(struct vsocket *sock, int * err, struct sockaddr *skaddr) {
+struct vsocket * InetAccept(struct vsocket *sock, int * err, struct sockaddr *skaddr, int * did_block) {
 	struct vsock *sk = sock->sk;
 	struct vsock *newsk;
     struct vsocket * newvsock = NULL;
@@ -234,7 +236,7 @@ struct vsocket * InetAccept(struct vsocket *sock, int * err, struct sockaddr *sk
 	if (!sk)
 		goto out;
     print_debug ("Invoking tcp accept !\n");
-	newsk = sk->ops->accept(sk);
+	newsk = sk->ops->accept(sk, did_block);
     print_debug ("Finished invoking tcp accept !\n");
 	if (newsk) {
 		newvsock = newsk->sock;

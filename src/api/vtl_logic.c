@@ -148,12 +148,16 @@ void SetLoopLookahead(int initValue, int finalValue, int stepValue, int loopDept
     	s64 loop_lookahead_ns = GetLoopLookAhead((long)currLoopID)*numIterations;
         loop_lookahead_ns = (s64)((loop_lookahead_ns)/cpuCyclesPerNs);
 
-        printf("Called SetLoopLookahead: init: %d, final: %d, step: %d, "
-               "loopDepth: %d, cumulative-num-iterations: %d, look-ahead-ns: %lld\n",
-               initValue, finalValue, stepValue, origLoopDepth, numIterations,
-               loop_lookahead_ns);
+	    if (loopDepth > 0 || loop_lookahead_ns > 1000000) {
+		    printf("Called SetLoopLookahead: init: %d, final: %d, step: %d, "
+		           "loopDepth: %d, cumulative-num-iterations: %d, look-ahead-ns: %lld\n",
+		        initValue, finalValue, stepValue, origLoopDepth, numIterations,
+		        loop_lookahead_ns);
+	    }
 
-        if (loop_lookahead_ns)
+        if (loop_lookahead_ns && loop_lookahead_ns > 1000000) 
+	    // this is an optimization - if loop lookahead is not much - don't bother
+            // its expensive to make the system call to set this lookahead
     	    SetLookahead(loop_lookahead_ns + GetCurrentTime(), LOOKAHEAD_ANCHOR_NONE);
 
     }

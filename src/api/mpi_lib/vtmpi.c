@@ -13,6 +13,7 @@ struct sockaddr_in serverAddr;
 pthread_t *serverThread;
 int *foundCondition;
 int *sockets;
+int bcast_tag = 1234;
 
 struct peerNode *nodes;
 struct message *messageList = NULL;
@@ -190,6 +191,50 @@ void *listenForMessages(void* arg) {
 	free(mapping);
 	free(pfds);
 	return NULL;
+}
+
+int MPI_Bcast(void *buffer, int count, int datatype, int root, int MPI_comm) {
+	int start = 0;
+	if (root == rank) {
+		// sender
+		while ( start < count ) {
+			if (count - start < 100) {
+				for (int i = 0; i < total; i++) {
+					if (i == rank) continue;
+					MPI_Send(buffer + datatype * start, count - start, datatype,
+						i, bcast_tag, MPI_comm);
+
+				}
+				break;
+			} else {
+				for (int i = 0; i < total; i++) {
+					if (i == rank) continue;
+					MPI_Send(buffer + datatype * start, 100, datatype,
+						i, bcast_tag, MPI_comm);
+
+				}
+				start += 100;
+				bcast_tag ++;
+			}
+		}
+
+	} else {
+		while ( start < count ) {
+			if (count - start < 100) {
+				MPI_Recv(buffer + datatype * start, count - start, datatype, root,
+					bcast_tag, MPI_comm, NULL);
+				break; 
+			} else {
+				MPI_Recv(buffer + datatype * start, 100, datatype, root,
+					bcast_tag, MPI_comm, NULL);
+				start += 100;
+				bcast_tag ++; 
+
+			}
+		}
+
+	}
+	return 0;
 }
 
 int MPI_Send(void *buf, int count, int datatype,
@@ -386,9 +431,11 @@ void connectToLower() {  // useful for worker (rank = 1). sockets[0] is set
 	    	serverAddr.sin_addr.s_addr = inet_addr(nodes[i].IP);
 	    	memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
 		printf ("Connecting to lower ranked node: %d at %s:%d\n", i, nodes[i].IP, nodes[i].port);
+		fflush(stdout);
 		connect(clientSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
 		send(clientSocket, &buffer, sizeof(int), 0);
 		printf ("Successfully connected to lower ranked node: %d at %s:%d\n", i, nodes[i].IP, nodes[i].port);
+		fflush(stdout);
 		sockets[i] = clientSocket;
 	}
 }
@@ -396,21 +443,27 @@ void connectToLower() {  // useful for worker (rank = 1). sockets[0] is set
 //Accept connections from nodes ranked higher than itself.
 void acceptFromUpper() { // useful for master (rank = 0). sockets[1] is set
 	int i;
+	listen(serverSocket, total);
 	for(i = total - 1; i>rank; i--) {
 		int buffer;
 		struct sockaddr_in clientAddr;
 		socklen_t addr_size;
 		addr_size = sizeof(clientAddr);
-		listen(serverSocket, total);
+		
 		printf ("Accepting connection from higher ranked node: %d\n", i);
+		fflush(stdout);
 		int confd = accept(serverSocket, 
 			(struct sockaddr *)&clientAddr, &addr_size);
+		printf ("Accepted connection from higher ranked node: %d\n", i);
+		fflush(stdout);
 		recv(confd, &buffer, sizeof(int), 0);
 		sockets[buffer] = confd;
 		printf ("Successfully connected with higher ranked node: %d\n", i);
+		fflush(stdout);
 	}	
 
 	printf ("Closing server socket: %d\n", serverSocket);
+	fflush(stdout);
 	close(serverSocket);
 }
 
@@ -454,14 +507,25 @@ int MPI_Init(int *argc, char **argv[]) {
 	setupServerSocket();
 	if (rank > 0)
 		usleep(rank * 100);
+
 	doFileWork();
+
+	printf ("\n---------------- Waiting for higher ranked nodes to connect --------------\n");
+	fflush(stdout);
 	acceptFromUpper();
 	//if(rank != total -1)
+	printf ("\n---------------- Connecting to lowed ranked nodes ! --------------\n");
+	fflush(stdout);
 	connectToLower();
 
 	int *ignoreRank = (int *)malloc(sizeof(int));
 	*ignoreRank = rank;
+	printf ("\n---------------- Creating listen Thread ! --------------\n");
+	fflush(stdout);
 	pthread_create(serverThread, NULL, listenForMessages, ignoreRank);
+
+	printf ("\n---------------- MPI-Init success ! --------------\n");
+	fflush(stdout);
 	return 0;
 }
 
