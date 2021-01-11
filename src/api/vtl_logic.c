@@ -238,7 +238,9 @@ void SleepForNS(int ThreadID, int64_t duration) {
     currBurstCyclesLeft = (s64)(currBurstCyclesLeft*cpuCyclesPerNs);
     int myThreadID = syscall(SYS_gettid);
 
-    if (currActiveThreadID != myThreadID) { // There was a context switch
+     if (!currThreadInfo->ignoreCtxSwitches &&
+         currActiveThreadID != myThreadID) { // There was a context switch
+        printf ("Sleep-For: Flushing Data Cache !\n");
         #ifndef DISABLE_DATA_CACHE_SIM
         flushDataCache();
         #endif
@@ -247,7 +249,9 @@ void SleepForNS(int ThreadID, int64_t duration) {
         flushInsCache();
         #endif
     }
-    currActiveThreadID = myThreadID;
+
+    if (!currThreadInfo->ignoreCtxSwitches)
+        currActiveThreadID = myThreadID;
     
     
     specifiedBurstCycles = currBurstCyclesLeft;
@@ -371,6 +375,13 @@ void CleanupThreadInfo(ThreadInfo * relevantThreadInfo) {
     
 }
 
+void MarkIgnoreCtxSwitches(int ThreadID) {
+    ThreadInfo * currThreadInfo = hmap_get_abs(&thread_info_map, ThreadID);
+    if (!currThreadInfo)  return;
+
+    currThreadInfo->ignoreCtxSwitches = 1;
+}
+
 //! Allots thread specific information
 ThreadInfo * AllotThreadInfo(int ThreadID, int processPID) {
     ThreadInfo * currThreadInfo = NULL;
@@ -384,6 +395,7 @@ ThreadInfo * AllotThreadInfo(int ThreadID, int processPID) {
         currThreadInfo->in_callback = 0;
         currThreadInfo->fpuState = (char *) malloc(512 * sizeof(char));
         currThreadInfo->stack.totalBurstLength = 0;
+        currThreadInfo->ignoreCtxSwitches = 0;
 
 	#ifndef DISABLE_VT_SOCKET_LAYER
 	currThreadInfo->stackThread = -1;
@@ -452,7 +464,10 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
     currBurstCyclesLeft = MarkBurstComplete(0);
     int myThreadID = syscall(SYS_gettid);
 
-    if (currActiveThreadID != myThreadID) { // There was a context switch
+    if (!currThreadInfo->ignoreCtxSwitches &&
+         currActiveThreadID != myThreadID) { // There was a context switch
+
+        printf ("Force complete burst: Flushing Data Cache !\n");
         #ifndef DISABLE_DATA_CACHE_SIM
         flushDataCache();
         #endif
@@ -461,7 +476,8 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
         flushInsCache();
         #endif
     }
-    currActiveThreadID = myThreadID;
+    if (!currThreadInfo->ignoreCtxSwitches)
+        currActiveThreadID = myThreadID;
 
     if (currBurstCyclesLeft)
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);
@@ -504,7 +520,10 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     
     currBurstCyclesLeft = FinishBurst();
     int myThreadID = syscall(SYS_gettid);
-    if (currActiveThreadID != myThreadID) { // There was a context switch
+     if (!currThreadInfo->ignoreCtxSwitches &&
+         currActiveThreadID != myThreadID) { // There was a context switch
+
+        printf ("Signal Burst Completion: Flushing Data Cache !\n");
         #ifndef DISABLE_DATA_CACHE_SIM
         flushDataCache();
         #endif
@@ -513,7 +532,8 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
         flushInsCache();
         #endif
     }
-    currActiveThreadID = myThreadID;
+    if (!currThreadInfo->ignoreCtxSwitches)
+        currActiveThreadID = myThreadID;
 
     if (currBurstCyclesLeft)
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);
@@ -741,6 +761,7 @@ s64 TriggerSyscallWait(int ThreadID, int save) {
     #ifndef DISABLE_LOOKAHEAD
     if  (save) currThreadInfo->stack.currBBID = currBBID;
     #endif
+
     s64 ret = TriggerSyscallWaitAPI();
     if (ret <= 0) HandleVTExpEnd(ThreadID);
 
@@ -762,7 +783,12 @@ void TriggerSyscallFinish(int ThreadID) {
     currBurstCyclesLeft = MarkBurstComplete(1);
 
     int myThreadID = syscall(SYS_gettid);
-    if (currActiveThreadID != myThreadID) { // There was a context switch
+     if (!currThreadInfo->ignoreCtxSwitches &&
+         currActiveThreadID != myThreadID) { // There was a context switch
+
+        printf ("Trigger syscall finish: %d, currActiveThreadID = %d, myThreadID = %d. Flushing Data Cache !\n", ThreadID,
+            currActiveThreadID, myThreadID);
+
         #ifndef DISABLE_DATA_CACHE_SIM
         flushDataCache();
         #endif
@@ -771,7 +797,8 @@ void TriggerSyscallFinish(int ThreadID) {
         flushInsCache();
         #endif
     }
-    currActiveThreadID = myThreadID;
+    if (!currThreadInfo->ignoreCtxSwitches)
+        currActiveThreadID = myThreadID;
 
     if (currBurstCyclesLeft)
         currBurstCyclesLeft = max((s64)(currBurstCyclesLeft*cpuCyclesPerNs), 1);

@@ -61,6 +61,7 @@ typedef struct ThreadInfoStruct {
     int in_force_completed;
     int in_callback;
     int processPID; // pid of the holder process. May differ from pid if this is a Thread
+    int ignoreCtxSwitches;
     #ifndef DISABLE_VT_SOCKET_LAYER
     pthread_t stackThread;
     #endif
@@ -76,6 +77,8 @@ typedef struct ThreadInfoStruct {
 
 s64 GetCurrentTime();
 void HandleVTExpEnd(int ThreadID);
+
+void MarkIgnoreCtxSwitches(int ThreadID);
 
 s64 TriggerSyscallWait(int ThreadID, int save);
 void TriggerSyscallFinish(int ThreadID);

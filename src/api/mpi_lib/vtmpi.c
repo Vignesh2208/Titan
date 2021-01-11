@@ -145,6 +145,8 @@ void *listenForMessages(void* arg) {
 		perror("malloc");
 		
     int ThreadID = syscall(SYS_gettid);
+
+	MarkIgnoreCtxSwitches(ThreadID);
         
 	/* Open each file on command line, and add it 'pfds' array */
 	do {
