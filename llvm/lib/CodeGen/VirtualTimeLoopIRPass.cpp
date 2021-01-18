@@ -217,12 +217,9 @@ bool VirtualTimeLoopIRPass::arePerfectlyNested(Loop &OuterLoop, Loop &InnerLoop,
          return false;
        }*/
  
-       // The only binary instruction allowed is the outer loop step instruction,
        // the only comparison instructions allowed are the inner loop guard
        // compare instruction and the outer loop latch compare instruction.
-       if ((isa<BinaryOperator>(I) && &I != &OuterLoopLB->getStepInst()) ||
-	   (isa<CmpInst>(I) && &I != OuterLoopLatchCmp &&
-            &I != InnerLoopGuardCmp)) {
+       if ((isa<CmpInst>(I) && &I != OuterLoopLatchCmp && &I != InnerLoopGuardCmp)) {
          DEBUG_WITH_TYPE(VerboseDebug, {
            dbgs() << "Instruction: " << I << "\nin basic block:" << BB
                   << "is unsafe.\n";
