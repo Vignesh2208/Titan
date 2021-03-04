@@ -240,7 +240,6 @@ void SleepForNS(int ThreadID, int64_t duration) {
 
      if (!currThreadInfo->ignoreCtxSwitches &&
          currActiveThreadID != myThreadID) { // There was a context switch
-        printf ("Sleep-For: Flushing Data Cache !\n");
         #ifndef DISABLE_DATA_CACHE_SIM
         flushDataCache();
         #endif
@@ -466,8 +465,6 @@ void ForceCompleteBurst(int ThreadID, int save, long syscall_number) {
 
     if (!currThreadInfo->ignoreCtxSwitches &&
          currActiveThreadID != myThreadID) { // There was a context switch
-
-        printf ("Force complete burst: Flushing Data Cache !\n");
         #ifndef DISABLE_DATA_CACHE_SIM
         flushDataCache();
         #endif
@@ -522,8 +519,6 @@ void SignalBurstCompletion(ThreadInfo * currThreadInfo, int save) {
     int myThreadID = syscall(SYS_gettid);
      if (!currThreadInfo->ignoreCtxSwitches &&
          currActiveThreadID != myThreadID) { // There was a context switch
-
-        printf ("Signal Burst Completion: Flushing Data Cache !\n");
         #ifndef DISABLE_DATA_CACHE_SIM
         flushDataCache();
         #endif
@@ -785,10 +780,6 @@ void TriggerSyscallFinish(int ThreadID) {
     int myThreadID = syscall(SYS_gettid);
      if (!currThreadInfo->ignoreCtxSwitches &&
          currActiveThreadID != myThreadID) { // There was a context switch
-
-        printf ("Trigger syscall finish: %d, currActiveThreadID = %d, myThreadID = %d. Flushing Data Cache !\n", ThreadID,
-            currActiveThreadID, myThreadID);
-
         #ifndef DISABLE_DATA_CACHE_SIM
         flushDataCache();
         #endif

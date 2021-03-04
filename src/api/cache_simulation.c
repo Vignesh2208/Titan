@@ -349,9 +349,6 @@ void flushDataCache() {
     if (dataCache.initialization_status != 1)
         return;
 
-    printf ("Flushed Data Cache !\n");
-    fflush(stdout);
-
     for (i = 0; i < dataCache.num_lines; i++ ) {
         cacheLineMeta[i].access_time = 0;
         cacheLineMeta[i].tag = 0;

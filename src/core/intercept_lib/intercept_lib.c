@@ -801,6 +801,7 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
             }
         }
     #else
+        int ThreadID = syscall(SYS_gettid);
         if (!vtInitialized || *vtInitialized != 1)
             return orig_accept(sockfd, addr, addrlen);
         ret = orig_accept(sockfd, addr, addrlen);
@@ -848,6 +849,7 @@ int accept4(int sockfd, struct sockaddr *addr,
             }
         }
     #else
+        int ThreadID = syscall(SYS_gettid);
         if (!vtInitialized || *vtInitialized != 1)
             return orig_accept4(sockfd, addr, addrlen, flags);
         ret = orig_accept4(sockfd, addr, addrlen, flags);
@@ -1209,7 +1211,7 @@ int setsockopt(int sockfd, int level, int option_name,
             ret = orig_setsockopt(sockfd, level,option_name, option_value, option_len);
         }
     #else
-        return orig_setsockopt(fd, level, optname, optval, optlen);
+        return orig_setsockopt(sockfd, level,option_name, option_value, option_len);
     #endif
     return ret;
 
@@ -1988,7 +1990,13 @@ static int hook(long syscall_number, long arg0, long arg1, long arg2, long arg3,
         || syscall_number == SYS_waitid
         || syscall_number == SYS_recvfrom
         || syscall_number == SYS_recvmmsg
-        || syscall_number == SYS_recvmsg) {
+        || syscall_number == SYS_recvmsg
+        #ifdef DISABLE_VT_SOCKET_LAYER
+        || syscall_number == SYS_sendto
+        || syscall_number == SYS_sendmsg
+        || syscall_number == SYS_sendmmsg
+        #endif
+        ) {
 
         
 

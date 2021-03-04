@@ -144,7 +144,7 @@ void *listenForMessages(void* arg) {
 	if (pfds == NULL)
 		perror("malloc");
 		
-    int ThreadID = syscall(SYS_gettid);
+        int ThreadID = syscall(SYS_gettid);
 
 	MarkIgnoreCtxSwitches(ThreadID);
         
