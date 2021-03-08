@@ -102,8 +102,8 @@ Step-3 Running the instrumented executable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To run the instrumented application as a part of a co-simulated model, some additional steps
-need to be performed. These are described in the **Launching co-simulations** section of the
-documentation.
+need to be performed. Instructions for launching co-simulations are described in detail 
+`here <https://vt-s3fnet.readthedocs.io/en/latest/index.html>`_.
 
 
 Updating a ttn project
