@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quickstart Example &#8212; Titan 1 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="quickstart-example">
+<h1>Quickstart Example<a class="headerlink" href="#quickstart-example" title="Permalink to this headline">¶</a></h1>
+<p>In this section we discuss a simple example which ties all of the previously described steps before. It uses an example python orchestrator script included with the installation. It can be found <a class="reference external" href="https://github.com/Vignesh2208/Kronos/tree/master/examples/example_kronos_experiment.py">here</a>. The rest of this section assumes that Kronos has already been loaded.</p>
+<p>Commands/processes which need to be dilated can be added with arguments to the <a class="reference external" href="https://github.com/Vignesh2208/Kronos/tree/master/examples/cmds_to_run_file.txt">cmds_to_run_file.txt</a> file.</p>
+<p>The example can be started as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>python example_vt_experiment.py --cmds_to_run_file=$HOME/Kronos/examples/cmds_to_run_file.txt \
+                                --run_in_one_tracer=False \
+                                --rel_cpu_speed=1.0 \
+                                --num_insns_per_round=1000000 \
+                                --num_progress_rounds=1000
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The run_in_one_tracer argument specifies if all commands in the cmd file need to launched under just one tracer. If specified to False, a new tracer is launched for each command.</p>
+</div>
+<p>This example performs all the initialization steps and runs a virtual time synchronized experiment. The stdout/stderr of each dilated process can be found inside its corresponding tracer_log located inside the <strong>/tmp</strong> directory.</p>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Titan</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, project_moses.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/quickstart.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

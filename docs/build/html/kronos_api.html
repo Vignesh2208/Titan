@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kronos API &#8212; Titan 1 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="kronos-api">
+<h1>Kronos API<a class="headerlink" href="#kronos-api" title="Permalink to this headline">¶</a></h1>
+<p>In this section we briefly describe python and C APIs provided for invoking Kronos specific functions. These API calls need to be invoked by the central orchestrator script.
+It assumes the default python version is 3.6 or higher.</p>
+<div class="section" id="kronos-python-api">
+<h2>Kronos Python API<a class="headerlink" href="#kronos-python-api" title="Permalink to this headline">¶</a></h2>
+<p>The initialization process also installs a python module called kronos_functions. The orchestrator script needs to import this module. For the rest of this discussion, we use an example python orchestrator script included with the installation. It can be found <a class="reference external" href="https://github.com/Vignesh2208/Kronos/tree/master/examples/example_kronos_experiment.py">here</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">kronos_functions</span> <span class="k">as</span> <span class="nn">kf</span>
+</pre></div>
+</div>
+<div class="section" id="initializing-kronos">
+<h3>Initializing Kronos<a class="headerlink" href="#initializing-kronos" title="Permalink to this headline">¶</a></h3>
+<p>To initialize Kronos the <strong>initializeExp(num_expected_tracers)</strong> API call must be made. It takes in as input the number of tracers that will be launched subsequently:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">kf</span><span class="o">.</span><span class="n">initializeExp</span><span class="p">(</span><span class="n">num_expected_tracers</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">:</span>
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Kronos initialization failed ! Make sure you are running the dilated kernel and kronos module is loaded !&quot;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="synchronize-and-freeze">
+<h3>Synchronize and Freeze<a class="headerlink" href="#synchronize-and-freeze" title="Permalink to this headline">¶</a></h3>
+<p>The Synchronize and Freeze API can be invoked:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">while</span> <span class="n">kf</span><span class="o">.</span><span class="n">synchronizeAndFreeze</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Kronos &gt;&gt; Synchronize and Freeze failed. Retrying in 1 sec&quot;</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="progress-for-specifed-number-of-rounds">
+<h3>Progress for specifed number of rounds<a class="headerlink" href="#progress-for-specifed-number-of-rounds" title="Permalink to this headline">¶</a></h3>
+<p>To run the experiment for a specified number of rounds the <strong>progressBy(duration_ns, num_rounds)</strong> API call is used:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">num_finished_rounds</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">step_size</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="k">while</span> <span class="n">num_finised_rounds</span> <span class="o">&lt;=</span> <span class="mi">10000</span><span class="p">:</span>
+    <span class="n">kf</span><span class="o">.</span><span class="n">progressBy</span><span class="p">(</span><span class="mi">1000000</span><span class="p">,</span> <span class="n">step_size</span><span class="p">)</span>
+    <span class="n">num_finished_rounds</span> <span class="o">+=</span> <span class="n">step_size</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Ran </span><span class="si">%d</span><span class="s2"> rounds ...&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">num_finished_rounds</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>In this example the experiment is run in bursts of 100 rounds before returning control to the orchestrator script. During
+each round, virtual time advances by 1000000 ns or 1ms.</p>
+</div>
+<div class="section" id="stop-experiment">
+<h3>Stop Experiment<a class="headerlink" href="#stop-experiment" title="Permalink to this headline">¶</a></h3>
+<p>To stop the dilated experiment, <strong>stopExp()</strong> API call is invoked:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">kf</span><span class="o">.</span><span class="n">stopExp</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="kronos-c-api">
+<h2>Kronos C API<a class="headerlink" href="#kronos-c-api" title="Permalink to this headline">¶</a></h2>
+<p>An almost identical set of API calls are provided in C as well. An orchestrator script which uses C API must include the Kronos_functions.h header file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>#include &quot;Kronos_functions.h&quot;
+
+The function prototypes of all the relevant API calls are given below::
+
+//! Initializes a EXP_CBE experiment with specified number of expected tracers
+int initializeExp(int num_expected_tracers);
+
+//! Synchronizes and Freezes all started tracers
+int synchronizeAndFreeze(void);
+
+//! Initiates Stoppage of the experiment
+int stopExp(void);
+
+//! Instructs the experiment to be run for the specific number of rounds
+//  where each round signals advancement of virtual time by the specified duration in nanoseconds
+int progressBy(s64 duration, int num_rounds);
+</pre></div>
+</div>
+<p>The orchestrator script must be linked with the kronos api library with <strong>-lkronosapi</strong> linker option at compile time. This library gets included in the system path when Kronos is first installed.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Titan</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, project_moses.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/kronos_api.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

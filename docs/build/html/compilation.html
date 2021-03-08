@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Compilation of Emulated Entities &#8212; Titan 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Launching co-simulations" href="co_simulation.html" />
+    <link rel="prev" title="Titan controlled co-simulation" href="virtual_experiment.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="co_simulation.html" title="Launching co-simulations"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="virtual_experiment.html" title="Titan controlled co-simulation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Titan 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="user_guide.html" accesskey="U">User Guide</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Compilation of Emulated Entities</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="compilation-of-emulated-entities">
+<h1>Compilation of Emulated Entities<a class="headerlink" href="#compilation-of-emulated-entities" title="Permalink to this headline">¶</a></h1>
+<p>This section describes how an emulated entity can be compiled into a
+format suitable for use in the co-simulation.</p>
+<p>We use a running example here for the binary ${HOME}/Titan/scripts/x86_vt_spinner/x86_vt_spinner.c
+The goal is to make this code suitable for co-simulation.</p>
+<div class="figure align-center" id="id1">
+<a class="reference internal image-reference" href="_images/la_extraction.jpg"><img alt="Steps involved in compilation and lookahead extraction" src="_images/la_extraction.jpg" style="width: 80%;" /></a>
+<p class="caption"><span class="caption-text">Figure 1. All steps involved in compilation and lookahead extraction.</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</div>
+<p>Figure 1 outlines all the phases involved in instrumenting executables and extracting lookahead from
+them. A tool called <strong>ttn</strong> is provided to help with these steps. The general worklfow is described
+below.</p>
+<div class="section" id="step-0-pre-compilation">
+<h2>Step-0: Pre-compilation<a class="headerlink" href="#step-0-pre-compilation" title="Permalink to this headline">¶</a></h2>
+<p>Before compilation of a piece of emulated code, a titan project needs to
+be created for that code. This project needs to be unique for each distinct
+executable that needs to be co-simulated.</p>
+<ul>
+<li><p>Creating a titan project can be accomplished with the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ttn</span> <span class="n">add</span> <span class="o">-</span><span class="n">p</span> <span class="o">&lt;</span><span class="n">project_name</span><span class="o">&gt;</span> <span class="o">-</span><span class="n">s</span> <span class="o">&lt;</span><span class="n">project_source_dir</span><span class="o">&gt;</span> <span class="p">[</span><span class="n">additional</span> <span class="n">options</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>For e.g, to associate the example binary with a titan project with the
+name “vt_test”, the following command needs to be used:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ttn add -p vt_test -s ${HOME}/Titan/scripts/x86_vt_spinner
+</pre></div>
+</div>
+<p>Additional options may be used to configure the project at the time
+of creation. For e.g, to configure the project “vt_test” to use the
+“Skylake” target micro-architecture and a 2.7 GHz target processor, the
+following command needs to be used:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ttn add -p vt_test -s ${HOME}/Titan/scripts/x86_vt_spinner -a Skylake --cpu_mhz 2700
+</pre></div>
+</div>
+<p>To see the list of supported options, use the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ttn</span> <span class="n">help</span>
+</pre></div>
+</div>
+<p>To view the list of supported target micro-architectures, use the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">vtins</span> <span class="o">-</span><span class="n">l</span>
+</pre></div>
+</div>
+</li>
+<li><p>To check the ttn project parameters, use the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ttn</span> <span class="n">show</span> <span class="o">-</span><span class="n">p</span> <span class="n">vt_test</span>
+</pre></div>
+</div>
+</li>
+<li><p>To listing all created projects, use the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ttn</span> <span class="nb">list</span>
+</pre></div>
+</div>
+</li>
+<li><p>Activating created project. The next pre-compilation step is activating the
+project:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ttn</span> <span class="n">activate</span> <span class="o">-</span><span class="n">p</span> <span class="n">vt_test</span>
+</pre></div>
+</div>
+<p>Ensure that the desired project is active before compiling its source files.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="step-1-compiling-a-project-source">
+<h2>Step-1 Compiling a project source<a class="headerlink" href="#step-1-compiling-a-project-source" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p>Go to the project source directory. In this example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">~/</span><span class="n">Titan</span><span class="o">/</span><span class="n">scripts</span><span class="o">/</span><span class="n">x86_vt_spinner</span>
+</pre></div>
+</div>
+</li>
+<li><p>Compile using <strong>clang</strong> with two additional flags <strong>-O1</strong> and <strong>-lvtllogic</strong></p>
+<blockquote>
+<div><p>clang -O1 -lvtllogic x86_vt_spinner.c -o x86_vt_spinner</p>
+</div></blockquote>
+<p>This step automatically figures out the current active project (in this case it is vt_test)
+and reads its parameters. The generated binary is instrumented according to the passed
+project configuration.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="step-2-extracting-lookahead-from-a-compiled-project">
+<h2>Step-2 Extracting lookahead from a compiled project<a class="headerlink" href="#step-2-extracting-lookahead-from-a-compiled-project" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p>To extract and store lookahead information, first ensure that DISABLE_LOOKAHEAD build
+flag in ~/Titan/CONFIG is set to no.</p></li>
+<li><p>Assuming the previous two steps have been completed, to extract lookahead
+use the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ttn</span> <span class="n">extract</span> <span class="o">-</span><span class="n">p</span> <span class="o">&lt;</span><span class="n">project_name</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>In this example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ttn</span> <span class="n">extract</span> <span class="o">-</span><span class="n">p</span> <span class="n">vt_test</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="step-3-running-the-instrumented-executable">
+<h2>Step-3 Running the instrumented executable<a class="headerlink" href="#step-3-running-the-instrumented-executable" title="Permalink to this headline">¶</a></h2>
+<p>To run the instrumented application as a part of a co-simulated model, some additional steps
+need to be performed. These are described in the <strong>Launching co-simulations</strong> section of the
+documentation.</p>
+</div>
+<div class="section" id="updating-a-ttn-project">
+<h2>Updating a ttn project<a class="headerlink" href="#updating-a-ttn-project" title="Permalink to this headline">¶</a></h2>
+<p>To update a project, simply add it again:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ttn</span> <span class="n">add</span> <span class="o">-</span><span class="n">p</span> <span class="o">&lt;</span><span class="n">project_name</span><span class="o">&gt;</span> <span class="o">-</span><span class="n">s</span> <span class="o">&lt;</span><span class="n">project_src_dir</span><span class="o">&gt;</span> <span class="p">[</span><span class="n">additional</span> <span class="n">options</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="deleting-a-ttn-project">
+<h2>Deleting a ttn project<a class="headerlink" href="#deleting-a-ttn-project" title="Permalink to this headline">¶</a></h2>
+<p>Use the following commands to deactivate and delete ttn projects:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ttn</span> <span class="n">deactivate</span> <span class="o">-</span><span class="n">p</span> <span class="o">&lt;</span><span class="n">project_name</span><span class="o">&gt;</span>
+<span class="n">ttn</span> <span class="n">delete</span> <span class="o">-</span><span class="n">p</span> <span class="o">&lt;</span><span class="n">project_name</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Compilation of Emulated Entities</a><ul>
+<li><a class="reference internal" href="#step-0-pre-compilation">Step-0: Pre-compilation</a></li>
+<li><a class="reference internal" href="#step-1-compiling-a-project-source">Step-1 Compiling a project source</a></li>
+<li><a class="reference internal" href="#step-2-extracting-lookahead-from-a-compiled-project">Step-2 Extracting lookahead from a compiled project</a></li>
+<li><a class="reference internal" href="#step-3-running-the-instrumented-executable">Step-3 Running the instrumented executable</a></li>
+<li><a class="reference internal" href="#updating-a-ttn-project">Updating a ttn project</a></li>
+<li><a class="reference internal" href="#deleting-a-ttn-project">Deleting a ttn project</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="virtual_experiment.html"
+                        title="previous chapter">Titan controlled co-simulation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="co_simulation.html"
+                        title="next chapter">Launching co-simulations</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/compilation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="co_simulation.html" title="Launching co-simulations"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="virtual_experiment.html" title="Titan controlled co-simulation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Titan 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="user_guide.html" >User Guide</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Compilation of Emulated Entities</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, project_moses.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.1.
+    </div>
+  </body>
+</html>

@@ -13,6 +13,7 @@ usage () {
   echo 'commands: '
   echo ''
   echo 'install_deps : build and install titan project dependencies. Run first time'
+  echo 'reinstall: rebuilds and installs titan project files and dependencies'
   echo 'clean: clean/remove titan project build files'
   echo 'build : build the titan project files'
   echo 'install : install the titan project files'
@@ -154,7 +155,7 @@ build_llvm_project () {
         echo 'llvm-project: Creating a fresh virtual time integrated clang compiler install ...'
         mkdir -p $LLVM_BUILD_DIR
         cd $LLVM_BUILD_DIR && cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS='clang' -DCMAKE_BUILD_TYPE=Release ../llvm
-	cd $LLVM_BUILD_DIR && make -j$nCpus
+	    cd $LLVM_BUILD_DIR && make -j$nCpus
     fi
 
     echo 'Patching llvm-project with locally modified files ...'
@@ -283,6 +284,16 @@ if [ $CMD == "build" ]; then
 fi
 
 if [ $CMD == "install" ]; then
+    install_tools
+    install_titan_files
+fi
+
+if [ $CMD == "reinstall" ]; then
+    build_llvm_project
+    install_llvm_project
+    build_syscall_intercept_lib
+    install_syscall_intercept_lib
+    build_titan_files
     install_tools
     install_titan_files
 fi

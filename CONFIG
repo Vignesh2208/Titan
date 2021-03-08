@@ -1,7 +1,7 @@
 # Titan build configuration. Set config variables to yes/no accordingly
 
 # This flag would control whether lookahead tracking would be enabled at the compiler level
-# Set no to enable lookahead tracking. Set yes to disable it.
+# Set no to enable lookahead tracking. Set yes to disable lookaheads.
 DISABLE_LOOKAHEAD=no
 
 # This flag would control whether instruction cache simulation callback functions would be
@@ -13,10 +13,12 @@ DISABLE_INSN_CACHE_SIM=yes
 DISABLE_DATA_CACHE_SIM=yes
 
 
+# Disables VTL. Experimental. don't set it to yes.
 DISABLE_VTL=no
 
-
+# Disables virtual socket layer and forces all emulated processes to use native socket layer. For better accuracy, don't set it to yes.
 DISABLE_VT_SOCKET_LAYER=no
 
 
+# Experimental feature. Collects and prints some stats (e.g cache hits) during program execution. Its normally not required.
 COLLECT_STATS=no

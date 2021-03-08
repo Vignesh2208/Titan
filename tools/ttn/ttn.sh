@@ -22,26 +22,36 @@ usage () {
   echo 'extract : extract and store lookahead information associated with project'
   echo ''
   echo ''
-  echo 'options:'
+  echo 'Additional Options:'
   echo ''
+  echo 'General Options:'
   echo '-p|--project_name : Name of the project'
   echo '-s|--project_src_dir : Project source directory'
   echo '-a|--arch : project compilation target architecture name'
   echo '--nic_mbps : modelled nic speed in mbps'
   echo '--cpu_mhz : cpu speed in mhz'
-  echo '--l1_ins_cache_size_kb : l1-instruction cache size kb'
+  echo '--timing_model : timing model: EMPIRICAL (default) or ANALYTICAL (experimental)'
+  echo '--rob_size : re-order buffer size of modelled processor'
+  echo '--dispatch_units : number of instruction dispatch units of modelled processor (experimental - used in analytical model)'
+  
+  echo ''
+  echo 'Instruction Cache Options: [DISABLE_INSN_CACHE_SIM build CONFIG flag (inside ~/Titan/CONFIG) must be set to no]'
+  
+  echo '--l1_ins_cache_size_kb : l1-instruction cache size kb.'
   echo '--l1_ins_cache_lines : l1-instruction cache line size (bytes)'
   echo '--l1_ins_cache_policy : l1-instruction cache replacement policy (random or lru)'
   echo '--l1_ins_cache_miss_cycles : l1-instruction cache number of cycles per miss'
   echo '--l1_ins_cache_assoc : l1-instruction cache associativity'
+
+  echo ''
+  echo 'Instruction Cache Options: [DISABLE_DATA_CACHE_SIM build CONFIG flag (inside ~/Titan/CONFIG) must be set to no]'
+
   echo '--l1_data_cache_size_kb : l1-data cache size kb'
   echo '--l1_data_cache_lines : l1-data cache line size (bytes)'
   echo '--l1_data_cache_policy : l1-data cache replacement policy (random or lru)'
   echo '--l1_data_cache_miss_cycles : l1-data cache number of cycles per miss'
   echo '--l1_data_cache_assoc : l1-data cache associativity'
-  echo '--timing_model : timing model: NONE (default), EMPIRICAL or ANALYTICAL'
-  echo '--rob_size : re-order buffer size of modelled processor'
-  echo '--dispatch_units : number of instruction dispatch units of modelled processor'
+  
 }
 CMD=""
 ARG_BUILDER=""

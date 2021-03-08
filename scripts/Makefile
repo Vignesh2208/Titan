@@ -10,12 +10,12 @@ CHMOD:=chmod
 .PHONY: install
 install: 
 	@$(MKDIR) -p ${SCRIPTS_DIR}/bin
-	@$(CLANG) -O1 -o ${SCRIPTS_DIR}/bin/timerfd_example -lvtllogic timerfd_example.c
+	@$(CLANG) -O1 -o ${SCRIPTS_DIR}/bin/timerfd_example -lvtllogic timerfd_example/timerfd_example.c
 	@$(GCC) -o ${SCRIPTS_DIR}/bin/x64_synchronizer x64_synchronizer.c
-	@$(CLANG) -O1 -o ${SCRIPTS_DIR}/bin/x86_vt_spinner -lvtllogic x86_vt_spinner.c 
-	@$(CLANG) -O1 -o ${SCRIPTS_DIR}/bin/tcp_server -lvtllogic tcp_server.c
-	@$(CLANG) -O1 -o ${SCRIPTS_DIR}/bin/tcp_client -lvtllogic tcp_client.c
-	@$(CLANG) -O1 -lvtllogic -o ${SCRIPTS_DIR}/bin/loop_example loop_example.c #-O1 flag here is crucial to enable loop optimization passes and loop set lookahead
+	@$(CLANG) -O1 -o ${SCRIPTS_DIR}/bin/x86_vt_spinner -lvtllogic x86_vt_spinner/x86_vt_spinner.c 
+	@$(CLANG) -O1 -o ${SCRIPTS_DIR}/bin/tcp_server -lvtllogic tcp_server/tcp_server.c
+	@$(CLANG) -O1 -o ${SCRIPTS_DIR}/bin/tcp_client -lvtllogic tcp_client/tcp_client.c
+	@$(CLANG) -O1 -lvtllogic -o ${SCRIPTS_DIR}/bin/loop_example loop_example/loop_example.c #-O1 flag here is crucial to enable loop optimization passes and loop set lookahead
 	@$(CHMOD) -R 777 ${SCRIPTS_DIR}/bin/*
 	@$(CP) ${SCRIPTS_DIR}/bin/x64_synchronizer /bin/
 	@$(CP) ${SCRIPTS_DIR}/bin/x86_vt_spinner /bin/

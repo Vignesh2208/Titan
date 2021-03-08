@@ -8,8 +8,8 @@ import argparse
 EXP_CBE = 1
 EXP_CS = 2
 
-def start_new_dilated_process(tracer_id, timeline_id, cmd_to_run, log_file_fd,
-    exp_type):
+def start_new_dilated_process(tracer_id, timeline_id, cmd_to_run,
+    log_file_fd, exp_type):
     
     newpid = os.fork()
     if newpid == 0:
