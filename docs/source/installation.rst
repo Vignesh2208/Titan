@@ -14,7 +14,7 @@ Installing Titan
 
 To get started, please perform the following installation steps:
 
-* Clone Repository into /home/${user} directory. Checkout the master branch::
+* Clone Repository into $HOME directory. Checkout the master branch::
 
     git clone https://github.com/Vignesh2208/Titan.git
 

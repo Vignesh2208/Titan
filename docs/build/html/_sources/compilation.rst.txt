@@ -5,7 +5,7 @@ This section describes how an emulated entity can be compiled into a
 format suitable for use in the co-simulation.
 
 
-We use a running example here for the binary ${HOME}/Titan/scripts/x86_vt_spinner/x86_vt_spinner.c
+We use a running example here for the binary :file:`$HOME/Titan/scripts/x86_vt_spinner/x86_vt_spinner.c`
 The goal is to make this code suitable for co-simulation.
 
 
