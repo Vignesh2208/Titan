@@ -2,7 +2,7 @@ Titan controlled co-simulation
 ==============================
 
 
-Titan is meant to be used with a companion `VT-S3FNet <https://github.com/Vignesh2208/VT-S3FNet.git>`_ project. This is a modified S3FNet simulator
+Titan is meant to be used with a companion `VT-S3FNet <https://vt-s3fnet.readthedocs.io/en/latest/index.html>`_ project. This is a modified S3FNet simulator
 which supports co-simulation i.e it can have emulated entities communicate
 with each other over simulated networks.
 
