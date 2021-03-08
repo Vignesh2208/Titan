@@ -14,9 +14,11 @@ Installing Titan
 
 To get started, please perform the following installation steps:
 
-* Clone Repository into $HOME directory. Checkout the master branch::
+.. Clone Repository into $HOME directory. Checkout the master branch::
 
-    git clone https://github.com/Vignesh2208/Titan.git
+.. git clone https://github.com/Vignesh2208/Titan.git
+
+* Download version 1.0 of the code from `here <https://github.com/Vignesh2208/Titan/archive/v1.0.tar.gz>`_ and extract it to the $HOME folder under a directory with the name **Titan**.
 
 * (Optional) Edit any build configs if necessary. These are located in the 
   CONFIG file. Unless required, its safe to leave this untouched::
