@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/fork_logging.dir/fork_logging.c.o"
-  "fork_logging"
   "fork_logging.pdb"
+  "fork_logging"
 )
 
 # Per-language clean rules from dependency scanning.

@@ -1,80 +1,71 @@
 Performing C SOURCE FILE Test HAS_ARG_NOPIE failed with the following output:
 Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_75303/fast && /usr/bin/make -f CMakeFiles/cmTC_75303.dir/build.make CMakeFiles/cmTC_75303.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_6bbd0/fast"
+/usr/bin/make -f CMakeFiles/cmTC_6bbd0.dir/build.make CMakeFiles/cmTC_6bbd0.dir/build
 make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_75303.dir/src.c.o
-/usr/bin/gcc   -DHAS_ARG_NOPIE   -nopie -o CMakeFiles/cmTC_75303.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
+Building C object CMakeFiles/cmTC_6bbd0.dir/src.c.o
+/usr/bin/gcc   -DHAS_ARG_NOPIE   -nopie -o CMakeFiles/cmTC_6bbd0.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
 gcc: error: unrecognized command line option '-nopie'; did you mean '-no-pie'?
-CMakeFiles/cmTC_75303.dir/build.make:65: recipe for target 'CMakeFiles/cmTC_75303.dir/src.c.o' failed
-make[1]: *** [CMakeFiles/cmTC_75303.dir/src.c.o] Error 1
+CMakeFiles/cmTC_6bbd0.dir/build.make:65: recipe for target 'CMakeFiles/cmTC_6bbd0.dir/src.c.o' failed
+make[1]: *** [CMakeFiles/cmTC_6bbd0.dir/src.c.o] Error 1
 make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Makefile:121: recipe for target 'cmTC_75303/fast' failed
-make: *** [cmTC_75303/fast] Error 2
-
+Makefile:126: recipe for target 'cmTC_6bbd0/fast' failed
+make: *** [cmTC_6bbd0/fast] Error 2
 
 Source file was:
 int main(void) { return 0; }
-Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Determining if the pthread_create exist failed with the following output:
 Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_c86dc/fast && /usr/bin/make -f CMakeFiles/cmTC_c86dc.dir/build.make CMakeFiles/cmTC_c86dc.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_0ca87/fast"
+/usr/bin/make -f CMakeFiles/cmTC_0ca87.dir/build.make CMakeFiles/cmTC_0ca87.dir/build
 make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_c86dc.dir/src.c.o
-/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCMAKE_HAVE_LIBC_PTHREAD -fPIE   -o CMakeFiles/cmTC_c86dc.dir/src.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_c86dc
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c86dc.dir/link.txt --verbose=1
-/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCMAKE_HAVE_LIBC_PTHREAD    -rdynamic CMakeFiles/cmTC_c86dc.dir/src.c.o  -o cmTC_c86dc 
-CMakeFiles/cmTC_c86dc.dir/src.c.o: In function `main':
-src.c:(.text+0x3e): undefined reference to `pthread_create'
-src.c:(.text+0x4a): undefined reference to `pthread_detach'
-src.c:(.text+0x5b): undefined reference to `pthread_join'
-src.c:(.text+0x6f): undefined reference to `pthread_atfork'
-collect2: error: ld returned 1 exit status
-CMakeFiles/cmTC_c86dc.dir/build.make:86: recipe for target 'cmTC_c86dc' failed
-make[1]: *** [cmTC_c86dc] Error 1
+Building C object CMakeFiles/cmTC_0ca87.dir/CheckSymbolExists.c.o
+/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat  -fPIE   -o CMakeFiles/cmTC_0ca87.dir/CheckSymbolExists.c.o   -c /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c: In function ‘main’:
+/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c:8:11: error: ISO C forbids conversion of function pointer to object pointer type [-Werror=pedantic]
+   return ((int*)(&pthread_create))[argc];
+           ^
+cc1: all warnings being treated as errors
+CMakeFiles/cmTC_0ca87.dir/build.make:65: recipe for target 'CMakeFiles/cmTC_0ca87.dir/CheckSymbolExists.c.o' failed
+make[1]: *** [CMakeFiles/cmTC_0ca87.dir/CheckSymbolExists.c.o] Error 1
 make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Makefile:121: recipe for target 'cmTC_c86dc/fast' failed
-make: *** [cmTC_c86dc/fast] Error 2
+Makefile:126: recipe for target 'cmTC_0ca87/fast' failed
+make: *** [cmTC_0ca87/fast] Error 2
 
-
-Source file was:
+File /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
 #include <pthread.h>
 
-void* test_func(void* data)
+int main(int argc, char** argv)
 {
-  return data;
-}
-
-int main(void)
-{
-  pthread_t thread;
-  pthread_create(&thread, NULL, test_func, NULL);
-  pthread_detach(thread);
-  pthread_join(thread, NULL);
-  pthread_atfork(NULL, NULL, NULL);
-  pthread_exit(NULL);
-
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
   return 0;
+#endif
 }
 
 Determining if the function pthread_create exists in the pthreads failed with the following output:
 Change Dir: /home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make cmTC_5af7b/fast && /usr/bin/make -f CMakeFiles/cmTC_5af7b.dir/build.make CMakeFiles/cmTC_5af7b.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_5e086/fast"
+/usr/bin/make -f CMakeFiles/cmTC_5e086.dir/build.make CMakeFiles/cmTC_5e086.dir/build
 make[1]: Entering directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_5af7b.dir/CheckFunctionExists.c.o
-/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCHECK_FUNCTION_EXISTS=pthread_create -fPIE   -o CMakeFiles/cmTC_5af7b.dir/CheckFunctionExists.c.o   -c /usr/local/share/cmake-3.16/Modules/CheckFunctionExists.c
-Linking C executable cmTC_5af7b
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_5af7b.dir/link.txt --verbose=1
-/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_5af7b.dir/CheckFunctionExists.c.o  -o cmTC_5af7b  -lpthreads 
+Building C object CMakeFiles/cmTC_5e086.dir/CheckFunctionExists.c.o
+/usr/bin/gcc   -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCHECK_FUNCTION_EXISTS=pthread_create -fPIE   -o CMakeFiles/cmTC_5e086.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.10/Modules/CheckFunctionExists.c
+Linking C executable cmTC_5e086
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_5e086.dir/link.txt --verbose=1
+/usr/bin/gcc  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_5e086.dir/CheckFunctionExists.c.o  -o cmTC_5e086 -lpthreads 
 /usr/bin/ld: cannot find -lpthreads
 collect2: error: ld returned 1 exit status
-CMakeFiles/cmTC_5af7b.dir/build.make:86: recipe for target 'cmTC_5af7b' failed
-make[1]: *** [cmTC_5af7b] Error 1
+CMakeFiles/cmTC_5e086.dir/build.make:97: recipe for target 'cmTC_5e086' failed
+make[1]: *** [cmTC_5e086] Error 1
 make[1]: Leaving directory '/home/titan/Titan/ld_preloading/syscall_intercept/build/CMakeFiles/CMakeTmp'
-Makefile:121: recipe for target 'cmTC_5af7b/fast' failed
-make: *** [cmTC_5af7b/fast] Error 2
-
+Makefile:126: recipe for target 'cmTC_5e086/fast' failed
+make: *** [cmTC_5e086/fast] Error 2
 
 

@@ -28,6 +28,15 @@ To get started, please perform the following installation steps:
   For more information, refer to the build CONFIG flags described inside 
   the file.
 
+* Install some python dependencies::
+
+    python -m pip install pandas_ods_reader
+    python -m pip install ezodf
+    python -m pip install numpy
+    python -m pip install networkx
+    python -m pip install matplotlib
+
+
 * Configure and install Titan::
  
     cd ~/Titan 
@@ -43,7 +52,7 @@ To get started, please perform the following installation steps:
     sudo ./SETUP.sh clean
     sudo ./SETUP.sh reinstall
 
-* Post installation. Open a new terminal and run the following command::
+* Post installation. Run source ~/.bashrc in any open terminal. Open a new terminal and try running following command::
 
     ttn init
 

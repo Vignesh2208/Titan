@@ -12,7 +12,6 @@ set(CMAKE_C_COMPILER_ID "GNU")
 set(CMAKE_TARGET_DEFINITIONS_C
   "HAS_GCC_PRAGMA_SYSH"
   "_GNU_SOURCE"
-  "intercept_sys_write_EXPORTS"
   )
 
 # The include file search paths:

@@ -1,1 +1,1 @@
-/usr/bin/gcc -fPIC  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -O3 -DNDEBUG  -shared -Wl,-soname,libsyscall_intercept.so.0 -o libsyscall_intercept.so.0.1.0 syscall_intercept_scoped.o  -ldl -lcapstone 
+/usr/bin/gcc -fPIC  -Werror -Wall -Wextra -pedantic -Wno-c90-c99-compat -O3 -DNDEBUG  -shared -Wl,-soname,libsyscall_intercept.so.0 -o libsyscall_intercept.so.0.1.0 syscall_intercept_scoped.o -ldl -lcapstone 

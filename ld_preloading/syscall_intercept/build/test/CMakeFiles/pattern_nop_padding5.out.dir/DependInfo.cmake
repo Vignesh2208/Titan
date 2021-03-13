@@ -12,7 +12,6 @@ set(CMAKE_ASM_COMPILER_ID "GNU")
 set(CMAKE_TARGET_DEFINITIONS_ASM
   "HAS_GCC_PRAGMA_SYSH"
   "_GNU_SOURCE"
-  "pattern_nop_padding5_out_EXPORTS"
   )
 
 # The include file search paths:

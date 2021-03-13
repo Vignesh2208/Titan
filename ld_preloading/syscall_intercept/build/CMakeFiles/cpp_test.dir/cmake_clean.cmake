@@ -1,8 +1,8 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.o"
   "CMakeFiles/cpp_test.dir/src/cpp_compile_test.cc.o"
-  "cpp_test"
+  "CMakeFiles/cpp_test.dir/src/cpp_compile_mock.c.o"
   "cpp_test.pdb"
+  "cpp_test"
 )
 
 # Per-language clean rules from dependency scanning.

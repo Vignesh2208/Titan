@@ -202,6 +202,7 @@ install_deps () {
 
 
 install_tools () {
+
     echo "--------------------------------"
     echo "Installing titan tools ... "
     echo "--------------------------------"
@@ -230,6 +231,9 @@ install_tools () {
 
     echo 'Initializing ttn ...'
     $TITAN_SOURCE_DIR/tools/ttn/ttn.sh init
+
+    mkdir -p $HOME/.ttn
+    chmod -R 777 $HOME/.ttn
 
     echo 'Generating instruction timings for all available architectures ...'
     $TITAN_SOURCE_DIR/tools/instructions/vtins.sh -a all

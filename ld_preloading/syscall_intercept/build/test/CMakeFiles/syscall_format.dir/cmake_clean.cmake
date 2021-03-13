@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/syscall_format.dir/syscall_format.c.o"
-  "syscall_format"
   "syscall_format.pdb"
+  "syscall_format"
 )
 
 # Per-language clean rules from dependency scanning.

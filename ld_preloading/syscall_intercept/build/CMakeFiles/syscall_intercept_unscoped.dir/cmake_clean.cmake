@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "libsyscall_intercept_unscoped.a"
   "libsyscall_intercept_unscoped.pdb"
+  "libsyscall_intercept_unscoped.a"
 )
 
 # Per-language clean rules from dependency scanning.

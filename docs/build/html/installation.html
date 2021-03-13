@@ -1,25 +1,33 @@
 
-<!DOCTYPE html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Installation &#8212; Titan 1.0 documentation</title>
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
-    
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
-    
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="User Guide" href="user_guide.html" />
     <link rel="prev" title="About" href="about.html" /> 
-  </head><body>
+  </head>
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -32,8 +40,7 @@
         <li class="right" >
           <a href="about.html" title="About"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Titan 1.0 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Installation</a></li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Titan 1.0 documentation</a> &#187;</li> 
       </ul>
     </div>  
 
@@ -49,45 +56,55 @@
 <p>Titan has been tested on Ubuntu 18.04 LTS. It is advisable to run it on a
 system or VM with atleast 4 cores and 4GB of RAM.</p>
 <ul class="simple">
-<li><p>Default python version on the system must be &gt;= 3.6.9</p></li>
+<li>Default python version on the system must be &gt;= 3.6.9</li>
 </ul>
 </div>
 <div class="section" id="installing-titan">
 <h2>Installing Titan<a class="headerlink" href="#installing-titan" title="Permalink to this headline">¶</a></h2>
 <p>To get started, please perform the following installation steps:</p>
 <ul>
-<li><p>Download version 1.0 of the code from <a class="reference external" href="https://github.com/Vignesh2208/Titan/archive/v1.0.tar.gz">here</a> and extract it to the $HOME folder under a directory with the name <strong>Titan</strong>.</p></li>
-<li><p>(Optional) Edit any build configs if necessary. These are located in the
+<li><p class="first">Download version 1.0 of the code from <a class="reference external" href="https://github.com/Vignesh2208/Titan/archive/v1.0.tar.gz">here</a> and extract it to the $HOME folder under a directory with the name <strong>Titan</strong>.</p>
+</li>
+<li><p class="first">(Optional) Edit any build configs if necessary. These are located in the
 CONFIG file. Unless required, its safe to leave this untouched:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">vim</span> <span class="o">~/</span><span class="n">Titan</span><span class="o">/</span><span class="n">CONFIG</span> <span class="p">(</span><span class="n">edit</span> <span class="k">as</span> <span class="n">necessary</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">vim</span> <span class="o">~/</span><span class="n">Titan</span><span class="o">/</span><span class="n">CONFIG</span> <span class="p">(</span><span class="n">edit</span> <span class="k">as</span> <span class="n">necessary</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>For more information, refer to the build CONFIG flags described inside
 the file.</p>
 </li>
-<li><p>Configure and install Titan:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">~/</span><span class="n">Titan</span>
+<li><p class="first">Install some python dependencies:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">pandas_ods_reader</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">ezodf</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">numpy</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">networkx</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">matplotlib</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Configure and install Titan:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">~/</span><span class="n">Titan</span>
 <span class="n">sudo</span> <span class="o">./</span><span class="n">SETUP</span><span class="o">.</span><span class="n">sh</span> <span class="n">install_deps</span>
 <span class="n">sudo</span> <span class="o">./</span><span class="n">SETUP</span><span class="o">.</span><span class="n">sh</span> <span class="n">build</span>
 <span class="n">sudo</span> <span class="o">./</span><span class="n">SETUP</span><span class="o">.</span><span class="n">sh</span> <span class="n">install</span>
 </pre></div>
 </div>
 </li>
-<li><p>(Optional) If you need to change the build CONFIGs after installation:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">~/</span><span class="n">Titan</span>
+<li><p class="first">(Optional) If you need to change the build CONFIGs after installation:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">~/</span><span class="n">Titan</span>
 <span class="n">vim</span> <span class="n">CONFIG</span> <span class="p">(</span><span class="n">edit</span> <span class="k">as</span> <span class="n">necessary</span><span class="p">)</span>
 <span class="n">sudo</span> <span class="o">./</span><span class="n">SETUP</span><span class="o">.</span><span class="n">sh</span> <span class="n">clean</span>
 <span class="n">sudo</span> <span class="o">./</span><span class="n">SETUP</span><span class="o">.</span><span class="n">sh</span> <span class="n">reinstall</span>
 </pre></div>
 </div>
 </li>
-<li><p>Post installation. Open a new terminal and run the following command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ttn</span> <span class="n">init</span>
+<li><p class="first">Post installation. Run source ~/.bashrc in any open terminal. Open a new terminal and try running following command:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ttn</span> <span class="n">init</span>
 </pre></div>
 </div>
 </li>
-<li><p>Load Titan module after each reboot:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">~/</span><span class="n">Titan</span>
+<li><p class="first">Load Titan module after each reboot:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">~/</span><span class="n">Titan</span>
 <span class="n">sudo</span> <span class="n">make</span> <span class="n">load</span>
 </pre></div>
 </div>
@@ -101,13 +118,12 @@ the file.</p>
 </div>
 
 
-            <div class="clearer"></div>
           </div>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table of Contents</a></h3>
+  <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Installation</a><ul>
 <li><a class="reference internal" href="#minimum-system-requirements">Minimum System Requirements</a></li>
@@ -131,15 +147,15 @@ the file.</p>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
+  <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
     </form>
-    </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -156,13 +172,12 @@ the file.</p>
         <li class="right" >
           <a href="about.html" title="About"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Titan 1.0 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Installation</a></li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Titan 1.0 documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2021, project_moses.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.
     </div>
   </body>
 </html>
