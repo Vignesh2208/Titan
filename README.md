@@ -12,5 +12,6 @@ This is a prototype implementation with the primary goal of encouraging more res
 TODO
 ====
 
-* A slight modification to the lookahead algorithm might be required to improve lookahead estimates in the event of packet drops in the simulated network. Currently it appears lookahead estimates are small if an in-transit packet gets dropped. This needs to be investigated.
-* The virtual socket layer does not support poll and select interface yet. This feature will be added soon.
+* BUG-FIX: In the current implementation related to lookahead extraction from netsted loops, the estimates may become incorrect if the nested loop at any point calls a function containing more loops. This needs to be fixed by ignoring all such nested loop blocks i.e treating those loops independently. Only nested loop blocks which dont call any functions or only call functions with no loops should be cumulatively handled. This distinction is currently not made and will be included in the next version.
+* BUG-FIX: A slight modification to the lookahead algorithm might be required to improve lookahead estimates in the event of packet drops in the simulated network. Currently it appears lookahead estimates are small if an in-transit packet gets dropped. This needs to be investigated.
+* The virtual socket layer does not support poll and select interface yet. This feature will be added in the next version.
