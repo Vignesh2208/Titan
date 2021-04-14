@@ -1389,7 +1389,10 @@ int HandleVtSetProcessLookahead(unsigned long arg, struct dilated_task_struct * 
 
 
     curr_process_lookahead = GetProcessCurrLookahead(dilated_task);
-    if (new_process_lookahead >= curr_process_lookahead) {
+    if (lookahead_anchor_type == LOOKAHEAD_ANCHOR_EAT ||
+        dilated_task->lookahead_anchor_type == LOOKAHEAD_ANCHOR_EAT ||
+        (lookahead_anchor_type == LOOKAHEAD_ANCHOR_CURR_TIME && dilated_task->lookahead_anchor_type == LOOKAHEAD_ANCHOR_CURR_TIME) ||
+        new_process_lookahead >= curr_process_lookahead) {
         dilated_task->bulk_lookahead_expiry_time = bulk_lookahead_expiry_time;
         dilated_task->lookahead_anchor_type = lookahead_anchor_type;
     }

@@ -69,6 +69,7 @@ void SetNetDevStackID(int tracerID, int stackID, float nicSpeedMps) {
     netdev.in_callback = 1;
     netdev.nicSpeedMbps = nicSpeedMps;
     netdev.currTsliceQuantaUs = 1;
+    netdev.prevTsliceLeftUs = 0;
     netdev.netDevPktQueueSize = 0;
     memset(uniqueIDStr, 0, 100);
     sprintf(uniqueIDStr, "%d%d", netdev.tracerID, netdev.stackID);
@@ -162,6 +163,7 @@ void NetDevSendQueuedPackets() {
 
         if (pkt) {
             currPktUsedQuantaUs = (float)(pkt->len * 8.0) / (netdev.nicSpeedMbps);
+            
         } else {
             break;
         }
@@ -173,6 +175,18 @@ void NetDevSendQueuedPackets() {
 
         if (pkt && availQuantaUs - currPktUsedQuantaUs > 0) {
             availQuantaUs -= currPktUsedQuantaUs;
+
+            if (netdev.prevTsliceLeftUs) {
+
+                if (currPktUsedQuantaUs >=  netdev.prevTsliceLeftUs){
+                    currPktUsedQuantaUs -= netdev.prevTsliceLeftUs;
+                    netdev.prevTsliceLeftUs = 0;
+                } else {
+                    netdev.prevTsliceLeftUs -= currPktUsedQuantaUs;
+                    currPktUsedQuantaUs = 0;
+                }
+            }
+
             usedPktQuantaUs += currPktUsedQuantaUs;
 
             //printf ("Sending new pkt !\n");
@@ -197,8 +211,10 @@ void NetDevSendQueuedPackets() {
         //reset
         netdev.netDevPktQueueSize = 0;
         netdev.currTsliceQuantaUs = 0.0;
+        netdev.prevTsliceLeftUs = 0.0;
     } else {
         netdev.currTsliceQuantaUs = availQuantaUs;
+        netdev.prevTsliceLeftUs += availQuantaUs;
     }
 
     if (netdev.netDevPktQueueSize) {

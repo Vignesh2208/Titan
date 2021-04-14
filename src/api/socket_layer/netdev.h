@@ -18,6 +18,7 @@ struct netdev {
     int netDevPktQueueSize;
     float nicSpeedMbps;
     float currTsliceQuantaUs;
+    float prevTsliceLeftUs;
     int stackID;
     int tracerID;
     int uniqueID;
